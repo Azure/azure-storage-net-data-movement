@@ -1,0 +1,141 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<HelpTOC>
+
+  <HelpTOCNode Id="2b7c14f8-fb3d-411b-87bc-20d6bc126f71" Title="Microsoft.WindowsAzure.Storage.DataMovement" Url="html/10c70dbe-7be3-53d9-0b3f-05128c8826af.htm">
+    <HelpTOCNode Id="fb0af125-b67b-4467-a844-dd792d0740ee" Title="CopyOptions Class" Url="html/5676a741-870a-f755-0af3-3692a985be7b.htm">
+      <HelpTOCNode Title="CopyOptions Constructor " Url="html/4c7d84fe-c954-d8b9-de95-ed3f20461d05.htm" />
+      <HelpTOCNode Title="CopyOptions Methods" Url="html/07f958b4-316b-790b-cc2a-1fb246ca7fcf.htm" />
+      <HelpTOCNode Id="35199084-6b5f-4b28-bb3e-7517fe50c452" Title="CopyOptions Properties" Url="html/e422782b-88bc-734a-45c0-af97182e8bbe.htm">
+        <HelpTOCNode Title="DestinationAccessCondition Property " Url="html/1a114b39-078b-534e-5001-389170946f8e.htm" />
+        <HelpTOCNode Title="SourceAccessCondition Property " Url="html/f77d15b7-fec3-37eb-eee4-baa3f1f53edb.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="0602040e-4a48-467a-b47b-099db2d7d59b" Title="DownloadOptions Class" Url="html/dad632c4-7426-647a-ad0a-85d15de94dd6.htm">
+      <HelpTOCNode Title="DownloadOptions Constructor " Url="html/cde3a0b2-41d6-83d5-3758-5a56697df161.htm" />
+      <HelpTOCNode Title="DownloadOptions Methods" Url="html/6a208112-eb69-143b-1d05-9ac3b61a4076.htm" />
+      <HelpTOCNode Id="cb535429-46cc-4140-8f8a-8b37a6674da8" Title="DownloadOptions Properties" Url="html/f8d72e5d-4eae-3d21-0c72-b67c94b05e17.htm">
+        <HelpTOCNode Title="DisableContentMD5Validation Property " Url="html/8c219636-6556-a9b4-5699-57c1ae89b147.htm" />
+        <HelpTOCNode Title="SourceAccessCondition Property " Url="html/42ca196d-c09e-3c3c-5f22-88c46c92c041.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="OverwriteCallback Delegate" Url="html/5d6560c9-a139-0e6d-8a93-7563c07c24ec.htm" />
+    <HelpTOCNode Id="7ca7c993-84f6-4bf3-9d63-c910ef187817" Title="TransferCheckpoint Class" Url="html/3428efcf-8210-334c-9885-613e4b1222a4.htm">
+      <HelpTOCNode Title="TransferCheckpoint Constructor " Url="html/7e791cd1-dcb8-9a71-4497-6a2bee93155b.htm" />
+      <HelpTOCNode Id="01405e95-e0b9-46db-8b5a-db9518efd71e" Title="TransferCheckpoint Methods" Url="html/7a7efac8-cc3d-ebb1-9180-d1e7241745be.htm">
+        <HelpTOCNode Title="GetObjectData Method " Url="html/2c2a61c9-2a21-449f-fcdc-2b6d1b75ac63.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="66ee08ca-5319-4477-b57d-03ebe624cd33" Title="TransferConfigurations Class" Url="html/00d502f9-54dc-f902-6571-367fd8851081.htm">
+      <HelpTOCNode Title="TransferConfigurations Constructor " Url="html/a4b361d8-4f86-f29f-ad5d-6ac61976cf38.htm" />
+      <HelpTOCNode Title="TransferConfigurations Methods" Url="html/5c41c6f6-6bd8-4f09-d594-541412c540db.htm" />
+      <HelpTOCNode Id="d7bb72b1-4da6-477e-9347-5c844c0df985" Title="TransferConfigurations Properties" Url="html/442ecc45-37cb-0200-348e-e1f57e41e2a7.htm">
+        <HelpTOCNode Title="ParallelOperations Property " Url="html/d53e61ef-6352-aca8-d589-ef957309c6d1.htm" />
+        <HelpTOCNode Title="UserAgentSuffix Property " Url="html/034d1836-5cb2-a895-7ab2-ad3dd74283e8.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="8d9e6df2-42b1-41b6-b9ee-7c47e139772b" Title="TransferContext Class" Url="html/2cc2721a-4cd1-549a-af9f-462d5f413943.htm">
+      <HelpTOCNode Id="e59eea23-eb40-4768-94a1-e61ea805c70c" Title="TransferContext Constructor " Url="html/9dc591ed-8a0c-bd99-e6f9-7f70e947c4cd.htm">
+        <HelpTOCNode Title="TransferContext Constructor " Url="html/5ad41c8e-a366-b1eb-79b3-1e1076e1960a.htm" />
+        <HelpTOCNode Title="TransferContext Constructor (TransferCheckpoint)" Url="html/7aed4b81-ec99-2c98-7c4c-44b262c4b4d1.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Title="TransferContext Methods" Url="html/2ca74265-30e7-e1ed-03ba-a14d0f7695bf.htm" />
+      <HelpTOCNode Id="414f0f6a-565b-4909-8ca1-3ab8a949d5c2" Title="TransferContext Properties" Url="html/48a39f09-d87b-3392-819b-2f7cb41deabf.htm">
+        <HelpTOCNode Title="ClientRequestId Property " Url="html/880898ba-eba8-6262-0f9d-471d168fc9c0.htm" />
+        <HelpTOCNode Title="LastCheckpoint Property " Url="html/807db32d-5362-35d8-2e54-872f30a1e18b.htm" />
+        <HelpTOCNode Title="LogLevel Property " Url="html/21180ac0-29f5-49dc-de5a-f6a8a969209b.htm" />
+        <HelpTOCNode Title="OverwriteCallback Property " Url="html/0cf4fc2e-4672-3ef9-7b87-bfe224e3492f.htm" />
+        <HelpTOCNode Title="ProgressHandler Property " Url="html/8ebb0022-9f0f-119f-514e-13a209cb389b.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="TransferErrorCode Enumeration" Url="html/c0cc97ae-9bd8-37b2-a727-c4d714b5cc8f.htm" />
+    <HelpTOCNode Id="9db77103-8be2-4f69-aee9-7a4de167f456" Title="TransferException Class" Url="html/7863b152-18df-e59d-6fc0-ee48b5d0ce0f.htm">
+      <HelpTOCNode Id="e1cd275a-afe8-4926-9315-cdf6397ffa5f" Title="TransferException Constructor " Url="html/d763acf8-93c0-1809-0fe8-23e764b029c2.htm">
+        <HelpTOCNode Title="TransferException Constructor " Url="html/700ba9fa-07ae-ec51-75c0-557f33abd5c4.htm" />
+        <HelpTOCNode Title="TransferException Constructor (String)" Url="html/f580fcd8-86e2-62ac-498d-07cee9d8fcf7.htm" />
+        <HelpTOCNode Title="TransferException Constructor (TransferErrorCode)" Url="html/83719c16-5116-a9c5-1298-221cb4fc9f98.htm" />
+        <HelpTOCNode Title="TransferException Constructor (String, Exception)" Url="html/cb1ca504-d35a-ce2b-5b61-ba9b13325815.htm" />
+        <HelpTOCNode Title="TransferException Constructor (TransferErrorCode, String)" Url="html/e6ae12e5-3dd5-e82d-ae55-ae06f56e9b6d.htm" />
+        <HelpTOCNode Title="TransferException Constructor (TransferErrorCode, String, Exception)" Url="html/bec4f901-27d2-31a9-1766-68a893fe0d19.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="47d8ba84-02e1-4882-9e60-c15ada447b10" Title="TransferException Methods" Url="html/f50edfc7-b105-4d17-0f24-c3db9efe124f.htm">
+        <HelpTOCNode Title="GetObjectData Method " Url="html/148d34e7-5614-6e3d-590c-962171c52c0d.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="c358583e-6577-4e18-a6e1-7e9f3a506297" Title="TransferException Properties" Url="html/e447baa8-5a4b-909f-7bef-8ab1974524b8.htm">
+        <HelpTOCNode Title="ErrorCode Property " Url="html/e9bca134-aff5-bac5-fb48-f2919f1d0f94.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="8629c344-aeb6-4672-8db1-51b1749f6fa5" Title="TransferManager Class" Url="html/d194ffb9-b4cc-cefa-5988-bc9eb195cefe.htm">
+      <HelpTOCNode Id="6948239a-afdb-43cf-acfd-89e5338d6edc" Title="TransferManager Methods" Url="html/b9df5500-f194-0306-2de6-4a9b371afd85.htm">
+        <HelpTOCNode Id="2632900b-41af-4628-8af2-a55037b2a190" Title="CopyAsync Method " Url="html/c81c7fea-ea59-72cf-676e-28b326c50935.htm">
+          <HelpTOCNode Title="CopyAsync Method (CloudBlob, CloudBlob, Boolean)" Url="html/c1314df8-3b4b-bbe1-debd-630d7b5b1341.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudBlob, CloudFile, Boolean)" Url="html/5306795b-3b89-b549-5ea7-bdf15d649842.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudFile, CloudBlob, Boolean)" Url="html/cc63cfe3-87df-24a2-9d32-98f97010079f.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudFile, CloudFile, Boolean)" Url="html/bf14870b-3bd6-6a11-7861-e66e0a286f74.htm" />
+          <HelpTOCNode Title="CopyAsync Method (Uri, CloudBlob, Boolean)" Url="html/eca7465a-9823-535b-2a7f-e3338b144a36.htm" />
+          <HelpTOCNode Title="CopyAsync Method (Uri, CloudFile, Boolean)" Url="html/8a7f8290-2dbf-695c-e008-e85250e069bb.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudBlob, CloudBlob, Boolean, CopyOptions, TransferContext)" Url="html/c64d9e36-22ba-d99b-2dfb-c21728b0df4b.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudBlob, CloudFile, Boolean, CopyOptions, TransferContext)" Url="html/433f0e2a-76f2-cb82-735a-720ad186f1f9.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudFile, CloudBlob, Boolean, CopyOptions, TransferContext)" Url="html/88ec4aa7-34a4-31a2-bf04-ab6c71f788e0.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudFile, CloudFile, Boolean, CopyOptions, TransferContext)" Url="html/57dea590-b49f-a9f0-712d-875db885d486.htm" />
+          <HelpTOCNode Title="CopyAsync Method (Uri, CloudBlob, Boolean, CopyOptions, TransferContext)" Url="html/11fa6243-c5d5-40ef-1198-87ccc17c1c49.htm" />
+          <HelpTOCNode Title="CopyAsync Method (Uri, CloudFile, Boolean, CopyOptions, TransferContext)" Url="html/5a9a4646-9ca4-c0f5-7d4e-b7ed01e1aafb.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudBlob, CloudBlob, Boolean, CopyOptions, TransferContext, CancellationToken)" Url="html/14396447-eb55-8a00-91f2-7f505b359ff7.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudBlob, CloudFile, Boolean, CopyOptions, TransferContext, CancellationToken)" Url="html/59ffbc5c-4420-bfbc-5fc1-8b8fa89d1ed8.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudFile, CloudBlob, Boolean, CopyOptions, TransferContext, CancellationToken)" Url="html/39596c46-17d8-c0a6-f97a-9f25bd90cdfb.htm" />
+          <HelpTOCNode Title="CopyAsync Method (CloudFile, CloudFile, Boolean, CopyOptions, TransferContext, CancellationToken)" Url="html/090edd69-a8e1-795f-c919-6a29382913de.htm" />
+          <HelpTOCNode Title="CopyAsync Method (Uri, CloudBlob, Boolean, CopyOptions, TransferContext, CancellationToken)" Url="html/03609d0c-9ce9-c005-aaf5-ccc4cb017806.htm" />
+          <HelpTOCNode Title="CopyAsync Method (Uri, CloudFile, Boolean, CopyOptions, TransferContext, CancellationToken)" Url="html/b58094ff-af9d-7deb-5258-959719e9420e.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="f996e325-8b3b-4c08-a751-fd4bf1d900b3" Title="DownloadAsync Method " Url="html/022941d0-4b47-7c67-ae40-f6c6d67f2f2e.htm">
+          <HelpTOCNode Title="DownloadAsync Method (CloudBlob, Stream)" Url="html/2561aa0b-f0a0-5b10-4185-e9e11363dfb7.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudBlob, String)" Url="html/e9d8f6a5-f316-0b49-bf5e-40476fdc1766.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudFile, Stream)" Url="html/4f530f7b-4a62-91f4-c6bc-bb6905904430.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudFile, String)" Url="html/d36c15e8-aefd-a389-4475-5411aa5259dc.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudBlob, Stream, DownloadOptions, TransferContext)" Url="html/74fc0ecb-b6f4-ff13-a918-66d8a539ece6.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudBlob, String, DownloadOptions, TransferContext)" Url="html/ddcf4606-87e2-7c1e-4f82-009ef3e7163a.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudFile, Stream, DownloadOptions, TransferContext)" Url="html/d5b18c2d-ec5c-5f1a-b86c-43bd845ecbf6.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudFile, String, DownloadOptions, TransferContext)" Url="html/e6e4d675-f04f-d3b9-bf93-6c74869ca86a.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudBlob, Stream, DownloadOptions, TransferContext, CancellationToken)" Url="html/0f6ed073-7077-87bf-07f6-19684c579823.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudBlob, String, DownloadOptions, TransferContext, CancellationToken)" Url="html/666570fc-1e6b-1174-c6fd-c0c7b28a14c3.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudFile, Stream, DownloadOptions, TransferContext, CancellationToken)" Url="html/970af359-33d3-9295-aac5-1b50fa1d8ce2.htm" />
+          <HelpTOCNode Title="DownloadAsync Method (CloudFile, String, DownloadOptions, TransferContext, CancellationToken)" Url="html/8ddeffbc-4925-d58e-cad6-68a04ec9f7b0.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="de05d077-f449-428b-81f4-74b4a2db689f" Title="UploadAsync Method " Url="html/f7069d97-e479-72e4-238d-d9b799bf8488.htm">
+          <HelpTOCNode Title="UploadAsync Method (Stream, CloudBlob)" Url="html/69228bfe-4e82-383c-1034-738c0f1afd32.htm" />
+          <HelpTOCNode Title="UploadAsync Method (Stream, CloudFile)" Url="html/2f2fe94a-07b5-b5f9-e5c6-612d14df059a.htm" />
+          <HelpTOCNode Title="UploadAsync Method (String, CloudBlob)" Url="html/90065cef-70d1-b335-8a51-504acaa9d592.htm" />
+          <HelpTOCNode Title="UploadAsync Method (String, CloudFile)" Url="html/dbed1183-1f92-feee-162d-a82c31270787.htm" />
+          <HelpTOCNode Title="UploadAsync Method (Stream, CloudBlob, UploadOptions, TransferContext)" Url="html/26e905cb-d4af-e847-cf1f-fb3de84f7adf.htm" />
+          <HelpTOCNode Title="UploadAsync Method (Stream, CloudFile, UploadOptions, TransferContext)" Url="html/f941faaa-86d2-5d76-971f-8b119003d35f.htm" />
+          <HelpTOCNode Title="UploadAsync Method (String, CloudBlob, UploadOptions, TransferContext)" Url="html/633f2057-5138-b8b2-14a8-37b1035d860e.htm" />
+          <HelpTOCNode Title="UploadAsync Method (String, CloudFile, UploadOptions, TransferContext)" Url="html/61bea9ed-008a-c37c-1110-d98f1fbeb99a.htm" />
+          <HelpTOCNode Title="UploadAsync Method (Stream, CloudBlob, UploadOptions, TransferContext, CancellationToken)" Url="html/311a000e-c8d9-c2c4-df14-41b2bdfbeb5c.htm" />
+          <HelpTOCNode Title="UploadAsync Method (Stream, CloudFile, UploadOptions, TransferContext, CancellationToken)" Url="html/3fef9a8f-f0a6-01cd-c6ed-8751285a7f1a.htm" />
+          <HelpTOCNode Title="UploadAsync Method (String, CloudBlob, UploadOptions, TransferContext, CancellationToken)" Url="html/bba8db24-f794-c8b9-f1af-ac603bdb0b66.htm" />
+          <HelpTOCNode Title="UploadAsync Method (String, CloudFile, UploadOptions, TransferContext, CancellationToken)" Url="html/548701b0-59f9-780d-a885-5930c98082e2.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="2ea12340-82af-4038-b3c1-50000b8118d0" Title="TransferManager Properties" Url="html/2e6cb225-f59d-423f-aa49-2d89c5569603.htm">
+        <HelpTOCNode Title="Configurations Property " Url="html/4065875b-9022-f93a-9fb0-bbe0ee14ac2c.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="ecd70e57-3c1f-4e42-b277-ad90c804db32" Title="TransferProgress Class" Url="html/f0b6e694-52d2-0157-1dd2-b78dc44d1dee.htm">
+      <HelpTOCNode Title="TransferProgress Constructor " Url="html/f69c5295-717a-d9ab-15af-1821cd6f0f07.htm" />
+      <HelpTOCNode Title="TransferProgress Methods" Url="html/54a8281b-79f3-1409-10d9-2fca9ab58f83.htm" />
+      <HelpTOCNode Id="50b35dc3-6f09-4cfe-a2db-8313da10b159" Title="TransferProgress Properties" Url="html/fdc85d9d-c377-3ad9-5c36-938f2493bc8e.htm">
+        <HelpTOCNode Title="BytesTransferred Property " Url="html/b719d24d-bd85-f145-1f49-7989cf57d137.htm" />
+        <HelpTOCNode Title="NumberOfFilesFailed Property " Url="html/2712caaf-5567-2ba3-a8a1-de42f85192b2.htm" />
+        <HelpTOCNode Title="NumberOfFilesSkipped Property " Url="html/9f18d1f1-62c3-ccd8-19cb-5cad88809fde.htm" />
+        <HelpTOCNode Title="NumberOfFilesTransferred Property " Url="html/72844252-81b5-e8ea-7609-513d2224f26d.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="5bc81d94-d002-4697-8974-6383b7545f25" Title="UploadOptions Class" Url="html/ef2b9911-8cbd-bd35-7ed5-ee3abfa62d00.htm">
+      <HelpTOCNode Title="UploadOptions Constructor " Url="html/bf4bff6c-020a-88e7-cf22-acb5f144b93a.htm" />
+      <HelpTOCNode Title="UploadOptions Methods" Url="html/c7e303d5-9a7d-4968-14ca-e50590b142fd.htm" />
+      <HelpTOCNode Id="30aa8d6c-aa3b-4a55-9c4b-879a11aca5f5" Title="UploadOptions Properties" Url="html/929c9020-6297-3751-04fe-371ed6a52967.htm">
+        <HelpTOCNode Title="ContentType Property " Url="html/3ba711da-c953-d4c2-89b9-5ab08b14e594.htm" />
+        <HelpTOCNode Title="DestinationAccessCondition Property " Url="html/c087565a-95ab-3bbd-9664-c4812e077010.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+</HelpTOC>
