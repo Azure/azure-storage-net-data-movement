@@ -1,0 +1,678 @@
+//------------------------------------------------------------------------------
+// <copyright file="AsyncCopyController.cs" company="Microsoft">
+//    Copyright (c) Microsoft Corporation
+// </copyright>
+//------------------------------------------------------------------------------
+namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
+{
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+    using Microsoft.WindowsAzure.Storage.File;
+
+    internal abstract class AsyncCopyController : TransferControllerBase
+    {
+        /// <summary>
+        /// Timer to signal refresh status.
+        /// </summary>
+        private Timer statusRefreshTimer;
+
+        /// <summary>
+        /// Lock to protect statusRefreshTimer.
+        /// </summary>
+        private object statusRefreshTimerLock = new object();
+
+        /// <summary>
+        /// Keeps track of the internal state-machine state.
+        /// </summary>
+        private volatile State state;
+
+        /// <summary>
+        /// Indicates whether the controller has work available
+        /// or not for the calling code. 
+        /// </summary>
+        private bool hasWork;
+
+        /// <summary>
+        /// Indicates the BytesCopied value of last CopyState
+        /// </summary>
+        private long lastBytesCopied;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AsyncCopyController"/> class.
+        /// </summary>
+        /// <param name="scheduler">Scheduler object which creates this object.</param>
+        /// <param name="transferJob">Instance of job to start async copy.</param>
+        /// <param name="userCancellationToken">Token user input to notify about cancellation.</param>
+        internal AsyncCopyController(
+            TransferScheduler scheduler,
+            TransferJob transferJob,
+            CancellationToken userCancellationToken)
+            : base(scheduler, transferJob, userCancellationToken)
+        {
+            if (null == transferJob.Destination)
+            {
+                throw new ArgumentException(
+                    string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resources.ParameterCannotBeNullException,
+                        "Dest"),
+                    "transferJob");
+            }
+
+            if ((null == transferJob.Source.SourceUri && null == transferJob.Source.Blob && null == transferJob.Source.AzureFile)
+                || (null != transferJob.Source.SourceUri && null != transferJob.Source.Blob)
+                || (null != transferJob.Source.Blob && null != transferJob.Source.AzureFile)
+                || (null != transferJob.Source.SourceUri && null != transferJob.Source.AzureFile))
+            {
+                throw new ArgumentException(
+                    string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resources.ProvideExactlyOneOfThreeParameters,
+                        "Source.SourceUri",
+                        "Source.Blob",
+                        "Source.AzureFile"),
+                    "transferJob");
+            }
+
+            this.SourceUri = this.TransferJob.Source.SourceUri;
+            this.SourceBlob = this.TransferJob.Source.Blob;
+            this.SourceFile = this.TransferJob.Source.AzureFile;
+
+            // initialize the status refresh timer
+            this.statusRefreshTimer = new Timer(
+                new TimerCallback(
+                    delegate(object timerState)
+                    {
+                        this.hasWork = true;
+                    }));
+
+            this.SetInitialStatus();
+        }
+
+        /// <summary>
+        /// Internal state values.
+        /// </summary>
+        private enum State
+        {
+            FetchSourceAttributes,
+            GetDestination,
+            StartCopy,
+            GetCopyState,
+            Finished,
+            Error,
+        }
+
+        public override bool HasWork
+        {
+            get
+            {
+                return this.hasWork;
+            }
+        }
+
+        protected CloudBlob SourceBlob
+        {
+            get;
+            private set;
+        }
+
+        protected CloudFile SourceFile
+        {
+            get;
+            private set;
+        }
+
+        protected Uri SourceUri
+        {
+            get;
+            private set;
+        }
+
+        protected abstract Uri DestUri
+        {
+            get;
+        }
+
+        public static AsyncCopyController CreateAsyncCopyController(TransferScheduler transferScheduler, TransferJob transferJob, CancellationToken cancellationToken)
+        {
+            if (transferJob.Destination.TransferLocationType == TransferLocationType.AzureFile)
+            {
+                return new FileAsyncCopyController(transferScheduler, transferJob, cancellationToken);
+            }
+
+            if (transferJob.Destination.TransferLocationType == TransferLocationType.AzureBlob)
+            {
+                return new BlobAsyncCopyController(transferScheduler, transferJob, cancellationToken);
+            }
+
+            throw new InvalidOperationException(Resources.CanOnlyCopyToFileOrBlobException);
+        }
+
+        /// <summary>
+        /// Do work in the controller.
+        /// A controller controls the whole transfer from source to destination, 
+        /// which could be split into several work items. This method is to let controller to do one of those work items.
+        /// There could be several work items to do at the same time in the controller. 
+        /// </summary>
+        /// <returns>Whether the controller has completed. This is to tell <c>TransferScheduler</c> 
+        /// whether the controller can be disposed.</returns>
+        protected override async Task<bool> DoWorkInternalAsync()
+        {
+            switch (this.state)
+            {
+                case State.FetchSourceAttributes:
+                    await this.FetchSourceAttributesAsync();
+                    break;
+                case State.GetDestination:
+                    await this.GetDestinationAsync();
+                    break;
+                case State.StartCopy:
+                    await this.StartCopyAsync();
+                    break;
+                case State.GetCopyState:
+                    await this.GetCopyStateAsync();
+                    break;
+                case State.Finished:
+                case State.Error:
+                default:
+                    break;
+            }
+
+            return (State.Error == this.state || State.Finished == this.state);
+        }
+
+        /// <summary>
+        /// Sets the state of the controller to Error, while recording
+        /// the last occurred exception and setting the HasWork and 
+        /// IsFinished fields.
+        /// </summary>
+        /// <param name="ex">Exception to record.</param>
+        protected override void SetErrorState(Exception ex)
+        {
+            Debug.Assert(
+                this.state != State.Finished,
+                "SetErrorState called, while controller already in Finished state");
+
+            this.state = State.Error;
+            this.hasWork = false;
+        }
+
+        /// <summary>
+        /// Taken from <c>Microsoft.WindowsAzure.Storage.Core.Util.HttpUtility</c>: Parse the http query string.
+        /// </summary>
+        /// <param name="query">Http query string.</param>
+        /// <returns>A dictionary of query pairs.</returns>
+        protected static Dictionary<string, string> ParseQueryString(string query)
+        {
+            Dictionary<string, string> retVal = new Dictionary<string, string>();
+            if (query == null || query.Length == 0)
+            {
+                return retVal;
+            }
+
+            // remove ? if present
+            if (query.StartsWith("?", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Substring(1);
+            }
+
+            string[] valuePairs = query.Split(new string[] { "&" }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string vp in valuePairs)
+            {
+                int equalDex = vp.IndexOf("=", StringComparison.OrdinalIgnoreCase);
+                if (equalDex < 0)
+                {
+                    retVal.Add(Uri.UnescapeDataString(vp), null);
+                    continue;
+                }
+
+                string key = vp.Substring(0, equalDex);
+                string value = vp.Substring(equalDex + 1);
+
+                retVal.Add(Uri.UnescapeDataString(key), Uri.UnescapeDataString(value));
+            }
+
+            return retVal;
+        }
+
+        private void SetInitialStatus()
+        {
+            switch (this.TransferJob.Status)
+            {
+                case TransferJobStatus.NotStarted:
+                    this.TransferJob.Status = TransferJobStatus.Transfer;
+                    break;
+                case TransferJobStatus.Transfer:
+                    break;
+                case TransferJobStatus.Monitor:
+                    break;
+                case TransferJobStatus.Finished:
+                default:
+                    throw new ArgumentException(string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resources.InvalidInitialEntryStatusForControllerException,
+                        this.TransferJob.Status,
+                        this.GetType().Name));
+            }
+
+            this.SetHasWorkAfterStatusChanged();
+        }
+
+        private void SetHasWorkAfterStatusChanged()
+        {
+            if (TransferJobStatus.Transfer == this.TransferJob.Status)
+            {
+                if (null != this.SourceUri)
+                {
+                    this.state = State.GetDestination;
+                }
+                else
+                {
+                    this.state = State.FetchSourceAttributes;
+                }
+            }
+            else if(TransferJobStatus.Monitor == this.TransferJob.Status)
+            {
+                this.state = State.GetCopyState;
+            }
+            else
+            {
+                Debug.Fail("We should never be here");
+            }
+
+            this.hasWork = true;
+        }
+
+        private async Task FetchSourceAttributesAsync()
+        {
+            Debug.Assert(
+                this.state == State.FetchSourceAttributes,
+                "FetchSourceAttributesAsync called, but state isn't FetchSourceAttributes");
+
+            this.hasWork = false;
+            this.StartCallbackHandler();
+
+            try
+            {
+                await this.DoFetchSourceAttributesAsync();
+            }
+            catch (StorageException e)
+            {
+                HandleFetchSourceAttributesException(e);
+                throw;
+            }
+
+            this.TransferJob.Source.CheckedAccessCondition = true;
+
+            this.state = State.GetDestination;
+            this.hasWork = true;
+        }
+
+        private static void HandleFetchSourceAttributesException(StorageException e)
+        {
+            // Getting a storage exception is expected if the source doesn't
+            // exist. For those cases that indicate the source doesn't exist
+            // we will set a specific error state.
+            if (null != e.RequestInformation &&
+                e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+            {
+                throw new InvalidOperationException(Resources.SourceDoesNotExistException);
+            }
+        }
+
+        private async Task GetDestinationAsync()
+        {
+            Debug.Assert(
+                this.state == State.GetDestination,
+                "GetDestinationAsync called, but state isn't GetDestination");
+
+            this.hasWork = false;
+            this.StartCallbackHandler();
+
+            try
+            {
+                await this.DoFetchDestAttributesAsync();
+            }
+            catch (StorageException se)
+            {
+                if (!this.HandleGetDestinationResult(se))
+                {
+                    throw se;
+                }
+                return;
+            }
+
+            this.HandleGetDestinationResult(null);
+        }
+
+        private bool HandleGetDestinationResult(Exception e)
+        {
+            bool destExist = true;
+
+            if (null != e)
+            {
+                StorageException se = e as StorageException;
+
+                // Getting a storage exception is expected if the destination doesn't
+                // exist. In this case we won't error out, but set the 
+                // destExist flag to false to indicate we will copy to 
+                // a new blob/file instead of overwriting an existing one.
+                if (null != se &&
+                    null != se.RequestInformation &&
+                    se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    destExist = false;
+                }
+                else
+                {
+                    this.DoHandleGetDestinationException(se);
+                    return false;
+                }
+            }
+
+            this.TransferJob.Destination.CheckedAccessCondition = true;
+
+            if ((TransferJobStatus.Monitor == this.TransferJob.Status)
+                && string.IsNullOrEmpty(this.TransferJob.CopyId))
+            {
+                throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
+            }
+
+            // If destination file exists, query user whether to overwrite it.
+
+            Uri sourceUri = this.GetSourceUri();
+            this.CheckOverwrite(
+                destExist,
+                sourceUri.ToString(),
+                this.DestUri.ToString());
+
+            this.UpdateProgressAddBytesTransferred(0);
+
+            this.state = State.StartCopy;
+
+            this.hasWork = true;
+            return true;
+        }
+
+        private async Task StartCopyAsync()
+        {
+            Debug.Assert(
+                this.state == State.StartCopy,
+                "StartCopyAsync called, but state isn't StartCopy");
+
+            this.hasWork = false;
+
+            try
+            {
+                this.TransferJob.CopyId = await this.DoStartCopyAsync();
+            }
+            catch (StorageException se)
+            {
+                if (!this.HandleStartCopyResult(se))
+                {
+                    throw;
+                }
+
+                return;
+            }
+
+            this.HandleStartCopyResult(null);
+        }
+
+        private bool HandleStartCopyResult(StorageException se)
+        {
+            if (null != se)
+            {
+                if (null != se.RequestInformation
+                && null != se.RequestInformation.ExtendedErrorInformation
+                && BlobErrorCodeStrings.PendingCopyOperation == se.RequestInformation.ExtendedErrorInformation.ErrorCode)
+                {
+                    CopyState copyState = this.FetchCopyStateAsync().Result;
+
+                    if (null == copyState)
+                    {
+                        return false;
+                    }
+
+                    string baseUriString = copyState.Source.GetComponents(
+                        UriComponents.Host | UriComponents.Port | UriComponents.Path, UriFormat.UriEscaped);
+
+                    Uri sourceUri = this.GetSourceUri();
+
+                    string ourBaseUriString = sourceUri.GetComponents(UriComponents.Host | UriComponents.Port | UriComponents.Path, UriFormat.UriEscaped);
+
+                    DateTimeOffset? baseSnapshot = null;
+                    DateTimeOffset? ourSnapshot = null == this.SourceBlob ? null : this.SourceBlob.SnapshotTime;
+
+                    string snapshotString;
+                    if (ParseQueryString(copyState.Source.Query).TryGetValue("snapshot", out snapshotString))
+                    {
+                        if (!string.IsNullOrEmpty(snapshotString))
+                        {
+                            DateTimeOffset snapshotTime;
+                            if (DateTimeOffset.TryParse(
+                                snapshotString,
+                                CultureInfo.CurrentCulture,
+                                DateTimeStyles.AdjustToUniversal,
+                                out snapshotTime))
+                            {
+                                baseSnapshot = snapshotTime;
+                            }
+                        }
+                    }
+
+                    if (!baseUriString.Equals(ourBaseUriString) ||
+                        !baseSnapshot.Equals(ourSnapshot))
+                    {
+                        return false;
+                    }
+
+                    if (string.IsNullOrEmpty(this.TransferJob.CopyId))
+                    {
+                        this.TransferJob.CopyId = copyState.CopyId;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            this.state = State.GetCopyState;
+            this.hasWork = true;
+            return true;
+        }
+
+        private async Task GetCopyStateAsync()
+        {
+            Debug.Assert(
+                this.state == State.GetCopyState,
+                "GetCopyStateAsync called, but state isn't GetCopyState");
+
+            this.hasWork = false;
+            this.StartCallbackHandler();
+
+            CopyState copyState = null;
+
+            try
+            {
+                copyState = await this.FetchCopyStateAsync();
+            }
+            catch (StorageException se)
+            {
+                if (null != se.RequestInformation &&
+                       se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                {
+                    // The reason of 404 (Not Found) may be that the destination blob has not been created yet.
+                    this.RestartTimer();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            this.HandleFetchCopyStateResult(copyState);
+        }
+
+        private void HandleFetchCopyStateResult(CopyState copyState)
+        {
+            if (null == copyState)
+            {
+                // Reach here, the destination should already exist.
+                string exceptionMessage = string.Format(
+                            CultureInfo.CurrentCulture,
+                            Resources.FailedToRetrieveCopyStateForObjectException,
+                            this.DestUri.ToString());
+
+                throw new TransferException(
+                        TransferErrorCode.FailToRetrieveCopyStateForObject,
+                        exceptionMessage);
+            }
+            else
+            {
+                // Verify we are monitoring the right blob copying process.
+                if (!this.TransferJob.CopyId.Equals(copyState.CopyId))
+                {
+                    throw new TransferException(
+                            TransferErrorCode.MismatchCopyId,
+                            Resources.MismatchFoundBetweenLocalAndServerCopyIdsException);
+                }
+
+                if (CopyStatus.Success == copyState.Status)
+                {
+                    this.UpdateTransferProgress(copyState);
+
+                    this.DisposeStatusRefreshTimer();
+
+                    this.SetFinished();
+                }
+                else if (CopyStatus.Pending == copyState.Status)
+                {
+                    this.UpdateTransferProgress(copyState);
+
+                    // Wait a period to restart refresh the status.
+                    this.RestartTimer();
+                }
+                else
+                {
+                    string exceptionMessage = string.Format(
+                                CultureInfo.CurrentCulture,
+                                Resources.FailedToAsyncCopyObjectException,
+                                this.GetSourceUri().ToString(),
+                                this.DestUri.ToString(),
+                                copyState.Status.ToString(),
+                                copyState.StatusDescription);
+
+                    // CopyStatus.Invalid | Failed | Aborted
+                    throw new TransferException(
+                            TransferErrorCode.AsyncCopyFailed,
+                            exceptionMessage);
+                }
+            }
+        }
+
+        private void UpdateTransferProgress(CopyState copyState)
+        {
+            if (null != copyState &&
+                copyState.TotalBytes.HasValue)
+            {
+                Debug.Assert(
+                    copyState.BytesCopied.HasValue,
+                    "BytesCopied cannot be null as TotalBytes is not null.");
+
+                if (this.TransferContext != null)
+                {
+                    long bytesTransferred = copyState.BytesCopied.Value;
+                    this.UpdateProgressAddBytesTransferred(bytesTransferred - this.lastBytesCopied);
+
+                    this.lastBytesCopied = bytesTransferred;
+                }
+            }
+        }
+
+        private void SetFinished()
+        {
+            this.state = State.Finished;
+            this.hasWork = false;
+
+            this.FinishCallbackHandler(null);
+        }
+
+        private void RestartTimer()
+        {
+            // Wait a period to restart refresh the status.
+            this.statusRefreshTimer.Change(
+                TimeSpan.FromMilliseconds(Constants.AsyncCopyStatusRefreshWaitTimeInMilliseconds),
+                new TimeSpan(-1));
+        }
+
+        private void DisposeStatusRefreshTimer()
+        {
+            if (null != this.statusRefreshTimer)
+            {
+                lock (this.statusRefreshTimerLock)
+                {
+                    if (null != this.statusRefreshTimer)
+                    {
+                        this.statusRefreshTimer.Dispose();
+                        this.statusRefreshTimer = null;
+                    }
+                }
+            }
+        }
+
+        private Uri GetSourceUri()
+        {
+            if (null != this.SourceUri)
+            {
+                return this.SourceUri;
+            }
+
+            if (null != this.SourceBlob)
+            {
+                return this.SourceBlob.SnapshotQualifiedUri;
+            }
+
+            return this.SourceFile.Uri;
+        }
+
+        protected async Task DoFetchSourceAttributesAsync()
+        {
+            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
+                this.TransferJob.Source.AccessCondition,
+                this.TransferJob.Source.CheckedAccessCondition);
+            OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
+
+            if (this.SourceBlob != null)
+            {
+                await this.SourceBlob.FetchAttributesAsync(
+                    accessCondition,
+                    Utils.GenerateBlobRequestOptions(this.TransferJob.Source.BlobRequestOptions),
+                    operationContext,
+                    this.CancellationToken);
+            }
+            else if (this.SourceFile != null)
+            {
+                await this.SourceFile.FetchAttributesAsync(
+                    accessCondition,
+                    Utils.GenerateFileRequestOptions(this.TransferJob.Source.FileRequestOptions),
+                    operationContext,
+                    this.CancellationToken);
+            }
+        }
+
+        protected abstract Task DoFetchDestAttributesAsync();
+        protected abstract Task<string> DoStartCopyAsync();
+        protected abstract void DoHandleGetDestinationException(StorageException se);
+        protected abstract Task<CopyState> FetchCopyStateAsync();
+    }
+}

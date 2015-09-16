@@ -1,0 +1,322 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="BlobFileSizeInvalidException" xml:space="preserve">
+    <value>File size {0} is invalid for {1}, must be a multiple of {2}.</value>
+    <comment>{0} is file size. {1} is the destination blob type. {2} should be 512 bytes for pageblob.</comment>
+  </data>
+  <data name="BlobFileSizeTooLargeException" xml:space="preserve">
+    <value>File size {0} is larger than {1} maximum size {2}.</value>
+    <comment>{0} is file size. {1} is the destination blob type. {2} is the size limit of the destination.</comment>
+  </data>
+  <data name="BlobTransferCancelledException" xml:space="preserve">
+    <value>The blob transfer has been cancelled.</value>
+  </data>
+  <data name="BlockSizeOutOfRangeException" xml:space="preserve">
+    <value>BlockSize must be between {0} and {1}.</value>
+  </data>
+  <data name="CannotDeserializeLocationType" xml:space="preserve">
+    <value>Cannot deserialize to TransferLocation when its TransferLocationType is {0}.</value>
+  </data>
+  <data name="CannotSerializeStreamLocation" xml:space="preserve">
+    <value>The TransferLocation cannot be serialized when it represents a stream location.</value>
+  </data>
+  <data name="CloudFileSizeTooLargeException" xml:space="preserve">
+    <value>File size {0} is larger than cloud file maximum size {1} bytes.</value>
+    <comment>{0} is file size. {1} is the size limit of the destination.</comment>
+  </data>
+  <data name="CanOnlyCopyToFileOrBlobException" xml:space="preserve">
+    <value>Destination of asynchronous copying must be File Storage or Blob Storage.</value>
+  </data>
+  <data name="AsyncCopyFromFileToPageBlobNotSupportException" xml:space="preserve">
+    <value>Copying from File Storage to page Blob Storage asynchronously is not supported.</value>
+  </data>
+  <data name="DeserializationVersionNotMatchException" xml:space="preserve">
+    <value>{0} Deserialization failed: Version number doesn't match. Version number:{1}, expect:{2}.</value>
+    <comment>{0} is the class name.
+            {1} is the version number in serialization binary.
+            {2} is the expect version number.</comment>
+  </data>
+  <data name="DestinationChangedException" xml:space="preserve">
+    <value>Destination might be changed by other process or application.</value>
+  </data>
+  <data name="DownloadedMd5MismatchException" xml:space="preserve">
+    <value>The MD5 hash calculated from the downloaded data does not match the MD5 hash stored in the property of source: {0}. Please refer to help or documentation for detail.
+MD5 calculated: {1}
+MD5 in property: {2}</value>
+    <comment>{0} is the uri of source, {1} is the calculated MD5, {2} is the MD5 stored in the source property</comment>
+  </data>
+  <data name="DestinationBlobTypeNotMatch" xml:space="preserve">
+    <value>User specified blob type does not match the blob type of the existing destination blob.</value>
+  </data>
+  <data name="DestinationMustBeBaseBlob" xml:space="preserve">
+    <value>Destination must be a base blob.</value>
+  </data>
+  <data name="FailedToAllocateMemoryException" xml:space="preserve">
+    <value>Failed to allocate required memory.</value>
+  </data>
+  <data name="FailedToAsyncCopyObjectException" xml:space="preserve">
+    <value>Failed to copy from "{0}" to "{1}". Copy status: {2}; Description: {3}.</value>
+    <comment>{0} is uri of source, {1} is uri of destination. {2} is the copy status, {3} is the copy status description.</comment>
+  </data>
+  <data name="FailedToRetrieveCopyStateForObjectException" xml:space="preserve">
+    <value>Failed to retrieve CopyState for object "{0}".</value>
+    <comment>{0} is uri of target object.</comment>
+  </data>
+  <data name="FailedToGetBlobTypeException" xml:space="preserve">
+    <value>Failed to retrieve the original BlobType.</value>
+  </data>
+  <data name="FailedToOpenFileException" xml:space="preserve">
+    <value>Failed to open file {0}: {1}.</value>
+    <comment>{0} is file name, {1} is detailed error message.</comment>
+  </data>
+  <data name="InvalidInitialEntryStatusForControllerException" xml:space="preserve">
+    <value>The initial entry status {0} is invalid for {1}.</value>
+    <comment>{0} is the initial entry status, {1} is the controller.</comment>
+  </data>
+  <data name="LocalToLocalTransferUnsupportedException" xml:space="preserve">
+    <value>Both Source and Destination are locally accessible locations. At least one of source and destination should be an Azure Storage location.</value>
+  </data>
+  <data name="MismatchFoundBetweenLocalAndServerCopyIdsException" xml:space="preserve">
+    <value>The local copy id is different from the one returned from the server.</value>
+  </data>
+  <data name="NotSupportedBlobType" xml:space="preserve">
+    <value>Blob type '{0}' is not supported.</value>
+    <comment>{0} is the blob type name.</comment>
+  </data>
+  <data name="OverwriteCallbackCancelTransferException" xml:space="preserve">
+    <value>Skiped file "{0}" because target "{1}" already exists.</value>
+    <comment>{0} is source file name, {1} is destination file name.</comment>
+  </data>
+  <data name="ParallelCountNotPositiveException" xml:space="preserve">
+    <value>Parallel operations count must be positive.</value>
+  </data>
+  <data name="ParameterCannotBeNullException" xml:space="preserve">
+    <value>{0} cannot be null.</value>
+    <comment>{0} is the property or parameter name.</comment>
+  </data>
+  <data name="ProvideExactlyOneOfThreeParameters" xml:space="preserve">
+    <value>Exactly one of these parameters must be provided: {0}, {1}, {2}.</value>
+    <comment>{0} is the first parameter, {1} is the second one, {2} is the third one.</comment>
+  </data>
+  <data name="ReadableSizeFormatBytes" xml:space="preserve">
+    <value>{0:0.##} bytes</value>
+    <comment>{0: -&gt; take value from the first parameter.
+0.##} -&gt;Display at least 1 digit before the decimal point and up to 2 digits after the decimal point. </comment>
+  </data>
+  <data name="ReadableSizeFormatExaBytes" xml:space="preserve">
+    <value>{0:0.##}EB</value>
+    <comment>{0: -&gt; take value from the first parameter.
+0.##} -&gt;Display at least 1 digit before the decimal point and up to 2 digits after the decimal point. </comment>
+  </data>
+  <data name="ReadableSizeFormatGigaBytes" xml:space="preserve">
+    <value>{0:0.##}GB</value>
+    <comment>{0: -&gt; take value from the first parameter.
+0.##} -&gt;Display at least 1 digit before the decimal point and up to 2 digits after the decimal point. </comment>
+  </data>
+  <data name="ReadableSizeFormatKiloBytes" xml:space="preserve">
+    <value>{0:0.##}KB</value>
+    <comment>{0: -&gt; take value from the first parameter.
+0.##} -&gt;Display at least 1 digit before the decimal point and up to 2 digits after the decimal point. </comment>
+  </data>
+  <data name="ReadableSizeFormatMegaBytes" xml:space="preserve">
+    <value>{0:0.##}MB</value>
+    <comment>{0: -&gt; take value from the first parameter.
+0.##} -&gt;Display at least 1 digit before the decimal point and up to 2 digits after the decimal point. </comment>
+  </data>
+  <data name="ReadableSizeFormatPetaBytes" xml:space="preserve">
+    <value>{0:0.##}PB</value>
+    <comment>{0: -&gt; take value from the first parameter.
+0.##} -&gt;Display at least 1 digit before the decimal point and up to 2 digits after the decimal point. </comment>
+  </data>
+  <data name="ReadableSizeFormatTeraBytes" xml:space="preserve">
+    <value>{0:0.##}TB</value>
+    <comment>{0: -&gt; take value from the first parameter.
+0.##} -&gt;Display at least 1 digit before the decimal point and up to 2 digits after the decimal point. </comment>
+  </data>
+  <data name="RestartableInfoCorruptedException" xml:space="preserve">
+    <value>Failed to read restartable info from file.</value>
+  </data>
+  <data name="SmallMemoryCacheSizeLimitationException" xml:space="preserve">
+    <value>MaximumCacheSize cannot be less than {0}.</value>
+    <comment>{0} is minimum memory cache size limitation</comment>
+  </data>
+  <data name="SourceAndDestinationBlobTypeDifferent" xml:space="preserve">
+    <value>Blob type of source and destination must be the same.</value>
+  </data>
+  <data name="SourceAndDestinationLocationCannotBeEqualException" xml:space="preserve">
+    <value>Source and destination cannot be the same.</value>
+  </data>
+  <data name="SourceDoesNotExistException" xml:space="preserve">
+    <value>Source does not exist.</value>
+  </data>
+  <data name="SourceBlobDoesNotExistException" xml:space="preserve">
+    <value>Source blob does not exist.</value>
+  </data>
+  <data name="SourceBlobTypeNotMatch" xml:space="preserve">
+    <value>User specified blob type does not match the blob type of the existing source blob.</value>
+  </data>
+  <data name="StreamMustSupportReadException" xml:space="preserve">
+    <value>{0} must support Read.</value>
+  </data>
+  <data name="StreamMustSupportSeekException" xml:space="preserve">
+    <value>{0} must support Seek.</value>
+  </data>
+  <data name="StreamMustSupportWriteException" xml:space="preserve">
+    <value>{0} must support Write.</value>
+  </data>
+  <data name="StreamNotExpandable" xml:space="preserve">
+    <value>The stream is not expandable.</value>
+  </data>
+  <data name="TransferEntryCopyIdCannotBeNullOrEmptyException" xml:space="preserve">
+    <value>TransferEntry.CopyId cannot be null or empty because we need it to verify we are monitoring the right blob copying process.</value>
+  </data>
+  <data name="UnsupportedBlobTypeException" xml:space="preserve">
+    <value>The given blob type {0} is not supported.</value>
+    <comment>{0} is the given blob type.</comment>
+  </data>
+  <data name="UnsupportedTransferLocationException" xml:space="preserve">
+    <value>The given transfer location type {0} is not supported.</value>
+    <comment>{0} is the given transfer location type.</comment>
+  </data>
+  <data name="AsyncCopyFromFileToAppendBlobNotSupportException" xml:space="preserve">
+    <value>Copying from File Storage to append Blob Storage asynchronously is not supported.</value>
+  </data>
+  <data name="AppendBlob" xml:space="preserve">
+    <value>AppendBlob</value>
+  </data>
+  <data name="BlockBlob" xml:space="preserve">
+    <value>BlockBlob</value>
+  </data>
+  <data name="PageBlob" xml:space="preserve">
+    <value>PageBlob</value>
+  </data>
+  <data name="SyncCopyFromUriToAzureBlobNotSupportedException" xml:space="preserve">
+    <value>Copying from uri to Azure Blob Storage synchronously is not supported.</value>
+  </data>
+  <data name="SyncCopyFromUriToAzureFileNotSupportedException" xml:space="preserve">
+    <value>Copying from uri to Azure File Storage synchronously is not supported.</value>
+  </data>
+  <data name="TransferAlreadyExists" xml:space="preserve">
+    <value>A transfer operation with the same source and destination already exists.</value>
+  </data>
+  <data name="UncategorizedException" xml:space="preserve">
+    <value>The transfer failed.</value>
+  </data>
+</root>
