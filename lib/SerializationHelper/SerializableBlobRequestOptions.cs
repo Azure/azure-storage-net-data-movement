@@ -1,0 +1,105 @@
+//------------------------------------------------------------------------------
+// <copyright file="SerializableBlobRequestOptions.cs" company="Microsoft">
+//    Copyright (c) Microsoft Corporation
+// </copyright>
+//------------------------------------------------------------------------------
+
+namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
+{
+    using System;
+    using System.Diagnostics;
+    using System.Runtime.Serialization;
+    using Microsoft.WindowsAzure.Storage.Blob;
+
+    [Serializable]
+    internal sealed class SerializableBlobRequestOptions : SerializableRequestOptions
+    {
+        private const string DisableContentMD5ValidationName = "DisableContentMD5Validation";
+        private const string MaximumExecutionTimeName = "MaximumExecutionTime";
+        private const string ServerTimeoutName = "ServerTimeout";
+        private const string StoreBlobContentMD5Name = "StoreBlobContentMD5";
+        private const string UseTransactionalMD5Name = "UseTransactionalMD5";
+
+        private BlobRequestOptions blobRequestOptions;
+
+        public SerializableBlobRequestOptions()
+        {
+        }       
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SerializableBlobRequestOptions"/> class.
+        /// </summary>
+        /// <param name="info">Serialization information.</param>
+        /// <param name="context">Streaming context.</param>
+        private SerializableBlobRequestOptions(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+            bool? disableContentMD5Validation = (bool?)info.GetValue(DisableContentMD5ValidationName, typeof(bool?));
+            TimeSpan? maximumExecutionTime = (TimeSpan?)info.GetValue(MaximumExecutionTimeName, typeof(TimeSpan?));
+            TimeSpan? serverTimeout = (TimeSpan?)info.GetValue(ServerTimeoutName, typeof(TimeSpan?));
+            bool? storeBlobContentMD5 = (bool?)info.GetValue(StoreBlobContentMD5Name, typeof(bool?));
+            bool? useTransactionalMD5 = (bool?)info.GetValue(UseTransactionalMD5Name, typeof(bool?));
+
+            if (null != disableContentMD5Validation
+                || null != maximumExecutionTime
+                || null != serverTimeout
+                || null != storeBlobContentMD5
+                || null != useTransactionalMD5)
+            {
+                this.blobRequestOptions = Transfer_RequestOptions.DefaultBlobRequestOptions;
+
+                this.blobRequestOptions.DisableContentMD5Validation = disableContentMD5Validation;
+                this.blobRequestOptions.MaximumExecutionTime = maximumExecutionTime;
+                this.blobRequestOptions.ServerTimeout = serverTimeout;
+                this.blobRequestOptions.StoreBlobContentMD5 = storeBlobContentMD5;
+                this.blobRequestOptions.UseTransactionalMD5 = useTransactionalMD5;
+            }
+            else
+            {
+                this.blobRequestOptions = null;
+            }
+        }
+
+        protected override IRequestOptions RequestOptions
+        {
+            get
+            {
+                return this.blobRequestOptions;
+            }
+
+            set
+            {
+                BlobRequestOptions requestOptions = value as BlobRequestOptions;
+                Debug.Assert(null != requestOptions, "Setting RequestOptions in BlobRequestOptionsSerializer, but the value is not a BlobRequestOptions instance.");
+                this.blobRequestOptions = requestOptions;
+            }
+        }
+
+        /// <summary>
+        /// Serializes the object.
+        /// </summary>
+        /// <param name="info">Serialization info object.</param>
+        /// <param name="context">Streaming context.</param>
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+
+            if (null == this.blobRequestOptions)
+            {
+                info.AddValue(DisableContentMD5ValidationName, null);
+                info.AddValue(MaximumExecutionTimeName, null, typeof(TimeSpan?));
+                info.AddValue(ServerTimeoutName, null, typeof(TimeSpan?));
+                info.AddValue(StoreBlobContentMD5Name, null);
+                info.AddValue(UseTransactionalMD5Name, null);
+            }
+            else
+            {
+                info.AddValue(DisableContentMD5ValidationName, this.blobRequestOptions.DisableContentMD5Validation);
+                info.AddValue(MaximumExecutionTimeName, this.blobRequestOptions.MaximumExecutionTime, typeof(TimeSpan?));
+                info.AddValue(ServerTimeoutName, this.blobRequestOptions.ServerTimeout, typeof(TimeSpan?));
+                info.AddValue(StoreBlobContentMD5Name, this.blobRequestOptions.StoreBlobContentMD5);
+                info.AddValue(UseTransactionalMD5Name, this.blobRequestOptions.UseTransactionalMD5);
+            }
+        }
+    }
+}

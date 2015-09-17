@@ -1,0 +1,336 @@
+//------------------------------------------------------------------------------
+// <copyright file="TransferControllerBase.cs" company="Microsoft">
+//    Copyright (c) Microsoft Corporation
+// </copyright>
+//------------------------------------------------------------------------------
+
+namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
+{
+    using System;
+    using System.Globalization;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.WindowsAzure.Storage.DataMovement;
+
+    internal abstract class TransferControllerBase : ITransferController, IDisposable
+    {
+        /// <summary>
+        /// Count of active tasks in this controller.
+        /// </summary>
+        private int activeTasks;
+
+        private volatile bool isFinished = false;
+
+        private object lockOnFinished = new object();
+
+        private int notifiedFinish;
+
+        private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+        private CancellationTokenRegistration transferSchedulerCancellationTokenRegistration;
+
+        private CancellationTokenRegistration userCancellationTokenRegistration;
+
+        protected TransferControllerBase(TransferScheduler transferScheduler, TransferJob transferJob, CancellationToken userCancellationToken)
+        {
+            if (null == transferScheduler)
+            {
+                throw new ArgumentNullException("transferScheduler");
+            }
+
+            if (null == transferJob)
+            {
+                throw new ArgumentNullException("transferJob");
+            }
+
+            this.Scheduler = transferScheduler;
+            this.TransferJob = transferJob;
+
+            this.transferSchedulerCancellationTokenRegistration =
+                this.Scheduler.CancellationTokenSource.Token.Register(this.CancelWork);
+
+            this.userCancellationTokenRegistration = userCancellationToken.Register(this.CancelWork);
+            this.TaskCompletionSource = new TaskCompletionSource<object>();
+        }
+
+        ~TransferControllerBase()
+        {
+            this.Dispose(false);
+        }
+
+        /// <summary>
+        /// Gets or sets the transfer context for the controller.
+        /// </summary>
+        public TransferContext TransferContext
+        {
+            get
+            {
+                return this.TransferJob.Transfer.Context;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the controller has work available
+        /// or not for the calling code. If HasWork is false, while IsFinished
+        /// is also false this indicates that there are currently still active
+        /// async tasks running. The caller should continue checking if this
+        /// controller HasWork available later; once the currently active 
+        /// async tasks are done HasWork will change to True, or IsFinished
+        /// will be set to True.
+        /// </summary>
+        public abstract bool HasWork
+        {
+            get;
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether this controller is finished with
+        /// its transferring task.
+        /// </summary>
+        public bool IsFinished
+        {
+            get
+            {
+                return this.isFinished;
+            }
+        }
+
+        public TaskCompletionSource<object> TaskCompletionSource
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets scheduler object which creates this object.
+        /// </summary>
+        protected TransferScheduler Scheduler
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Gets TransferJob related to this controller.
+        /// </summary>
+        protected TransferJob TransferJob
+        {
+            get;
+            private set;
+        }
+
+        protected CancellationToken CancellationToken
+        {
+            get
+            {
+                return cancellationTokenSource.Token;
+            }
+        }
+
+        /// <summary>
+        /// Do work in the controller.
+        /// A controller controls the whole transfer from source to destination, 
+        /// which could be split into several work items. This method is to let controller to do one of those work items.
+        /// There could be several work items to do at the same time in the controller. 
+        /// </summary>
+        /// <returns>Whether the controller has completed. This is to tell <c>TransferScheduler</c> 
+        /// whether the controller can be disposed.</returns>
+        public async Task<bool> DoWorkAsync()
+        {
+            if (!this.HasWork)
+            {
+                return false;
+            }
+
+            bool setFinish = false;
+            Exception exception = null;
+            this.PreWork();
+
+            try
+            {
+                setFinish = await this.DoWorkInternalAsync();
+            }
+            catch (Exception ex)
+            {
+                this.SetErrorState(ex);
+                setFinish = true;
+                exception = ex;
+            }
+
+            if (setFinish)
+            {
+                var postWork = this.SetFinishedAndPostWork();
+                if (exception != null)
+                {
+                    // There might be still some active tasks running while error occurs, and
+                    // those tasks shouldn't take long time to complete, so just spin until they are done.
+                    var spin = new SpinWait();
+                    while (this.activeTasks != 0)
+                    {
+                        spin.SpinOnce();
+                    }
+
+                    this.FinishCallbackHandler(exception);
+                    return true;
+                }
+                else
+                {
+                    return postWork;
+                }
+            }
+            else
+            {
+                return this.PostWork();
+            }
+        }
+
+        /// <summary>
+        /// Cancels all work in the controller.
+        /// </summary>
+        public void CancelWork()
+        {
+            this.cancellationTokenSource.Cancel();
+        }
+
+        /// <summary>
+        /// Public dispose method to release all resources owned.
+        /// </summary>
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        public void CheckCancellation()
+        {
+            Utils.CheckCancellation(this.cancellationTokenSource);
+        }
+
+        public void UpdateProgressAddBytesTransferred(long bytesTransferredToAdd)
+        {
+            this.TransferJob.Transfer.ProgressTracker.AddBytesTransferred(bytesTransferredToAdd);
+        }
+
+        public void StartCallbackHandler()
+        {
+            if (this.TransferJob.Status == TransferJobStatus.NotStarted)
+            {
+                this.TransferJob.Status = TransferJobStatus.Transfer;
+            }
+        }
+
+        public void FinishCallbackHandler(Exception exception)
+        {
+            if (Interlocked.CompareExchange(ref this.notifiedFinish, 1, 0) == 0)
+            {
+                if (null != exception)
+                {
+                    this.TaskCompletionSource.SetException(exception);
+                }
+                else
+                {
+                    this.TaskCompletionSource.SetResult(null);
+                }
+            }
+        }
+
+        protected abstract Task<bool> DoWorkInternalAsync();
+
+        /// <summary>
+        /// Pre work action.
+        /// </summary>
+        protected void PreWork()
+        {
+            Interlocked.Increment(ref this.activeTasks);
+        }
+
+        /// <summary>
+        /// Post work action.
+        /// </summary>
+        /// <returns>
+        /// Count of current active task in the controller.
+        /// A Controller can only be destroyed after this count of active tasks is 0.
+        /// </returns>
+        protected bool PostWork()
+        {
+            lock (this.lockOnFinished)
+            {
+                return 0 == Interlocked.Decrement(ref this.activeTasks) && this.isFinished;
+            }
+        }
+
+        protected bool SetFinishedAndPostWork()
+        {
+            lock (this.lockOnFinished)
+            {
+                this.isFinished = true;
+                return 0 == Interlocked.Decrement(ref this.activeTasks) && this.isFinished;
+            }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                try
+                {
+                    this.transferSchedulerCancellationTokenRegistration.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Object has been disposed before, just catch this exception, do nothing else.
+                }
+
+                try
+                {
+                    this.userCancellationTokenRegistration.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Object has been disposed before, just catch this exception, do nothing else.
+                }
+
+                try
+                {
+                    this.cancellationTokenSource.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Object has been disposed before, just catch this exception, do nothing else.
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the state of the controller to Error, while recording
+        /// the last occurred exception and setting the HasWork and 
+        /// IsFinished fields.
+        /// </summary>
+        /// <param name="ex">Exception to record.</param>
+        protected abstract void SetErrorState(Exception ex);
+
+        public void CheckOverwrite(
+            bool exist,
+            string sourceFileName, 
+            string destFileName)
+        {
+            if (null == this.TransferJob.Overwrite)
+            {
+                this.TransferJob.Overwrite = true;
+                if (exist)
+                {
+                    if (null == this.TransferContext || null == this.TransferContext.OverwriteCallback || !this.TransferContext.OverwriteCallback(sourceFileName, destFileName))
+                    {
+                        this.TransferJob.Overwrite = false;
+                    }
+                }
+            }
+
+            if (exist && !this.TransferJob.Overwrite.Value)
+            {
+                string exceptionMessage = string.Format(CultureInfo.InvariantCulture, Resources.OverwriteCallbackCancelTransferException, sourceFileName, destFileName);
+                throw new TransferException(TransferErrorCode.NotOverwriteExistingDestination, exceptionMessage);
+            }
+        }
+    }
+}
