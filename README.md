@@ -67,7 +67,7 @@ This version depends on Azure Storage Client Library for .NET.
 
 ## Code Samples
 
-Find more samples at [getting started with Storage Data Movement Library (TBC)]() and the [sample folder (TBC)]().
+Find more samples at the [sample folder](https://github.com/Azure/azure-storage-net-data-movement/tree/master/samples/DataMovementSamples).
 
 ### Upload a blob
 
