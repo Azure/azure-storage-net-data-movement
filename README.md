@@ -77,7 +77,6 @@ First, include the classes you need, here we include Storage client library, the
 using System;
 using System.Threading;
 using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.DataMovement;
 ```
@@ -85,8 +84,8 @@ using Microsoft.WindowsAzure.Storage.DataMovement;
 Now use the interfaces provided by Storage client lib to setup the storage context (find more details at [how to use Blob Storage from .NET](https://azure.microsoft.com/documentation/articles/storage-dotnet-how-to-use-blobs/)):
 
 ```csharp
-CloudStorageAccount account = CloudStorageAccount.Parse(
-	configurationManager.ConnectionStrings["StorageConnectionString"]);
+string storageConnectionString = "myStorageConnectionString";
+CloudStorageAccount account = CloudStorageAccount.Parse(storageConnectionString);
 CloudBlobClient blobClient = account.CreateCloudBlobClient();
 CloudBlobContainer blobContainer = blobClient.GetContainerReference("mycontainer");
 blobContainer.CreateIfNotExists();
@@ -103,8 +102,7 @@ TransferManager.Configurations.ParallelOperations = 64;
 TransferContext context = new TransferContext();
 context.ProgressHandler = new Progress<TransferProgress>((progress) =>
 {
-    Console.WriteLine("Bytes uploaded: {0}/{1}", 
-    	progress.BytesTransferred, progress.TotalSize);
+	Console.WriteLine("Bytes uploaded: {0}", progress.BytesTransferred);
 });
 // Upload a local blob
 var task = TransferManager.UploadAsync(
@@ -120,7 +118,7 @@ AzCopy will set ServicePointManager.DefaultConnectionLimit to the number of eigh
 
 ```csharp
 ServicePoint myServicePoint = ServicePointManager.FindServicePoint(myServiceUri);
-myServicePoint.ConnectionLimit = 48
+myServicePoint.ConnectionLimit = 64
 ```
 
 ### Turn off 100-continue 
@@ -149,6 +147,6 @@ For general suggestions about Microsoft Azure please use our [UserVoice forum](h
 
 # Learn More
 
-- [Storage Data Movement Library API reference (TBC)]()
+- [Storage Data Movement Library API reference](https://azure.github.io/azure-storage-net-data-movement)
 - [Storage Client Library Reference for .NET - MSDN](http://msdn.microsoft.com/library/azure/dn495001(v=azure.10).aspx)
 - [Azure Storage Team Blog](http://blogs.msdn.com/b/windowsazurestorage/)
