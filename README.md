@@ -50,7 +50,7 @@ cd azure-storage-net-data-movement
 ### Via NuGet
 
 To get the binaries of this library as distributed by Microsoft, ready for use
-within your project you can also have them installed by the .NET package manager [NuGet](http://www.nuget.org/).
+within your project you can also have them installed by the .NET package manager [NuGet](https://www.nuget.org/packages/Microsoft.Azure.Storage.DataMovement).
 
 `Install-Package WindowsAzure.Storage.DataMovment`
 
