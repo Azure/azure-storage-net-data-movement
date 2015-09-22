@@ -50,7 +50,7 @@ cd azure-storage-net-data-movement
 To get the binaries of this library as distributed by Microsoft, ready for use
 within your project you can also have them installed by the .NET package manager [NuGet](https://www.nuget.org/packages/Microsoft.Azure.Storage.DataMovement).
 
-`Install-Package Microsoft.Azure.Storage.DataMovment`
+`Install-Package Microsoft.Azure.Storage.DataMovement`
 
 
 ## Dependencies
@@ -69,7 +69,7 @@ Find more samples at the [sample folder](https://github.com/Azure/azure-storage-
 
 ### Upload a blob
 
-First, include the classes you need, here we include Storage client library, the Storage data movement library and the .NET threading because data movement libary provides Task Asynchronous interfaces to transfer storage objects:
+First, include the classes you need, here we include Storage client library, the Storage data movement library and the .NET threading because data movement library provides Task Asynchronous interfaces to transfer storage objects:
 
 ```csharp
 using System;
