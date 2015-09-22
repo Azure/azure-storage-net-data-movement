@@ -9,13 +9,13 @@ For more information about the Azure Storage, please visit [Microsoft Azure Stor
 - Blobs
     - Download/Upload/Copy Blobs.
     - Synchronous and asynchronous copy Blobs
-    - Concurrently transfer Blobs and Blob chunks, define number of concurrents
+    - Concurrently transfer Blobs and Blob chunks, define number of concurrent operations
     - Download Specific Blob Snapshot
 
 - Files
 	- Download/Upload/Copy Files.
     - Synchronous and asynchronous copy Files
-    - Concurrently transfer Files and File ranges, define number of concurrents
+    - Concurrently transfer Files and File ranges, define number of concurrent operations
 
 - General
 	- Track data transfer progress
