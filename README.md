@@ -1,8 +1,6 @@
 # Microsoft Azure Storage Data Movement Library (0.1.0)
 
-The Microsoft Azure Storage Data Movement Library designed for high-performance uploading, downloading and copying Azure Storage Blob and File.
-
-[AzCopy](https://azure.microsoft.com/documentation/articles/storage-use-azcopy/), the Azure Storage data management command line utility, is refering to this library.
+The Microsoft Azure Storage Data Movement Library designed for high-performance uploading, downloading and copying Azure Storage Blob and File. This library is based on the core data movement framework that powers [AzCopy](https://azure.microsoft.com/documentation/articles/storage-use-azcopy/).
 
 For more information about the Azure Storage, please visit [Microsoft Azure Storage Documentation](https://azure.microsoft.com/documentation/services/storage/).
 
@@ -11,13 +9,13 @@ For more information about the Azure Storage, please visit [Microsoft Azure Stor
 - Blobs
     - Download/Upload/Copy Blobs.
     - Synchronous and asynchronous copy Blobs
-    - Concurrently transfer Blobs and Blob chunks, define number of concurrents
+    - Concurrently transfer Blobs and Blob chunks, define number of concurrent operations
     - Download Specific Blob Snapshot
 
 - Files
 	- Download/Upload/Copy Files.
     - Synchronous and asynchronous copy Files
-    - Concurrently transfer Files and File ranges, define number of concurrents
+    - Concurrently transfer Files and File ranges, define number of concurrent operations
 
 - General
 	- Track data transfer progress
@@ -52,7 +50,7 @@ cd azure-storage-net-data-movement
 To get the binaries of this library as distributed by Microsoft, ready for use
 within your project you can also have them installed by the .NET package manager [NuGet](https://www.nuget.org/packages/Microsoft.Azure.Storage.DataMovement).
 
-`Install-Package WindowsAzure.Storage.DataMovment`
+`Install-Package Microsoft.Azure.Storage.DataMovment`
 
 
 ## Dependencies
@@ -117,8 +115,7 @@ By default, the .Net HTTP connection limit is 2. This implies that only two conc
 AzCopy will set ServicePointManager.DefaultConnectionLimit to the number of eight multiple the core number by default. To have a comparable performance when using Data Movement Library alone, we recommend you set this value as well.
 
 ```csharp
-ServicePoint myServicePoint = ServicePointManager.FindServicePoint(myServiceUri);
-myServicePoint.ConnectionLimit = 64
+ServicePointManager.DefaultConnectionLimit = Environment.ProcessorCount * 8;
 ```
 
 ### Turn off 100-continue 
