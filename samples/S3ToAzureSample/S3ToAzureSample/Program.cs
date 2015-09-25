@@ -7,6 +7,7 @@ namespace S3ToAzureSample
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Configuration;
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
@@ -18,68 +19,72 @@ namespace S3ToAzureSample
     using Microsoft.WindowsAzure.Storage.DataMovement;
 
     /// <summary>
-    /// This sample demonstrates how to copy all objects from an Amazon s3 bucket into a Microsoft Azure Blob container
+    /// This sample demonstrates how to copy all objects from an Amazon s3 bucket into a Microsoft Azure blob container
     /// Before running this sample, you need to update it with your Amazon s3 and Microsoft Azure account settings.
     /// </summary>
-    class Program
+    static class Program
     {
         #region account settings
-        // Amazon S3 account settings:
-        // Change it to your aws access key id
-        private static string AWSAccessKeyId = "[Your aws access key id]";
+        // Please set your account credentials in app.config.
 
-        // Change it to your aws access secret key
-        private static string AWSSecretAccessKey = "[Your aws secret access key]";
+        // Change it to the region your S3 bucket is in.
+        private static readonly RegionEndpoint S3BucketRegion = RegionEndpoint.USWest1;
 
-        // Change it to the region your bucket is in
-        private static RegionEndpoint S3BucketRegion = RegionEndpoint.USWest1;
+        // Change it to your S3 bucket name to copy data from.
+        private static readonly string S3BucketName = "[Your S3 bucket name]";
 
-        // Change it to your S3 bucket name to copy data from
-        private static string S3BucketName = "[Your S3 bucket name]";
-
-        // Microsoft Azure account settings:
-        // Change it to your Azure Blob container name to copy data to
-        private static string AzureContainerName = "[Your Azure Blob container name]";
-
-        // Insert your Microsoft Azure Storage account name and account key into the following connection string
-        private static string AzureConnectionString = "DefaultEndpointsProtocol=https;AccountName=[Your azure account];AccountKey=[Your azure account key]";
+        // Change it to your Azure blob container name to copy data to.
+        private static readonly string AzureContainerName = "[Your Azure blob container name]";
 
         #endregion
 
         // This sample uses two threads working as producer and consumer. This job queue is used to share data between two threads.
-        private static BlockingCollection<TransferJob> jobQueue = new BlockingCollection<TransferJob>();
+        private static BlockingCollection<S3ToAzureTransferJob> jobQueue = new BlockingCollection<S3ToAzureTransferJob>();
 
-        // CountdownEvent to indicate the overall transfer completion
+        // CountdownEvent to indicate the overall transfer completion.
         private static CountdownEvent countdownEvent = new CountdownEvent(1);
 
         // A recorder helping to collect transfer summary from DataMovement library progress handler.
         private static ProgressRecorder progressRecorder = new ProgressRecorder();
 
-        // Local folder used to store temporary files, it will be deleted after at the end of this sample
+        // Local folder used to store temporary files, it will be deleted after at the end of this sample.
         private static string tempFolder = "TempFolder";
 
-        // lock to block the console output when querying for user input
+        // lock to block the console output when querying for user input.
         private static object consoleLock = new object();
 
-        // Amazon s3 client
+        // Amazon s3 client.
         private static AmazonS3Client s3Client;
 
-        // Microsoft Azure cloud blob client
+        // Microsoft Azure cloud blob client.
         private static CloudBlobClient azureClient;
 
         static void Main(string[] args)
         {
             try
             {
-                // Initialize the sample
-                Init();
+                // Create Amazon S3 client
+                string awsAccessKeyId = LoadSettingFromAppConfig("AWSAccessKeyId");
+                string awsSecretAccessKey = LoadSettingFromAppConfig("AWSSecretAccessKey");
+                s3Client = new AmazonS3Client(awsAccessKeyId, awsSecretAccessKey, S3BucketRegion);
+
+                // Create Microsoft Azure client
+                string azureConnectionString = LoadSettingFromAppConfig("AzureStorageConnectionString");
+                CloudStorageAccount account = CloudStorageAccount.Parse(azureConnectionString);
+                azureClient = account.CreateCloudBlobClient();
+
+                // Create local temporary folder
+                Directory.CreateDirectory(tempFolder);
+
+                // Configue DataMovement library
+                TransferManager.Configurations.UserAgentSuffix = "S3ToAzureSample";
 
                 ConsoleWriteLine("===Transfer begins===");
 
                 // Start a thread to list objects from your Amazon s3 bucket
                 Task.Run(() => { ListFromS3(); });
 
-                // Start a thread to transfer listed objects into your Microsoft Azure Blob container
+                // Start a thread to transfer listed objects into your Microsoft Azure blob container
                 Task.Run(() => { TransferToAzure(); });
 
                 // Wait until all data are copied into Azure
@@ -90,46 +95,33 @@ namespace S3ToAzureSample
             }
             finally
             {
-                Cleanup();
+                // Delete the temporary folder
+                Directory.Delete(tempFolder, true);
             }
         }
 
-        private static void Init()
+        /// <summary>
+        /// Load a setting from app.config.
+        /// </summary>
+        /// <param name="key">Key of setting.</param>
+        /// <returns>Value of setting.</returns>
+        private static string LoadSettingFromAppConfig(string key)
         {
-            // Create Amazon S3 client
-            s3Client = GetS3Client();
+            string result = ConfigurationManager.AppSettings[key];
 
-            // Create Microsoft Azure client
-            azureClient = GetAzureClient();
+            if (string.IsNullOrEmpty(result))
+            {
+                throw new InvalidOperationException(string.Format("{0} is not set in App.config.", key));
+            }
 
-            // Create local temporary folder
-            Directory.CreateDirectory(tempFolder);
-
-            // Configue DataMovement library
-            TransferManager.Configurations.UserAgentSuffix = "S3ToAzureSample";
+            return result;
         }
 
-        private static void Cleanup()
-        {
-            // Delete the temporary folder
-            Directory.Delete(tempFolder, true);
-        }
-
-        private static AmazonS3Client GetS3Client()
-        {
-            return new AmazonS3Client(AWSAccessKeyId, AWSSecretAccessKey, S3BucketRegion);
-        }
-
-        private static CloudBlobClient GetAzureClient()
-        {
-            CloudStorageAccount account = CloudStorageAccount.Parse(AzureConnectionString);
-            return account.CreateCloudBlobClient();
-        }
-
+        /// <summary>
+        /// List all objects from your S3 bucket and add one job into jobQueue for each listed object.
+        /// </summary>
         private static void ListFromS3()
         {
-            AmazonS3Client client = GetS3Client();
-
             string previousMarker = null;
             bool listFinish = false;
 
@@ -141,7 +133,7 @@ namespace S3ToAzureSample
                     Marker = previousMarker,
                 };
 
-                ListObjectsResponse listObjectResponse = client.ListObjects(listObjectRequest);
+                ListObjectsResponse listObjectResponse = s3Client.ListObjects(listObjectRequest);
                 previousMarker = listObjectResponse.NextMarker;
                 listFinish = String.IsNullOrEmpty(previousMarker);
 
@@ -151,7 +143,7 @@ namespace S3ToAzureSample
 
                     // By default, the sample will download an amazon s3 object into a local file and
                     // then upload it into Microsoft Azure Stroage with DataMovement library later.
-                    TransferJob job = CreateTransferJob(source);
+                    S3ToAzureTransferJob job = CreateTransferJob(source);
 
                     // You can choose to use azure server side copy by replacing CreateTransferJob above
                     // with the following statement. When server side copy is used, Azure server will copy 
@@ -165,6 +157,9 @@ namespace S3ToAzureSample
             jobQueue.CompleteAdding();
         }
 
+        /// <summary>
+        /// Get job from jobQueue and transfer data into your Azure blob container.
+        /// </summary>
         private static void TransferToAzure()
         {
             // Create the container if it doesn't exist yet
@@ -181,7 +176,7 @@ namespace S3ToAzureSample
 
             while(!jobQueue.IsCompleted)
             {
-                TransferJob job = null;
+                S3ToAzureTransferJob job = null;
                 try
                 {
                     job = jobQueue.Take();
@@ -200,7 +195,7 @@ namespace S3ToAzureSample
 
                 CloudBlockBlob cloudBlob = container.GetBlockBlobReference(job.Name);
 
-                ConsoleWriteLine("start to transfer {0} to azure.", job.Name);
+                ConsoleWriteLine("Start to transfer {0} to azure.", job.Name);
 
                 Task task = null;
 
@@ -253,7 +248,12 @@ namespace S3ToAzureSample
             countdownEvent.Signal();
         }
 
-        private static TransferJob CreateTransferJob(S3Object sourceObject)
+        /// <summary>
+        /// Create a <see cref="S3ToAzureTransferJob"/> representing a download-to-local-and-upload copy from one S3 object to Azure blob.
+        /// </summary>
+        /// <param name="sourceObject">S3 object used to create the job.</param>
+        /// <returns>A job representing a download-to-local-and-upload copy from one S3 object to Azure blob.</returns>
+        private static S3ToAzureTransferJob CreateTransferJob(S3Object sourceObject)
         {
             // Download the source object to a temporary file
             GetObjectRequest getObjectRequest = new GetObjectRequest()
@@ -267,17 +267,23 @@ namespace S3ToAzureSample
                 string tempFile = Path.Combine(tempFolder, Guid.NewGuid().ToString());
                 getObjectResponse.WriteResponseStreamToFile(tempFile);
 
-                TransferJob job = new TransferJob()
+                S3ToAzureTransferJob job = new S3ToAzureTransferJob()
                 {
                     Source = tempFile,
                     Name = sourceObject.Key,
                     ServiceSideCopy = false
                 };
+
                 return job;
             }
         }
 
-        private static TransferJob CreateServiceSideTransferJob(S3Object sourceObject)
+        /// <summary>
+        /// Create a <see cref="S3ToAzureTransferJob"/> representing a service side copy from one S3 object to Azure blob.
+        /// </summary>
+        /// <param name="sourceObject">S3 object used to create the job.</param>
+        /// <returns>A job representing a service side copy from one S3 object to Azure blob</returns>
+        private static S3ToAzureTransferJob CreateServiceSideTransferJob(S3Object sourceObject)
         {
             // Azure server side copy requires read permission of the source data
             // Generate a pre-signed url for the amazon s3 object here
@@ -290,7 +296,7 @@ namespace S3ToAzureSample
 
             string url = s3Client.GetPreSignedURL(getPresignedUrlRequest);
 
-            return new TransferJob()
+            return new S3ToAzureTransferJob()
             {
                 Source = url,
                 Name = sourceObject.Key,
@@ -298,6 +304,13 @@ namespace S3ToAzureSample
             };
         }
 
+        /// <summary>
+        /// Overwrite callback used in <see cref="Microsoft.WindowsAzure.Storage.DataMovement.TransferContext"/> to query user if overwrite
+        /// an existing destination blob.
+        /// </summary>
+        /// <param name="source">Path of the source used to overwrite the destination.</param>
+        /// <param name="destination">Path of the destination to be overwritten.</param>
+        /// <returns>True if the destination should be overwritten; otherwise false.</returns>
         private static bool OverwritePrompt(string source, string destination)
         {
             lock (consoleLock)
@@ -325,7 +338,11 @@ namespace S3ToAzureSample
             }
         }
 
-        // Print message in console
+        /// <summary>
+        /// Print message in console. Will be blocked while querying for user input.
+        /// </summary>
+        /// <param name="format">A composite format string.</param>
+        /// <param name="args">An array of objects to write using format.</param>
         private static void ConsoleWriteLine(string format, params object[] args)
         {
             lock (consoleLock)
@@ -334,7 +351,11 @@ namespace S3ToAzureSample
             }
         }
 
-        // Print message in console
+        /// <summary>
+        /// Print message in console. Will be blocked while querying for user input.
+        /// </summary>
+        /// <param name="format">A composite format string.</param>
+        /// <param name="args">An array of objects to write using format.</param>
         private static void ConsoleWrite(string format, params object[] args)
         {
             lock (consoleLock)
@@ -347,7 +368,7 @@ namespace S3ToAzureSample
     /// <summary>
     /// Entity class to represent a job to transfer from s3 to azure
     /// </summary>
-    class TransferJob
+    class S3ToAzureTransferJob
     {
         public string Name;
         public string Source;
@@ -364,6 +385,10 @@ namespace S3ToAzureSample
         private long latestNumberOfFilesSkipped;
         private long latestNumberOfFilesFailed;
 
+        /// <summary>
+        /// Callback to get the progress from data movement library.
+        /// </summary>
+        /// <param name="progress">Transfer progress.</param>
         public void Report(TransferProgress progress)
         {
             this.latestBytesTransferred = progress.BytesTransferred;
@@ -372,6 +397,10 @@ namespace S3ToAzureSample
             this.latestNumberOfFilesFailed = progress.NumberOfFilesFailed;
         }
 
+        /// <summary>
+        /// Return the recorded progress information.
+        /// </summary>
+        /// <returns>Recorded progress information.</returns>
         public override string ToString()
         {
             return string.Format("Transferred bytes: {0}; Transfered: {1}, Skipped: {2}, Failed: {3}",
