@@ -262,19 +262,19 @@ namespace S3ToAzureSample
                 Key = sourceObject.Key,
             };
 
-            GetObjectResponse getObjectResponse = s3Client.GetObject(getObjectRequest);
-
-            string tempFile = Path.Combine(tempFolder, Guid.NewGuid().ToString());
-            getObjectResponse.WriteResponseStreamToFile(tempFile);
-
-            TransferJob job = new TransferJob()
+            using (GetObjectResponse getObjectResponse = s3Client.GetObject(getObjectRequest))
             {
-                Source = tempFile,
-                Name = sourceObject.Key,
-                ServiceSideCopy = false
-            };
+                string tempFile = Path.Combine(tempFolder, Guid.NewGuid().ToString());
+                getObjectResponse.WriteResponseStreamToFile(tempFile);
 
-            return job;
+                TransferJob job = new TransferJob()
+                {
+                    Source = tempFile,
+                    Name = sourceObject.Key,
+                    ServiceSideCopy = false
+                };
+                return job;
+            }
         }
 
         private static TransferJob CreateServiceSideTransferJob(S3Object sourceObject)
