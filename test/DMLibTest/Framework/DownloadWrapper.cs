@@ -14,12 +14,18 @@ namespace DMLibTest
     {
         public DownloadWrapper()
         {
-
         }
 
         protected override Task DoTransferImp(TransferItem item)
         {
-            return this.Download(item.SourceObject, item);
+            if (item.IsDirectoryTransfer)
+            {
+                return this.DownloadDirectory(item.SourceObject, item);
+            }
+            else
+            {
+                return this.Download(item.SourceObject, item);
+            }
         }
 
         private Task Download(dynamic sourceObject, TransferItem item)
@@ -62,6 +68,27 @@ namespace DMLibTest
                 {
                     return TransferManager.DownloadAsync(sourceObject, destStream);
                 }
+            }
+        }
+
+        private Task DownloadDirectory(dynamic sourceObject, TransferItem item)
+        {
+            DownloadDirectoryOptions downloadDirectoryOptions = item.Options as DownloadDirectoryOptions;
+            TransferContext transferContext = item.TransferContext;
+            CancellationToken cancellationToken = item.CancellationToken;
+            string destPath = item.DestObject as string;
+
+            if (cancellationToken != null && cancellationToken != CancellationToken.None)
+            {
+                return TransferManager.DownloadDirectoryAsync(sourceObject, destPath, downloadDirectoryOptions, transferContext, cancellationToken);
+            }
+            else if (transferContext != null || downloadDirectoryOptions != null)
+            {
+                return TransferManager.DownloadDirectoryAsync(sourceObject, destPath, downloadDirectoryOptions, transferContext);
+            }
+            else
+            {
+                return TransferManager.DownloadDirectoryAsync(sourceObject, destPath);
             }
         }
     }

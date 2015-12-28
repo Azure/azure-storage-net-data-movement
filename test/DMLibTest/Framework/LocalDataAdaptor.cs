@@ -19,9 +19,9 @@ namespace DMLibTest
             this.useStream = useStream;
         }
 
-        public override object GetTransferObject(FileNode fileNode)
+        public override object GetTransferObject(string rootPath, FileNode fileNode)
         {
-            string filePath = Path.Combine(this.BasePath, fileNode.GetLocalRelativePath());
+            string filePath = Path.Combine(this.BasePath, rootPath, fileNode.GetLocalRelativePath());
 
             if (this.useStream)
             {
@@ -40,14 +40,14 @@ namespace DMLibTest
             }
         }
 
-        public override object GetTransferObject(DirNode dirNode)
+        public override object GetTransferObject(string rootPath, DirNode dirNode)
         {
             if (this.useStream)
             {
                 throw new InvalidOperationException("Can't get directory transfer object in stream data adaptor.");
             }
 
-            return Path.Combine(this.BasePath, dirNode.GetLocalRelativePath());
+            return Path.Combine(this.BasePath, rootPath, dirNode.GetLocalRelativePath());
         }
 
         protected override void GenerateDataImp(DMLibDataInfo dataInfo)

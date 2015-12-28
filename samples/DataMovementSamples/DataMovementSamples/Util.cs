@@ -54,6 +54,21 @@ namespace DataMovementSamples
         }
 
         /// <summary>
+        /// Get a CloudBlobDirectory instance with the specified name in the given container.
+        /// </summary>
+        /// <param name="containerName">Container name.</param>
+        /// <param name="directoryName">Blob directory name.</param>
+        /// <returns>A CloudBlobDirectory instance with the specified name in the given container.</returns>
+        public static CloudBlobDirectory GetCloudBlobDirectory(string containerName, string directoryName)
+        {
+            CloudBlobClient client = GetCloudBlobClient();
+            CloudBlobContainer container = client.GetContainerReference(containerName);
+            container.CreateIfNotExists();
+
+            return container.GetDirectoryReference(directoryName);
+        }
+
+        /// <summary>
         /// Get a CloudFile instance with the specified name in the given share.
         /// </summary>
         /// <param name="shareName">Share name.</param>

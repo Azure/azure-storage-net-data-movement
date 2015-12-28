@@ -22,9 +22,9 @@ namespace DMLibTest
 
         public abstract string GetSecondaryAddress(params string[] list);
 
-        public abstract object GetTransferObject(FileNode fileNode);
+        public abstract object GetTransferObject(string rootPath, FileNode fileNode);
 
-        public abstract object GetTransferObject(DirNode dirNode);
+        public abstract object GetTransferObject(string rootPath, DirNode dirNode);
 
         public abstract void CreateIfNotExists();
 

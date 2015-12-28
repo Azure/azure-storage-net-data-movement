@@ -214,7 +214,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             if (numberOfFilesToIncrease != 0)
             {
                 Interlocked.Add(ref this.numberOfFilesFailed, numberOfFilesToIncrease);
-
                 if (this.Parent != null)
                 {
                     this.Parent.AddNumberOfFilesFailed(numberOfFilesToIncrease);
@@ -222,6 +221,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             this.InvokeProgressHandler();
+        }
+
+        public void AddProgress(TransferProgressTracker progressTracker)
+        {
+            this.AddBytesTransferred(progressTracker.BytesTransferred);
+            this.AddNumberOfFilesFailed(progressTracker.NumberOfFilesFailed);
+            this.AddNumberOfFilesSkipped(progressTracker.NumberOfFilesSkipped);
+            this.AddNumberOfFilesTransferred(progressTracker.NumberOfFilesTransferred);
         }
 
         /// <summary>

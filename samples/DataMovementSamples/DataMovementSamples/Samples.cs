@@ -8,6 +8,8 @@ namespace DataMovementSamples
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Runtime.Serialization;
+    using System.Runtime.Serialization.Formatters.Binary;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.WindowsAzure.Storage.Blob;
@@ -20,12 +22,12 @@ namespace DataMovementSamples
         {
             try
             {
+                // Single object transfer samples
                 Console.WriteLine("Data movement upload sample.");
                 BlobUploadSample().Wait();
 
                 // Uncomment the following statement if the account supports Azure File Storage.
                 // Note that Azure File Storage are not supported on Azure Storage Emulator.
-                // See http://azure.microsoft.com/en-us/services/preview/ to sign-up for on Azure Files Preview. 
                 // FileUploadSample().Wait();
 
                 // Azure Blob Storage are used in following copy and download samples. You can replace the 
@@ -37,6 +39,15 @@ namespace DataMovementSamples
                 Console.WriteLine();
                 Console.WriteLine("Data movement download sample.");
                 BlobDownloadSample().Wait();
+
+                // Directory transfer samples
+                Console.WriteLine();
+                Console.WriteLine("Data movement directory upload sample");
+                BlobDirectoryUploadSample().Wait();
+
+                Console.WriteLine();
+                Console.WriteLine("Data movement directory copy sample.");
+                BlobDirectoryCopySample().Wait();
             }
             finally
             {
@@ -118,24 +129,18 @@ namespace DataMovementSamples
             TransferCheckpoint checkpoint = null;
             TransferContext context = new TransferContext();
 
-            // Cancel the transfer after there's any progress reported
-            Progress<TransferProgress> progress = new Progress<TransferProgress>(
-                (transferProgress) => {
-                    if (!cancellationSource.IsCancellationRequested)
-                    {
-                        Console.WriteLine("Cancel the transfer.");
-
-                        // Cancel the transfer
-                        cancellationSource.Cancel();
-                    }
-                });
-
-            context.ProgressHandler = progress;
-
             // Start the transfer
             try
             {
-                await TransferManager.CopyAsync(sourceBlob, destinationBlob, false /* isServiceCopy */, null /* options */, context, cancellationSource.Token);
+                Task task = TransferManager.CopyAsync(sourceBlob, destinationBlob, false /* isServiceCopy */, null /* options */, context, cancellationSource.Token);
+
+                // Sleep for 1 seconds and cancel the transfer. 
+                // It may fail to cancel the transfer if transfer is done in 1 second. If so, no file will tranferred after resume.
+                Thread.Sleep(1000);
+                Console.WriteLine("Cancel the transfer.");
+                cancellationSource.Cancel();
+
+                await task;
             }
             catch (Exception e)
             {
@@ -233,6 +238,154 @@ namespace DataMovementSamples
 
             // Print out the final transfer state
             Console.WriteLine("Final transfer state: {0}", recorder.ToString());
+        }
+
+        /// <summary>
+        /// Upload local pictures to azure storage.
+        ///   1. Upload png files starting with "azure" in the source directory as block blobs, not including the sub-directory
+        ///   2. Set their content type to "image/png".
+        /// </summary>
+        private static async Task BlobDirectoryUploadSample()
+        {
+            string sourceDirPath = ".";
+            CloudBlobDirectory destDir = Util.GetCloudBlobDirectory(ContainerName, "blobdir");
+
+            // SearchPattern and Recuresive can be used to determine the files to be transferred from the source directory. The behavior of
+            // SearchPattern and Recuresive varies for different source directory types.
+            // See https://azure.github.io/azure-storage-net-data-movement for more details.
+            //
+            // When source is local directory, data movement library matches source files against the SearchPattern as standard wildcards. If 
+            // recuresive is set to false, only files directly under the source directory will be matched. Otherwise, all files in the
+            // sub-directory will be matched as well.
+            //
+            // In the following case, data movement library will upload png files starting with "azure" in the source directory as block blobs,
+            // not including the sub-directory.
+            UploadDirectoryOptions options = new UploadDirectoryOptions()
+            {
+                SearchPattern = "azure*.png",
+                Recursive = false,
+                BlobType = BlobType.BlockBlob,
+                ContentType = "image/png",
+            };
+
+            // Register for transfer event. It's optional and also applicable to single object transfer after v0.2.0.
+            TransferContext context = new TransferContext();
+            context.FileTransferred += FileTransferredCallback;
+            context.FileFailed +=FileFailedCallback;
+            context.FileSkipped += FileSkippedCallback;
+
+            // Start the upload
+            await TransferManager.UploadDirectoryAsync(sourceDirPath, destDir, options, context);
+            Console.WriteLine("Files in directory {0} is uploaded to {1} successfully.", sourceDirPath, destDir.Uri.ToString());
+        }
+
+        /// <summary>
+        /// Copy data between Azure storage.
+        ///   1. Copy a CloudBlobDirectory
+        ///   2. Cancel the transfer before it finishes with a CancellationToken
+        ///   3. Store the transfer checkpoint into a file after transfer being cancelled
+        ///   4. Reload checkpoint from the file
+        ///   4. Resume the transfer with the loaded checkpoint
+        /// </summary>
+        private static async Task BlobDirectoryCopySample()
+        {
+            CloudBlobDirectory sourceBlobDir = Util.GetCloudBlobDirectory(ContainerName, "blobdir");
+            CloudBlobDirectory destBlobDir = Util.GetCloudBlobDirectory(ContainerName, "blobdir2");
+
+            // When source is CloudBlobDirectory:
+            //   1. If recursive is set to true, data movement library matches the source blob name against SearchPattern as prefix.
+            //   2. Otherwise, data movement library matches the blob with the exact name specified by SearchPattern.
+            //
+            // You can also replace the source directory with a CloudFileDirectory instance to copy data from Azure File Storage. If so:
+            //   1. If recursive is set to true, SearchPattern is not supported. Data movement library simply transfer all azure files
+            //      under the source CloudFileDirectory and its sub-directories.
+            //   2. Otherwise, data movement library matches the azure file with the exact name specified by SearchPattern.
+            //
+            // In the following case, data movement library will copy all blobs with the prefix "azure" in source blob directory.
+            CopyDirectoryOptions options = new CopyDirectoryOptions()
+            {
+                SearchPattern = "azure",
+                Recursive = true,
+            };
+
+            TransferContext context = new TransferContext();
+            context.FileTransferred += FileTransferredCallback;
+            context.FileFailed += FileFailedCallback;
+            context.FileSkipped += FileSkippedCallback;
+
+            // Create CancellationTokenSource used to cancel the transfer
+            CancellationTokenSource cancellationSource = new CancellationTokenSource();
+
+            TransferCheckpoint checkpoint = null;
+
+            try
+            {
+                Task task =  TransferManager.CopyDirectoryAsync(sourceBlobDir, destBlobDir, false /* isServiceCopy */, options, context, cancellationSource.Token);
+
+                // Sleep for 1 seconds and cancel the transfer. 
+                // It may fail to cancel the transfer if transfer is done in 1 second. If so, no file will be copied after resume.
+                Thread.Sleep(1000);
+                Console.WriteLine("Cancel the transfer.");
+                cancellationSource.Cancel();
+
+                await task;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("The transfer is cancelled: {0}", e.Message);
+            }
+
+            // Store the transfer checkpoint
+            checkpoint = context.LastCheckpoint;
+
+            // Serialize the checkpoint into a file
+            IFormatter formatter = new BinaryFormatter();
+
+            string tempFileName = Guid.NewGuid().ToString();
+            using (var stream = new FileStream(tempFileName, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                formatter.Serialize(stream, checkpoint);
+            }
+
+            // Deserialize the checkpoint from the file
+            using (var stream = new FileStream(tempFileName, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                checkpoint = formatter.Deserialize(stream) as TransferCheckpoint;
+            }
+
+            File.Delete(tempFileName);
+
+            // Create a new TransferContext with the store checkpoint
+            TransferContext resumeContext = new TransferContext(checkpoint);
+            resumeContext.FileTransferred += FileTransferredCallback;
+            resumeContext.FileFailed += FileFailedCallback;
+            resumeContext.FileSkipped += FileSkippedCallback;
+
+            // Record the overall progress
+            ProgressRecorder recorder = new ProgressRecorder();
+            resumeContext.ProgressHandler = recorder;
+
+            // Resume transfer from the stored checkpoint
+            Console.WriteLine("Resume the cancelled transfer.");
+            await TransferManager.CopyDirectoryAsync(sourceBlobDir, destBlobDir, false /* isServiceCopy */, options, resumeContext);
+
+            // Print out the final transfer state
+            Console.WriteLine("Final transfer state: {0}", recorder.ToString());
+        }
+
+        private static void FileTransferredCallback(object sender, TransferEventArgs e)
+        {
+            Console.WriteLine("Transfer Succeeds. {0} -> {1}.", e.Source, e.Destination);
+        }
+
+        private static void FileFailedCallback(object sender, TransferEventArgs e)
+        {
+            Console.WriteLine("Transfer fails. {0} -> {1}. Error message:{2}", e.Source, e.Destination, e.Exception.Message);
+        }
+
+        private static void FileSkippedCallback(object sender, TransferEventArgs e)
+        {
+            Console.WriteLine("Transfer skips. {0} -> {1}.", e.Source, e.Destination);
         }
 
         /// <summary>

@@ -17,6 +17,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
     internal sealed class PageBlobWriter : RangeBasedWriter
     {
+        private AzureBlobLocation destLocation;
         private CloudPageBlob pageBlob;
 
         /// <summary>
@@ -37,7 +38,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             CancellationToken cancellationToken)
             : base(scheduler, controller, cancellationToken)
         {
-            this.pageBlob = this.TransferJob.Destination.Blob as CloudPageBlob;
+            this.destLocation = this.TransferJob.Destination as AzureBlobLocation;
+            this.pageBlob = this.destLocation.Blob as CloudPageBlob;
         }
 
         protected override Uri DestUri
@@ -84,8 +86,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         protected override async Task DoFetchAttributesAsync()
         {
             await this.pageBlob.FetchAttributesAsync(
-                this.TransferJob.Destination.AccessCondition,
-                Utils.GenerateBlobRequestOptions(this.TransferJob.Destination.BlobRequestOptions),
+                this.destLocation.AccessCondition,
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
             this.destExist = true;
@@ -105,8 +107,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             await this.pageBlob.CreateAsync(
                 size,
-                Utils.GenerateConditionWithCustomerCondition(this.TransferJob.Destination.AccessCondition),
-                Utils.GenerateBlobRequestOptions(this.TransferJob.Destination.BlobRequestOptions),
+                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
         }
@@ -115,8 +117,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             await this.pageBlob.ResizeAsync(
                 size,
-                Utils.GenerateConditionWithCustomerCondition(this.TransferJob.Destination.AccessCondition),
-                Utils.GenerateBlobRequestOptions(this.TransferJob.Destination.BlobRequestOptions),
+                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
         }
@@ -127,21 +129,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 transferData.Stream,
                 transferData.StartOffset,
                 null,
-                Utils.GenerateConditionWithCustomerCondition(this.TransferJob.Destination.AccessCondition),
-                Utils.GenerateBlobRequestOptions(this.TransferJob.Destination.BlobRequestOptions),
+                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
         }
 
         protected override async Task DoCommitAsync()
         {
-            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.TransferJob.Destination.BlobRequestOptions);
+            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
 
             if (!this.destExist)
             {
                 await this.pageBlob.FetchAttributesAsync(
-                    Utils.GenerateConditionWithCustomerCondition(this.TransferJob.Destination.AccessCondition),
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                     blobRequestOptions,
                     operationContext,
                     this.CancellationToken);
@@ -151,7 +153,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             Utils.SetAttributes(this.pageBlob, this.SharedTransferData.Attributes);
 
             await this.pageBlob.SetPropertiesAsync(
-                Utils.GenerateConditionWithCustomerCondition(this.TransferJob.Destination.AccessCondition),
+                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 blobRequestOptions,
                 null,
                 this.CancellationToken);
@@ -159,7 +161,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (!originalMetadata.DictionaryEquals(this.pageBlob.Metadata))
             {
                 await this.pageBlob.SetMetadataAsync(
-                             Utils.GenerateConditionWithCustomerCondition(this.TransferJob.Destination.AccessCondition),
+                             Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                              blobRequestOptions,
                              operationContext,
                              this.CancellationToken);

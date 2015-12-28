@@ -95,22 +95,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private TransferReaderWriterBase GetReader(TransferLocation sourceLocation)
         {
-            switch (sourceLocation.TransferLocationType)
+            switch (sourceLocation.Type)
             {
                 case TransferLocationType.Stream:
                     return new StreamedReader(this.Scheduler, this, this.CancellationToken);
                 case TransferLocationType.FilePath:
                     return new StreamedReader(this.Scheduler, this, this.CancellationToken);
                 case TransferLocationType.AzureBlob:
-                    if (sourceLocation.Blob is CloudPageBlob)
+                    CloudBlob sourceBlob = (sourceLocation as AzureBlobLocation).Blob;
+                    if (sourceBlob is CloudPageBlob)
                     {
                         return new PageBlobReader(this.Scheduler, this, this.CancellationToken);
                     }
-                    else if (sourceLocation.Blob is CloudBlockBlob)
+                    else if (sourceBlob is CloudBlockBlob)
                     {
                         return new BlockBasedBlobReader(this.Scheduler, this, this.CancellationToken);
                     }
-                    else if (sourceLocation.Blob is CloudAppendBlob)
+                    else if (sourceBlob is CloudAppendBlob)
                     {
                         return new BlockBasedBlobReader(this.Scheduler, this, this.CancellationToken);
                     }
@@ -120,7 +121,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             string.Format(
                             CultureInfo.CurrentCulture,
                             Resources.UnsupportedBlobTypeException,
-                            sourceLocation.Blob.BlobType));
+                            sourceBlob.BlobType));
                     }
                 case TransferLocationType.AzureFile:
                     return new CloudFileReader(this.Scheduler, this, this.CancellationToken);
@@ -129,28 +130,29 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         string.Format(
                         CultureInfo.CurrentCulture,
                         Resources.UnsupportedTransferLocationException,
-                        sourceLocation.TransferLocationType));
+                        sourceLocation.Type));
             }
         }
 
         private TransferReaderWriterBase GetWriter(TransferLocation destLocation)
         {
-            switch (destLocation.TransferLocationType)
+            switch (destLocation.Type)
             {
                 case TransferLocationType.Stream:
                     return new StreamedWriter(this.Scheduler, this, this.CancellationToken);
                 case TransferLocationType.FilePath:
                     return new StreamedWriter(this.Scheduler, this, this.CancellationToken);
                 case TransferLocationType.AzureBlob:
-                    if (destLocation.Blob is CloudPageBlob)
+                    CloudBlob destBlob = (destLocation as AzureBlobLocation).Blob;
+                    if (destBlob is CloudPageBlob)
                     {
                         return new PageBlobWriter(this.Scheduler, this, this.CancellationToken);
                     }
-                    else if (destLocation.Blob is CloudBlockBlob)
+                    else if (destBlob is CloudBlockBlob)
                     {
                         return new BlockBlobWriter(this.Scheduler, this, this.CancellationToken);
                     }
-                    else if (destLocation.Blob is CloudAppendBlob)
+                    else if (destBlob is CloudAppendBlob)
                     {
                         return new AppendBlobWriter(this.Scheduler, this, this.CancellationToken);
                     }
@@ -160,7 +162,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             string.Format(
                             CultureInfo.CurrentCulture,
                             Resources.UnsupportedBlobTypeException,
-                            destLocation.Blob.BlobType));
+                            destBlob.BlobType));
                     }
                 case TransferLocationType.AzureFile:
                     return new CloudFileWriter(this.Scheduler, this, this.CancellationToken);
@@ -169,7 +171,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         string.Format(
                         CultureInfo.CurrentCulture,
                         Resources.UnsupportedTransferLocationException,
-                        destLocation.TransferLocationType));
+                        destLocation.Type));
             }
         }
 

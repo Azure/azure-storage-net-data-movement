@@ -19,6 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     /// </summary>
     internal class BlobAsyncCopyController : AsyncCopyController
     {
+        private AzureBlobLocation destLocation;
         private CloudBlob destBlob;
 
         public BlobAsyncCopyController(
@@ -27,7 +28,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             CancellationToken cancellationToken)
             : base(transferScheduler, transferJob, cancellationToken)
         {
-            CloudBlob transferDestBlob = transferJob.Destination.Blob;
+            this.destLocation = transferJob.Destination as AzureBlobLocation;
+            CloudBlob transferDestBlob = this.destLocation.Blob;
             if (null == transferDestBlob)
             {
                 throw new ArgumentException(
@@ -43,17 +45,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 throw new ArgumentException(Resources.DestinationMustBeBaseBlob, "transferJob");
             }
 
-            CloudBlob transferSourceBlob = transferJob.Source.Blob;
-
-            if (null != transferSourceBlob && transferDestBlob.BlobType != transferSourceBlob.BlobType)
+            AzureBlobLocation sourceBlobLocation = transferJob.Source as AzureBlobLocation;
+            if (sourceBlobLocation != null)
             {
-                throw new ArgumentException(Resources.SourceAndDestinationBlobTypeDifferent, "transferJob");
-            }
+                if (sourceBlobLocation.Blob.BlobType != transferDestBlob.BlobType)
+                {
+                    throw new ArgumentException(Resources.SourceAndDestinationBlobTypeDifferent, "transferJob");
+                }
 
-            if ((null != transferSourceBlob)
-                && (StorageExtensions.Equals(transferSourceBlob, transferDestBlob)))
-            {
-                throw new InvalidOperationException(Resources.SourceAndDestinationLocationCannotBeEqualException);
+                if (StorageExtensions.Equals(sourceBlobLocation.Blob, transferDestBlob))
+                {
+                    throw new InvalidOperationException(Resources.SourceAndDestinationLocationCannotBeEqualException);
+                }
             }
 
             this.destBlob = transferDestBlob;
@@ -70,19 +73,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         protected override Task DoFetchDestAttributesAsync()
         {
             AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
-                this.TransferJob.Destination.AccessCondition,
-                this.TransferJob.Destination.CheckedAccessCondition);
+                this.destLocation.AccessCondition,
+                this.destLocation.CheckedAccessCondition);
 
             return this.destBlob.FetchAttributesAsync(
                 accessCondition,
-                Utils.GenerateBlobRequestOptions(this.TransferJob.Destination.BlobRequestOptions),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
                 this.CancellationToken);
         }
 
         protected override Task<string> DoStartCopyAsync()
         {
-            AccessCondition destAccessCondition = Utils.GenerateConditionWithCustomerCondition(this.TransferJob.Destination.AccessCondition);
+            AccessCondition destAccessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition);
 
             if (null != this.SourceUri)
             {
@@ -90,7 +93,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     this.SourceUri,
                     null,
                     destAccessCondition,
-                    Utils.GenerateBlobRequestOptions(this.TransferJob.Destination.BlobRequestOptions),
+                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
                     this.CancellationToken);
             }
@@ -103,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                          this.SourceBlob.GenerateUriWithCredentials(),
                          sourceAccessCondition,
                          destAccessCondition,
-                         Utils.GenerateBlobRequestOptions(this.TransferJob.Destination.BlobRequestOptions),
+                         Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                          Utils.GenerateOperationContext(this.TransferContext),
                          this.CancellationToken);
             }
@@ -115,7 +118,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                              this.SourceFile.GenerateCopySourceFile(),
                              null,
                              destAccessCondition,
-                             Utils.GenerateBlobRequestOptions(this.TransferJob.Destination.BlobRequestOptions),
+                             Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                              Utils.GenerateOperationContext(this.TransferContext),
                              this.CancellationToken);
                 }
@@ -162,8 +165,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         protected override async Task<CopyState> FetchCopyStateAsync()
         {
             await this.destBlob.FetchAttributesAsync(
-                Utils.GenerateConditionWithCustomerCondition(this.TransferJob.Destination.AccessCondition),
-                Utils.GenerateBlobRequestOptions(this.TransferJob.Destination.BlobRequestOptions),
+                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
                 this.CancellationToken);
 

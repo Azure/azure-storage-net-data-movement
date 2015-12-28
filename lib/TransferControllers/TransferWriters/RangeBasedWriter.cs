@@ -164,7 +164,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 throw;
             }
 
-            this.TransferJob.Destination.CheckedAccessCondition = true;
+            if (this.TransferJob.Destination.Type == TransferLocationType.AzureBlob)
+            {
+                (this.TransferJob.Destination as AzureBlobLocation).CheckedAccessCondition = true;
+            }
+            else
+            {
+                (this.TransferJob.Destination as AzureFileLocation).CheckedAccessCondition = true;
+            }
             
             this.Controller.CheckOverwrite(
                 exist,

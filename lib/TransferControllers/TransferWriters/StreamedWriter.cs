@@ -122,9 +122,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             await Task.Run(() =>
             {
-                if (TransferLocationType.Stream == this.TransferJob.Destination.TransferLocationType)
+                if (TransferLocationType.Stream == this.TransferJob.Destination.Type)
                 {
-                    Stream streamInDestination = this.TransferJob.Destination.Stream;
+                    Stream streamInDestination = (this.TransferJob.Destination as StreamLocation).Stream;
                     if (!streamInDestination.CanWrite)
                     {
                         throw new NotSupportedException(string.Format(
@@ -141,14 +141,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             "outputStream"));
                     }
 
-                    this.outputStream = this.TransferJob.Destination.Stream;
+                    this.outputStream = streamInDestination;
                 }
                 else
                 {
+                    string filePath = (this.TransferJob.Destination as FileLocation).FilePath;
                     this.Controller.CheckOverwrite(
-                        File.Exists(this.TransferJob.Destination.FilePath),
+                        File.Exists(filePath),
                         this.SharedTransferData.SourceLocation,
-                        this.TransferJob.Destination.FilePath);
+                        filePath);
 
                     this.Controller.UpdateProgressAddBytesTransferred(0);
 
@@ -172,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                         // Attempt to open the file first so that we throw an exception before getting into the async work
                         this.outputStream = new FileStream(
-                            this.TransferJob.Destination.FilePath,
+                            filePath,
                             fileMode,
                             FileAccess.ReadWrite,
                             FileShare.None);
@@ -184,7 +185,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         string exceptionMessage = string.Format(
                                     CultureInfo.CurrentCulture,
                                     Resources.FailedToOpenFileException,
-                                    this.TransferJob.Destination.FilePath,
+                                    filePath,
                                     ex.Message);
 
                         throw new TransferException(

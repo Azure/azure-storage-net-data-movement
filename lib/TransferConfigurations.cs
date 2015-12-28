@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Maximum amount of cache memory to use in bytes.
         /// </summary>
-        private long maximumCacheSize; 
+        private long maximumCacheSize;
 
         /// <summary>
         /// Instance to call native methods to get current memory status.
@@ -74,9 +74,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Gets or sets the user agent suffix
+        /// Gets or sets the user agent prefix
         /// </summary>
-        public string UserAgentSuffix
+        public string UserAgentPrefix
         {
             get;
             set; 

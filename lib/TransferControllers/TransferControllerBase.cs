@@ -25,6 +25,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private int notifiedFinish;
 
+        private object cancelLock = new object();
+
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         private CancellationTokenRegistration transferSchedulerCancellationTokenRegistration;
@@ -189,7 +191,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         /// </summary>
         public void CancelWork()
         {
-            this.cancellationTokenSource.Cancel();
+            // CancellationTokenSource.Cancel returns only if all registered callbacks are executed.
+            // Thus, this method won't return immediately if there are many outstanding tasks to be cancelled
+            // within this controller.
+            // Trigger the CancellationTokenSource asynchronously. Otherwise, all controllers sharing the same
+            // userCancellationToken will keep running until this.cancellationTokenSource.Cancel() returns.
+            Task.Run(() => 
+                {
+                    lock (this.cancelLock)
+                    {
+                        if (this.cancellationTokenSource != null)
+                        {
+                            this.cancellationTokenSource.Cancel();
+                        }
+                    }
+                });
         }
 
         /// <summary>
@@ -203,7 +219,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         public void CheckCancellation()
         {
-            Utils.CheckCancellation(this.cancellationTokenSource);
+            Utils.CheckCancellation(this.cancellationTokenSource.Token);
         }
 
         public void UpdateProgressAddBytesTransferred(long bytesTransferredToAdd)
@@ -292,7 +308,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 try
                 {
-                    this.cancellationTokenSource.Dispose();
+                    lock (this.cancelLock)
+                    {
+                        this.cancellationTokenSource.Dispose();
+                        this.cancellationTokenSource = null;
+                    }
                 }
                 catch (ObjectDisposedException)
                 {

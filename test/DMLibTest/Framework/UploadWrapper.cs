@@ -20,7 +20,14 @@ namespace DMLibTest
 
         protected override Task DoTransferImp(TransferItem item)
         {
-            return this.Upload(item.DestObject, item);
+            if (item.IsDirectoryTransfer)
+            {
+                return this.UploadDirectory(item.DestObject, item);
+            }
+            else
+            {
+                return this.Upload(item.DestObject, item);
+            }
         }
 
         private Task Upload(dynamic destObject, TransferItem item)
@@ -63,6 +70,27 @@ namespace DMLibTest
                 {
                     return TransferManager.UploadAsync(sourceStream, destObject);
                 }
+            }
+        }
+
+        private Task UploadDirectory(dynamic destObject, TransferItem item)
+        {
+            UploadDirectoryOptions uploadDirectoryOptions = item.Options as UploadDirectoryOptions;
+            TransferContext transferContrext = item.TransferContext;
+            CancellationToken cancellationToken = item.CancellationToken;
+            string sourcePath = item.SourceObject as string;
+
+            if (cancellationToken != null && cancellationToken != CancellationToken.None)
+            {
+                return TransferManager.UploadDirectoryAsync(sourcePath, destObject, uploadDirectoryOptions, transferContrext, cancellationToken);
+            }
+            else if (transferContrext != null || uploadDirectoryOptions != null)
+            {
+                return TransferManager.UploadDirectoryAsync(sourcePath, destObject, uploadDirectoryOptions, transferContrext);
+            }
+            else
+            {
+                return TransferManager.UploadDirectoryAsync(sourcePath, destObject);
             }
         }
     }

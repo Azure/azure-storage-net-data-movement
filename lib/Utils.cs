@@ -8,6 +8,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Text;
     using System.Threading;
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
@@ -52,11 +53,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return string.Format(CultureInfo.CurrentCulture, SizeFormats[order], size);
         }
 
-        public static void CheckCancellation(CancellationTokenSource cancellationTokenSource)
+        public static void CheckCancellation(CancellationToken cancellationToken)
         {
-            if (cancellationTokenSource.IsCancellationRequested)
+            if (cancellationToken.IsCancellationRequested)
             {
-                throw new OperationCanceledException(Resources.BlobTransferCancelledException);
+                throw new OperationCanceledException(Resources.TransferCancelledException);
             }
         }
 
@@ -338,6 +339,76 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     Resources.NotSupportedBlobType,
                     blobType));
             }
+        }
+        public static string GetExceptionMessage(this Exception ex)
+        {
+            if (ex == null)
+            {
+                throw new ArgumentNullException("ex");
+            }
+
+            string exceptionMessage;
+#if DEBUG
+            exceptionMessage = ex.ToString();
+#else
+            var storageEx = ex as StorageException;
+            if (storageEx != null)
+            {
+                exceptionMessage = storageEx.ToErrorDetail();
+            }
+            else
+            {
+                exceptionMessage = ex.Message;
+            }
+#endif
+
+            return exceptionMessage;
+        }
+
+        /// <summary>
+        /// Returns a string that represents error details of the corresponding <see cref="StorageException"/>.
+        /// </summary>
+        /// <param name="ex">The given exception.</param>
+        /// <returns>A string that represents error details of the corresponding <see cref="StorageException"/>.</returns>
+        public static string ToErrorDetail(this StorageException ex)
+        {
+            if (ex == null)
+            {
+                throw new ArgumentNullException("ex");
+            }
+
+            var messageBuilder = new StringBuilder();
+            messageBuilder.Append(ex.Message);
+
+            if (ex.RequestInformation != null)
+            {
+                string errorDetails = ex.RequestInformation.HttpStatusMessage;
+
+                if (ex.RequestInformation.ExtendedErrorInformation != null)
+                {
+                    // Overrides the error details with error message inside
+                    // extended error information if avaliable.
+                    errorDetails = ex.RequestInformation.ExtendedErrorInformation.ErrorMessage;
+                }
+                else
+                {
+                    // If available, try to fetch the TimeoutException from the inner exception
+                    // to provide more detail.
+                    if (ex.InnerException != null)
+                    {
+                        var timeoutException = ex.InnerException as TimeoutException;
+                        if (timeoutException != null)
+                        {
+                            errorDetails = timeoutException.Message;
+                        }
+                    }
+                }
+
+                messageBuilder.AppendLine();
+                messageBuilder.Append(errorDetails);
+            }
+
+            return messageBuilder.ToString();
         }
 
         public static byte[] RequireBuffer(MemoryManager memoryManager, Action checkCancellation)

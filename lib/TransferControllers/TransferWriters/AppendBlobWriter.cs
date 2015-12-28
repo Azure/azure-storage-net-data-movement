@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     {
         private volatile State state;
         private volatile bool hasWork;
-        private TransferLocation location;
+        private AzureBlobLocation destLocation;
         private CloudAppendBlob appendBlob;
         private long expectedOffset = 0;
 
@@ -38,8 +38,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             CancellationToken cancellationToken)
             : base(scheduler, controller, cancellationToken)
         {
-            this.location = this.SharedTransferData.TransferJob.Destination;
-            this.appendBlob = this.location.Blob as CloudAppendBlob;
+            this.destLocation = this.SharedTransferData.TransferJob.Destination as AzureBlobLocation;
+            this.appendBlob = this.destLocation.Blob as CloudAppendBlob;
 
             Debug.Assert(null != this.appendBlob, "The destination is not an append blob while initializing a AppendBlobWriter instance.");
 
@@ -126,14 +126,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             bool existingBlob = true;
 
             AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
-                this.location.AccessCondition,
-                this.location.CheckedAccessCondition);
+                this.destLocation.AccessCondition,
+                this.destLocation.CheckedAccessCondition);
 
             try
             {
                 await this.appendBlob.FetchAttributesAsync(
                     accessCondition,
-                    Utils.GenerateBlobRequestOptions(this.location.BlobRequestOptions),
+                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
                     this.CancellationToken);
 
@@ -166,7 +166,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private void HandleFetchAttributesResult(bool existingBlob)
         {
-            this.location.CheckedAccessCondition = true;
+            this.destLocation.CheckedAccessCondition = true;
 
             // If destination file exists, query user whether to overwrite it.
             this.Controller.CheckOverwrite(
@@ -236,12 +236,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = false; 
             
             AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
-                 this.location.AccessCondition,
+                 this.destLocation.AccessCondition,
                  true);
 
             await this.appendBlob.CreateOrReplaceAsync(
                 accessCondition,
-                Utils.GenerateBlobRequestOptions(this.location.BlobRequestOptions),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
 
@@ -281,7 +281,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     transferData.Stream = new MemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
 
-                    AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.location.AccessCondition, true) ?? new AccessCondition();
+                    AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true) ?? new AccessCondition();
                     accessCondition.IfAppendPositionEqual = currentOffset;
 
                     bool needToCheckContent = false;
@@ -291,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         await this.appendBlob.AppendBlockAsync(transferData.Stream,
                             null,
                             accessCondition,
-                            Utils.GenerateBlobRequestOptions(this.location.BlobRequestOptions),
+                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                             Utils.GenerateOperationContext(this.Controller.TransferContext),
                             this.CancellationToken);
                     }
@@ -340,13 +340,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.hasWork = false;
 
-            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.location.BlobRequestOptions);
+            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
 
             if (!this.destExist)
             {
                 await this.appendBlob.FetchAttributesAsync(
-                    Utils.GenerateConditionWithCustomerCondition(this.location.AccessCondition),
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                     blobRequestOptions,
                     operationContext,
                     this.CancellationToken);
@@ -356,7 +356,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             Utils.SetAttributes(this.appendBlob, this.SharedTransferData.Attributes);
 
             await this.appendBlob.SetPropertiesAsync(
-                Utils.GenerateConditionWithCustomerCondition(this.location.AccessCondition),
+                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 blobRequestOptions,
                 operationContext,
                 this.CancellationToken);
@@ -364,7 +364,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (!originalMetadata.DictionaryEquals(this.appendBlob.Metadata))
             {
                 await this.appendBlob.SetMetadataAsync(
-                             Utils.GenerateConditionWithCustomerCondition(this.location.AccessCondition),
+                             Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                              blobRequestOptions,
                              operationContext,
                              this.CancellationToken);
@@ -375,11 +375,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private async Task<bool> ValidateUploadedChunkAsync(byte[] currentData, long startOffset, long length)
         {
-            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.location.AccessCondition, true);
+            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
             await this.appendBlob.FetchAttributesAsync(
                 accessCondition,
-                Utils.GenerateBlobRequestOptions(this.location.BlobRequestOptions),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 operationContext,
                 this.CancellationToken);
 
@@ -399,7 +399,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 startOffset,
                 length,
                 accessCondition,
-                Utils.GenerateBlobRequestOptions(this.location.BlobRequestOptions),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 operationContext,
                 this.CancellationToken);
 

@@ -453,14 +453,14 @@ namespace DMLibTest
                 if (DMLibTestBase.IsCloudBlob(DMLibTestContext.DestType))
                 {
                     CloudBlobDataAdaptor cloudBlobDataAdaptor = destAdaptor as CloudBlobDataAdaptor;
-                    CloudBlob cloudBlob = cloudBlobDataAdaptor.GetCloudBlobReference(fileNode);
+                    CloudBlob cloudBlob = cloudBlobDataAdaptor.GetCloudBlobReference(dataInfo.RootPath, fileNode);
 
                     fileNode.MD5 = CloudBlobHelper.CalculateMD5ByDownloading(cloudBlob, disableMD5Check);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.CloudFile)
                 {
                     CloudFileDataAdaptor cloudFileDataAdaptor = destAdaptor as CloudFileDataAdaptor;
-                    CloudFile cloudFile = cloudFileDataAdaptor.GetCloudFileReference(fileNode);
+                    CloudFile cloudFile = cloudFileDataAdaptor.GetCloudFileReference(dataInfo.RootPath, fileNode);
 
                     fileNode.MD5 = CloudFileHelper.CalculateMD5ByDownloading(cloudFile, disableMD5Check);
                 }

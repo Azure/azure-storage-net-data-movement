@@ -1,0 +1,235 @@
+//------------------------------------------------------------------------------
+// <copyright file="TransferCollection.cs" company="Microsoft">
+//    Copyright (c) Microsoft Corporation
+// </copyright>
+//------------------------------------------------------------------------------
+namespace Microsoft.WindowsAzure.Storage.DataMovement
+{
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.Runtime.Serialization;
+    using TransferKey = System.Tuple<TransferLocation, TransferLocation>;
+
+    /// <summary>
+    /// A collection of transfers.
+    /// </summary>
+    [Serializable]
+    internal class TransferCollection : ISerializable
+    {
+        /// <summary>
+        /// Serialization field name for single object transfers.
+        /// </summary>
+        private const string SingleObjectTransfersName = "SingleObjectTransfers";
+
+        /// <summary>
+        /// Serialization field name for directory transfers.
+        /// </summary>
+        private const string DirectoryTransfersName = "DirectoryTransfers";
+
+        /// <summary>
+        /// All transfers in the collection.
+        /// </summary>
+        private ConcurrentDictionary<TransferKey, Transfer> transfers = new ConcurrentDictionary<TransferKey, Transfer>();
+
+        /// <summary>
+        /// Overall transfer progress tracker.
+        /// </summary>
+        private TransferProgressTracker overallProgressTracker = new TransferProgressTracker();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TransferCollection"/> class.
+        /// </summary>
+        internal TransferCollection()
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TransferCollection"/> class.
+        /// </summary>
+        /// <param name="info">Serialization information.</param>
+        /// <param name="context">Streaming context.</param>
+        protected TransferCollection(SerializationInfo info, StreamingContext context)
+        {
+            if (info == null)
+            {
+                throw new System.ArgumentNullException("info");
+            }
+
+            int transferCount = info.GetInt32(SingleObjectTransfersName);
+
+            for (int i = 0; i < transferCount; ++i)
+            {
+                this.AddTransfer((SingleObjectTransfer)info.GetValue(string.Format(CultureInfo.InvariantCulture, "{0}{1}", SingleObjectTransfersName, i), typeof(SingleObjectTransfer)));
+            }
+
+            transferCount = info.GetInt32(DirectoryTransfersName);
+            for (int i = 0; i < transferCount; ++i)
+            {
+                this.AddTransfer((DirectoryTransfer)info.GetValue(string.Format(CultureInfo.InvariantCulture, "{0}{1}", DirectoryTransfersName, i), typeof(DirectoryTransfer)));
+            }
+
+            foreach (Transfer transfer in this.transfers.Values)
+            {
+                this.OverallProgressTracker.AddProgress(transfer.ProgressTracker);
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of transfers currently in the collection.
+        /// </summary>
+        public int Count
+        {
+            get
+            {
+                return this.transfers.Count;
+            }
+        }
+
+        /// <summary>
+        /// Gets the overall transfer progress.
+        /// </summary>
+        public TransferProgressTracker OverallProgressTracker
+        {
+            get
+            {
+                return this.overallProgressTracker;
+            }
+        }
+
+        /// <summary>
+        /// Serializes the checkpoint.
+        /// </summary>
+        /// <param name="info">Serialization info object.</param>
+        /// <param name="context">Streaming context.</param>
+        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            if (info == null)
+            {
+                throw new ArgumentNullException("info");
+            }
+
+            List<SingleObjectTransfer> singleObjectTransfers = new List<SingleObjectTransfer>();
+            List<DirectoryTransfer> directoryTransfers = new List<DirectoryTransfer>();
+            foreach (var kv in this.transfers)
+            {
+                SingleObjectTransfer transfer = kv.Value as SingleObjectTransfer;
+                if (transfer != null)
+                {
+                    singleObjectTransfers.Add(transfer);
+                    continue;
+                }
+
+                DirectoryTransfer transfer2 = kv.Value as DirectoryTransfer;
+                if (transfer2 != null)
+                {
+                    directoryTransfers.Add(transfer2);
+                    continue;
+                }
+            }
+
+            info.AddValue(SingleObjectTransfersName, singleObjectTransfers.Count);
+
+            for (int i = 0; i < singleObjectTransfers.Count; ++i)
+            {
+                info.AddValue(string.Format(CultureInfo.InvariantCulture, "{0}{1}", SingleObjectTransfersName, i), singleObjectTransfers[i], typeof(SingleObjectTransfer));
+            }
+
+            info.AddValue(DirectoryTransfersName, directoryTransfers.Count);
+
+            for (int i = 0; i < directoryTransfers.Count; ++i)
+            {
+                info.AddValue(string.Format(CultureInfo.InvariantCulture, "{0}{1}", DirectoryTransfersName, i), directoryTransfers[i], typeof(DirectoryTransfer));
+            }
+        }
+
+        /// <summary>
+        /// Adds a transfer.
+        /// </summary>
+        /// <param name="transfer">The transfer to be added.</param>
+        public void AddTransfer(Transfer transfer)
+        {
+            transfer.ProgressTracker.Parent = this.OverallProgressTracker;
+            this.overallProgressTracker.AddProgress(transfer.ProgressTracker);
+
+            bool unused = this.transfers.TryAdd(new TransferKey(transfer.Source, transfer.Destination), transfer);
+            Debug.Assert(unused, "Transfer with the same source and destination already exists");
+        }
+
+        /// <summary>
+        /// Remove a transfer.
+        /// </summary>
+        /// <param name="transfer">Transfer to be removed</param>
+        /// <returns>True if the transfer is removed successfully, false otherwise.</returns>
+        public bool RemoveTransfer(Transfer transfer)
+        {
+            Transfer unused = null;
+            if (this.transfers.TryRemove(new TransferKey(transfer.Source, transfer.Destination), out unused))
+            {
+                transfer.ProgressTracker.Parent = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Gets a transfer with the specified source location, destination location and transfer method.
+        /// </summary>
+        /// <param name="sourceLocation">Source location of the transfer.</param>
+        /// <param name="destLocation">Destination location of the transfer.</param>
+        /// <param name="transferMethod">Transfer method.</param>
+        /// <returns>A transfer that matches the specified source location, destination location and transfer method; Or null if no matches.</returns>
+        public Transfer GetTransfer(TransferLocation sourceLocation, TransferLocation destLocation, TransferMethod transferMethod)
+        {
+            Transfer transfer = null;
+            if (this.transfers.TryGetValue(new TransferKey(sourceLocation, destLocation), out transfer))
+            {
+                if (transfer.TransferMethod == transferMethod)
+                {
+                    return transfer;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get an enumerable object for all tansfers in this TransferCollection.
+        /// </summary>
+        /// <returns>An enumerable object for all tansfers in this TransferCollection.</returns>
+        public IEnumerable<Transfer> GetEnumerator()
+        {
+            return this.transfers.Values;
+        }
+
+        /// <summary>
+        /// Gets a static snapshot of this transfer checkpoint
+        /// </summary>
+        /// <returns>A snapshot of current transfer checkpoint</returns>
+        public TransferCollection Copy()
+        {
+            TransferCollection copyObj = new TransferCollection();
+            foreach (var kv in this.transfers)
+            {
+                SingleObjectTransfer transfer = kv.Value as SingleObjectTransfer;
+                if (transfer != null)
+                {
+                    copyObj.AddTransfer(transfer.Copy());
+                    continue;
+                }
+
+                DirectoryTransfer transfer2 = kv.Value as DirectoryTransfer;
+                if (transfer2 != null)
+                {
+                    copyObj.AddTransfer(transfer2.Copy());
+                    continue;
+                }
+            }
+
+            return copyObj;
+        }
+    }
+}

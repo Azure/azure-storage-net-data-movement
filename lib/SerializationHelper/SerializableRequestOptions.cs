@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             }
         }
 
-        abstract protected IRequestOptions RequestOptions
+        protected abstract IRequestOptions RequestOptions
         {
             get;
             set;

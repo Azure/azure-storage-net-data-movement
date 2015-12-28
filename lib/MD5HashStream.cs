@@ -43,7 +43,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Running md5 hash of the blob being downloaded.
         /// </summary>
-        private MD5CryptoServiceProvider md5hash;
+        private MD5 md5hash;
 
         /// <summary>
         /// Offset of the transferred bytes. We should calculate MD5hash on all bytes before this offset.
@@ -77,7 +77,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             if (md5hashCheck)
             {
-                this.md5hash = new MD5CryptoServiceProvider();
+                if (CloudStorageAccount.UseV1MD5)
+                {
+                    this.md5hash = new MD5CryptoServiceProvider();
+                }
+                else
+                {
+                    this.md5hash = new NativeMD5();
+                }
             }
 
             if ((!this.finishedSeparateMd5Calculator)

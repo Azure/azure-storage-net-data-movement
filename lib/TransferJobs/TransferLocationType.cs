@@ -12,6 +12,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         Stream,
         AzureBlob,
         AzureFile,
-        SourceUri
+        SourceUri,
+        LocalDirectory,
+        AzureBlobDirectory,
+        AzureFileDirectory,
     }
 }

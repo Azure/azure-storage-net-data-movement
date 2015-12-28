@@ -201,7 +201,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     break;
             }
 
-            Utils.CheckCancellation(this.cancellationTokenSource);
+            Utils.CheckCancellation(this.cancellationTokenSource.Token);
             this.controllerQueue.Add(controller, this.cancellationTokenSource.Token);
 
             try
