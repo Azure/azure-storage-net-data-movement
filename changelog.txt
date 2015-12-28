@@ -1,2 +1,10 @@
+2015.12.28 Version 0.2.0
+ * Support download, upload, copy directory (local file directory, blob virtual directory, file share directory) 
+ * Support transfer directory in recursive mode or flat mode 
+ * Support specify the file pattern when copying files and directories 
+ * Support download snapshots under directories 
+ * Provide Event to get single file transfer result in a transfer 
+ * Change TransferConfigurations.UserAgentSuffix to TransferConfigurations.UserAgentPrefix
+
 2015.07.17 Version 0.1.0
  * Initial Release
