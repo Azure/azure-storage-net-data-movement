@@ -77,7 +77,7 @@ namespace S3ToAzureSample
                 Directory.CreateDirectory(tempFolder);
 
                 // Configue DataMovement library
-                TransferManager.Configurations.UserAgentSuffix = "S3ToAzureSample";
+                TransferManager.Configurations.UserAgentPrefix = "S3ToAzureSample";
 
                 ConsoleWriteLine("===Transfer begins===");
 
