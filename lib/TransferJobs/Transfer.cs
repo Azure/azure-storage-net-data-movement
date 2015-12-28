@@ -11,11 +11,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Runtime.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.WindowsAzure.Storage.Blob;
 
     /// <summary>
     /// Base class for transfer operation.
     /// </summary>
-    internal abstract class Transfer : ISerializable
+    internal abstract class Transfer : ISerializable, IDisposable
     {
         private const string FormatVersionName = "Version";
         private const string SourceName = "Source";
@@ -61,8 +62,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     Constants.FormatVersion));
             }
 
-            this.Source = (TransferLocation)info.GetValue(SourceName, typeof(TransferLocation));
-            this.Destination = (TransferLocation)info.GetValue(DestName, typeof(TransferLocation));
+            var serializableSourceLocation = (SerializableTransferLocation)info.GetValue(SourceName, typeof(SerializableTransferLocation));
+            var serializableDestLocation = (SerializableTransferLocation)info.GetValue(DestName, typeof(SerializableTransferLocation));
+            this.Source = serializableSourceLocation.Location;
+            this.Destination = serializableDestLocation.Location;
             this.TransferMethod = (TransferMethod)info.GetValue(TransferMethodName, typeof(TransferMethod));
             this.ProgressTracker = (TransferProgressTracker)info.GetValue(TransferProgressName, typeof(TransferProgressTracker));
         }
@@ -125,6 +128,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
+        /// Gets or sets blob type of destination blob.
+        /// </summary>
+        public BlobType BlobType
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Gets the progress tracker for this transfer.
         /// </summary>
         public TransferProgressTracker ProgressTracker
@@ -146,8 +158,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             info.AddValue(FormatVersionName, Constants.FormatVersion, typeof(string));
-            info.AddValue(SourceName, this.Source, typeof(TransferLocation));
-            info.AddValue(DestName, this.Destination, typeof(TransferLocation));
+            SerializableTransferLocation serializableSourceLocation = new SerializableTransferLocation(this.Source);
+            SerializableTransferLocation serializableDestLocation = new SerializableTransferLocation(this.Destination);
+            info.AddValue(SourceName, serializableSourceLocation, typeof(SerializableTransferLocation));
+            info.AddValue(DestName, serializableDestLocation, typeof(SerializableTransferLocation));
             info.AddValue(TransferMethodName, this.TransferMethod);
             info.AddValue(TransferProgressName, this.ProgressTracker);
         }
@@ -167,6 +181,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 switch (targetStatus)
                 {
                     case TransferJobStatus.Transfer:
+                    case TransferJobStatus.Monitor:
                         if (transferJob.Status == TransferJobStatus.Failed)
                         {
                             this.ProgressTracker.AddNumberOfFilesFailed(-1);
@@ -187,13 +202,27 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         break;
 
                     case TransferJobStatus.NotStarted:
-                    case TransferJobStatus.Monitor:
+                    
                     default:
                         break;
                 }
 
                 transferJob.Status = targetStatus;
             }
+        }
+
+        /// <summary>
+        /// Public dispose method to release all resources owned.
+        /// </summary>
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            // Nothing to dispose
         }
     }
 }

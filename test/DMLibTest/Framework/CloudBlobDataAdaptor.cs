@@ -20,14 +20,14 @@ namespace DMLibTest
         {
         }
 
-        public override object GetTransferObject(FileNode fileNode)
+        public override object GetTransferObject(string rootPath, FileNode fileNode)
         {
-            return this.GetCloudBlobReference(fileNode);
+            return this.GetCloudBlobReference(rootPath, fileNode);
         }
 
-        public override object GetTransferObject(DirNode dirNode)
+        public override object GetTransferObject(string rootPath, DirNode dirNode)
         {
-            return this.GetCloudBlobDirReference(dirNode);
+            return this.GetCloudBlobDirReference(rootPath, dirNode);
         }
 
         protected override void GenerateDataImp(DMLibDataInfo dataInfo)
@@ -55,19 +55,19 @@ namespace DMLibTest
             return dataInfo;
         }
 
-        public string LeaseBlob(FileNode fileNode, TimeSpan? leaseTime)
+        public string LeaseBlob(string rootPath, FileNode fileNode, TimeSpan? leaseTime)
         {
-            var blob = this.GetCloudBlobReference(fileNode);
+            var blob = this.GetCloudBlobReference(rootPath, fileNode);
             return blob.AcquireLease(leaseTime, null, options: HelperConst.DefaultBlobOptions);
         }
 
-        public void ReleaseLease(FileNode fileNode, string leaseId)
+        public void ReleaseLease(string rootPath, FileNode fileNode, string leaseId)
         {
-            var blob = this.GetCloudBlobReference(fileNode);
+            var blob = this.GetCloudBlobReference(rootPath, fileNode);
             blob.ReleaseLease(AccessCondition.GenerateLeaseCondition(leaseId), options: HelperConst.DefaultBlobOptions);
         }
 
-        public CloudBlob GetCloudBlobReference(FileNode fileNode)
+        public CloudBlob GetCloudBlobReference(string rootPath, FileNode fileNode)
         {
             var container = this.BlobHelper.BlobClient.GetContainerReference(this.ContainerName);
             var blobName = fileNode.GetURLRelativePath();
@@ -76,16 +76,26 @@ namespace DMLibTest
                 blobName = blobName.Substring(1, blobName.Length - 1);
             }
 
+            if (!string.IsNullOrEmpty(rootPath))
+            {
+                blobName = rootPath + "/" + blobName;
+            }
+
             return CloudBlobHelper.GetCloudBlobReference(container, blobName, this.BlobType);
         }
 
-        public CloudBlobDirectory GetCloudBlobDirReference(DirNode dirNode)
+        public CloudBlobDirectory GetCloudBlobDirReference(string rootPath, DirNode dirNode)
         {
             var container = this.BlobHelper.BlobClient.GetContainerReference(this.ContainerName);
             var dirName = dirNode.GetURLRelativePath();
             if (dirName.StartsWith("/"))
             {
                 dirName = dirName.Substring(1, dirName.Length - 1);
+            }
+
+            if (!string.IsNullOrEmpty(rootPath))
+            {
+                dirName = rootPath + "/" + dirName;
             }
 
             return container.GetDirectoryReference(dirName);

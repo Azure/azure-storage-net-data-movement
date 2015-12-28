@@ -13,19 +13,16 @@ namespace DMLibTest
 
     public static class VerificationHelper
     {
+        public static void VerifyTransferSucceed(TestResult<DMLibDataInfo> result, DMLibDataInfo expectedDataInfo)
+        {
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(expectedDataInfo, result.DataInfo), "Verify transfer result.");
+        }
+        
         public static void VerifySingleObjectResumeResult(TestResult<DMLibDataInfo> result, DMLibDataInfo expectedDataInfo)
         {
-            if (DMLibTestContext.SourceType != DMLibDataType.Stream && DMLibTestContext.DestType != DMLibDataType.Stream)
-            {
-                Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
-                Test.Assert(DMLibDataHelper.Equals(expectedDataInfo, result.DataInfo), "Verify transfer result.");
-            }
-            else
-            {
-                Test.Assert(result.Exceptions.Count == 1, "Verify stream resume is not supported");
-                Exception exception = result.Exceptions[0];
-                Test.Assert(exception is NotSupportedException, "Verify stream resume is not supported");
-            }
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(expectedDataInfo, result.DataInfo), "Verify transfer result.");
         }
 
         public static void VerifyTransferException(Exception exception, TransferErrorCode expectedErrorCode, params string[] expectedMessages)
@@ -61,6 +58,24 @@ namespace DMLibTest
             foreach (string expectedMessage in expectedMessages)
             {
                 Test.Assert(exception.Message.Contains(expectedMessage), "Verify exception message contains {0}", expectedMessage);
+            }
+        }
+
+        public static void VerifyFinalProgress(ProgressChecker progressChecker, long? transferredFilesNum, long? skippedFilesNum, long? failedFilesNum)
+        {
+            if (transferredFilesNum != null)
+            {
+                Test.Assert(progressChecker.TransferredFilesNumber == (int)transferredFilesNum, "Verify transferred files number: expected {0}, actual {1}.", transferredFilesNum, progressChecker.TransferredFilesNumber);
+            }
+
+            if (skippedFilesNum != null)
+            {
+                Test.Assert(progressChecker.SkippedFilesNumber == (int)skippedFilesNum, "Verify skipped files number: expected {0}, actual {1}.", skippedFilesNum, progressChecker.SkippedFilesNumber);
+            }
+
+            if (failedFilesNum != null)
+            {
+                Test.Assert(progressChecker.FailedFilesNumber == (int)failedFilesNum, "Verify failed files number: expected {0}, actual {1}.", failedFilesNum, progressChecker.FailedFilesNumber);
             }
         }
     }

@@ -16,6 +16,8 @@ namespace DMLibTest
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
 
+    using XSCLBlobType = Microsoft.WindowsAzure.Storage.Blob.BlobType;
+
     public class DMLibTestBase : MultiDirectionTestBase<DMLibDataInfo, DMLibDataType>
     {
         private static Dictionary<string, string> sourceConnectionStrings = new Dictionary<string, string>();
@@ -112,13 +114,19 @@ namespace DMLibTest
             SourceAdaptor.CreateIfNotExists();
             DestAdaptor.CreateIfNotExists();
 
+            string sourceRootPath = string.Empty;
+            DirNode sourceRootNode = new DirNode(string.Empty);
             if (sourceDataInfo != null)
             {
+                sourceRootPath = sourceDataInfo.RootPath;
+                sourceRootNode = sourceDataInfo.RootNode;
                 SourceAdaptor.GenerateData(sourceDataInfo);
             }
 
+            string destRootPath = string.Empty;
             if (options.DestTransferDataInfo != null)
             {
+                destRootPath = options.DestTransferDataInfo.RootPath;
                 DestAdaptor.GenerateData(options.DestTransferDataInfo);
             }
 
@@ -128,23 +136,46 @@ namespace DMLibTest
             }
 
             List<TransferItem> allItems = new List<TransferItem>();
-            foreach(var fileNode in sourceDataInfo.EnumerateFileNodes())
+
+            if (options.IsDirectoryTransfer)
             {
                 TransferItem item = new TransferItem()
                 {
-                    SourceObject = SourceAdaptor.GetTransferObject(fileNode),
-                    DestObject = DestAdaptor.GetTransferObject(fileNode),
+                    SourceObject = SourceAdaptor.GetTransferObject(sourceRootPath, sourceRootNode),
+                    DestObject = DestAdaptor.GetTransferObject(destRootPath, sourceRootNode),
                     SourceType = DMLibTestContext.SourceType,
                     DestType = DMLibTestContext.DestType,
                     IsServiceCopy = DMLibTestContext.IsAsync,
+                    IsDirectoryTransfer = true,
                 };
 
                 if (options.TransferItemModifier != null)
                 {
-                    options.TransferItemModifier(fileNode, item);
+                    options.TransferItemModifier(null, item);
                 }
 
                 allItems.Add(item);
+            }
+            else
+            {
+                foreach (var fileNode in sourceDataInfo.EnumerateFileNodes())
+                {
+                    TransferItem item = new TransferItem()
+                    {
+                        SourceObject = SourceAdaptor.GetTransferObject(sourceDataInfo.RootPath, fileNode),
+                        DestObject = DestAdaptor.GetTransferObject(destRootPath, fileNode),
+                        SourceType = DMLibTestContext.SourceType,
+                        DestType = DMLibTestContext.DestType,
+                        IsServiceCopy = DMLibTestContext.IsAsync,
+                    };
+
+                    if (options.TransferItemModifier != null)
+                    {
+                        options.TransferItemModifier(fileNode, item);
+                    }
+
+                    allItems.Add(item);
+                }
             }
 
             return this.RunTransferItems(allItems, options);
@@ -261,6 +292,14 @@ namespace DMLibTest
             }
         }
 
+        public static object DefaultTransferDirectoryOptions
+        {
+            get
+            {
+                return DMLibTestBase.GetDefaultTransferDirectoryOptions(DMLibTestContext.SourceType, DMLibTestContext.DestType);
+            }
+        }
+
         public static object GetDefaultTransferOptions(DMLibDataType sourceType, DMLibDataType destType)
         {
             if (DMLibTestBase.IsLocal(sourceType))
@@ -277,6 +316,36 @@ namespace DMLibTest
             }
         }
 
+        public static object GetDefaultTransferDirectoryOptions(DMLibDataType sourceType, DMLibDataType destType)
+        {
+            if (DMLibTestBase.IsLocal(sourceType))
+            {
+                var result = new UploadDirectoryOptions();
+
+                if (IsCloudBlob(destType))
+                {
+                    result.BlobType = MapBlobDataTypeToXSCLBlobType(destType);
+                }
+
+                return result;
+            }
+            else if (DMLibTestBase.IsLocal(destType))
+            {
+                return new DownloadDirectoryOptions();
+            }
+            else
+            {
+                var result = new CopyDirectoryOptions();
+
+                if (IsCloudBlob(destType))
+                {
+                    result.BlobType = MapBlobDataTypeToXSCLBlobType(destType);
+                }
+
+                return result;
+            }
+        }
+
         public static string MapBlobDataTypeToBlobType(DMLibDataType blobDataType)
         {
             switch (blobDataType)
@@ -287,6 +356,21 @@ namespace DMLibTest
                     return BlobType.Page;
                 case DMLibDataType.AppendBlob:
                     return BlobType.Append;
+                default:
+                    throw new ArgumentException("blobDataType");
+            }
+        }
+
+        public static XSCLBlobType MapBlobDataTypeToXSCLBlobType(DMLibDataType blobDataType)
+        {
+            switch (blobDataType)
+            {
+                case DMLibDataType.BlockBlob:
+                    return XSCLBlobType.BlockBlob;
+                case DMLibDataType.PageBlob:
+                    return XSCLBlobType.PageBlob;
+                case DMLibDataType.AppendBlob:
+                    return XSCLBlobType.AppendBlob;
                 default:
                     throw new ArgumentException("blobDataType");
             }

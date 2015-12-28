@@ -23,6 +23,10 @@ namespace DMLibTest
         public static void MyClassInitialize(TestContext testContext)
         {
             DMLibTestBase.BaseClassInitialize(testContext);
+
+            DMLibTestBase.CleanupSource = false;
+
+            AllTransferDirectionTest.PrepareSourceData();
         }
 
         [ClassCleanup()]
@@ -35,6 +39,8 @@ namespace DMLibTest
         public void MyTestInitialize()
         {
             base.BaseTestInitialize();
+
+            AllTransferDirectionTest.CleanupAllDestination();
         }
 
         [TestCleanup()]
@@ -44,42 +50,40 @@ namespace DMLibTest
         }
         #endregion
 
-        private Dictionary<string, FileNode> PrepareSourceData(long fileSizeInB)
+        private static Dictionary<string, DMLibDataInfo> sourceDataInfos = new Dictionary<string, DMLibDataInfo>();
+        private static Dictionary<string, FileNode> expectedFileNodes = new Dictionary<string, FileNode>();
+        private static Dictionary<string, FileNode> singleObjectNodes = new Dictionary<string, FileNode>();
+        private static Dictionary<string, DirNode> directoryNodes = new Dictionary<string, DirNode>();
+
+        private static DMLibDataInfo GetSourceDataInfo(string key)
         {
-            var sourceFileNodes = new Dictionary<string, FileNode>();
-            var sourceDataInfos = new Dictionary<string, DMLibDataInfo>();
-
-            // Prepare source data info
-            foreach (DMLibTransferDirection direction in GetAllValidDirections())
+            DMLibDataInfo result;
+            if (!sourceDataInfos.ContainsKey(key))
             {
-                string fileName = GetTransferFileName(direction);
+                result = new DMLibDataInfo(string.Empty);
 
-                DMLibDataInfo sourceDataInfo;
-                string sourceDataInfoKey;
-                if (direction.SourceType != DMLibDataType.URI)
-                {
-                    sourceDataInfoKey = direction.SourceType.ToString();
-                }
-                else
-                {
-                    sourceDataInfoKey = GetTransferFileName(direction);
-                }
-
-                if (sourceDataInfos.ContainsKey(sourceDataInfoKey))
-                {
-                    sourceDataInfo = sourceDataInfos[sourceDataInfoKey];
-                }
-                else
-                {
-                    sourceDataInfo = new DMLibDataInfo(string.Empty);
-                    sourceDataInfos[sourceDataInfoKey] = sourceDataInfo;
-                }
-
-                DMLibDataHelper.AddOneFileInBytes(sourceDataInfo.RootNode, fileName, fileSizeInB);
-
-                FileNode sourceFileNode = sourceDataInfo.RootNode.GetFileNode(fileName);
-                sourceFileNodes.Add(fileName, sourceFileNode);
+                sourceDataInfos.Add(key, result);
             }
+
+            return sourceDataInfos[key];
+        }
+
+        private static string GetSourceDataInfoKey(DMLibTransferDirection direction)
+        {
+            if (direction.SourceType != DMLibDataType.URI)
+            {
+                return direction.SourceType.ToString();
+            }
+            else
+            {
+                return GetTransferFileName(direction);
+            }
+        }
+
+        private static void PrepareSourceData()
+        {
+            PrepareDirSourceData(5 * 1024 * 1024);
+            PrepareSingleObjectSourceData(5 * 1024 * 1024);
 
             // Generate source data
             foreach (var pair in sourceDataInfos)
@@ -107,11 +111,14 @@ namespace DMLibTest
             foreach (DMLibDataType uriDestDataType in uriDestDataTypes)
             {
                 DMLibTestContext.DestType = uriDestDataType;
-                string sourceDataInfoKey = GetTransferFileName(DMLibDataType.URI, uriDestDataType, true);
+                string sourceDataInfoKey = GetTransferString(DMLibDataType.URI, uriDestDataType, true);
 
                 uriSourceAdaptor.GenerateData(sourceDataInfos[sourceDataInfoKey]);
             }
+        }
 
+        private static void CleanupAllDestination()
+        {
             // Clean up destination
             foreach (DMLibDataType destDataType in DataTypes)
             {
@@ -122,28 +129,95 @@ namespace DMLibTest
                     destAdaptor.CreateIfNotExists();
                 }
             }
-
-            return sourceFileNodes;
         }
 
-        private List<TransferItem> GetTransformItemsForAllDirections(Dictionary<string, FileNode> fileNodes)
+        private static void PrepareDirSourceData(long fileSizeInB)
+        {
+            foreach (DMLibTransferDirection direction in GetAllDirectoryValidDirections())
+            {
+                string dirName = GetTransferDirName(direction);
+                string fileName = dirName;
+                string sourceDataInfoKey = GetSourceDataInfoKey(direction);
+
+                DMLibDataInfo sourceDataInfo = GetSourceDataInfo(sourceDataInfoKey);
+
+                DirNode subDirNode = new DirNode(dirName);
+                DMLibDataHelper.AddOneFileInBytes(subDirNode, fileName, fileSizeInB);
+
+                sourceDataInfo.RootNode.AddDirNode(subDirNode);
+
+                directoryNodes.Add(dirName, subDirNode);
+
+                expectedFileNodes.Add(fileName, subDirNode.GetFileNode(fileName));
+            }
+        }
+
+        private static void PrepareSingleObjectSourceData(long fileSizeInB)
+        {
+            foreach (DMLibTransferDirection direction in GetAllValidDirections())
+            {
+                string fileName = GetTransferFileName(direction);
+                string sourceDataInfoKey = GetSourceDataInfoKey(direction);
+
+                DMLibDataInfo sourceDataInfo = GetSourceDataInfo(sourceDataInfoKey);
+
+                DMLibDataHelper.AddOneFileInBytes(sourceDataInfo.RootNode, fileName, fileSizeInB);
+
+                FileNode sourceFileNode = sourceDataInfo.RootNode.GetFileNode(fileName);
+                singleObjectNodes.Add(fileName, sourceFileNode);
+
+                expectedFileNodes.Add(fileName, sourceFileNode);
+            }
+        }
+
+        private static List<TransferItem> GetTransformItemsForAllDirections(bool resume)
         {
             List<TransferItem> allItems = new List<TransferItem>();
             foreach (DMLibTransferDirection direction in GetAllValidDirections())
             {
+                if (resume && (direction.SourceType == DMLibDataType.Stream || direction.DestType == DMLibDataType.Stream))
+                {
+                    continue;
+                }
+                
                 string fileName = GetTransferFileName(direction);
                 DataAdaptor<DMLibDataInfo> sourceAdaptor = GetSourceAdaptor(direction.SourceType);
                 DataAdaptor<DMLibDataInfo> destAdaptor = GetDestAdaptor(direction.DestType);
 
-                FileNode fileNode = fileNodes[fileName];
+                FileNode fileNode = singleObjectNodes[fileName];
                 TransferItem item = new TransferItem()
                 {
-                    SourceObject = sourceAdaptor.GetTransferObject(fileNode),
-                    DestObject = destAdaptor.GetTransferObject(fileNode),
+                    SourceObject = sourceAdaptor.GetTransferObject(string.Empty, fileNode),
+                    DestObject = destAdaptor.GetTransferObject(string.Empty, fileNode),
                     SourceType = direction.SourceType,
                     DestType = direction.DestType,
                     IsServiceCopy = direction.IsAsync,
                 };
+                allItems.Add(item);
+            }
+
+            foreach (DMLibTransferDirection direction in GetAllDirectoryValidDirections())
+            {
+                string dirName = GetTransferDirName(direction);
+                DataAdaptor<DMLibDataInfo> sourceAdaptor = GetSourceAdaptor(direction.SourceType);
+                DataAdaptor<DMLibDataInfo> destAdaptor = GetDestAdaptor(direction.DestType);
+
+                DirNode dirNode = directoryNodes[dirName];
+
+                dynamic options = DMLibTestBase.GetDefaultTransferDirectoryOptions(direction.SourceType, direction.DestType);
+                options.Recursive = true;
+
+                TransferItem item = new TransferItem()
+                {
+                    SourceObject = sourceAdaptor.GetTransferObject(string.Empty, dirNode),
+                    DestObject = destAdaptor.GetTransferObject(string.Empty, dirNode),
+                    SourceType = direction.SourceType,
+                    DestType = direction.DestType,
+                    IsServiceCopy = direction.IsAsync,
+                    IsDirectoryTransfer = true,
+                    Options = options,
+                };
+
                 allItems.Add(item);
             }
 
@@ -154,17 +228,15 @@ namespace DMLibTest
         [TestCategory(Tag.Function)]
         public void ResumeInAllDirections()
         {
-            long fileSizeInByte = 10 * 1024 * 1024;
-            Dictionary<string, FileNode> sourceFileNodes = this.PrepareSourceData(fileSizeInByte);
-            List<TransferItem> allItems = this.GetTransformItemsForAllDirections(sourceFileNodes);
+            List<TransferItem> allItems = AllTransferDirectionTest.GetTransformItemsForAllDirections(resume: true);
 
-            int fileCount = sourceFileNodes.Keys.Count;
+            int fileCount = expectedFileNodes.Keys.Count;
 
             // Execution and store checkpoints
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
             var transferContext = new TransferContext();
-            var progressChecker = new ProgressChecker(fileCount, fileSizeInByte * fileCount);
+            var progressChecker = new ProgressChecker(fileCount, 1024 * fileCount);
             transferContext.ProgressHandler = progressChecker.GetProgressHandler();
             allItems.ForEach(item =>
             {
@@ -217,7 +289,7 @@ namespace DMLibTest
                 options.DisableDestinationFetch = true;
 
                 progressChecker.Reset();
-                transferContext = new TransferContext(pair.Value)
+                transferContext = new TransferContext(DMLibTestHelper.RandomReloadCheckpoint(pair.Value))
                 {
                     ProgressHandler = progressChecker.GetProgressHandler(),
 
@@ -226,6 +298,9 @@ namespace DMLibTest
                     // We don't have overwrite callback here.
                     OverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY()
                 };
+
+                TransferEventChecker eventChecker = new TransferEventChecker();
+                eventChecker.Apply(transferContext);
 
                 List<TransferItem> itemsToResume = allItems.Select(item =>
                 {
@@ -236,7 +311,6 @@ namespace DMLibTest
 
                 result = this.RunTransferItems(itemsToResume, options);
 
-                int resumeFailCount = 0;
                 foreach (DMLibDataType destDataType in DataTypes)
                 {
                     DataAdaptor<DMLibDataInfo> destAdaptor = GetSourceAdaptor(destDataType);
@@ -245,24 +319,12 @@ namespace DMLibTest
                     foreach (FileNode destFileNode in destDataInfo.EnumerateFileNodes())
                     {
                         string fileName = destFileNode.Name;
-                        if (!fileName.Contains(DMLibDataType.Stream.ToString()))
-                        {
-                            FileNode sourceFileNode = sourceFileNodes[fileName];
-                            Test.Assert(DMLibDataHelper.Equals(sourceFileNode, destFileNode), "Verify transfer result.");
-                        }
-                        else
-                        {
-                            resumeFailCount++;
-                        }
+                        FileNode sourceFileNode = expectedFileNodes[fileName];
+                        Test.Assert(DMLibDataHelper.Equals(sourceFileNode, destFileNode), "Verify transfer result.");
                     }
                 }
 
-                Test.Assert(result.Exceptions.Count == resumeFailCount, "Verify resume failure count: expected {0}, actual {1}.", resumeFailCount, result.Exceptions.Count);
-
-                foreach (var resumeException in result.Exceptions)
-                {
-                    Test.Assert(resumeException is NotSupportedException, "Verify resume exception is NotSupportedException.");
-                }
+                Test.Assert(result.Exceptions.Count == 0, "Verify no error happens. Actual: {0}", result.Exceptions.Count);
             }
         }
 
@@ -270,9 +332,7 @@ namespace DMLibTest
         [TestCategory(Tag.BVT)]
         public void TransferInAllDirections()
         {
-            // Prepare source data
-            Dictionary<string, FileNode> sourceFileNodes = this.PrepareSourceData(10 * 1024 * 1024);
-            List<TransferItem> allItems = this.GetTransformItemsForAllDirections(sourceFileNodes);
+            List<TransferItem> allItems = AllTransferDirectionTest.GetTransformItemsForAllDirections(resume: false);
 
             // Execution
             var result = this.RunTransferItems(allItems, new TestExecutionOptions<DMLibDataInfo>());
@@ -286,7 +346,7 @@ namespace DMLibTest
 
                 foreach (FileNode destFileNode in destDataInfo.EnumerateFileNodes())
                 {
-                    FileNode sourceFileNode = sourceFileNodes[destFileNode.Name];
+                    FileNode sourceFileNode = expectedFileNodes[destFileNode.Name];
                     Test.Assert(DMLibDataHelper.Equals(sourceFileNode, destFileNode), "Verify transfer result.");
                 }
             }
@@ -294,15 +354,30 @@ namespace DMLibTest
 
         private static string GetTransferFileName(DMLibTransferDirection direction)
         {
-            return GetTransferFileName(direction.SourceType, direction.DestType, direction.IsAsync);
+            return GetTransferString(direction.SourceType, direction.DestType, direction.IsAsync);
         }
 
-        private static string GetTransferFileName(DMLibDataType sourceType, DMLibDataType destType, bool isAsync)
+        private static string GetTransferDirName(DMLibTransferDirection direction)
+        {
+            return "dir" + GetTransferString(direction.SourceType, direction.DestType, direction.IsAsync);
+        }
+
+        private static string GetTransferString(DMLibDataType sourceType, DMLibDataType destType, bool isAsync)
         {
             return sourceType.ToString() + destType.ToString() + (isAsync ? "async" : ""); 
         }
 
         private static IEnumerable<DMLibTransferDirection> GetAllValidDirections()
+        {
+            return EnumerateAllDirections(validSyncDirections, validAsyncDirections);
+        }
+
+        private static IEnumerable<DMLibTransferDirection> GetAllDirectoryValidDirections()
+        {
+            return EnumerateAllDirections(dirValidSyncDirections, dirValidAsyncDirections);
+        }
+
+        private static IEnumerable<DMLibTransferDirection> EnumerateAllDirections(bool[][] syncDirections, bool[][] asyncDirections)
         {
             for (int sourceIndex = 0; sourceIndex < DataTypes.Length; ++sourceIndex)
             {
@@ -311,7 +386,7 @@ namespace DMLibTest
                     DMLibDataType sourceDataType = DataTypes[sourceIndex];
                     DMLibDataType destDataType = DataTypes[destIndex];
 
-                    if (validSyncDirections[sourceIndex][destIndex])
+                    if (syncDirections[sourceIndex][destIndex])
                     {
                         yield return new DMLibTransferDirection()
                         {
@@ -321,7 +396,7 @@ namespace DMLibTest
                         };
                     }
 
-                    if (validAsyncDirections[sourceIndex][destIndex])
+                    if (asyncDirections[sourceIndex][destIndex])
                     {
                         yield return new DMLibTransferDirection()
                         {
@@ -353,6 +428,32 @@ namespace DMLibTest
             //          stream, uri, local, xsmb, block, page, append
             new bool[] {false, false, false, false, false, false, false}, // stream
             new bool[] {false, false, false, true, true, true, true}, // uri
+            new bool[] {false, false, false, false, false, false, false}, // local
+            new bool[] {false, false, false, true, true, false, false}, // xsmb
+            new bool[] {false, false, false, true, true, false, false}, // block
+            new bool[] {false, false, false, true, false, true, false}, // page
+            new bool[] {false, false, false, true, false, false, true}, // append
+        };
+
+        // [SourceType][DestType]
+        private static bool[][] dirValidSyncDirections = 
+        {
+            //          stream, uri, local, xsmb, block, page, append
+            new bool[] {false, false, false, false, false, false, false}, // stream
+            new bool[] {false, false, false, false, false, false, false}, // uri
+            new bool[] {false, false, false, true, true, true, true}, // local
+            new bool[] {false, false, true, true, true, true, true}, // xsmb
+            new bool[] {false, false, true, true, true, false, false}, // block
+            new bool[] {false, false, true, true, false, true, false}, // page
+            new bool[] {false, false, true, true, false, false, true}, // append
+        };
+
+        // [SourceType][DestType]
+        private static bool[][] dirValidAsyncDirections = 
+        {
+            //          stream, uri, local, xsmb, block, page, append
+            new bool[] {false, false, false, false, false, false, false}, // stream
+            new bool[] {false, false, false, false, false, false, false}, // uri
             new bool[] {false, false, false, false, false, false, false}, // local
             new bool[] {false, false, false, true, true, false, false}, // xsmb
             new bool[] {false, false, false, true, true, false, false}, // block

@@ -31,6 +31,12 @@ namespace DMLibTest
             set;
         }
 
+        public bool IsDirectoryTransfer
+        {
+            get;
+            set;
+        }
+
         public bool DisableDestinationFetch
         {
             get;

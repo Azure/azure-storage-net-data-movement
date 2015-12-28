@@ -17,7 +17,14 @@ namespace DMLibTest
 
         protected override Task DoTransferImp(TransferItem item)
         {
-            return this.Copy(item.SourceObject, item.DestObject, item);
+            if (item.IsDirectoryTransfer)
+            {
+                return this.CopyDirectory(item.SourceObject, item.DestObject, item);
+            }
+            else
+            {
+                return this.Copy(item.SourceObject, item.DestObject, item);
+            }
         }
 
         private Task Copy(dynamic sourceObject, dynamic destObject, TransferItem item)
@@ -37,6 +44,26 @@ namespace DMLibTest
             else
             {
                 return TransferManager.CopyAsync(sourceObject, destObject, item.IsServiceCopy);
+            }
+        }
+
+        private Task CopyDirectory(dynamic sourceObject, dynamic destObject, TransferItem item)
+        {
+            CopyDirectoryOptions copyDirectoryOptions = item.Options as CopyDirectoryOptions;
+            TransferContext transferContext = item.TransferContext;
+            CancellationToken cancellationToken = item.CancellationToken;
+
+            if (cancellationToken != null && cancellationToken != CancellationToken.None)
+            {
+                return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.IsServiceCopy, copyDirectoryOptions, transferContext, cancellationToken);
+            }
+            else if (transferContext != null || copyDirectoryOptions != null)
+            {
+                return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.IsServiceCopy, copyDirectoryOptions, transferContext);
+            }
+            else
+            {
+                return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.IsServiceCopy);
             }
         }
     }

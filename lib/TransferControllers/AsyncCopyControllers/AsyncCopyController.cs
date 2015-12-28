@@ -28,6 +28,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         /// </summary>
         private object statusRefreshTimerLock = new object();
 
+        /// <summary>  
+        /// Wait time between two status refresh requests.  
+        /// </summary>  
+        private long statusRefreshWaitTime = Constants.CopyStatusRefreshMinWaitTimeInMilliseconds;
+
+        /// <summary>
+        /// Indicates whether the copy job is apporaching finish.
+        /// </summary>
+        private bool approachingFinish = false;
+
+        /// <summary>
+        /// Request count sent with current statusRefreshWaitTime
+        /// </summary>
+        private long statusRefreshRequestCount = 0;
+
         /// <summary>
         /// Keeps track of the internal state-machine state.
         /// </summary>
@@ -66,24 +81,30 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     "transferJob");
             }
 
-            if ((null == transferJob.Source.SourceUri && null == transferJob.Source.Blob && null == transferJob.Source.AzureFile)
-                || (null != transferJob.Source.SourceUri && null != transferJob.Source.Blob)
-                || (null != transferJob.Source.Blob && null != transferJob.Source.AzureFile)
-                || (null != transferJob.Source.SourceUri && null != transferJob.Source.AzureFile))
+            switch(this.TransferJob.Source.Type)
             {
-                throw new ArgumentException(
-                    string.Format(
-                        CultureInfo.CurrentCulture,
-                        Resources.ProvideExactlyOneOfThreeParameters,
-                        "Source.SourceUri",
-                        "Source.Blob",
-                        "Source.AzureFile"),
-                    "transferJob");
-            }
+                case TransferLocationType.AzureBlob:
+                    this.SourceBlob = (this.TransferJob.Source as AzureBlobLocation).Blob;
+                    break;
 
-            this.SourceUri = this.TransferJob.Source.SourceUri;
-            this.SourceBlob = this.TransferJob.Source.Blob;
-            this.SourceFile = this.TransferJob.Source.AzureFile;
+                case TransferLocationType.AzureFile:
+                    this.SourceFile = (this.TransferJob.Source as AzureFileLocation).AzureFile;
+                    break;
+
+                case TransferLocationType.SourceUri:
+                    this.SourceUri = (this.TransferJob.Source as UriLocation).Uri;
+                    break;
+
+                default:
+                    throw new ArgumentException(
+                        string.Format(
+                            CultureInfo.CurrentCulture,
+                            Resources.ProvideExactlyOneOfThreeParameters,
+                            "Source.SourceUri",
+                            "Source.Blob",
+                            "Source.AzureFile"),
+                        "transferJob");
+            }
 
             // initialize the status refresh timer
             this.statusRefreshTimer = new Timer(
@@ -142,12 +163,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         public static AsyncCopyController CreateAsyncCopyController(TransferScheduler transferScheduler, TransferJob transferJob, CancellationToken cancellationToken)
         {
-            if (transferJob.Destination.TransferLocationType == TransferLocationType.AzureFile)
+            if (transferJob.Destination.Type == TransferLocationType.AzureFile)
             {
                 return new FileAsyncCopyController(transferScheduler, transferJob, cancellationToken);
             }
 
-            if (transferJob.Destination.TransferLocationType == TransferLocationType.AzureBlob)
+            if (transferJob.Destination.Type == TransferLocationType.AzureBlob)
             {
                 return new BlobAsyncCopyController(transferScheduler, transferJob, cancellationToken);
             }
@@ -253,6 +274,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 case TransferJobStatus.Transfer:
                     break;
                 case TransferJobStatus.Monitor:
+                    this.lastBytesCopied = this.TransferJob.Transfer.ProgressTracker.BytesTransferred;
                     break;
                 case TransferJobStatus.Finished:
                 default:
@@ -310,7 +332,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 throw;
             }
 
-            this.TransferJob.Source.CheckedAccessCondition = true;
+            if (this.TransferJob.Source.Type == TransferLocationType.AzureBlob)
+            {
+                (this.TransferJob.Source as AzureBlobLocation).CheckedAccessCondition = true;
+            }
+            else
+            {
+                (this.TransferJob.Source as AzureFileLocation).CheckedAccessCondition = true;
+            }
 
             this.state = State.GetDestination;
             this.hasWork = true;
@@ -378,7 +407,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            this.TransferJob.Destination.CheckedAccessCondition = true;
+            if (this.TransferJob.Destination.Type == TransferLocationType.AzureBlob)
+            {
+                (this.TransferJob.Destination as AzureBlobLocation).CheckedAccessCondition = true;
+            }
+            else if(this.TransferJob.Destination.Type == TransferLocationType.AzureFile)
+            {
+                (this.TransferJob.Destination as AzureFileLocation).CheckedAccessCondition = true;
+            }
 
             if ((TransferJobStatus.Monitor == this.TransferJob.Status)
                 && string.IsNullOrEmpty(this.TransferJob.CopyId))
@@ -486,6 +522,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
             }
 
+            this.TransferJob.Status = TransferJobStatus.Monitor;
             this.state = State.GetCopyState;
             this.hasWork = true;
             return true;
@@ -589,6 +626,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     copyState.BytesCopied.HasValue,
                     "BytesCopied cannot be null as TotalBytes is not null.");
 
+                if (this.approachingFinish == false &&
+                    copyState.TotalBytes - copyState.BytesCopied <= Constants.CopyApproachingFinishThresholdInBytes)
+                {
+                    this.approachingFinish = true;
+                }
+
                 if (this.TransferContext != null)
                 {
                     long bytesTransferred = copyState.BytesCopied.Value;
@@ -609,9 +652,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private void RestartTimer()
         {
+            if (this.approachingFinish)
+            {
+                this.statusRefreshWaitTime = Constants.CopyStatusRefreshMinWaitTimeInMilliseconds;
+            }
+            else if (this.statusRefreshRequestCount >= Constants.CopyStatusRefreshWaitTimeMaxRequestCount &&
+                this.statusRefreshWaitTime < Constants.CopyStatusRefreshMaxWaitTimeInMilliseconds)
+            {
+                this.statusRefreshRequestCount = 0;
+                this.statusRefreshWaitTime *= 10;
+                this.statusRefreshWaitTime = Math.Min(this.statusRefreshWaitTime, Constants.CopyStatusRefreshMaxWaitTimeInMilliseconds);
+            }
+            else if (this.statusRefreshWaitTime < Constants.CopyStatusRefreshMaxWaitTimeInMilliseconds)
+            {
+                this.statusRefreshRequestCount++;
+            }
+
             // Wait a period to restart refresh the status.
             this.statusRefreshTimer.Change(
-                TimeSpan.FromMilliseconds(Constants.AsyncCopyStatusRefreshWaitTimeInMilliseconds),
+                TimeSpan.FromMilliseconds(this.statusRefreshWaitTime),
                 new TimeSpan(-1));
         }
 
@@ -647,24 +706,30 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         protected async Task DoFetchSourceAttributesAsync()
         {
-            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
-                this.TransferJob.Source.AccessCondition,
-                this.TransferJob.Source.CheckedAccessCondition);
-            OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
-
-            if (this.SourceBlob != null)
+            if (this.TransferJob.Source.Type == TransferLocationType.AzureBlob)
             {
-                await this.SourceBlob.FetchAttributesAsync(
+                AzureBlobLocation sourceLocation = this.TransferJob.Source as AzureBlobLocation;
+                AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
+                    sourceLocation.AccessCondition,
+                    sourceLocation.CheckedAccessCondition);
+                OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
+
+                await sourceLocation.Blob.FetchAttributesAsync(
                     accessCondition,
-                    Utils.GenerateBlobRequestOptions(this.TransferJob.Source.BlobRequestOptions),
+                    Utils.GenerateBlobRequestOptions(sourceLocation.BlobRequestOptions),
                     operationContext,
                     this.CancellationToken);
             }
-            else if (this.SourceFile != null)
+            else if(this.TransferJob.Source.Type == TransferLocationType.AzureFile)
             {
-                await this.SourceFile.FetchAttributesAsync(
+                AzureFileLocation sourceLocation = this.TransferJob.Source as AzureFileLocation;
+                AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
+                    sourceLocation.AccessCondition,
+                    sourceLocation.CheckedAccessCondition);
+                OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
+                await sourceLocation.AzureFile.FetchAttributesAsync(
                     accessCondition,
-                    Utils.GenerateFileRequestOptions(this.TransferJob.Source.FileRequestOptions),
+                    Utils.GenerateFileRequestOptions(sourceLocation.FileRequestOptions),
                     operationContext,
                     this.CancellationToken);
             }

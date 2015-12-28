@@ -7,9 +7,13 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
+    using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using System.Runtime.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.File;
 
     /// <summary>
     /// Represents a single object transfer operation.
@@ -20,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private const string TransferJobName = "TransferJob";
 
         /// <summary>
-        /// Internal transfer jobs.
+        /// Internal transfer job.
         /// </summary>
         private TransferJob transferJob;
 
@@ -36,48 +40,52 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public SingleObjectTransfer(TransferLocation source, TransferLocation dest, TransferMethod transferMethod)
             : base(source, dest, transferMethod)
         {
-            if (null == source)
-            {
-                throw new ArgumentNullException("source");
-            }
+            Debug.Assert(source != null && dest != null);
+            Debug.Assert(
+                source.Type == TransferLocationType.FilePath || source.Type == TransferLocationType.Stream ||
+                source.Type == TransferLocationType.AzureBlob || source.Type == TransferLocationType.AzureFile ||
+                source.Type == TransferLocationType.SourceUri);
+            Debug.Assert(
+                dest.Type == TransferLocationType.FilePath || dest.Type == TransferLocationType.Stream ||
+                dest.Type == TransferLocationType.AzureBlob || dest.Type == TransferLocationType.AzureFile ||
+                dest.Type == TransferLocationType.SourceUri);
+            Debug.Assert(!((source.Type == TransferLocationType.FilePath || source.Type == TransferLocationType.Stream) &&
+                (dest.Type == TransferLocationType.FilePath || dest.Type == TransferLocationType.Stream)));
 
-            if (null == dest)
+            if (source.Type == TransferLocationType.AzureBlob && dest.Type == TransferLocationType.AzureBlob)
             {
-                throw new ArgumentNullException("dest");
-            }
-
-            if ((null != source.FilePath || null != source.Stream)
-                && (null != dest.FilePath || null != dest.Stream))
-            {
-                throw new InvalidOperationException(Resources.LocalToLocalTransferUnsupportedException);
-            }
-
-            if ((null != source.Blob)
-                && (null != dest.Blob))
-            {
-                if (source.Blob.BlobType != dest.Blob.BlobType)
+                CloudBlob sourceBlob = (source as AzureBlobLocation).Blob;
+                CloudBlob destBlob = (dest as AzureBlobLocation).Blob;
+                if (sourceBlob.BlobType != destBlob.BlobType)
                 {
                     throw new InvalidOperationException(Resources.SourceAndDestinationBlobTypeDifferent);
                 }
 
-                if (StorageExtensions.Equals(source.Blob, dest.Blob))
+                if (StorageExtensions.Equals(sourceBlob, destBlob))
                 {
                     throw new InvalidOperationException(Resources.SourceAndDestinationLocationCannotBeEqualException);
                 }
             }
 
-            if ((null != source.AzureFile)
-                && (null != dest.AzureFile)
-                && string.Equals(source.AzureFile.Uri.Host, dest.AzureFile.Uri.Host, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(source.AzureFile.Uri.AbsolutePath, dest.AzureFile.Uri.AbsolutePath, StringComparison.OrdinalIgnoreCase))
+            if (source.Type == TransferLocationType.AzureFile && dest.Type == TransferLocationType.AzureFile)
             {
-                throw new InvalidOperationException(Resources.SourceAndDestinationLocationCannotBeEqualException);
+                CloudFile sourceFile = (source as AzureFileLocation).AzureFile;
+                CloudFile destFile = (dest as AzureFileLocation).AzureFile;
+                if (string.Equals(sourceFile.Uri.Host, destFile.Uri.Host, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(sourceFile.Uri.AbsolutePath, destFile.Uri.AbsolutePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(Resources.SourceAndDestinationLocationCannotBeEqualException);
+                }
             }
 
-            this.transferJob = new TransferJob(this.Source, this.Destination);
-            this.transferJob.Transfer = this;
+            this.transferJob = new TransferJob(this);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SingleObjectTransfer"/> class.
+        /// </summary>
+        /// <param name="info">Serialization information.</param>
+        /// <param name="context">Streaming context.</param>
         protected SingleObjectTransfer(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -85,6 +93,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.transferJob.Transfer = this;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SingleObjectTransfer"/> class.
+        /// </summary>
+        /// <param name="other">Another <see cref="SingleObjectTransfer"/> object. </param>
         private SingleObjectTransfer(SingleObjectTransfer other)
             : base(other)
         {
@@ -104,9 +116,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Gets a copy of this transfer object.
+        /// Creates a copy of current transfer object.
         /// </summary>
-        /// <returns>A copy of current transfer object</returns>
+        /// <returns>A copy of current transfer object.</returns>
         public SingleObjectTransfer Copy()
         {
             lock (this.ProgressTracker)
@@ -129,28 +141,73 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 return;
             }
 
-            if (transferJob.Status == TransferJobStatus.Failed)
+            TransferEventArgs eventArgs = new TransferEventArgs(this.Source.ToString(), this.Destination.ToString());
+            eventArgs.StartTime = DateTime.UtcNow;
+
+            if (this.transferJob.Status == TransferJobStatus.Failed)
             {
                 // Resuming a failed transfer job
-                this.UpdateTransferJobStatus(transferJob, TransferJobStatus.Transfer);
+                if (string.IsNullOrEmpty(this.transferJob.CopyId))
+                {
+                    this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Transfer);
+                }
+                else
+                {
+                    this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Monitor);
+                }
             }
 
             try
             {
-                await scheduler.ExecuteJobAsync(transferJob, cancellationToken);
-                this.UpdateTransferJobStatus(transferJob, TransferJobStatus.Finished);
+                await scheduler.ExecuteJobAsync(this.transferJob, cancellationToken);
+                this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Finished);
+
+                eventArgs.EndTime = DateTime.UtcNow;
+
+                if(this.Context != null)
+                {
+                    this.Context.OnTransferSuccess(eventArgs);
+                }
             }
             catch (TransferException exception)
             {
+                eventArgs.EndTime = DateTime.UtcNow;
+                eventArgs.Exception = exception;
+
                 if (exception.ErrorCode == TransferErrorCode.NotOverwriteExistingDestination)
                 {
                     // transfer skipped
-                    this.UpdateTransferJobStatus(transferJob, TransferJobStatus.Skipped);
+                    this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Skipped);
+                    if (this.Context != null)
+                    {
+                        this.Context.OnTransferSkipped(eventArgs);
+                    }
+
+                    throw;
                 }
                 else
                 {
                     // transfer failed
-                    this.UpdateTransferJobStatus(transferJob, TransferJobStatus.Failed);
+                    this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Failed);
+                    if (this.Context != null)
+                    {
+                        this.Context.OnTransferFailed(eventArgs);
+                    }
+
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                eventArgs.EndTime = DateTime.UtcNow;
+                eventArgs.Exception = ex;
+
+                // transfer failed
+                this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Failed);
+
+                if (this.Context != null)
+                {
+                    this.Context.OnTransferFailed(eventArgs);
                 }
 
                 throw;

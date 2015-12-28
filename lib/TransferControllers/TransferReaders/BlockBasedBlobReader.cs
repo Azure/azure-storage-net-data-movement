@@ -19,19 +19,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     internal sealed class BlockBasedBlobReader : TransferReaderWriterBase
     {
         /// <summary>
+        /// Instance to represent source location.
+        /// </summary>
+        private AzureBlobLocation sourceLocation;
+
+        /// <summary>
         /// Block/append blob instance to be downloaded from.
         /// </summary>
-        private CloudBlob blob;
+        private CloudBlob sourceBlob;
 
         /// <summary>
         /// Window to record unfinished chunks to be retransferred again.
         /// </summary>
         private Queue<long> lastTransferWindow;
-
-        /// <summary>
-        /// Instance to represent source location.
-        /// </summary>
-        private TransferLocation transferLocation;
 
         private TransferJob transferJob;
 
@@ -52,12 +52,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             CancellationToken cancellationToken)
             : base(scheduler, controller, cancellationToken)
         {
-            this.transferLocation = this.SharedTransferData.TransferJob.Source;
             this.transferJob = this.SharedTransferData.TransferJob;
-            this.blob = this.transferLocation.Blob;
+            this.sourceLocation = this.transferJob.Source as AzureBlobLocation;
+            this.sourceBlob = this.sourceLocation.Blob;
 
             Debug.Assert(
-                (this.blob is CloudBlockBlob) ||(this.blob is CloudAppendBlob), 
+                (this.sourceBlob is CloudBlockBlob) ||(this.sourceBlob is CloudAppendBlob), 
             "Initializing BlockBlobReader while source location is not a block blob or an append blob.");
 
             this.hasWork = true;
@@ -119,15 +119,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.NotifyStarting();
 
             AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                this.transferLocation.ETag,
-                this.transferLocation.AccessCondition,
-                this.transferLocation.CheckedAccessCondition);
+                this.sourceLocation.ETag,
+                this.sourceLocation.AccessCondition,
+                this.sourceLocation.CheckedAccessCondition);
 
             try
             {
-                await this.blob.FetchAttributesAsync(
+                await this.sourceBlob.FetchAttributesAsync(
                     accessCondition,
-                    Utils.GenerateBlobRequestOptions(this.transferLocation.BlobRequestOptions),
+                    Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
                     this.CancellationToken);
             }
@@ -144,37 +144,37 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            this.transferLocation.CheckedAccessCondition = true;
+            this.sourceLocation.CheckedAccessCondition = true;
 
-            if (this.blob.Properties.BlobType == BlobType.Unspecified)
+            if (this.sourceBlob.Properties.BlobType == BlobType.Unspecified)
             {
                 throw new InvalidOperationException(Resources.FailedToGetBlobTypeException);
             }
 
-            if (string.IsNullOrEmpty(this.transferLocation.ETag))
+            if (string.IsNullOrEmpty(this.sourceLocation.ETag))
             {
                 if (0 != this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset)
                 {
                     throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
                 }
 
-                this.transferLocation.ETag = this.blob.Properties.ETag;
+                this.sourceLocation.ETag = this.sourceBlob.Properties.ETag;
             }
-            else if ((this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset > this.blob.Properties.Length)
+            else if ((this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset > this.sourceBlob.Properties.Length)
                 || (this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset < 0))
             {
                 throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
             }
 
-            this.SharedTransferData.SourceLocation = this.blob.Uri.ToString();
+            this.SharedTransferData.SourceLocation = this.sourceBlob.Uri.ToString();
 
             this.SharedTransferData.DisableContentMD5Validation =
-                null != this.transferLocation.BlobRequestOptions ?
-                this.transferLocation.BlobRequestOptions.DisableContentMD5Validation.HasValue ?
-                this.transferLocation.BlobRequestOptions.DisableContentMD5Validation.Value : false : false;
+                null != this.sourceLocation.BlobRequestOptions ?
+                this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.HasValue ?
+                this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.Value : false : false;
 
-            this.SharedTransferData.TotalLength = this.blob.Properties.Length;
-            this.SharedTransferData.Attributes = Utils.GenerateAttributes(this.blob);
+            this.SharedTransferData.TotalLength = this.sourceBlob.Properties.Length;
+            this.SharedTransferData.Attributes = Utils.GenerateAttributes(this.sourceBlob);
 
             if ((0 == this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset)
                 && (null != this.SharedTransferData.TransferJob.CheckPoint.TransferWindow)
@@ -186,7 +186,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.lastTransferWindow = new Queue<long>(this.SharedTransferData.TransferJob.CheckPoint.TransferWindow);
             
             int downloadCount = this.lastTransferWindow.Count +
-                (int)Math.Ceiling((double)(this.blob.Properties.Length - this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset) / this.Scheduler.TransferOptions.BlockSize);
+                (int)Math.Ceiling((double)(this.sourceBlob.Properties.Length - this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset) / this.Scheduler.TransferOptions.BlockSize);
 
             if (0 == downloadCount)
             {
@@ -288,8 +288,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
 
             AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                 this.blob.Properties.ETag,
-                 this.transferLocation.AccessCondition);
+                 this.sourceBlob.Properties.ETag,
+                 this.sourceLocation.AccessCondition);
 
             // We're to download this block.
             asyncState.MemoryStream =
@@ -298,12 +298,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     0,
                     asyncState.Length);
 
-            await this.blob.DownloadRangeToStreamAsync(
+            await this.sourceBlob.DownloadRangeToStreamAsync(
                         asyncState.MemoryStream,
                         asyncState.StartOffset,
                         asyncState.Length,
                         accessCondition,
-                        Utils.GenerateBlobRequestOptions(this.transferLocation.BlobRequestOptions),
+                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                         Utils.GenerateOperationContext(this.Controller.TransferContext),
                         this.CancellationToken);
 

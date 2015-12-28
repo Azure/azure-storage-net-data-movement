@@ -23,6 +23,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
 
         private AccessCondition accessCondition;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SerializableAccessCondition" /> class.
+        /// </summary>
         public SerializableAccessCondition()
         {
         }

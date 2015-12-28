@@ -64,5 +64,35 @@ namespace DMLibTest.Cases
             FileNode destFileNode = result.DataInfo.RootNode.GetFileNode(DMLibTestBase.FileName);
             Test.Assert(contentType.Equals(destFileNode.ContentType), "Verify content type: {0}, expected {1}", destFileNode.ContentType, contentType);
         }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalSource)]
+        public void TestDirectorySetContentType()
+        {
+            string contentType = "contenttype";
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            int[] fileSizes = new int[] {1024, 1024, 1024 };
+            DMLibDataHelper.AddMultipleFilesDifferentSize(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizes);
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.IsDirectoryTransfer = true;
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                dynamic uploadOptions = DefaultTransferDirectoryOptions;
+                uploadOptions.ContentType = "contenttype";
+
+                transferItem.Options = uploadOptions;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+
+            foreach (FileNode destFileNode in result.DataInfo.RootNode.FileNodes)
+            {
+                Test.Assert(contentType.Equals(destFileNode.ContentType), "Verify content type: {0}, expected {1}", destFileNode.ContentType, contentType);
+            }
+        }
     }
 }

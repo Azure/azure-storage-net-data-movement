@@ -16,6 +16,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
     internal sealed class PageBlobReader : RangeBasedReader
     {
+        private AzureBlobLocation sourceLocation;
         private CloudPageBlob pageBlob;
 
         public PageBlobReader(
@@ -24,24 +25,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             CancellationToken cancellationToken)
             :base(scheduler, controller, cancellationToken)
         {
-            pageBlob = this.SharedTransferData.TransferJob.Source.Blob as CloudPageBlob;
+            this.sourceLocation = this.SharedTransferData.TransferJob.Source as AzureBlobLocation;
+            this.pageBlob = this.sourceLocation.Blob as CloudPageBlob;
             Debug.Assert(null != this.pageBlob, "Initializing a PageBlobReader, the source location should be a CloudPageBlob instance.");
         }
 
         protected override async Task DoFetchAttributesAsync()
         {
             AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                this.Location.ETag,
-                this.Location.AccessCondition,
-                this.Location.CheckedAccessCondition);
+                this.sourceLocation.ETag,
+                this.sourceLocation.AccessCondition,
+                this.sourceLocation.CheckedAccessCondition);
 
             await this.pageBlob.FetchAttributesAsync(
                 accessCondition,
-                Utils.GenerateBlobRequestOptions(this.Location.BlobRequestOptions),
+                Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
 
-            if (string.IsNullOrEmpty(this.Location.ETag))
+            if (string.IsNullOrEmpty(this.sourceLocation.ETag))
             {
                 if ((0 != this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset)
                     || (this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Any()))
@@ -49,18 +51,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
                 }
 
-                this.Location.ETag = this.Location.Blob.Properties.ETag;
+                this.sourceLocation.ETag = this.sourceLocation.Blob.Properties.ETag;
             }
-            else if ((this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset > this.Location.Blob.Properties.Length)
+            else if ((this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset > this.sourceLocation.Blob.Properties.Length)
                 || (this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset < 0))
             {
                 throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
             }
 
             this.SharedTransferData.DisableContentMD5Validation =
-                null != this.Location.BlobRequestOptions ?
-                this.Location.BlobRequestOptions.DisableContentMD5Validation.HasValue ?
-                this.Location.BlobRequestOptions.DisableContentMD5Validation.Value : false : false;
+                null != this.sourceLocation.BlobRequestOptions ?
+                this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.HasValue ?
+                this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.Value : false : false;
 
             this.SharedTransferData.Attributes = Utils.GenerateAttributes(this.pageBlob);
             this.SharedTransferData.TotalLength = this.pageBlob.Properties.Length;
@@ -70,8 +72,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         protected override async Task<List<Range>> DoGetRangesAsync(RangesSpan rangesSpan)
         {
             AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                this.Location.Blob.Properties.ETag,
-                this.Location.AccessCondition);
+                this.sourceLocation.Blob.Properties.ETag,
+                this.sourceLocation.AccessCondition);
 
             List<Range> rangeList = new List<Range>();
 
@@ -79,7 +81,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     rangesSpan.StartOffset,
                     rangesSpan.EndOffset - rangesSpan.StartOffset + 1,
                     accessCondition,
-                    Utils.GenerateBlobRequestOptions(this.Location.BlobRequestOptions),
+                    Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
                     this.CancellationToken))
             {
@@ -97,15 +99,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         protected override async Task DoDownloadRangeToStreamAsync(RangeBasedDownloadState asyncState)
         {
             AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                this.Location.Blob.Properties.ETag,
-                this.Location.AccessCondition);
+                this.sourceLocation.Blob.Properties.ETag,
+                this.sourceLocation.AccessCondition);
 
-            await this.Location.Blob.DownloadRangeToStreamAsync(
+            await this.sourceLocation.Blob.DownloadRangeToStreamAsync(
                 asyncState.DownloadStream,
                 asyncState.StartOffset,
                 asyncState.Length,
                 accessCondition,
-                Utils.GenerateBlobRequestOptions(this.Location.BlobRequestOptions),
+                Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
         }

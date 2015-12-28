@@ -15,6 +15,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
     internal sealed class CloudFileWriter : RangeBasedWriter
     {
+        private AzureFileLocation destLocation;
         private CloudFile cloudFile;
 
         /// <summary>
@@ -29,7 +30,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             CancellationToken cancellationToken)
             : base(scheduler, controller, cancellationToken)
         {
-            this.cloudFile = this.TransferJob.Destination.AzureFile;
+            this.destLocation = this.TransferJob.Destination as AzureFileLocation;
+            this.cloudFile = this.destLocation.AzureFile;
         }
 
         protected override Uri DestUri
@@ -62,7 +64,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             await this.cloudFile.FetchAttributesAsync(
                 null,
-                Utils.GenerateFileRequestOptions(this.TransferJob.Destination.FileRequestOptions),
+                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
             this.destExist = true;
@@ -78,7 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             await this.cloudFile.CreateAsync(
                 size,
                 null,
-                Utils.GenerateFileRequestOptions(this.TransferJob.Destination.FileRequestOptions),
+                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
         }
@@ -88,7 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             await this.cloudFile.ResizeAsync(
                 size,
                 null,
-                Utils.GenerateFileRequestOptions(this.TransferJob.Destination.FileRequestOptions),
+                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
         }
@@ -100,14 +102,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 transferData.StartOffset,
                 null,
                 null,
-                Utils.GenerateFileRequestOptions(this.TransferJob.Destination.FileRequestOptions),
+                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
         }
 
         protected override async Task DoCommitAsync()
         {
-            FileRequestOptions fileRequestOptions = Utils.GenerateFileRequestOptions(this.TransferJob.Destination.FileRequestOptions);
+            FileRequestOptions fileRequestOptions = Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
 
             if (!this.destExist)

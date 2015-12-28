@@ -12,22 +12,34 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
 
+    /// <summary>
+    /// A utility class for serializing and de-serializing <see cref="CloudBlob"/> object.
+    /// </summary>
     [Serializable]
     internal class SerializableCloudBlob : ISerializable
     {
+        /// <summary>
+        /// Serialization field name for cloud blob uri.
+        /// </summary>
         private const string BlobUriName = "BlobUri";
+
+        /// <summary>
+        /// Serialization field name for cloud blob type.
+        /// </summary>
         private const string BlobTypeName = "BlobType";
 
-        private Uri blobUri;
-
-        private BlobType blobType;
-
-        private CloudBlob blob;
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SerializableCloudBlob"/> class.
+        /// </summary>
         public SerializableCloudBlob()
         { 
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SerializableCloudBlob"/> class.
+        /// </summary>
+        /// <param name="info">Serialization information.</param>
+        /// <param name="context">Streaming context.</param>
         private SerializableCloudBlob(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -35,35 +47,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
                 throw new ArgumentNullException("info");
             }
 
-            this.blobUri = (Uri)info.GetValue(BlobUriName, typeof(Uri));
-            this.blobType = (BlobType)info.GetValue(BlobTypeName, typeof(BlobType));
-            this.CreateCloudBlobInstance(null);
+            Uri blobUri = (Uri)info.GetValue(BlobUriName, typeof(Uri));
+            BlobType blobType = (BlobType)info.GetValue(BlobTypeName, typeof(BlobType));
+            this.CreateCloudBlobInstance(blobUri, blobType, null);
         }
 
+        /// <summary>
+        /// Gets or sets the target <see cref="CloudBlob"/> object.
+        /// </summary>
         internal CloudBlob Blob
         {
-            get
-            {
-                return this.blob;
-            }
-
-            set
-            {
-                this.blob = value;
-
-                if (null == this.blob)
-                {
-                    this.blobUri = null;
-                    this.blobType = BlobType.Unspecified;
-                }
-                else
-                {
-                    this.blobUri = this.blob.SnapshotQualifiedUri;
-                    this.blobType = this.blob.BlobType;
-                }
-            }
+            get;
+            set;
         }
 
+        /// <summary>
+        /// Serializes the object.
+        /// </summary>
+        /// <param name="info">Serialization info object.</param>
+        /// <param name="context">Streaming context.</param>
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -71,10 +73,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
                 throw new ArgumentNullException("info");
             }
 
-            info.AddValue(BlobUriName, this.blobUri, typeof(Uri));
-            info.AddValue(BlobTypeName, this.blobType);
+            Uri blobUri = null;
+            BlobType blobType = BlobType.Unspecified;
+            if (null != this.Blob)
+            {
+                blobUri = this.Blob.SnapshotQualifiedUri;
+                blobType = this.Blob.BlobType;
+            }
+
+            info.AddValue(BlobUriName, blobUri, typeof(Uri));
+            info.AddValue(BlobTypeName, blobType, typeof(BlobType));
         }
 
+        /// <summary>
+        /// Gets the target target <see cref="CloudBlob"/> object of a <see cref="SerializableCloudBlob"/> object.
+        /// </summary>
+        /// <param name="blobSerialization">A <see cref="SerializableCloudBlob"/> object.</param>
+        /// <returns>The target <see cref="CloudBlob"/> object.</returns>
         internal static CloudBlob GetBlob(SerializableCloudBlob blobSerialization)
         {
             if (null == blobSerialization)
@@ -85,6 +100,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             return blobSerialization.Blob;
         }
 
+        /// <summary>
+        /// Sets the target target <see cref="CloudBlob"/> object of a <see cref="SerializableCloudBlob"/> object.
+        /// </summary>
+        /// <param name="blobSerialization">A <see cref="SerializableCloudBlob"/> object.</param>
+        /// <param name="value">A <see cref="CloudBlob"/> object.</param>
         internal static void SetBlob(ref SerializableCloudBlob blobSerialization, CloudBlob value)
         {
             if ((null == blobSerialization)
@@ -106,20 +126,37 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             }
         }
 
+        /// <summary>
+        /// Updates the account credentials used to access the target <see cref="CloudBlob"/> object.
+        /// </summary>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         internal void UpdateStorageCredentials(StorageCredentials credentials)
         {
-            this.CreateCloudBlobInstance(credentials);
+            if (this.Blob == null)
+            {
+                this.CreateCloudBlobInstance(null, BlobType.Unspecified, credentials);
+            }
+            else
+            {
+                this.CreateCloudBlobInstance(this.Blob.Uri, this.Blob.BlobType, credentials);
+            }
         }
 
-        private void CreateCloudBlobInstance(StorageCredentials credentials)
+        /// <summary>
+        /// Creates the target <see cref="CloudBlob"/> object using the specified uri, blob type and account crendentials.
+        /// </summary>
+        /// <param name="blobUri">Cloud blob uri.</param>
+        /// <param name="blobType">Cloud blob type.</param>
+        /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
+        private void CreateCloudBlobInstance(Uri blobUri, BlobType blobType, StorageCredentials credentials)
         {
-            if ((null != this.blob)
-                && this.blob.ServiceClient.Credentials == credentials)
+            if ((null != this.Blob)
+                && this.Blob.ServiceClient.Credentials == credentials)
             {
                 return;
             }
 
-            if (null == this.blobUri)
+            if (null == blobUri)
             {
                 throw new InvalidOperationException(
                     string.Format(
@@ -128,7 +165,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
                         "blobUri"));
             }
 
-            this.blob = Utils.GetBlobReference(this.blobUri, credentials, this.blobType);
+            this.Blob = Utils.GetBlobReference(blobUri, credentials, blobType);
         }
     }
 }

@@ -1,3 +1,4 @@
+
 //------------------------------------------------------------------------------
 // <copyright file="AssemblyInfo.cs" company="Microsoft">
 //    Copyright (c) Microsoft Corporation

@@ -22,12 +22,12 @@ namespace DMLibTest
             // Do nothing, keep the container public
         }
 
-        public override object GetTransferObject(FileNode fileNode)
+        public override object GetTransferObject(string rootPath, FileNode fileNode)
         {
-            return base.GetCloudBlobReference(fileNode).Uri;
+            return base.GetCloudBlobReference(rootPath, fileNode).Uri;
         }
 
-        public override object GetTransferObject(DirNode dirNode)
+        public override object GetTransferObject(string rootPath, DirNode dirNode)
         {
             throw new InvalidOperationException("Can't get directory transfer object in URI data adaptor.");
         }
