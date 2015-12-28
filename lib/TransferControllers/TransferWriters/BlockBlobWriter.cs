@@ -22,8 +22,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private volatile bool hasWork;
         private volatile State state;
         private CountdownEvent countdownEvent;
-        private TransferLocation location;
         private string[] blockIdSequence;
+        private AzureBlobLocation destLocation;
         private CloudBlockBlob blockBlob;
 
         public BlockBlobWriter(
@@ -32,8 +32,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             CancellationToken cancellationToken)
             : base(scheduler, controller, cancellationToken)
         {
-            this.location = this.SharedTransferData.TransferJob.Destination;
-            this.blockBlob = this.location.Blob as CloudBlockBlob;
+            this.destLocation = this.SharedTransferData.TransferJob.Destination as AzureBlobLocation;
+            this.blockBlob = this.destLocation.Blob as CloudBlockBlob;
 
             Debug.Assert(null != this.blockBlob, "The destination is not a block blob while initializing a BlockBlobWriter instance.");
 
@@ -133,18 +133,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
             
             AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
-                this.location.AccessCondition,
-                this.location.CheckedAccessCondition);
+                this.destLocation.AccessCondition,
+                this.destLocation.CheckedAccessCondition);
 
             try
             {
-                await this.location.Blob.FetchAttributesAsync(
+                await this.destLocation.Blob.FetchAttributesAsync(
                     accessCondition,
-                    Utils.GenerateBlobRequestOptions(this.location.BlobRequestOptions),
+                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
                     this.CancellationToken);
             }
-            catch (Exception e)
+            catch (StorageException e)
             {
                 this.HandleFetchAttributesResult(e);
                 return;
@@ -182,40 +182,44 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         throw se;
                     }
                 }
+                else
+                {
+                    throw e;
+                }
             }
 
-            this.location.CheckedAccessCondition = true;
+            this.destLocation.CheckedAccessCondition = true;
 
-            if (string.IsNullOrEmpty(this.location.BlockIdPrefix))
+            if (string.IsNullOrEmpty(this.destLocation.BlockIdPrefix))
             {
                 // BlockIdPrefix is never set before that this is the first time to transfer this file.
                 // In block blob upload, it stores uploaded but not committed blocks on Azure Storage. 
                 // In DM, we use block id to identify the blocks uploaded so we only need to upload it once.
                 // Keep BlockIdPrefix in upload job object for restarting the transfer if anything happens.
-                this.location.BlockIdPrefix = Guid.NewGuid().ToString("N") + "-";
+                this.destLocation.BlockIdPrefix = Guid.NewGuid().ToString("N") + "-";
             }
 
             // If destination file exists, query user whether to overwrite it.
             this.Controller.CheckOverwrite(
                 existingBlob,
                 this.SharedTransferData.SourceLocation,
-                this.location.Blob.Uri.ToString());
+                this.destLocation.Blob.Uri.ToString());
 
             this.Controller.UpdateProgressAddBytesTransferred(0);
 
             if (existingBlob)
             {
-                if (this.location.Blob.Properties.BlobType == BlobType.Unspecified)
+                if (this.destLocation.Blob.Properties.BlobType == BlobType.Unspecified)
                 {
                     throw new InvalidOperationException(Resources.FailedToGetBlobTypeException);
                 }
-                if (this.location.Blob.Properties.BlobType != BlobType.BlockBlob)
+                if (this.destLocation.Blob.Properties.BlobType != BlobType.BlockBlob)
                 {
                     throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch);
                 }
 
                 Debug.Assert(
-                    this.location.Blob.Properties.BlobType == BlobType.BlockBlob,
+                    this.destLocation.Blob.Properties.BlobType == BlobType.BlockBlob,
                     "BlobType should be BlockBlob if we reach here.");
             }
 
@@ -229,7 +233,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             for (int i = 0; i < numBlocks; ++i)
             {
                 string blockIdSuffix = i.ToString("D6", CultureInfo.InvariantCulture);
-                byte[] blockIdInBytes = System.Text.Encoding.UTF8.GetBytes(this.location.BlockIdPrefix + blockIdSuffix);
+                byte[] blockIdInBytes = System.Text.Encoding.UTF8.GetBytes(this.destLocation.BlockIdPrefix + blockIdSuffix);
                 string blockId = Convert.ToBase64String(blockIdInBytes);
                 this.blockIdSequence[i] = blockId;
             }
@@ -274,8 +278,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         this.GetBlockId(transferData.StartOffset),
                         transferData.Stream,
                         null,
-                        Utils.GenerateConditionWithCustomerCondition(this.location.AccessCondition, true),
-                        Utils.GenerateBlobRequestOptions(this.location.BlobRequestOptions),
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
+                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                         Utils.GenerateOperationContext(this.Controller.TransferContext),
                         this.CancellationToken);
                 }
@@ -308,12 +312,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             Utils.SetAttributes(this.blockBlob, this.SharedTransferData.Attributes);
 
-            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.location.BlobRequestOptions);
+            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
 
             await this.blockBlob.PutBlockListAsync(
                         this.blockIdSequence,
-                        Utils.GenerateConditionWithCustomerCondition(this.location.AccessCondition),
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                         blobRequestOptions,
                         operationContext,
                         this.CancellationToken);
@@ -326,7 +330,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 || (!this.SharedTransferData.Attributes.OverWriteAll && this.SharedTransferData.Attributes.ContentType == string.Empty))
             {
                 await this.blockBlob.SetPropertiesAsync(
-                    Utils.GenerateConditionWithCustomerCondition(this.location.AccessCondition),
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                     blobRequestOptions,
                     operationContext,
                     this.CancellationToken);

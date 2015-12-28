@@ -16,12 +16,34 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
     [Serializable]
     internal sealed class SerializableFileRequestOptions : SerializableRequestOptions, ISerializable
     {
+        /// <summary>
+        /// Serialization field name for DisableContentMD5Validation option.
+        /// </summary>
         private const string DisableContentMD5ValidationName = "DisableContentMD5Validation";
+
+        /// <summary>
+        /// Serialization field name for MaximumExecutionTime option.
+        /// </summary>
         private const string MaximumExecutionTimeName = "MaximumExecutionTime";
+
+        /// <summary>
+        /// Serialization field name for ServerTimeout option.
+        /// </summary>
         private const string ServerTimeoutName = "ServerTimeout";
+
+        /// <summary>
+        /// Serialization field name for StoreFileContentMD5 option.
+        /// </summary>
         private const string StoreFileContentMD5Name = "StoreFileContentMD5";
+
+        /// <summary>
+        /// Serialization field name for UseTransactionalMD5 option.
+        /// </summary>
         private const string UseTransactionalMD5Name = "UseTransactionalMD5";
 
+        /// <summary>
+        /// The target <see cref="FileRequestOptions"/> object.
+        /// </summary>
         private FileRequestOptions fileRequestOptions;
 
         /// <summary>
@@ -37,7 +59,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
         /// <param name="info">Serialization information.</param>
         /// <param name="context">Streaming context.</param>
         private SerializableFileRequestOptions(SerializationInfo info, StreamingContext context)
-            : base (info, context)
+            : base(info, context)
         {
             bool? disableContentMD5Validation = (bool?)info.GetValue(DisableContentMD5ValidationName, typeof(bool?));
             TimeSpan? maximumExecutionTime = (TimeSpan?)info.GetValue(MaximumExecutionTimeName, typeof(TimeSpan?));
@@ -65,6 +87,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             }
         }
 
+        /// <summary>
+        /// Gets or sets the target <see cref="FileRequestOptions"/> object.
+        /// </summary>
         protected override IRequestOptions RequestOptions
         {
             get

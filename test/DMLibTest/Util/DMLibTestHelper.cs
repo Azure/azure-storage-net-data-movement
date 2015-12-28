@@ -10,8 +10,11 @@ namespace DMLibTest
     using System.Diagnostics;
     using System.Globalization;
     using System.IO;
+    using System.Runtime.Serialization;
+    using System.Runtime.Serialization.Formatters.Binary;
     using System.Threading;
     using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
     using StorageBlob = Microsoft.WindowsAzure.Storage.Blob;
 
@@ -75,6 +78,42 @@ namespace DMLibTest
         private static Random random = new Random();
 
         private static readonly char[] validSuffixChars = "abcdefghijkjlmnopqrstuvwxyz".ToCharArray();
+
+        public static TransferCheckpoint SaveAndReloadCheckpoint(TransferCheckpoint checkpoint)
+        {
+            //return checkpoint;
+            Test.Info("Save and reload checkpoint");
+            IFormatter formatter = new BinaryFormatter();
+
+            TransferCheckpoint reloadedCheckpoint;
+
+            string tempFileName = Guid.NewGuid().ToString();
+
+            using (var stream = new FileStream(tempFileName, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                formatter.Serialize(stream, checkpoint);
+            }
+
+            using (var stream = new FileStream(tempFileName, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                reloadedCheckpoint = formatter.Deserialize(stream) as TransferCheckpoint;
+            }
+
+            File.Delete(tempFileName);
+
+            return reloadedCheckpoint;
+        }
+
+        public static TransferCheckpoint RandomReloadCheckpoint(TransferCheckpoint checkpoint)
+        {
+            if (Helper.RandomBoolean())
+            {
+                Test.Info("Save and reload checkpoint");
+                return DMLibTestHelper.SaveAndReloadCheckpoint(checkpoint);
+            }
+
+            return checkpoint;
+        }
 
         public static void KeepFilesWhenCaseFail(params string[] filesToKeep)
         {

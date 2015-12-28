@@ -47,6 +47,12 @@ namespace DMLibTest
             set;
         }
 
+        public bool IsDirectoryTransfer
+        {
+            get;
+            set;
+        }
+
         public object Options
         {
             get;
@@ -101,6 +107,7 @@ namespace DMLibTest
                 DestObject = NewLocationObject(this.DestObject),
                 SourceType = this.SourceType,
                 DestType = this.DestType,
+                IsDirectoryTransfer = this.IsDirectoryTransfer,
                 IsServiceCopy = this.IsServiceCopy,
                 Options = this.Options,
             };
@@ -136,6 +143,12 @@ namespace DMLibTest
                 CloudFile newCloudFile = new CloudFile(cloudFile.Uri, cloudFile.ServiceClient.Credentials);
                 return newCloudFile;
             }
+            else if (locationObject is FileStream)
+            {
+                FileStream fileStream = locationObject as FileStream;
+                FileStream newFileStream = new FileStream(fileStream.Name, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                return newFileStream;
+            }
             else
             {
                 return locationObject;
@@ -160,6 +173,14 @@ namespace DMLibTest
             else if (dataObject is CloudFile)
             {
                 return (dataObject as CloudFile).Uri.ToString();
+            }
+            else if (dataObject is CloudBlobDirectory)
+            {
+                return (dataObject as CloudBlobDirectory).Uri.ToString();
+            }
+            else if (dataObject is CloudFileDirectory)
+            {
+                return (dataObject as CloudFileDirectory).Uri.ToString();
             }
 
             return dataObject.ToString();

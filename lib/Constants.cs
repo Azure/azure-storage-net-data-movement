@@ -76,7 +76,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// TODO: update this number when doc for cloud file is available.
         /// </summary>
         internal const long FileRangeSpanSize = 148 * 1024 * 1024;
-        
+
         /// <summary>
         /// Percentage of available we'll try to use for our memory cache.
         /// </summary>
@@ -93,14 +93,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         internal const int MemoryManagerCellsMaximum = 8 * 1024;
 
         /// <summary>
-        /// The life time in minutes of SAS auto generated for blob to blob copy.
+        /// The life time in minutes of SAS auto generated for asynchronous copy.
         /// </summary>
         internal const int CopySASLifeTimeInMinutes = 7 * 24 * 60;
 
         /// <summary>
         /// The time in milliseconds to wait to refresh copy status for asynchronous copy.
+        /// In order to avoid refreshing the status too aggressively for large copy job and
+        /// meanwhile provide a timely update for small copy job, the wait time increases
+        /// from 0.1 second to 5 seconds gradually and remains 5 seconds afterwards.
         /// </summary>
-        internal const long AsyncCopyStatusRefreshWaitTimeInMilliseconds = 100;
+        internal const long CopyStatusRefreshMinWaitTimeInMilliseconds = 100;
+
+        internal const long CopyStatusRefreshMaxWaitTimeInMilliseconds = 5 * 1000;
+
+        internal const long CopyStatusRefreshWaitTimeMaxRequestCount = 100;
+
+        /// <summary>
+        /// Asynchronous copy decreases status refresh wait time to 0.1s if there's less than 500 MB
+        /// data to copy in order to detect the job completion in time.
+        /// </summary>
+        internal const long CopyApproachingFinishThresholdInBytes = 500 * 1024 * 1024;
+
+        /// <summary>
+        /// Multiplier to calculate number of entries listed in one segment.
+        /// Formula is: Concurrency * <c>ListSegmentLengthMultiplier</c>.
+        /// </summary>
+        internal const int ListSegmentLengthMultiplier = 8;
 
         internal const string BlobTypeMismatch = "Blob type of the blob reference doesn't match blob type of the blob.";
 

@@ -6,85 +6,38 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Runtime.Serialization;
-    using TransferKey = System.Tuple<TransferLocation, TransferLocation>;
 
     /// <summary>
     /// Represents a checkpoint from which a transfer may be resumed and continue.
     /// </summary>
     [Serializable]
-    public class TransferCheckpoint : ISerializable
+    public class TransferCheckpoint
     {
-        private const string SingleObjectTransfersName = "SingleObjectTransfers";
-
-        /// <summary>
-        /// Transfers associated with this transfer checkpoint.
-        /// </summary>
-        private ConcurrentDictionary<TransferKey, Transfer> transfers = new ConcurrentDictionary<TransferKey, Transfer>();
-
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferCheckpoint"/> class.
         /// </summary>
         internal TransferCheckpoint()
         {
+            this.TransferCollection = new TransferCollection();
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferCheckpoint"/> class.
         /// </summary>
-        /// <param name="info">Serialization information.</param>
-        /// <param name="context">Streaming context.</param>
-        protected TransferCheckpoint(SerializationInfo info, StreamingContext context)
+        /// <param name="other">Another TransferCheckpoint object. </param>
+        private TransferCheckpoint(TransferCheckpoint other)
         {
-            if (info == null)
-            {
-                throw new System.ArgumentNullException("info");
-            }
-
-            var singleObjectTransfers = (List<SingleObjectTransfer>)info.GetValue(SingleObjectTransfersName, typeof(List<SingleObjectTransfer>));
-            foreach(var transfer in singleObjectTransfers)
-            {
-                this.AddTransfer(transfer);
-            }
-        }
-
-
-        /// <summary>
-        /// Gets a list of all transfers
-        /// </summary>
-        internal ICollection<Transfer> AllTransfers
-        {
-            get
-            {
-                return this.transfers.Values;
-            }
+            this.TransferCollection = other.TransferCollection.Copy();
         }
 
         /// <summary>
-        /// Serializes the checkpoint.
+        /// Gets that container that tracks all transfers associated with this transfer checkpoint
         /// </summary>
-        /// <param name="info">Serialization info object.</param>
-        /// <param name="context">Streaming context.</param>
-        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
+        internal TransferCollection TransferCollection
         {
-            if (info == null)
-            {
-                throw new ArgumentNullException("info");
-            }
-
-            List<SingleObjectTransfer> singleObjectTransfers = new List<SingleObjectTransfer>();
-            foreach(var kvPair in this.transfers)
-            {
-                SingleObjectTransfer transfer = kvPair.Value as SingleObjectTransfer;
-                if (transfer != null)
-                {
-                    singleObjectTransfers.Add(transfer);
-                }
-            }
-
-            info.AddValue(SingleObjectTransfersName, singleObjectTransfers, typeof(List<SingleObjectTransfer>));
+            get;
+            private set;
         }
 
         /// <summary>
@@ -93,7 +46,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="transfer">The transfer to be kept track of.</param>
         internal void AddTransfer(Transfer transfer)
         {
-            this.transfers.TryAdd(new TransferKey(transfer.Source, transfer.Destination), transfer);
+            this.TransferCollection.AddTransfer(transfer);
         }
 
         /// <summary>
@@ -105,16 +58,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <returns>A transfer that matches the specified source location, destination location and transfer method; Or null if no matches.</returns>
         internal Transfer GetTransfer(TransferLocation sourceLocation, TransferLocation destLocation, TransferMethod transferMethod)
         {
-            Transfer transfer = null;
-            if (this.transfers.TryGetValue(new TransferKey(sourceLocation, destLocation), out transfer))
-            {
-                if (transfer.TransferMethod == transferMethod)
-                {
-                    return transfer;
-                }
-            }
-
-            return null;
+            return this.TransferCollection.GetTransfer(sourceLocation, destLocation, transferMethod);
         }
 
         /// <summary>
@@ -123,17 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <returns>A snapshot of current transfer checkpoint</returns>
         internal TransferCheckpoint Copy()
         {
-            TransferCheckpoint copyObj = new TransferCheckpoint();
-            foreach (var kvPair in this.transfers)
-            {
-                SingleObjectTransfer transfer = kvPair.Value as SingleObjectTransfer;
-                if (transfer != null)
-                {
-                    copyObj.AddTransfer(transfer.Copy());
-                }
-            }
-
-            return copyObj;
+            return new TransferCheckpoint(this);
         }
     }
 }

@@ -13,7 +13,7 @@
   <FileName>testfile</FileName>
   <FileSize>1024</FileSize>
   <FolderName>testfolder</FolderName>
-  <NetworkFolder>\\127.0.0.1\Azcopy</NetworkFolder>
+  <NetworkFolder>\\127.0.0.1\AzCopy</NetworkFolder>
   <JournalFolder>journal</JournalFolder>
   <TotalSizeInMB>200</TotalSizeInMB>
   <FlatFileCount>20</FlatFileCount>

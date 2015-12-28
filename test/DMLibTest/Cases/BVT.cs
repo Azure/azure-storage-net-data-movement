@@ -12,6 +12,7 @@ namespace DMLibTest
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.DataMovement;
     using Microsoft.WindowsAzure.Storage.File;
     using MS.Test.Common.MsTestLib;
 
@@ -49,6 +50,37 @@ namespace DMLibTest
         private static string UnicodeFileName;
 
         [TestCategory(Tag.BVT)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirAllValidDirection)]
+        public void TransferDirectoryDifferentSizeObject()
+        {
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo("rootfolder");
+
+            DMLibDataHelper.AddMultipleFilesNormalSize(sourceDataInfo.RootNode, BVT.UnicodeFileName);
+
+            var options = new TestExecutionOptions<DMLibDataInfo>()
+            {
+                IsDirectoryTransfer = true,
+                TransferItemModifier = (notUsed, item) =>
+                {
+                    dynamic transferOptions = DefaultTransferDirectoryOptions;
+                    transferOptions.Recursive = true;
+                    item.Options = transferOptions;
+                },
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            // For sync copy, recalculate md5 of destination by downloading the file to local.
+            if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+            {
+                DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
+            }
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+        }
+
+        [TestCategory(Tag.BVT)]
         [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirection)]
         public void TransferDifferentSizeObject()
         {
@@ -69,7 +101,7 @@ namespace DMLibTest
                         if (DMLibTestContext.SourceType == DMLibDataType.CloudFile)
                         {
                             CloudFileDataAdaptor cloudFileDataAdaptor = SourceAdaptor as CloudFileDataAdaptor;
-                            CloudFile sparseCloudFile = cloudFileDataAdaptor.GetCloudFileReference(sparseFileNode);
+                            CloudFile sparseCloudFile = cloudFileDataAdaptor.GetCloudFileReference(sourceDataInfo.RootPath, sparseFileNode);
                             this.PrepareCloudFileWithDifferentSizeRange(sparseCloudFile);
                             sparseFileNode.MD5 = sparseCloudFile.Properties.ContentMD5;
                             sparseFileNode.Metadata = sparseCloudFile.Metadata;
@@ -77,7 +109,7 @@ namespace DMLibTest
                         else if (DMLibTestContext.SourceType == DMLibDataType.PageBlob)
                         {
                             CloudBlobDataAdaptor cloudBlobDataAdaptor = SourceAdaptor as CloudBlobDataAdaptor;
-                            CloudPageBlob sparsePageBlob = cloudBlobDataAdaptor.GetCloudBlobReference(sparseFileNode) as CloudPageBlob;
+                            CloudPageBlob sparsePageBlob = cloudBlobDataAdaptor.GetCloudBlobReference(sourceDataInfo.RootPath, sparseFileNode) as CloudPageBlob;
                             this.PreparePageBlobWithDifferenSizePage(sparsePageBlob);
                             sparseFileNode.MD5 = sparsePageBlob.Properties.ContentMD5;
                             sparseFileNode.Metadata = sparsePageBlob.Metadata;
@@ -87,11 +119,11 @@ namespace DMLibTest
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
-            // For sync copy, recalculate md5 of destination by downloading the file to local.
-            if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
-            {
-                DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
-            }
+             // For sync copy, recalculate md5 of destination by downloading the file to local.
+             if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+             {
+                 DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
+             }
 
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");

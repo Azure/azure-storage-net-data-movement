@@ -17,7 +17,7 @@ namespace DMLibTest
 
     public static class MultiDirectionTestHelper
     {
-        public static void WaitUntilFileCreated(FileNode fileNode, DataAdaptor<DMLibDataInfo> dataAdaptor, DMLibDataType dataType, int timeoutInSec = 300)
+        public static void WaitUntilFileCreated(string rootPath, FileNode fileNode, DataAdaptor<DMLibDataInfo> dataAdaptor, DMLibDataType dataType, int timeoutInSec = 300)
         {
             Func<bool> checkFileCreated = null;
 
@@ -36,7 +36,7 @@ namespace DMLibTest
 
                 checkFileCreated = () =>
                 {
-                    CloudBlob cloudBlob = blobAdaptor.GetCloudBlobReference(fileNode);
+                    CloudBlob cloudBlob = blobAdaptor.GetCloudBlobReference(rootPath, fileNode);
                     return cloudBlob.Exists(options: HelperConst.DefaultBlobOptions);
                 };
             }
@@ -46,7 +46,7 @@ namespace DMLibTest
 
                 checkFileCreated = () =>
                 {
-                    CloudBlockBlob blockBlob = blobAdaptor.GetCloudBlobReference(fileNode) as CloudBlockBlob;
+                    CloudBlockBlob blockBlob = blobAdaptor.GetCloudBlobReference(rootPath, fileNode) as CloudBlockBlob;
                     try
                     {
                         return blockBlob.DownloadBlockList(BlockListingFilter.All, options: HelperConst.DefaultBlobOptions).Any();
@@ -63,7 +63,7 @@ namespace DMLibTest
 
                 checkFileCreated = () =>
                 {
-                    CloudFile cloudFile = fileAdaptor.GetCloudFileReference(fileNode);
+                    CloudFile cloudFile = fileAdaptor.GetCloudFileReference(rootPath, fileNode);
                     return cloudFile.Exists(options: HelperConst.DefaultFileOptions);
                 };
             }

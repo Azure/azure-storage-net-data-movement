@@ -34,15 +34,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 this.Checkpoint = checkpoint.Copy();
             }
-
-            this.OverallProgressTracker = new TransferProgressTracker();
-            foreach(Transfer transfer in this.Checkpoint.AllTransfers)
-            {
-                this.OverallProgressTracker.AddBytesTransferred(transfer.ProgressTracker.BytesTransferred);
-                this.OverallProgressTracker.AddNumberOfFilesTransferred(transfer.ProgressTracker.NumberOfFilesTransferred);
-                this.OverallProgressTracker.AddNumberOfFilesSkipped(transfer.ProgressTracker.NumberOfFilesSkipped);
-                this.OverallProgressTracker.AddNumberOfFilesFailed(transfer.ProgressTracker.NumberOfFilesFailed);
-            }
         }
 
         /// <summary>
@@ -59,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Gets or sets the logging level to be used for the related tranfer operation.
+        /// Gets or sets the logging level to be used for the related transfer operation.
         /// </summary>
         /// <value>A value of type <see cref="Microsoft.WindowsAzure.Storage.LogLevel"/> that specifies which events are logged for the related transfer operation.</value>
         public LogLevel LogLevel
@@ -80,7 +71,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Callback invoked to tell whether to overwrite an existing destination.
+        /// Gets or sets the callback invoked to tell whether to overwrite an existing destination.
         /// </summary>
         public OverwriteCallback OverwriteCallback
         {
@@ -97,6 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 return this.OverallProgressTracker.ProgressHandler;
             }
+
             set
             {
                 this.OverallProgressTracker.ProgressHandler = value;
@@ -104,12 +96,29 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
+        /// The event triggered when a file transfer is completed successfully.
+        /// </summary>
+        public event EventHandler<TransferEventArgs> FileTransferred;
+
+        /// <summary>
+        /// The event triggered when a file transfer is skipped.
+        /// </summary>
+        public event EventHandler<TransferEventArgs> FileSkipped;
+
+        /// <summary>
+        /// The event triggered when a file transfer is failed.
+        /// </summary>
+        public event EventHandler<TransferEventArgs> FileFailed;
+
+        /// <summary>
         /// Gets the overall transfer progress.
         /// </summary>
         internal TransferProgressTracker OverallProgressTracker
         {
-            get;
-            set;
+            get
+            {
+                return this.Checkpoint.TransferCollection.OverallProgressTracker;
+            }
         }
 
         /// <summary>
@@ -119,6 +128,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             get;
             private set;
+        }
+
+        internal void OnTransferSuccess(TransferEventArgs eventArgs)
+        {
+            EventHandler<TransferEventArgs> handler = this.FileTransferred;
+            if (handler != null)
+            {
+                handler(this, eventArgs);
+            }
+        }
+
+        internal void OnTransferSkipped(TransferEventArgs eventArgs)
+        {
+            EventHandler<TransferEventArgs> handler = this.FileSkipped;
+            if (handler != null)
+            {
+                handler(this, eventArgs);
+            }
+        }
+
+        internal void OnTransferFailed(TransferEventArgs eventArgs)
+        {
+            EventHandler<TransferEventArgs> handler = this.FileFailed;
+            if (handler != null)
+            {
+                handler(this, eventArgs);
+            }
         }
     }
 }

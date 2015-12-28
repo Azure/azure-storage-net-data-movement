@@ -1,4 +1,4 @@
-# Microsoft Azure Storage Data Movement Library (0.1.0)
+# Microsoft Azure Storage Data Movement Library (0.2.0)
 
 The Microsoft Azure Storage Data Movement Library designed for high-performance uploading, downloading and copying Azure Storage Blob and File. This library is based on the core data movement framework that powers [AzCopy](https://azure.microsoft.com/documentation/articles/storage-use-azcopy/).
 
@@ -22,6 +22,7 @@ For more information about the Azure Storage, please visit [Microsoft Azure Stor
 	- Recover the data transfer
 	- Set Access Condition
 	- Set User Agent Suffix
+	- Directory/recursive transfer
 	
 # Getting started
 
@@ -65,7 +66,7 @@ This version depends on Azure Storage Client Library for .NET.
 
 ## Code Samples
 
-Find more samples at the [sample folder](https://github.com/Azure/azure-storage-net-data-movement/tree/master/samples/DataMovementSamples).
+Find more samples at the [sample folder](https://github.com/Azure/azure-storage-net-data-movement/tree/master/samples?).
 
 ### Upload a blob
 
@@ -145,5 +146,5 @@ For general suggestions about Microsoft Azure please use our [UserVoice forum](h
 # Learn More
 
 - [Storage Data Movement Library API reference](https://azure.github.io/azure-storage-net-data-movement)
-- [Storage Client Library Reference for .NET - MSDN](http://msdn.microsoft.com/library/azure/dn495001(v=azure.10).aspx)
+- [Storage Client Library Reference for .NET - MSDN](https://msdn.microsoft.com/en-us/library/azure/dn261237.aspx?)
 - [Azure Storage Team Blog](http://blogs.msdn.com/b/windowsazurestorage/)

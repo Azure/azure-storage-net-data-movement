@@ -22,16 +22,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private const string OverwriteName = "Overwrite";
         private const string CopyIdName = "CopyId";
         private const string CheckpointName = "Checkpoint";
+        private const string StatusName = "Status";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferJob"/> class.
         /// </summary>
-        /// <param name="source">Source location.</param>
-        /// <param name="dest">Destination location.</param>
-        public TransferJob(TransferLocation source, TransferLocation dest)
+        /// <param name="transfer">Transfer object.</param>
+        public TransferJob(Transfer transfer)
         {
-            this.Source = source;
-            this.Destination = dest;
+            this.Transfer = transfer;
 
             this.CheckPoint = new SingleObjectCheckpoint();
         }
@@ -43,9 +42,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="context">Streaming context.</param>
         protected TransferJob(SerializationInfo info, StreamingContext context)
         {
-            this.Source = (TransferLocation)info.GetValue(SourceName, typeof(TransferLocation));
-            this.Destination = (TransferLocation)info.GetValue(DestName, typeof(TransferLocation));
-
             if (info.GetBoolean(CheckedOverwriteName))
             {
                 this.Overwrite = info.GetBoolean(OverwriteName);
@@ -57,6 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             this.CopyId = info.GetString(CopyIdName);
             this.CheckPoint = (SingleObjectCheckpoint)info.GetValue(CheckpointName, typeof(SingleObjectCheckpoint));
+            this.Status = (TransferJobStatus)info.GetValue(StatusName, typeof(TransferJobStatus));
         }
 
         /// <summary>
@@ -64,8 +61,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         private TransferJob(TransferJob other)
         {
-            this.Source = other.Source;
-            this.Destination = other.Destination;
             this.Overwrite = other.Overwrite;
             this.CopyId = other.CopyId;
             this.CheckPoint = other.CheckPoint.Copy();
@@ -77,8 +72,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         public TransferLocation Source
         {
-            get;
-            private set;
+            get
+            {
+                return this.Transfer.Source;
+            }
         }
 
         /// <summary>
@@ -86,8 +83,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         public TransferLocation Destination
         {
-            get;
-            private set;
+            get
+            {
+                return this.Transfer.Destination;
+            }
         }
 
         /// <summary>
@@ -153,9 +152,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new ArgumentNullException("info");
             }
 
-            info.AddValue(SourceName, this.Source, typeof(TransferLocation));
-            info.AddValue(DestName, this.Destination, typeof(TransferLocation));
-            
             info.AddValue(CheckedOverwriteName, this.Overwrite.HasValue);
             if (this.Overwrite.HasValue)
             {
@@ -164,6 +160,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             info.AddValue(CopyIdName, this.CopyId, typeof(string));
             info.AddValue(CheckpointName, this.CheckPoint, typeof(SingleObjectCheckpoint));
+            info.AddValue(StatusName, this.Status, typeof(TransferJobStatus));
         }
 
         /// <summary>

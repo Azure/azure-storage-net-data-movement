@@ -125,8 +125,8 @@
     <value>File size {0} is larger than {1} maximum size {2}.</value>
     <comment>{0} is file size. {1} is the destination blob type. {2} is the size limit of the destination.</comment>
   </data>
-  <data name="BlobTransferCancelledException" xml:space="preserve">
-    <value>The blob transfer has been cancelled.</value>
+  <data name="TransferCancelledException" xml:space="preserve">
+    <value>The transfer has been cancelled.</value>
   </data>
   <data name="BlockSizeOutOfRangeException" xml:space="preserve">
     <value>BlockSize must be between {0} and {1}.</value>
@@ -318,5 +318,19 @@ MD5 in property: {2}</value>
   </data>
   <data name="UncategorizedException" xml:space="preserve">
     <value>The transfer failed.</value>
+  </data>
+  <data name="FailedToEnumerateDirectory" xml:space="preserve">
+    <value>Failed to enumerate directory {0} with file pattern {1}.</value>
+    <comment>{0} is the directory path, {1} is file pattern.</comment>
+  </data>
+  <data name="FailedToValidateDestinationException" xml:space="preserve">
+    <value>Failed to validate destination.</value>
+  </data>
+  <data name="SearchPatternInRecursiveModeFromAzureFileNotSupportedException" xml:space="preserve">
+    <value>Search pattern is not supported in recursive mode when the source is an Azure file directory.</value>
+  </data>
+  <data name="SubTransferFailsException" xml:space="preserve">
+    <value>{0} sub transfer(s) failed. </value>
+    <comment>{0} is the number of failed sub transfers.</comment>
   </data>
 </root>

@@ -22,16 +22,30 @@ namespace DMLibTestCodeGen
         CloudBlobDest,
         CloudFileDest,
         LocalDest,
+
+        DirAllValidDirection,
+        DirCloud2Cloud,
+        DirAllAsync,
+        DirAllSync,
+        DirCloudSource,
+        DirCloudBlobSource,
+        DirCloudFileSource,
+        DirLocalSource,
+        DirCloudDest,
+        DirCloudBlobDest,
+        DirCloudFileDest,
+        DirLocalDest,
     }
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
     public class DMLibTestMethodSetAttribute : MultiDirectionTestMethodSetAttribute
     {
         public static DMLibTestMethodSetAttribute AllValidDirectionSet;
+        public static DMLibTestMethodSetAttribute DirAllValidDirectionSet;
 
         static DMLibTestMethodSetAttribute()
         {
-            // All valid direction
+            // All valid directions
             AllValidDirectionSet = new DMLibTestMethodSetAttribute();
             // Sync copy
             AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Local, DMLibDataType.Cloud));
@@ -47,6 +61,20 @@ namespace DMLibTestCodeGen
             AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, isAsync: true));
             AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile, isAsync: true));
             AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.BlockBlob, isAsync: true));
+
+            // All valid directory transfer directions
+            DirAllValidDirectionSet = new DMLibTestMethodSetAttribute();
+            // Sync copy
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Local, DMLibDataType.Cloud));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.Local));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.Cloud));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob));
+
+            // Async copy
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, isAsync: true));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile, isAsync: true));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.BlockBlob, isAsync: true));
         }
 
         public DMLibTestMethodSetAttribute()
@@ -79,7 +107,7 @@ namespace DMLibTestCodeGen
                     break;
                 case DMLibTestMethodSet.Cloud2Cloud:
                     this.AddTestMethodAttribute(AllValidDirectionSet);
-                    this.AddDirectionFilter(new DMLibDirectionFilter() 
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
                     {
                         SourceType = DMLibDataType.Cloud,
                         DestType = DMLibDataType.Cloud,
@@ -150,6 +178,87 @@ namespace DMLibTestCodeGen
                     break;
                 case DMLibTestMethodSet.LocalDest:
                     this.AddTestMethodAttribute(AllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        DestType = DMLibDataType.Local,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirAllValidDirection:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    break;
+                case DMLibTestMethodSet.DirCloud2Cloud:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        SourceType = DMLibDataType.Cloud,
+                        DestType = DMLibDataType.Cloud,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirAllAsync:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        IsAsync = true,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirAllSync:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        IsAsync = false,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirCloudSource:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        SourceType = DMLibDataType.Cloud,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirCloudBlobSource:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        SourceType = DMLibDataType.CloudBlob,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirCloudFileSource:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        SourceType = DMLibDataType.CloudFile,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirLocalSource:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        SourceType = DMLibDataType.Local,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirCloudDest:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        DestType = DMLibDataType.Cloud,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirCloudBlobDest:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        DestType = DMLibDataType.CloudBlob,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirCloudFileDest:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        DestType = DMLibDataType.CloudFile,
+                    });
+                    break;
+                case DMLibTestMethodSet.DirLocalDest:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
                     this.AddDirectionFilter(new DMLibDirectionFilter()
                     {
                         DestType = DMLibDataType.Local,

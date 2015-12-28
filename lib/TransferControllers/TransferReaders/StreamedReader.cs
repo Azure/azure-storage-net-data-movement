@@ -139,9 +139,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.NotifyStarting();
                 this.Controller.CheckCancellation();
 
-                if (this.transferJob.Source.Stream != null)
+                if (this.transferJob.Source.Type == TransferLocationType.Stream)
                 {
-                    this.inputStream = this.transferJob.Source.Stream;
+                    StreamLocation streamLocation = this.transferJob.Source as StreamLocation;
+                    this.inputStream = streamLocation.Stream;
                     this.ownsStream = false;
 
                     if (!this.inputStream.CanRead)
@@ -162,16 +163,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
                 else
                 {
+                    FileLocation fileLocation = this.transferJob.Source as FileLocation;
                     Debug.Assert(
-                        !string.IsNullOrEmpty(this.transferJob.Source.FilePath),
+                        null != fileLocation,
                         "Initializing StreamedReader instance, but source is neither a stream nor a file");
-                    this.SharedTransferData.SourceLocation = this.transferJob.Source.FilePath;
+                    this.SharedTransferData.SourceLocation = fileLocation.ToString();
 
                     try
                     {
                         // Attempt to open the file first so that we throw an exception before getting into the async work
                         this.inputStream = new FileStream(
-                            this.transferJob.Source.FilePath,
+                            fileLocation.FilePath,
                             FileMode.Open,
                             FileAccess.Read,
                             FileShare.Read);
@@ -189,7 +191,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             string exceptionMessage = string.Format(
                                         CultureInfo.CurrentCulture,
                                         Resources.FailedToOpenFileException,
-                                        this.transferJob.Source.FilePath,
+                                        fileLocation.FilePath,
                                         ex.Message);
 
                             throw new TransferException(

@@ -20,16 +20,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         None = 0,
 
         /// <summary>
-        /// Invalid source location specified.
-        /// </summary>
-        InvalidSourceLocation = 1,
-
-        /// <summary>
-        /// Invalid destination location specified.
-        /// </summary>
-        InvalidDestinationLocation = 2,
-
-        /// <summary>
         /// Failed to open file for upload or download.
         /// </summary>
         OpenFileFailed = 3,
@@ -95,6 +85,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Transfer with the same source and destination already exists.
         /// </summary>
         TransferAlreadyExists = 15,
+
+        /// <summary>
+        /// Fails to enumerate directory.
+        /// </summary>
+        FailToEnumerateDirectory = 16,
+
+        /// <summary>
+        /// Fails to validate destination.
+        /// </summary>
+        FailToVadlidateDestination = 17,
+
+        /// <summary>
+        /// Sub transfer fails.
+        /// </summary>
+        SubTransferFails = 18,
 
         /// <summary>
         /// Uncategorized transfer error.

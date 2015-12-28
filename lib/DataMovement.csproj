@@ -49,36 +49,30 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Azure.KeyVault.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Azure.KeyVault.Core.1.0.0\lib\net40\Microsoft.Azure.KeyVault.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Data.Edm, Version=5.6.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Data.OData, Version=5.6.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Data.Services.Client, Version=5.6.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Configuration, Version=1.8.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.1.8.0.0\lib\net35-full\Microsoft.WindowsAzure.Configuration.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Storage, Version=5.0.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\WindowsAzure.Storage.5.0.2\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
+    <Reference Include="Microsoft.WindowsAzure.Storage, Version=6.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\WindowsAzure.Storage.6.1.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
@@ -87,21 +81,25 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Spatial, Version=5.6.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\System.Spatial.5.6.4\lib\net40\System.Spatial.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.XML" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\tools\AssemblyInfo\SharedAssemblyInfo.cs">
       <Link>SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="NativeMD5.cs" />
     <Compile Include="OverwriteCallback.cs" />
+    <Compile Include="SerializationHelper\SerializableCloudBlobDirectory.cs" />
     <Compile Include="SerializationHelper\SerializableCloudFile.cs" />
+    <Compile Include="SerializationHelper\SerializableCloudFileDirectory.cs" />
     <Compile Include="SerializationHelper\SerializableFileRequestOptions.cs" />
     <Compile Include="SerializationHelper\SerializableRequestOptions.cs" />
     <Compile Include="TransferCheckpoint.cs" />
+    <Compile Include="TransferCollection.cs" />
     <Compile Include="TransferContext.cs" />
     <Compile Include="TransferControllers\AsyncCopyControllers\BlobAsyncCopyController.cs" />
     <Compile Include="TransferControllers\AsyncCopyControllers\FileAsyncCopyController.cs" />
@@ -119,8 +117,43 @@
     <Compile Include="TransferControllers\TransferWriters\PageBlobWriter.cs" />
     <Compile Include="TransferControllers\TransferWriters\RangeBasedWriter.cs" />
     <Compile Include="TransferControllers\TransferWriters\StreamedWriter.cs" />
+    <Compile Include="TransferEnumerators\AzureBlobEntry.cs" />
+    <Compile Include="TransferEnumerators\AzureBlobEnumerator.cs" />
+    <Compile Include="TransferEnumerators\AzureFileEntry.cs" />
+    <Compile Include="TransferEnumerators\AzureFileEnumerator.cs" />
+    <Compile Include="TransferEnumerators\AzureFileListContinuationToken.cs" />
+    <Compile Include="TransferEnumerators\AzureBlobListContinuationToken.cs" />
+    <Compile Include="TransferEnumerators\AzureFileToAzureNameResolver.cs" />
+    <Compile Include="TransferEnumerators\AzureNameResolver.cs" />
+    <Compile Include="TransferEnumerators\AzureToFileNameResolver.cs" />
+    <Compile Include="TransferEnumerators\AzureBlobToAzureFileNameResolver.cs" />
+    <Compile Include="TransferEnumerators\EnumerateDirectoryHelper.cs" />
+    <Compile Include="TransferEnumerators\ErrorEntry.cs" />
+    <Compile Include="TransferEnumerators\FileEntry.cs" />
+    <Compile Include="TransferEnumerators\FileEnumerator.cs" />
+    <Compile Include="TransferEnumerators\FileListContinuationToken.cs" />
+    <Compile Include="TransferEnumerators\AzureBlobToAzureBlobNameResolver.cs" />
+    <Compile Include="TransferEnumerators\ITransferEnumerator.cs" />
+    <Compile Include="TransferEnumerators\NameResolverHelper.cs" />
+    <Compile Include="TransferEnumerators\FileToAzureNameResolver.cs" />
+    <Compile Include="TransferEnumerators\INameResolver.cs" />
+    <Compile Include="TransferEnumerators\ListContinuationToken.cs" />
+    <Compile Include="TransferEnumerators\SerializableListContinuationToken.cs" />
+    <Compile Include="TransferEnumerators\TransferEntry.cs" />
+    <Compile Include="TransferEnumerators\TransferEnumeratorBase.cs" />
+    <Compile Include="TransferEventArgs.cs" />
+    <Compile Include="TransferJobs\AzureBlobDirectoryLocation.cs" />
+    <Compile Include="TransferJobs\AzureBlobLocation.cs" />
+    <Compile Include="TransferJobs\AzureFileDirectoryLocation.cs" />
+    <Compile Include="TransferJobs\AzureFileLocation.cs" />
+    <Compile Include="TransferJobs\DirectoryLocation.cs" />
+    <Compile Include="TransferJobs\DirectoryTransfer.cs" />
+    <Compile Include="TransferJobs\FileLocation.cs" />
+    <Compile Include="TransferJobs\MultipleObjectsTransfer.cs" />
+    <Compile Include="TransferJobs\SerializableTransferLocation.cs" />
     <Compile Include="TransferJobs\SingleObjectCheckpoint.cs" />
     <Compile Include="TransferJobs\SingleObjectTransfer.cs" />
+    <Compile Include="TransferJobs\StreamLocation.cs" />
     <Compile Include="TransferJobs\Transfer.cs" />
     <Compile Include="TransferJobs\TransferJob.cs" />
     <Compile Include="Constants.cs" />
@@ -144,7 +177,12 @@
     <Compile Include="TransferJobs\TransferMethod.cs" />
     <Compile Include="TransferJobs\TransferLocation.cs" />
     <Compile Include="TransferJobs\TransferLocationType.cs" />
+    <Compile Include="TransferJobs\UriLocation.cs" />
     <Compile Include="TransferManager.cs" />
+    <Compile Include="TransferOptions\CopyDirectoryOptions.cs" />
+    <Compile Include="TransferOptions\DirectoryOptions.cs" />
+    <Compile Include="TransferOptions\DownloadDirectoryOptions.cs" />
+    <Compile Include="TransferOptions\UploadDirectoryOptions.cs" />
     <Compile Include="TransferProgress.cs" />
     <Compile Include="TransferScheduler.cs" />
     <Compile Include="TransferConfigurations.cs" />

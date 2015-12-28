@@ -152,8 +152,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            this.Location.CheckedAccessCondition = true;
-            
+            if (this.Location.Type == TransferLocationType.AzureBlob)
+            {
+                (this.Location as AzureBlobLocation).CheckedAccessCondition = true;
+            }
+            else if (this.Location.Type == TransferLocationType.AzureFile)
+            {
+                (this.Location as AzureFileLocation).CheckedAccessCondition = true;
+            }
+
             this.Controller.CheckCancellation();
 
             this.state = State.GetRanges;

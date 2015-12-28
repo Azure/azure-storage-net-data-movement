@@ -52,14 +52,14 @@ namespace DMLibTest
             }
         }
 
-        public override object GetTransferObject(FileNode fileNode)
+        public override object GetTransferObject(string rootPath, FileNode fileNode)
         {
-            return this.GetCloudFileReference(fileNode);
+            return this.GetCloudFileReference(rootPath, fileNode);
         }
 
-        public override object GetTransferObject(DirNode dirNode)
+        public override object GetTransferObject(string rootPath, DirNode dirNode)
         {
-            return this.GetCloudFileDirReference(dirNode);
+            return this.GetCloudFileDirReference(rootPath, dirNode);
         }
 
         public override string GetAddress(params string[] list)
@@ -138,7 +138,7 @@ namespace DMLibTest
             Test.Info("stdout={0}, stderr={1}", stdout, stderr);
         }
 
-        public CloudFile GetCloudFileReference(FileNode fileNode)
+        public CloudFile GetCloudFileReference(string rootPath, FileNode fileNode)
         {
             var share = this.fileHelper.FileClient.GetShareReference(this.shareName);
             string fileName = fileNode.GetURLRelativePath();
@@ -147,10 +147,15 @@ namespace DMLibTest
                 fileName = fileName.Substring(1, fileName.Length - 1);
             }
 
+            if (!string.IsNullOrEmpty(rootPath))
+            {
+                fileName = rootPath + "/" + fileName;
+            }
+
             return share.GetRootDirectoryReference().GetFileReference(fileName);
         }
 
-        public CloudFileDirectory GetCloudFileDirReference(DirNode dirNode)
+        public CloudFileDirectory GetCloudFileDirReference(string rootPath, DirNode dirNode)
         {
             var share = this.fileHelper.FileClient.GetShareReference(this.shareName);
             string dirName = dirNode.GetURLRelativePath();
@@ -159,7 +164,19 @@ namespace DMLibTest
                 dirName = dirName.Substring(1, dirName.Length - 1);
             }
 
-            return share.GetRootDirectoryReference().GetDirectoryReference(dirName);
+            if (!string.IsNullOrEmpty(rootPath))
+            {
+                dirName = rootPath + "/" + dirName;
+            }
+
+            if (string.IsNullOrEmpty(dirName))
+            {
+                return share.GetRootDirectoryReference();
+            }
+            else
+            {
+                return share.GetRootDirectoryReference().GetDirectoryReference(dirName);
+            }
         }
 
         protected override void GenerateDataImp(DMLibDataInfo dataInfo)

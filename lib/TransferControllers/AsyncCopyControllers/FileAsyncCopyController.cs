@@ -19,6 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     /// </summary>
     internal class FileAsyncCopyController : AsyncCopyController
     {
+        private AzureFileLocation destLocation;
         private CloudFile destFile;
 
         public FileAsyncCopyController(
@@ -27,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             CancellationToken cancellationToken)
             : base(transferScheduler, transferJob, cancellationToken)
         {
-            if (null == transferJob.Destination.AzureFile)
+            if (transferJob.Destination.Type != TransferLocationType.AzureFile)
             {
                 throw new ArgumentException(
                     string.Format(
@@ -37,10 +38,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     "transferJob");
             }
 
-            if ((null == transferJob.Source.SourceUri && null == transferJob.Source.Blob && null == transferJob.Source.AzureFile)
-                || (null != transferJob.Source.SourceUri && null != transferJob.Source.Blob)
-                || (null != transferJob.Source.Blob && null != transferJob.Source.AzureFile)
-                || (null != transferJob.Source.SourceUri && null != transferJob.Source.AzureFile))
+            if (transferJob.Source.Type != TransferLocationType.SourceUri &&
+                transferJob.Source.Type != TransferLocationType.AzureBlob &&
+                transferJob.Source.Type != TransferLocationType.AzureFile)
             {
                 throw new ArgumentException(
                     string.Format(
@@ -52,7 +52,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     "transferJob");
             }
 
-            this.destFile = this.TransferJob.Destination.AzureFile;
+            this.destLocation = this.TransferJob.Destination as AzureFileLocation;
+            this.destFile = this.destLocation.AzureFile;
         }
 
         protected override Uri DestUri
@@ -67,7 +68,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             return this.destFile.FetchAttributesAsync(
                 null,
-                Utils.GenerateFileRequestOptions(this.TransferJob.Destination.FileRequestOptions),
+                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                 null,
                 this.CancellationToken);
         }
@@ -81,7 +82,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     this.SourceUri,
                     null,
                     null,
-                    Utils.GenerateFileRequestOptions(this.TransferJob.Destination.FileRequestOptions),
+                    Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
                     this.CancellationToken);
             }
@@ -91,7 +92,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     this.SourceBlob.GenerateCopySourceBlob(),
                     null,
                     null,
-                    Utils.GenerateFileRequestOptions(this.TransferJob.Destination.FileRequestOptions),
+                    Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
                     this.CancellationToken);
             }
@@ -101,7 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     this.SourceFile.GenerateCopySourceFile(),
                     null,
                     null,
-                    Utils.GenerateFileRequestOptions(this.TransferJob.Destination.FileRequestOptions),
+                    Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
                     this.CancellationToken);
             }
@@ -114,8 +115,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         protected override async Task<CopyState> FetchCopyStateAsync()
         {
             await this.destFile.FetchAttributesAsync(
-                Utils.GenerateConditionWithCustomerCondition(this.TransferJob.Destination.AccessCondition),
-                Utils.GenerateFileRequestOptions(this.TransferJob.Destination.FileRequestOptions),
+                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
                 this.CancellationToken);
 
