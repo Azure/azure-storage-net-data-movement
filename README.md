@@ -132,27 +132,29 @@ ServicePointManager.Expect100Continue = false;
 The following matrix explains how the DirectoryOptions.Recursive and DirectoryOptions.SearchPattern properties work in DMLib.
 
 <table>
-  <tr style="background-color: #EEEEEE">
+  <tr>
     <th>Source</th>
     <th>Search Pattern</th>
     <th>Recursive</th>
     <th>Search Pattern Example</th>
     <th>Comments</th>
   </tr>
-  <tr style="background-color: white">
-    <td rowspan="2">Local</td>
-    <td rowspan="2">Wildcard Match</td>
+  <tr>
+    <td>Local</td>
+    <td>Wildcard Match</td>
     <td>TRUE</td>
-    <td>foo*.png</td>
+    <td>foo*.png</td>
     <td>The search pattern is a standard wild card match that is applied to the current directory and all subdirectories.</td>
   </tr>
-  <tr style="background-color: white">
+  <tr>
+    <td>Local</td>
+    <td>Wildcard Match</td>
     <td>FALSE</td>
-    <td>foo*.png</td>
+    <td>foo*.png</td>
     <td>The search pattern is a standard wild card match that is applied to the current directory only.</td>
   </tr>
-  <tr style="background-color: white">
-    <td rowspan="6">Azure Blob</td>
+  <tr>
+    <td rowspan="3">Azure Blob</td>
     <td rowspan="3">Prefix Match</td>
     <td rowspan="3">TRUE</td>
     <td rowspan="3">&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;blobprefix&gt;<br><br>blah.blob.core.windows.net/ipsum/lorem/foo*</td>
@@ -162,7 +164,8 @@ The following matrix explains how the DirectoryOptions.Recursive and DirectoryOp
   </tr>
   <tr>
   </tr>
-  <tr style="background-color: white">
+  <tr>
+    <td rowspan="3">Azure Blob</td>
     <td rowspan="3">Exact Match</td>
     <td rowspan="3">FALSE</td>
     <td rowspan="3">&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;fullblobname&gt;<br><br>blah.blob.core.windows.net/ipsum/lorem/foobar.png</td>
@@ -172,14 +175,15 @@ The following matrix explains how the DirectoryOptions.Recursive and DirectoryOp
   </tr>
   <tr>
   </tr>
-  <tr style="background-color: white">
-    <td rowspan="2">Azure File</td>
+  <tr>
+    <td>Azure File</td>
     <td>N/A</td>
     <td>TRUE</td>
     <td>N/A</td>
     <td>Recursive search is not supported and will return an error.</td>
   </tr>
-  <tr style="background-color: white">
+  <tr>
+    <td>Azure File</td>
     <td>Exact Match</td>
     <td>FALSE</td>
     <td>&lt;domainname&gt;/&lt;share&gt;/&lt;directory&gt;/&lt;fullfilename&gt;<br><br>blah.files.core.windows.net/ipsum/lorem/foobar.png</td>
