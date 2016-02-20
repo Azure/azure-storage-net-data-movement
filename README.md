@@ -143,21 +143,21 @@ The following matrix explains how the DirectoryOptions.Recursive and DirectoryOp
     <td>Local</td>
     <td>Wildcard Match</td>
     <td>TRUE</td>
-    <td>foo*.png</td>
+    <td>"foo*.png"</td>
     <td>The search pattern is a standard wild card match that is applied to the current directory and all subdirectories.</td>
   </tr>
   <tr>
     <td>Local</td>
     <td>Wildcard Match</td>
     <td>FALSE</td>
-    <td>foo*.png</td>
+    <td>"foo*.png"</td>
     <td>The search pattern is a standard wild card match that is applied to the current directory only.</td>
   </tr>
   <tr>
     <td rowspan="3">Azure Blob</td>
     <td rowspan="3">Prefix Match</td>
     <td rowspan="3">TRUE</td>
-    <td rowspan="3">&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;blobprefix&gt;<br><br>blah.blob.core.windows.net/ipsum/lorem/foo*</td>
+    <td rowspan="3">&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;blobprefix&gt;<br><br>"blah.blob.core.windows.net/ipsum/lorem/foo*"</td>
     <td rowspan="3">The search pattern is a prefix match.</td>
   </tr>
   <tr>
@@ -168,7 +168,7 @@ The following matrix explains how the DirectoryOptions.Recursive and DirectoryOp
     <td rowspan="3">Azure Blob</td>
     <td rowspan="3">Exact Match</td>
     <td rowspan="3">FALSE</td>
-    <td rowspan="3">&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;fullblobname&gt;<br><br>blah.blob.core.windows.net/ipsum/lorem/foobar.png</td>
+    <td rowspan="3">&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;fullblobname&gt;<br><br>"blah.blob.core.windows.net/ipsum/lorem/foobar.png"</td>
     <td rowspan="3">The search pattern is an exact match. If the search pattern is an empty string, no blobs will be matched.</td>
   </tr>
   <tr>
@@ -186,7 +186,7 @@ The following matrix explains how the DirectoryOptions.Recursive and DirectoryOp
     <td>Azure File</td>
     <td>Exact Match</td>
     <td>FALSE</td>
-    <td>&lt;domainname&gt;/&lt;share&gt;/&lt;directory&gt;/&lt;fullfilename&gt;<br><br>blah.files.core.windows.net/ipsum/lorem/foobar.png</td>
+    <td>&lt;domainname&gt;/&lt;share&gt;/&lt;directory&gt;/&lt;fullfilename&gt;<br><br>"blah.files.core.windows.net/ipsum/lorem/foobar.png"</td>
     <td>The search pattern is an exact match. If the search pattern is an empty string, no files will be matched.</td>
   </tr>
 </table>
