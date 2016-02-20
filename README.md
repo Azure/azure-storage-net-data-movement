@@ -154,27 +154,17 @@ The following matrix explains how the DirectoryOptions.Recursive and DirectoryOp
     <td>The search pattern is a standard wild card match that is applied to the current directory only.</td>
   </tr>
   <tr>
-    <td rowspan="3">Azure Blob</td>
-    <td rowspan="3">Prefix Match</td>
-    <td rowspan="3">TRUE</td>
-    <td rowspan="3">&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;blobprefix&gt;<br><br>"blah.blob.core.windows.net/ipsum/lorem/foo*"</td>
-    <td rowspan="3">The search pattern is a prefix match.</td>
-  </tr>
+    <td>Azure Blob</td>
+    <td>Prefix Match</td>
+    <td>TRUE</td>
+    <td>&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;blobprefix&gt;<br><br>"blah.blob.core.windows.net/ipsum/lorem/foo*"</td>
+    <td>The search pattern is a prefix match.</td>
   <tr>
-  </tr>
-  <tr>
-  </tr>
-  <tr>
-    <td rowspan="3">Azure Blob</td>
-    <td rowspan="3">Exact Match</td>
-    <td rowspan="3">FALSE</td>
-    <td rowspan="3">&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;fullblobname&gt;<br><br>"blah.blob.core.windows.net/ipsum/lorem/foobar.png"</td>
-    <td rowspan="3">The search pattern is an exact match. If the search pattern is an empty string, no blobs will be matched.</td>
-  </tr>
-  <tr>
-  </tr>
-  <tr>
-  </tr>
+    <td>Azure Blob</td>
+    <td>Exact Match</td>
+    <td>FALSE</td>
+    <td>&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;fullblobname&gt;<br><br>"blah.blob.core.windows.net/ipsum/lorem/foobar.png"</td>
+    <td>The search pattern is an exact match. If the search pattern is an empty string, no blobs will be matched.</td>
   <tr>
     <td>Azure File</td>
     <td>N/A</td>
