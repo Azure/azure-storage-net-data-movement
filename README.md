@@ -143,12 +143,12 @@ The following matrix explains how the DirectoryOptions.Recursive and DirectoryOp
     <td rowspan="2">Local</td>
     <td rowspan="2">Wildcard Match</td>
     <td>TRUE</td>
-    <td>foo*.png</td>
+    <td>foo*.png</td>
     <td>The search pattern is a standard wild card match that is applied to the current directory and all subdirectories.</td>
   </tr>
   <tr>
     <td>FALSE</td>
-    <td>foo*.png</td>
+    <td>foo*.png</td>
     <td>The search pattern is a standard wild card match that is applied to the current directory only.</td>
   </tr>
   <tr>
