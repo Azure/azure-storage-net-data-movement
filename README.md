@@ -23,10 +23,10 @@ For more information about the Azure Storage, please visit [Microsoft Azure Stor
 	- Set Access Condition
 	- Set User Agent Suffix
 	- Directory/recursive transfer
-	
+
 # Getting started
 
-For the best development experience, we recommend that developers use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes. 
+For the best development experience, we recommend that developers use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes.
 
 
 ## Requirements
@@ -119,14 +119,74 @@ AzCopy will set ServicePointManager.DefaultConnectionLimit to the number of eigh
 ServicePointManager.DefaultConnectionLimit = Environment.ProcessorCount * 8;
 ```
 
-### Turn off 100-continue 
+### Turn off 100-continue
 When the property "Expect100Continue" is set to true, client requests that use the PUT and POST methods will add an Expect: 100-continue header to the request and it will expect to receive a 100-Continue response from the server to indicate that the client should send the data to be posted. This mechanism allows clients to avoid sending large amounts of data over the network when the server, based on the request headers, intends to reject the request.
 
-However, once the entire payload is received on the server end, other errors may still occur. And if Windows Azure clients have tested the client well enough to ensure that it is not sending any bad requests, clients could turn off 100-continue so that the entire request is sent in one roundtrip. This is especially true when clients send small size storage objects. 
+However, once the entire payload is received on the server end, other errors may still occur. And if Windows Azure clients have tested the client well enough to ensure that it is not sending any bad requests, clients could turn off 100-continue so that the entire request is sent in one roundtrip. This is especially true when clients send small size storage objects.
 
 ```csharp
-ServicePointManager.Expect100Continue = false; 
+ServicePointManager.Expect100Continue = false;
 ```
+
+### Pattern/Recursive in DMLib
+The following matrix explains how the DirectoryOptions.Recursive and DirectoryOptions.SearchPattern properties work in DMLib.
+
+<table>
+  <tr>
+    <th>Source</th>
+    <th>Search Pattern</th>
+    <th>Recursive</th>
+    <th>Search Pattern Example</th>
+    <th>Comments</th>
+  </tr>
+  <tr>
+    <td>Local</td>
+    <td>Wildcard Match</td>
+    <td>TRUE</td>
+    <td>"foo*.png"</td>
+    <td>The search pattern is a standard wild card match that is applied to the current directory and all subdirectories.</td>
+  </tr>
+  <tr>
+    <td>Local</td>
+    <td>Wildcard Match</td>
+    <td>FALSE</td>
+    <td>"foo*.png"</td>
+    <td>The search pattern is a standard wild card match that is applied to the current directory only.</td>
+  </tr>
+  <tr>
+    <td>Azure Blob</td>
+    <td>Prefix Match</td>
+    <td>TRUE</td>
+    <td>&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;blobprefix&gt;<br><br>"blah.blob.core.windows.net/ipsum/lorem/foo*"</td>
+    <td>The search pattern is a prefix match.</td>
+  <tr>
+    <td>Azure Blob</td>
+    <td>Exact Match</td>
+    <td>FALSE</td>
+    <td>&lt;domainname&gt;/&lt;container&gt;/&lt;virtualdirectory&gt;/&lt;fullblobname&gt;<br><br>"blah.blob.core.windows.net/ipsum/lorem/foobar.png"</td>
+    <td>The search pattern is an exact match. If the search pattern is an empty string, no blobs will be matched.</td>
+  <tr>
+    <td>Azure File</td>
+    <td>N/A</td>
+    <td>TRUE</td>
+    <td>N/A</td>
+    <td>Recursive search is not supported and will return an error.</td>
+  </tr>
+  <tr>
+    <td>Azure File</td>
+    <td>Exact Match</td>
+    <td>FALSE</td>
+    <td>&lt;domainname&gt;/&lt;share&gt;/&lt;directory&gt;/&lt;fullfilename&gt;<br><br>"blah.files.core.windows.net/ipsum/lorem/foobar.png"</td>
+    <td>The search pattern is an exact match. If the search pattern is an empty string, no files will be matched.</td>
+  </tr>
+</table>
+
+- Default pattern option:
+  - Local:*
+  - Blob: Empty string
+  - File: Empty string
+
+- Default recursive option: false
 
 # Need Help?
 Be sure to check out the Microsoft Azure [Developer Forums on MSDN](http://go.microsoft.com/fwlink/?LinkId=234489) if you have trouble with the provided code or use StackOverflow.
@@ -138,7 +198,7 @@ We gladly accept community contributions.
 
 - Issues: Please report bugs using the Issues section of GitHub
 - Forums: Interact with the development teams on StackOverflow or the Microsoft Azure Forums
-- Source Code Contributions: Please follow the [contribution guidelines for Microsoft Azure open source](http://azure.github.io/guidelines.html) that details information on onboarding as a contributor 
+- Source Code Contributions: Please follow the [contribution guidelines for Microsoft Azure open source](http://azure.github.io/guidelines.html) that details information on onboarding as a contributor
 
 For general suggestions about Microsoft Azure please use our [UserVoice forum](http://feedback.azure.com/forums/34192--general-feedback).
 
