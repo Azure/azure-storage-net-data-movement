@@ -13,8 +13,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
     /// <summary>
     /// Define class to serialize FileRequestOptions instance.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal sealed class SerializableFileRequestOptions : SerializableRequestOptions, ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal sealed class SerializableFileRequestOptions : SerializableRequestOptions
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         /// <summary>
         /// Serialization field name for DisableContentMD5Validation option.
@@ -53,6 +60,58 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
         {
         }
 
+#region Serialization helpers
+#if !BINARY_SERIALIZATION
+        [DataMember] private bool? disableContentMD5Validation;
+        [DataMember] private TimeSpan? maximumExecutionTime;
+        [DataMember] private TimeSpan? serverTimeout;
+        [DataMember] private bool? storeFileContentMD5;
+        [DataMember] private bool? useTransactionalMD5;
+
+        /// <summary>
+        /// Serializes the object by extracting key data from the underlying FileRequestOptions
+        /// </summary>
+        /// <param name="context"></param>
+        [OnSerializing]
+        private void OnSerializingCallback(StreamingContext context)
+        {
+            disableContentMD5Validation = null == fileRequestOptions ? null : this.fileRequestOptions.DisableContentMD5Validation;
+            maximumExecutionTime = null == fileRequestOptions ? null : this.fileRequestOptions.MaximumExecutionTime;
+            serverTimeout = null == fileRequestOptions ? null : this.fileRequestOptions.ServerTimeout;
+            storeFileContentMD5 = null == fileRequestOptions ? null : this.fileRequestOptions.StoreFileContentMD5;
+            useTransactionalMD5 = null == fileRequestOptions ? null : this.fileRequestOptions.UseTransactionalMD5;
+        }
+
+        /// <summary>
+        /// Initializes a deserialized FileRequestOptions
+        /// </summary>
+        /// <param name="context"></param>
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            if (null != disableContentMD5Validation
+                || null != maximumExecutionTime
+                || null != serverTimeout
+                || null != storeFileContentMD5
+                || null != useTransactionalMD5)
+            {
+                this.fileRequestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
+
+                this.fileRequestOptions.DisableContentMD5Validation = disableContentMD5Validation;
+                this.fileRequestOptions.MaximumExecutionTime = maximumExecutionTime;
+                this.fileRequestOptions.ServerTimeout = serverTimeout;
+                this.fileRequestOptions.StoreFileContentMD5 = storeFileContentMD5;
+                this.fileRequestOptions.UseTransactionalMD5 = useTransactionalMD5;
+            }
+            else
+            {
+                this.fileRequestOptions = null;
+            }
+        }
+#endif // !BINARY_SERIALIZATION
+#endregion // Serialization helpers
+
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="SerializableFileRequestOptions"/> class.
         /// </summary>
@@ -86,6 +145,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
                 this.fileRequestOptions = null;
             }
         }
+#endif // BINARY_SERIALIZATION
+
 
         /// <summary>
         /// Gets or sets the target <see cref="FileRequestOptions"/> object.
@@ -106,6 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             }
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -132,5 +194,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
                 info.AddValue(UseTransactionalMD5Name, this.fileRequestOptions.UseTransactionalMD5);
             }
         }
+#endif // BINARY_SERIALIZATION
     }
 }

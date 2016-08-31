@@ -8,6 +8,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 {
     using System.Collections.Generic;
     using System.IO;
+    using Interop;
 
     /// <summary>
     /// Name resolver class for translating Azure file/blob names to Windows file names.
@@ -33,7 +34,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         {
             get
             {
-                return "\\";
+                if (CrossPlatformHelpers.IsWindows)
+                {
+                    return "\\";
+                }
+                else
+                {
+                    return "/";
+                }
             }
         }
 
@@ -52,22 +60,29 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
         private static char[] GetInvalidPathChars()
         {
-            // Union InvalidFileNameChars and InvalidPathChars together
-            // while excluding slash.
-            HashSet<char> charSet = new HashSet<char>(Path.GetInvalidPathChars());
-
-            foreach (char c in invalidFileNameChars)
+            if (CrossPlatformHelpers.IsWindows)
             {
-                if ('\\' == c || charSet.Contains(c))
+                // Union InvalidFileNameChars and InvalidPathChars together
+                // while excluding slash.
+                HashSet<char> charSet = new HashSet<char>(Path.GetInvalidPathChars());
+
+                foreach (char c in invalidFileNameChars)
                 {
-                    continue;
+                    if ('\\' == c || charSet.Contains(c))
+                    {
+                        continue;
+                    }
+
+                    charSet.Add(c);
                 }
 
-                charSet.Add(c);
+                invalidPathChars = new char[charSet.Count];
+                charSet.CopyTo(invalidPathChars);
             }
-
-            invalidPathChars = new char[charSet.Count];
-            charSet.CopyTo(invalidPathChars);
+            else
+            {
+                invalidPathChars = new char[] { '\0' };
+            }
 
             return invalidPathChars;
         }

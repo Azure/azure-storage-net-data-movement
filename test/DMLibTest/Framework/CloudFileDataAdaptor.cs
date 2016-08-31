@@ -236,7 +236,7 @@ namespace DMLibTest
                 StoreFileContentMD5 = true,
             };
 
-            cloudFile.UploadFromFile(localFilePath, FileMode.Open, options: storeMD5Options);
+            cloudFile.UploadFromFile(localFilePath, options: storeMD5Options);
 
             if (null != fileNode.MD5 ||
                 null != fileNode.ContentType ||

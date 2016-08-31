@@ -12,6 +12,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     /// <summary>
     /// Base class of list continuation tokens
     /// </summary>
+#if !BINARY_SERIALIZATION
+    [DataContract]
+#endif
     internal abstract class ListContinuationToken
     {
     }

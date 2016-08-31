@@ -9,6 +9,25 @@ namespace DMLibTest
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using MS.Test.Common.MsTestLib;
 
+#if DNXCORE50
+    public class AssemblyInitCleanup : IDisposable
+    {
+        public AssemblyInitCleanup()
+        {
+            Test.Init(null); // use default config file name (TestData.xml, expected next to DMLibTest.xproj)
+            Test.AssertFail = new AssertFailDelegate(Assert.Fail);
+        }
+
+        public void Dispose()
+        {
+            Test.Close();
+        }
+    }
+
+    [Xunit.CollectionDefinition(Collections.Global)]
+    public class AssemblyCollection : Xunit.ICollectionFixture<AssemblyInitCleanup>
+    { }
+#else
     [TestClass]
     public class AssemblyInitCleanup
     {
@@ -28,4 +47,5 @@ namespace DMLibTest
             Test.Close();
         }
     }
+#endif
 }

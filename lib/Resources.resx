@@ -317,7 +317,8 @@ MD5 in property: {2}</value>
     <value>A transfer operation with the same source and destination already exists.</value>
   </data>
   <data name="UncategorizedException" xml:space="preserve">
-    <value>The transfer failed.</value>
+    <value>The transfer failed: {0}.</value>
+    <comment>{0} is the inner exception error message.</comment>
   </data>
   <data name="FailedToEnumerateDirectory" xml:space="preserve">
     <value>Failed to enumerate directory {0} with file pattern {1}.</value>

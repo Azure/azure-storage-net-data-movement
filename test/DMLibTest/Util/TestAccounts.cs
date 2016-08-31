@@ -69,7 +69,7 @@ namespace DMLibTest
         public string GetEndpointBaseUri(EndpointType endpoint, string protocol, bool secondary = false)
         {
             string url = string.Empty;
-            bool isHttps = (string.Compare(protocol, "https", StringComparison.InvariantCultureIgnoreCase) == 0);
+            bool isHttps = (string.Compare(protocol, "https", StringComparison.OrdinalIgnoreCase) == 0);
             if (DMLibTestHelper.GetTestAgainst() == TestAgainst.DevFabric)
             {
                 int port;

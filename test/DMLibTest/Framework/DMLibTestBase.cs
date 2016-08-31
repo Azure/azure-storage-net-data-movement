@@ -181,10 +181,11 @@ namespace DMLibTest
             return this.RunTransferItems(allItems, options);
         }
 
-        public TestResult<DMLibDataInfo> RunTransferItems(IEnumerable<TransferItem> items, TestExecutionOptions<DMLibDataInfo> options)
+        public TestResult<DMLibDataInfo> RunTransferItems(List<TransferItem> items, TestExecutionOptions<DMLibDataInfo> options)
         {
-            List<Task> allTasks = new List<Task>();
+            Dictionary<TransferItem, Task<TransferStatus>> allTasks = new Dictionary<TransferItem, Task<TransferStatus>>();
             var testResult = new TestResult<DMLibDataInfo>();
+            testResult.TransferItems = items;
             
             try
             {
@@ -205,7 +206,7 @@ namespace DMLibTest
                             TransferManager.Configurations.ParallelOperations = DMLibTestConstants.LimitedSpeedNC;
                         }
 
-                        allTasks.Add(wrapper.DoTransfer(item));
+                        allTasks.Add(item, wrapper.DoTransfer(item));
                     }
                     catch (Exception e)
                     {
@@ -225,7 +226,7 @@ namespace DMLibTest
 
                 try
                 {
-                    Task.WaitAll(allTasks.ToArray(), options.TimeoutInMs);
+                    Task.WaitAll(allTasks.Values.ToArray(), options.TimeoutInMs);
                 }
                 catch (Exception e)
                 {
@@ -253,7 +254,22 @@ namespace DMLibTest
                 }
             }
 
-            Parallel.ForEach(items, currentItem => currentItem.CloseStreamIfNecessary());
+            Parallel.ForEach(allTasks, pair =>
+            {
+                TransferItem transferItem = pair.Key;
+                Task<TransferStatus> task = pair.Value;
+
+                transferItem.CloseStreamIfNecessary();
+
+                try
+                {
+                    transferItem.FinalStatus = task.Result;
+                }
+                catch (Exception e)
+                {
+                    transferItem.Exception = e;
+                }
+            });
 
             if (!options.DisableDestinationFetch)
             {

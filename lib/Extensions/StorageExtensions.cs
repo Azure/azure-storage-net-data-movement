@@ -59,6 +59,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return new CloudFile(file.Uri, new StorageCredentials(sasToken));
         }
 
+        internal static Uri GenerateCopySourceUri(this CloudFile file)
+        {
+            CloudFile fileForCopy = file.GenerateCopySourceFile();
+            return fileForCopy.ServiceClient.Credentials.TransformUri(fileForCopy.Uri);
+        }
+
         private static string GetFileSASToken(CloudFile file)
         {
             if (null == file.ServiceClient.Credentials
@@ -116,39 +122,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             return Utils.GetBlobReference(blobUri, new StorageCredentials(sasToken), blob.BlobType);
         }
-        
-        /// <summary>
-        /// Append an auto generated SAS to a blob uri.
-        /// </summary>
-        /// <param name="blob">Blob to append SAS.</param>
-        /// <returns>Blob Uri with SAS appended.</returns>
-        internal static Uri GenerateUriWithCredentials(
-            this CloudBlob blob)
+
+        internal static Uri GenerateCopySourceUri(this CloudBlob cloudBlob)
         {
-            if (null == blob)
-            {
-                throw new ArgumentNullException("blob");
-            }
-
-            string sasToken = GetBlobSasToken(blob);
-
-            if (string.IsNullOrEmpty(sasToken))
-            {
-                return blob.SnapshotQualifiedUri;
-            }
-
-            string uriStr = null;
-
-            if (blob.IsSnapshot)
-            {
-                uriStr = string.Format(CultureInfo.InvariantCulture, "{0}&{1}", blob.SnapshotQualifiedUri.AbsoluteUri, sasToken.Substring(1));
-            }
-            else
-            {
-                uriStr = string.Format(CultureInfo.InvariantCulture, "{0}{1}", blob.Uri.AbsoluteUri, sasToken);
-            }
-
-            return new Uri(uriStr);
+            CloudBlob copySourceBlob = cloudBlob.GenerateCopySourceBlob();
+            return copySourceBlob.ServiceClient.Credentials.TransformUri(copySourceBlob.SnapshotQualifiedUri);
         }
 
         private static string GetBlobSasToken(CloudBlob blob)

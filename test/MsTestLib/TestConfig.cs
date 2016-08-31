@@ -48,7 +48,12 @@ namespace MS.Test.Common.MsTestLib
             XmlDocument config = new XmlDocument();
             try
             {
+#if DOTNET5_4
+                Stream configStream = File.OpenRead(configFile);
+                config.Load(configStream);
+#else
                 config.Load(configFile);
+#endif
             }
             catch (FileNotFoundException)
             {
@@ -59,7 +64,12 @@ namespace MS.Test.Common.MsTestLib
             {
                 throw;
             }
+#if DOTNET5_4
+            System.Xml.XPath.XPathNavigator navigator = config.DocumentElement.CreateNavigator();
+            XmlNode root = navigator.SelectSingleNode("/TestConfig").UnderlyingObject as XmlNode;
+#else
             XmlNode root = config.SelectSingleNode("TestConfig");
+#endif
             if (root != null)
             {
                 foreach (XmlNode node in root.ChildNodes)

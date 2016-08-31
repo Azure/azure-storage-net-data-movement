@@ -7,6 +7,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
     using System.Reflection;
+    using System.Runtime.InteropServices;
 
     /// <summary>
     /// Constants for use with the transfer classes.
@@ -76,7 +77,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// TODO: update this number when doc for cloud file is available.
         /// </summary>
         internal const long FileRangeSpanSize = 148 * 1024 * 1024;
-
         /// <summary>
         /// Percentage of available we'll try to use for our memory cache.
         /// </summary>
@@ -141,19 +141,35 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <returns>UserAgent string.</returns>
         private static string GetUserAgent()
         {
+#if DOTNET5_4
+
+            AssemblyName assemblyName = typeof(Constants).GetTypeInfo().Assembly.GetName();
+#else
+
             AssemblyName assemblyName = Assembly.GetExecutingAssembly().GetName();
+#endif
             return UserAgentProductName + "/" + assemblyName.Version.ToString();
         }
 
         private static string GetFormatVersion()
         {
+#if DOTNET5_4
+
+            AssemblyName assemblyName = typeof(Constants).GetTypeInfo().Assembly.GetName();
+#else
+
             AssemblyName assemblyName = Assembly.GetExecutingAssembly().GetName();
+#endif
             return assemblyName.Name + "/" + assemblyName.Version.ToString();
         }
 
         private static long GetMemoryCacheMaximum()
         {
+#if DOTNET5_4
+            return 8 == Marshal.SizeOf(new IntPtr()) ? (long)2 * 1024 * 1024 * 1024 : (long)512 * 1024 * 1024;
+#else
             return Environment.Is64BitProcess ? (long)2 * 1024 * 1024 * 1024 : (long)512 * 1024 * 1024;
+#endif
         }
     }
 }

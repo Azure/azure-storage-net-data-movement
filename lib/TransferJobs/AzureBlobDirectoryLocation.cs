@@ -13,11 +13,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class AzureBlobDirectoryLocation : TransferLocation, ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal class AzureBlobDirectoryLocation : TransferLocation
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string BlobDirName = "CloudBlobDir";
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private SerializableCloudBlobDirectory blobDirectorySerializer;
 
         /// <summary>
@@ -35,6 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.blobDirectorySerializer = new SerializableCloudBlobDirectory(blobDir);
         }
 
+#if BINARY_SERIALIZATION
         private AzureBlobDirectoryLocation(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -44,6 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             this.blobDirectorySerializer = (SerializableCloudBlobDirectory)info.GetValue(BlobDirName, typeof(SerializableCloudBlobDirectory));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets transfer location type.
@@ -76,6 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -90,13 +103,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             info.AddValue(BlobDirName, this.blobDirectorySerializer, typeof(SerializableCloudBlobDirectory));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Validates the transfer location.
         /// </summary>
         public override void Validate()
         {
-            this.BlobDirectory.Container.FetchAttributes(null, Transfer_RequestOptions.DefaultBlobRequestOptions);
+            this.BlobDirectory.Container.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultBlobRequestOptions, null).Wait();
         }
 
         /// <summary>

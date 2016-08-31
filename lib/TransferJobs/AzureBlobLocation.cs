@@ -13,8 +13,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class AzureBlobLocation : TransferLocation, ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    [KnownType(typeof(SerializableBlobRequestOptions))]
+    internal class AzureBlobLocation : TransferLocation
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string BlobName = "Blob";
         private const string AccessConditionName = "AccessCondition";
@@ -23,8 +31,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private const string ETagName = "ETag";
         private const string BlockIDPrefixName = "BlockIDPrefix";
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private SerializableCloudBlob blobSerializer;
+
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private SerializableAccessCondition accessCondition;
+
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private SerializableRequestOptions requestOptions;
 
         /// <summary>
@@ -42,6 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.Blob = blob;
         }
 
+#if BINARY_SERIALIZATION
         private AzureBlobLocation(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -56,6 +76,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.ETag = info.GetString(ETagName);
             this.BlockIdPrefix = info.GetString(BlockIDPrefixName);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets transfer location type.
@@ -101,12 +122,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         internal string ETag
         {
             get;
             set;
         }
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         internal bool CheckedAccessCondition
         {
             get;
@@ -128,6 +155,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         internal string BlockIdPrefix
         {
             get;
@@ -139,9 +169,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         public override void Validate()
         {
-            this.Blob.Container.FetchAttributes(null, Transfer_RequestOptions.DefaultBlobRequestOptions);
+            this.Blob.Container.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultBlobRequestOptions, null).Wait();
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -162,6 +193,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             info.AddValue(ETagName, this.ETag);
             info.AddValue(BlockIDPrefixName, this.BlockIdPrefix);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Update credentials of blob or azure file location.

@@ -131,8 +131,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
                     this.CancellationToken);
             }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+            catch (Exception ex) when (ex is StorageException || ex.InnerException is StorageException)
+            {
+                var e = ex as StorageException ?? ex.InnerException as StorageException;
+#else
             catch (StorageException e)
             {
+#endif
                 if (null != e.RequestInformation &&
                     e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                 {

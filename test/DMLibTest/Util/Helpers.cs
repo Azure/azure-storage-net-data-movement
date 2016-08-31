@@ -27,7 +27,7 @@ namespace DMLibTest
     using Microsoft.WindowsAzure.Storage.Table;
     using MS.Test.Common.MsTestLib;
     using StorageBlobType = Microsoft.WindowsAzure.Storage.Blob.BlobType;
-    
+
     /// <summary>
     /// this is a static helper class
     /// </summary>
@@ -95,13 +95,9 @@ namespace DMLibTest
                 }
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -474,7 +470,7 @@ namespace DMLibTest
             var fileList = new List<string>();
             for (int i = 0; i < width; i++)
             {
-                var fileName = parentDir + "\\" + fileNamePrefix + "_" + i;
+                var fileName = parentDir + Path.DirectorySeparatorChar + fileNamePrefix + "_" + i;
                 fileList.Add(fileName);
                 if (!doNotGenerateFile)
                 {
@@ -486,7 +482,7 @@ namespace DMLibTest
             {
                 for (int i = 0; i < width; i++)
                 {
-                    string dirName = parentDir + "\\" + dirNamePrefix + "_" + i;
+                    string dirName = parentDir + Path.DirectorySeparatorChar + dirNamePrefix + "_" + i;
 
                     if (!doNotGenerateFile)
                     {
@@ -548,7 +544,11 @@ namespace DMLibTest
                     bro.ServerTimeout = new TimeSpan(1, 30, 0);
                     bro.MaximumExecutionTime = new TimeSpan(1, 30, 0);
                     blob.DownloadToStream(fileStream, null, bro);
+#if DNXCORE50
+                    fileStream.Dispose();
+#else
                     fileStream.Close();
+#endif
                 }
                 string MD51 = Helper.GetFileContentMD5(tempblob);
                 string MD52 = Helper.GetFileContentMD5(filename);
@@ -645,7 +645,7 @@ namespace DMLibTest
             IEnumerable<FileInfo> list = folder.GetFiles("*.*", SearchOption.AllDirectories);
             List<string> relativePaths = new List<string>();
 
-            string absolutePath = folder.FullName + "\\";
+            string absolutePath = folder.FullName + Path.DirectorySeparatorChar;
 
             foreach (FileInfo fileInfo in list)
             {
@@ -797,7 +797,11 @@ namespace DMLibTest
         [DllImport("kernel32.dll", CallingConvention = CallingConvention.StdCall)]
         static extern bool GenerateConsoleCtrlEvent(ConsoleCtrlEvent sigevent, int dwProcessGroupId);
 
+#if DNXCORE50
+        [DllImport("kernel32.dll", CharSet = CharSet.Ansi)]
+#else
         [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
+#endif
         public static extern bool SetConsoleCtrlHandler(HandlerRoutine Handler, bool Add);
         public delegate bool HandlerRoutine(ConsoleCtrlEvent CtrlType);
 
@@ -817,7 +821,9 @@ namespace DMLibTest
             Test.Logger.Verbose("Running: {0} {1}", cmd, args);
             ProcessStartInfo psi = new ProcessStartInfo(cmd, args);
             psi.CreateNoWindow = true;
+#if !DNXCORE50
             psi.WindowStyle = ProcessWindowStyle.Hidden;
+#endif
             psi.UseShellExecute = false;
             psi.RedirectStandardError = true;
             psi.RedirectStandardOutput = true;
@@ -834,11 +840,14 @@ namespace DMLibTest
             Test.Logger.Verbose("Running: {0} {1}", cmd, args);
             ProcessStartInfo psi = new ProcessStartInfo(cmd, args);
             psi.CreateNoWindow = true;
+#if !DNXCORE50
             psi.WindowStyle = ProcessWindowStyle.Hidden;
+#endif
             psi.UseShellExecute = false;
             psi.RedirectStandardError = true;
             psi.RedirectStandardOutput = true;
             psi.RedirectStandardInput = true;
+#if !DNXCORE50
             if (null != faultInjectionPoints)
             {
                 foreach (var kv in faultInjectionPoints)
@@ -847,6 +856,7 @@ namespace DMLibTest
                     psi.EnvironmentVariables.Add(kv.Key, kv.Value);
                 }
             }
+#endif
 
             Process p = Process.Start(psi);
 
@@ -932,7 +942,11 @@ namespace DMLibTest
             {
                 random = rnd.Next(0x20, 0xFF);
             }
+#if DNXCORE50
+            while (CharUnicodeInfo.GetUnicodeCategory((char)random) == UnicodeCategory.Control || notavailList.Contains((char)random));
+#else
             while (char.GetUnicodeCategory((char)random) == UnicodeCategory.Control || notavailList.Contains((char)random));
+#endif
 
             return (char)random;
         }
@@ -972,16 +986,21 @@ namespace DMLibTest
             }
         }
 
-        public static bool IsNotFoundException(StorageException e)
+        public static bool IsNotFoundStorageException(Exception e)
         {
-            if (null != e.RequestInformation &&
-                404 == e.RequestInformation.HttpStatusCode)
-            {
-                Test.Info("Server returns 404 error: {0}", e.ToString());
-                return true;
-            }
+            return IsStorageExceptionWithStatusCode(e, 404);
+        }
 
-            return false;
+        public static bool IsConflictStorageException(Exception e)
+        {
+            return IsStorageExceptionWithStatusCode(e, 409);
+        }
+
+        private static bool IsStorageExceptionWithStatusCode(Exception e, int statusCode)
+        {
+            var se = e as StorageException ?? e.InnerException as StorageException;
+
+            return se?.RequestInformation.HttpStatusCode == statusCode;
         }
 
         public static void GenerateSparseCloudObject(
@@ -1328,7 +1347,11 @@ namespace DMLibTest
 
                     // Control characters are all invalid to blob name.
                     // Characters U+200E, U+200F, U+202A, U+202B, U+202C, U+202D, U+202E are all invalid to URI.
+#if DNXCORE50
+                    if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.Control &&
+#else
                     if (char.GetUnicodeCategory(ch) != UnicodeCategory.Control &&
+#endif
                         !InvalidCharsInLocalAndCloudFileName.Contains(ch) &&
                         i != 0x200e && i != 0x200f &&
                         i != 0x202a && i != 0x202b && i != 0x202c && i != 0x202d && i != 0x202e)
@@ -1357,9 +1380,17 @@ namespace DMLibTest
             return new string(char.ToUpper(letter), 1) + ":";
         }
 
+#if DNXCORE50
+        [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
+#else
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+#endif
         private static extern bool DefineDosDevice(int flags, string devname, string path);
+#if DNXCORE50
+        [DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
+#else
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+#endif
         private static extern int QueryDosDevice(string devname, StringBuilder buffer, int bufSize);
 
         public static void SetFileAttribute(string Filename, FileAttributes attribute)
@@ -1373,10 +1404,12 @@ namespace DMLibTest
 
             switch (attribute)
             {
+#if !DNXCORE50
                 case FileAttributes.Encrypted:
                     string fullPath = GetFullPath(Filename);
                     File.Encrypt(fullPath);
                     break;
+#endif
                 case FileAttributes.Normal:
                     RemoveFileAttribute(Filename, FileAttributes.Encrypted);
                     RemoveFileAttribute(Filename, FileAttributes.Compressed);
@@ -1420,9 +1453,11 @@ namespace DMLibTest
 
             switch (attribute)
             {
+#if !DNXCORE50
                 case FileAttributes.Encrypted:
                     File.Decrypt(GetFullPath(Filename));
                     break;
+#endif
                 case FileAttributes.Normal:
                     fa = fa | FileAttributes.Archive;
                     File.SetAttributes(Filename, fa);
@@ -1444,13 +1479,16 @@ namespace DMLibTest
         lpOutBuffer, int nOutBufferSize, ref int lpBytesReturned, IntPtr
         lpOverlapped);
 
+#if !DNXCORE50
         private static int FSCTL_SET_COMPRESSION = 0x9C040;
         private static short COMPRESSION_FORMAT_DEFAULT = 1;
         private static short COMPRESSION_FORMAT_NONE = 0;
+#endif
 
 #pragma warning disable 612, 618
         public static void compress(string filename)
         {
+#if !DNXCORE50
             if ((File.GetAttributes(filename) & FileAttributes.Encrypted) == FileAttributes.Encrypted)
             {
                 Test.Info("Decrypt File {0} to prepare for compress.", filename);
@@ -1463,10 +1501,12 @@ namespace DMLibTest
             ref COMPRESSION_FORMAT_DEFAULT, 2 /*sizeof(short)*/, IntPtr.Zero, 0,
             ref lpBytesReturned, IntPtr.Zero);
             f.Close();
+#endif
         }
 
         public static void uncompress(string filename)
         {
+#if !DNXCORE50
             int lpBytesReturned = 0;
             FileStream f = File.Open(filename, System.IO.FileMode.Open,
             System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
@@ -1474,6 +1514,7 @@ namespace DMLibTest
             ref COMPRESSION_FORMAT_NONE, 2 /*sizeof(short)*/, IntPtr.Zero, 0,
             ref lpBytesReturned, IntPtr.Zero);
             f.Close();
+#endif
         }
 #pragma warning restore 612, 618
 
@@ -1549,7 +1590,11 @@ namespace DMLibTest
                         createSuccess = true;
                         Test.Info("Share recreated.");
                     }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+                    catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+#else
                     catch (StorageException e)
+#endif
                     {
                         if (e.Message.Contains("(409)")) //conflict, the container is still in deleteing
                         {
@@ -1564,14 +1609,9 @@ namespace DMLibTest
 
                 return createSuccess;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-
-                throw;
+                return false;
             }
         }
 
@@ -1597,19 +1637,18 @@ namespace DMLibTest
                 using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     cloudFile.DownloadToStream(fileStream, null, fro);
+#if DNXCORE50
+                    fileStream.Dispose();
+#else
                     fileStream.Close();
+#endif
                 }
 
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-
-                throw;
+                return false;
             }
         }
 
@@ -1630,8 +1669,14 @@ namespace DMLibTest
                     this.CreateFileDirectory(shareName, parentDirectoryPath);
                 }
             }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+            catch (Exception ex) when (ex is StorageException || ex.InnerException is StorageException)
+            {
+                var e = ex as StorageException ?? ex.InnerException as StorageException;
+#else
             catch (StorageException e)
             {
+#endif
                 Test.Error("UploadFile: receives StorageException when creating parent: {0}", e.ToString());
                 return false;
             }
@@ -1666,7 +1711,11 @@ namespace DMLibTest
                 using (FileStream fileStream = new FileStream(sourceFile, FileMode.Open))
                 {
                     destFile.UploadFromStream(fileStream, null, fro);
+#if DNXCORE50
+                    fileStream.Dispose();
+#else
                     fileStream.Close();
+#endif
                 }
 
                 // update content md5
@@ -1677,7 +1726,7 @@ namespace DMLibTest
 
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
             {
                 Test.Error("UploadFile: receives StorageException: {0}", e.ToString());
                 return false;
@@ -1729,14 +1778,9 @@ namespace DMLibTest
                     return null;
                 }
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return null;
-                }
-
-                throw;
+                return null;
             }
         }
 
@@ -1798,14 +1842,9 @@ namespace DMLibTest
 
                 return dir.Exists() ? dir : null;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return null;
-                }
-
-                throw;
+                return null;
             }
         }
 
@@ -1992,6 +2031,34 @@ namespace DMLibTest
 
         public static string CalculateMD5ByDownloading(CloudFile cloudFile, bool disableMD5Check = false)
         {
+#if DNXCORE50
+            const int bufferSize = 4 * 1024 * 1024;
+            cloudFile.FetchAttributes();
+            long blobSize = cloudFile.Properties.Length;
+            byte[] buffer = new byte[bufferSize];
+
+
+            long index = 0;
+            using (IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.MD5))
+            {
+                do
+                {
+                    long sizeToRead = blobSize - index < bufferSize ? blobSize - index : bufferSize;
+
+                    if (sizeToRead <= 0)
+                    {
+                        break;
+                    }
+
+                    cloudFile.DownloadRangeToByteArrayAsync(buffer, 0, index, sizeToRead).Wait();
+                    index += sizeToRead;
+                    hash.AppendData(buffer, 0, (int)sizeToRead);
+                }
+                while (true);
+
+                return Convert.ToBase64String(hash.GetHashAndReset());
+            }
+#else
             using (TemporaryTestFolder tempFolder = new TemporaryTestFolder(Guid.NewGuid().ToString()))
             {
                 const string tempFileName = "tempFile";
@@ -2002,6 +2069,7 @@ namespace DMLibTest
                 cloudFile.DownloadToFile(tempFilePath, FileMode.OpenOrCreate, options: fileOptions);
                 return Helper.GetFileContentMD5(tempFilePath);
             }
+#endif
         }
 
         public CloudFile GetFileReference(string shareName, string cloudFileName)
@@ -2207,7 +2275,11 @@ namespace DMLibTest
                         createSuccess = true;
                         Test.Info("share recreated.");
                     }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+                    catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+#else
                     catch (StorageException e)
+#endif
                     {
                         if (e.Message.Contains("(409)")) //conflict, the share is still in deleteing
                         {
@@ -2221,13 +2293,9 @@ namespace DMLibTest
                 }
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -2287,8 +2355,6 @@ namespace DMLibTest
             share.SetPermissions(bp);
         }
     }
-
-      
 
     /// <summary>
     /// This class helps to do operations on cloud blobs
@@ -2409,13 +2475,9 @@ namespace DMLibTest
                 container.SetPermissions(blobPermissions);
                 return oldPerm;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return null;
-                }
-                throw;
+                return null;
             }
         }
 
@@ -2441,13 +2503,9 @@ namespace DMLibTest
                 }
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -2476,13 +2534,9 @@ namespace DMLibTest
                 }
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -2503,8 +2557,8 @@ namespace DMLibTest
             Test.Info("Verify the folder {0}...", sourceFolder);
             for (int i = 0; i < size; i++)
             {
-                string sourcefilename = sourceFolder + "\\" + filename + "_" + i;
-                string destblobname = destFolder + "\\" + filename + "_" + i;
+                string sourcefilename = sourceFolder + Path.DirectorySeparatorChar + filename + "_" + i;
+                string destblobname = destFolder + Path.DirectorySeparatorChar + filename + "_" + i;
                 CloudBlob blob = this.QueryBlob(containerName, destblobname);
                 if (!empty)
                 {
@@ -2534,7 +2588,7 @@ namespace DMLibTest
             {
                 for (int i = 0; i < size; i++)
                 {
-                    if (!ValidateFixedTestTree(filename, foldername, sourceFolder + "\\" + foldername + "_" + i, destFolder + "\\" + foldername + "_" + i, size, layer - 1, containerName, empty))
+                    if (!ValidateFixedTestTree(filename, foldername, sourceFolder + Path.DirectorySeparatorChar + foldername + "_" + i, destFolder + Path.DirectorySeparatorChar + foldername + "_" + i, size, layer - 1, containerName, empty))
                         return false;
                 }
 
@@ -2593,13 +2647,9 @@ namespace DMLibTest
                 Test.Info("The SAS is {0}", SAS);
                 return SAS;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return string.Empty;
-                }
-                throw;
+                return string.Empty;
             }
         }
 
@@ -2618,16 +2668,11 @@ namespace DMLibTest
                 container.SetPermissions(bp);
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
-
 
         public bool CleanupContainer(string containerName)
         {
@@ -2683,14 +2728,9 @@ namespace DMLibTest
                     return true;
                 }
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e) || Helper.IsConflictStorageException(e))
             {
-                if (Helper.IsNotFoundException(e) || 409 == e.RequestInformation.HttpStatusCode)
-                {
-                    if (!CleanupContainerByRecreateIt(containerName))
-                        return false;
-                }
-                throw;
+                return CleanupContainerByRecreateIt(containerName);
             }
         }
 
@@ -2708,13 +2748,8 @@ namespace DMLibTest
                 {
                     container.Delete(null, bro);
                 }
-                catch (StorageException e)
-                {
-                    if (!Helper.IsNotFoundException(e))
-                    {
-                        throw;
-                    }
-                }
+                catch (Exception e) when (Helper.IsNotFoundStorageException(e))
+                { }
 
                 Test.Info("container deleted.");
                 bro.RetryPolicy = new LinearRetry(new TimeSpan(0, 3, 0), 3);
@@ -2729,27 +2764,16 @@ namespace DMLibTest
                         createSuccess = true;
                         Test.Info("container recreated.");
                     }
-                    catch (StorageException e)
+                    catch (Exception e) when (Helper.IsConflictStorageException(e))
                     {
-                        if (e.Message.Contains("(409)")) //conflict, the container is still in deleteing
-                        {
-                            Thread.Sleep(3000);
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        Thread.Sleep(3000);
                     }
                 }
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -2968,6 +2992,34 @@ namespace DMLibTest
 
         public static string CalculateMD5ByDownloading(CloudBlob blob, bool disableMD5Check = false)
         {
+#if DNXCORE50
+            const int bufferSize = 4 * 1024 * 1024;
+            blob.FetchAttributes();
+            long blobSize = blob.Properties.Length;
+            byte[] buffer = new byte[bufferSize];
+
+
+            long index = 0;
+            using (IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.MD5))
+            {
+                do
+                {
+                    long sizeToRead = blobSize - index < bufferSize ? blobSize - index : bufferSize;
+
+                    if (sizeToRead <= 0)
+                    {
+                        break;
+                    }
+
+                    blob.DownloadRangeToByteArrayAsync(buffer, 0, index, sizeToRead).Wait();
+                    index += sizeToRead;
+                    hash.AppendData(buffer, 0, (int)sizeToRead);
+                }
+                while (true);
+
+                return Convert.ToBase64String(hash.GetHashAndReset());
+            }
+#else
             using (TemporaryTestFolder tempFolder = new TemporaryTestFolder(Guid.NewGuid().ToString()))
             {
                 const string tempFileName = "tempFile";
@@ -2978,6 +3030,7 @@ namespace DMLibTest
                 blob.DownloadToFile(tempFilePath, FileMode.OpenOrCreate, options: blobOptions);
                 return Helper.GetFileContentMD5(tempFilePath);
             }
+#endif
         }
 
         /// <summary>
@@ -2998,13 +3051,9 @@ namespace DMLibTest
 
                 return blob;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return null;
-                }
-                throw;
+                return null;
             }
         }
 
@@ -3022,13 +3071,9 @@ namespace DMLibTest
                 blob.FetchAttributes();
                 return blob.Properties;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return null;
-                }
-                throw;
+                return null;
             }
         }
 
@@ -3047,13 +3092,9 @@ namespace DMLibTest
                 CloudBlobDirectory blobDirectory = container.GetDirectoryReference(blobDirectoryName);
                 return blobDirectory;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return null;
-                }
-                throw;
+                return null;
             }
         }
 
@@ -3122,21 +3163,20 @@ namespace DMLibTest
                 CloudBlobContainer container = BlobClient.GetContainerReference(containerName);
                 if (container == null || !container.Exists()) return false;
                 CloudBlob blob = GetCloudBlobReference(container, blobName);
-
+#if DNXCORE50
+                using (MemoryStream MStream = new MemoryStream(Encoding.ASCII.GetBytes(content)))
+#else
                 using (MemoryStream MStream = new MemoryStream(ASCIIEncoding.Default.GetBytes(content)))
+#endif
                 {
                     blob.UploadFromStream(MStream);
                 }
 
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -3158,13 +3198,9 @@ namespace DMLibTest
                 blob.SetProperties();
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -3187,13 +3223,9 @@ namespace DMLibTest
 
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -3303,20 +3335,20 @@ namespace DMLibTest
                 using (FileStream fileStream = new FileStream(tempfile, FileMode.Create))
                 {
                     blob.DownloadToStream(fileStream);
+#if DNXCORE50
+                    fileStream.Dispose();
+#else
                     fileStream.Close();
+#endif
                 }
                 content = File.ReadAllText(tempfile);
                 File.Delete(tempfile);
 
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -3345,13 +3377,9 @@ namespace DMLibTest
                 }
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -3408,13 +3436,9 @@ namespace DMLibTest
 
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
 
@@ -3445,7 +3469,7 @@ namespace DMLibTest
             container.CreateIfNotExists(options);
 
             CloudBlob blob = GetCloudBlobReference(container, blobName, blobType);
-            blob.UploadFromFile(filePath, FileMode.Open, null, options, null);
+            blob.UploadFromFile(filePath, null, options, null);
             Test.Info("block blob {0} has been uploaded successfully", blob.Name);
 
             return true;
@@ -3465,18 +3489,18 @@ namespace DMLibTest
                 using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     blob.DownloadToStream(fileStream, null, bro);
+#if DNXCORE50
+                    fileStream.Dispose();
+#else
                     fileStream.Close();
+#endif
                 }
 
                 return true;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return false;
-                }
-                throw;
+                return false;
             }
         }
         /// <summary>
@@ -3503,13 +3527,9 @@ namespace DMLibTest
                 }
 
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return null;
-                }
-                throw;
+                return null;
             }
         }
 
@@ -3530,13 +3550,9 @@ namespace DMLibTest
                 blob.Delete(DeleteSnapshotsOption.DeleteSnapshotsOnly);
                 return;
             }
-            catch (StorageException e)
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e))
             {
-                if (Helper.IsNotFoundException(e))
-                {
-                    return;
-                }
-                throw;
+                return;
             }
         }
         /// <summary>
@@ -3662,6 +3678,45 @@ namespace DMLibTest
                 }
 
                 disposed = true;
+            }
+        }
+    }
+
+    public static class CrossPlatformHelpers
+    {
+        public static bool IsWindows
+        {
+            get
+            {
+#if RUNTIME_INFORMATION
+                return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#else
+                return true;
+#endif // RUNTIME_INFORMATION
+            }
+        }
+
+        public static bool IsOSX
+        {
+            get
+            {
+#if RUNTIME_INFORMATION
+                return RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+#else
+                return false;
+#endif // RUNTIME_INFORMATION
+            }
+        }
+
+        public static bool IsLinux
+        {
+            get
+            {
+#if RUNTIME_INFORMATION
+                return RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+#else
+                return false;
+#endif // RUNTIME_INFORMATION
             }
         }
     }

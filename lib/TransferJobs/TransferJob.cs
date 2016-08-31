@@ -9,12 +9,28 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System;
     using System.Globalization;
     using System.Runtime.Serialization;
+    using System.Threading;
 
     /// <summary>
     /// Represents transfer of a single file/blob.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class TransferJob : ISerializable
+#else
+    [DataContract]
+    [KnownType(typeof(AzureBlobDirectoryLocation))]
+    [KnownType(typeof(AzureBlobLocation))]
+    [KnownType(typeof(AzureFileDirectoryLocation))]
+    [KnownType(typeof(AzureFileLocation))]
+    [KnownType(typeof(DirectoryLocation))]
+    [KnownType(typeof(FileLocation))]
+    // StreamLocation intentionally omitted because it is not serializable
+    [KnownType(typeof(UriLocation))]
+#endif // BINARY_SERIALIZATION
+    internal class TransferJob
+#if BINARY_SERIALIZATION
+        : ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string SourceName = "Source";
         private const string DestName = "Dest";
@@ -23,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private const string CopyIdName = "CopyId";
         private const string CheckpointName = "Checkpoint";
         private const string StatusName = "Status";
-
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferJob"/> class.
         /// </summary>
@@ -35,6 +51,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.CheckPoint = new SingleObjectCheckpoint();
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferJob"/> class.
         /// </summary>
@@ -55,6 +72,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.CheckPoint = (SingleObjectCheckpoint)info.GetValue(CheckpointName, typeof(SingleObjectCheckpoint));
             this.Status = (TransferJobStatus)info.GetValue(StatusName, typeof(TransferJobStatus));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferJob"/> class.
@@ -65,6 +83,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.CopyId = other.CopyId;
             this.CheckPoint = other.CheckPoint.Copy();
             this.Status = other.Status;
+        }
+
+        public ReaderWriterLockSlim ProgressUpdateLock
+        {
+            get;
+            set;
         }
 
         /// <summary>
@@ -92,6 +116,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets or sets the overwrite flag.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public bool? Overwrite
         {
             get;
@@ -102,18 +129,27 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Gets ID for the asynchronous copy operation.
         /// </summary>
         /// <value>ID for the asynchronous copy operation.</value>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public string CopyId
         {
             get;
             set;
         }
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public TransferJobStatus Status
         {
             get;
             set;
         }
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public SingleObjectCheckpoint CheckPoint
         {
             get;
@@ -140,6 +176,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -162,6 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             info.AddValue(CheckpointName, this.CheckPoint, typeof(SingleObjectCheckpoint));
             info.AddValue(StatusName, this.Status, typeof(TransferJobStatus));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets a copy of this transfer job.

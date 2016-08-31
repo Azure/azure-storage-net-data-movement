@@ -9,8 +9,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     using System;
     using System.Runtime.Serialization;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal sealed class SerializableListContinuationToken : ISerializable
+#else
+    [DataContract]
+    [KnownType(typeof(AzureBlobListContinuationToken))]
+    [KnownType(typeof(AzureFileListContinuationToken))]
+    [KnownType(typeof(FileListContinuationToken))]
+#endif // BINARY_SERIALIZATION
+    internal sealed class SerializableListContinuationToken
+#if BINARY_SERIALIZATION
+        : ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string ListContinuationTokenTypeName = "TokenType";
         private const string ListContinuationTokenName = "Token";
@@ -23,6 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             this.ListContinuationToken = listContinuationToken;
         }
 
+#if BINARY_SERIALIZATION
         private SerializableListContinuationToken(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -48,13 +59,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 throw new ArgumentException("ListContinuationToken Type");
             }
         }
+#endif // BINARY_SERIALIZATION
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public ListContinuationToken ListContinuationToken
         {
             get;
             private set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -93,5 +109,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             throw new ArgumentException("ListContinuationToken");
         }
+#endif // BINARY_SERIALIZATION
     }
 }

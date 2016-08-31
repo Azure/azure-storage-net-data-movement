@@ -29,7 +29,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 if (null != this.Stream)
                 {
+#if DOTNET5_4
+                    this.Stream.Dispose();
+#else
                     this.Stream.Close();
+#endif
                     this.Stream = null;
                 }
 

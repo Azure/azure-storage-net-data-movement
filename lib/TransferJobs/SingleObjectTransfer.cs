@@ -18,7 +18,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// <summary>
     /// Represents a single object transfer operation.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
     internal class SingleObjectTransfer : Transfer
     {
         private const string TransferJobName = "TransferJob";
@@ -26,6 +30,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Internal transfer job.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private TransferJob transferJob;
 
         /// <summary>
@@ -81,6 +88,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.transferJob = new TransferJob(this);
         }
 
+#if !BINARY_SERIALIZATION
+        /// <summary>
+        /// Initializes a deserialized SingleObjectTransfer
+        /// </summary>
+        /// <param name="context"></param>
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            this.transferJob.Transfer = this;
+        }
+#endif
+
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="SingleObjectTransfer"/> class.
         /// </summary>
@@ -92,6 +112,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.transferJob = (TransferJob)info.GetValue(TransferJobName, typeof(TransferJob));
             this.transferJob.Transfer = this;
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SingleObjectTransfer"/> class.
@@ -100,10 +121,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private SingleObjectTransfer(SingleObjectTransfer other)
             : base(other)
         {
+            this.ProgressTracker = other.ProgressTracker.Copy();
             this.transferJob = other.transferJob.Copy();
             this.transferJob.Transfer = this;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -114,6 +137,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             base.GetObjectData(info, context);
             info.AddValue(TransferJobName, this.transferJob, typeof(TransferJob));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Creates a copy of current transfer object.
@@ -121,10 +145,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <returns>A copy of current transfer object.</returns>
         public SingleObjectTransfer Copy()
         {
-            lock (this.ProgressTracker)
-            {
-                return new SingleObjectTransfer(this);
-            }
+            return new SingleObjectTransfer(this);
+        }
+
+        public void UpdateProgressLock(ReaderWriterLockSlim uploadLock)
+        {
+            this.transferJob.ProgressUpdateLock = uploadLock;
         }
 
         /// <summary>

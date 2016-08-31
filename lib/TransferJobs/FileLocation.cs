@@ -10,8 +10,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.IO;
     using System.Runtime.Serialization;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class FileLocation : TransferLocation, ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal class FileLocation : TransferLocation
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string FilePathName = "FilePath";
         /// <summary>
@@ -33,6 +40,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.FilePath = filePath;
         }
 
+#if BINARY_SERIALIZATION
         private FileLocation(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -42,6 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             this.FilePath = info.GetString(FilePathName);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets transfer location type.
@@ -57,12 +66,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets path to the local file location.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public string FilePath
         {
             get;
             private set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -77,10 +90,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             info.AddValue(FilePathName, this.FilePath, typeof(string));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Validates the transfer location.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1804:RemoveUnusedLocals", MessageId = "time")]
         public override void Validate()
         {
             DirectoryInfo di = new DirectoryInfo(Path.GetDirectoryName(this.FilePath));

@@ -67,8 +67,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             set
             {
-                Debug.Assert(value is AzureFileListContinuationToken);
                 this.listContinuationToken = value as AzureFileListContinuationToken;
+                Debug.Assert(null == value || null != this.listContinuationToken);
             }
         }
 
@@ -127,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             try
             {
-                exist = cloudFile.Exists(requestOptions);
+                exist = cloudFile.ExistsAsync(requestOptions, null, cancellationToken).Result;
             }
             catch (Exception ex)
             {
@@ -218,11 +218,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     try
                     {
                         FileRequestOptions requestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
-                        resultSegment = directory.ListFilesAndDirectoriesSegmented(
+                        resultSegment = directory.ListFilesAndDirectoriesSegmentedAsync(
                             ListFilesSegmentSize,
                             continuationToken,
                             requestOptions,
-                            null);
+                            null,
+                            cancellationToken).Result;
                     }
                     catch (Exception ex)
                     {

@@ -19,7 +19,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// <summary>
     /// Represents a directory object transfer operation.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
     internal class DirectoryTransfer : MultipleObjectsTransfer
     {
         /// <summary>
@@ -44,6 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.Initialize();
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryTransfer"/> class.
         /// </summary>
@@ -54,6 +59,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             this.Initialize();
         }
+#endif // BINARY_SERIALIZATION
+
+        // Initialize a new DirectoryTransfer object after deserialization
+#if !BINARY_SERIALIZATION
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            this.Initialize();
+        }
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryTransfer"/> class.
@@ -65,6 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.Initialize();
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -74,6 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             base.GetObjectData(info, context);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Creates a copy of current transfer object.
@@ -205,7 +222,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Object will be disposed by the caller")]
-        protected override Transfer CreateTransfer(TransferEntry entry)
+        protected override SingleObjectTransfer CreateTransfer(TransferEntry entry)
         {
             TransferLocation sourceLocation = GetSourceTransferLocation(this.Source, entry);
             TransferLocation destLocation = GetDestinationTransferLocation(this.Destination, entry);
@@ -270,10 +287,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     break;
 
                 case TransferLocationType.LocalDirectory:
-                    if (destLocation.Type == TransferLocationType.AzureBlobDirectory ||
-                        destLocation.Type == TransferLocationType.AzureFileDirectory)
+                    if (destLocation.Type == TransferLocationType.AzureBlobDirectory)
                     {
-                        return new FileToAzureNameResolver();
+                        return new FileToAzureBlobNameResolver();
+                    }
+                    else if (destLocation.Type == TransferLocationType.AzureFileDirectory)
+                    {
+                        return new FileToAzureFileNameResolver();
                     }
                     break;
 
@@ -290,7 +310,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             CloudFileDirectory parent = file.Parent;
             if (!this.IsLastDirEqualsOrSubDirOf(parent))
             {
-                if (!parent.Exists(fileRequestOptions))
+                if (!parent.ExistsAsync(fileRequestOptions, null).Result)
                 {
                     CreateCloudFileDirectoryRecursively(parent);
                 }
@@ -344,7 +364,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             if (null != parent)
             {
                 CreateCloudFileDirectoryRecursively(parent);
-                dir.CreateIfNotExists(Transfer_RequestOptions.DefaultFileRequestOptions);
+                dir.CreateIfNotExistsAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
             }
         }
 

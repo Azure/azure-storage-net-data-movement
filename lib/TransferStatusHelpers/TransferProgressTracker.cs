@@ -12,8 +12,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// <summary>
     /// Calculate transfer progress.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class TransferProgressTracker : ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal class TransferProgressTracker
+#if BINARY_SERIALIZATION
+        : ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string BytesTransferredName = "BytesTransferred";
         private const string FilesTransferredName = "FilesTransferred";
@@ -23,21 +30,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Stores the number of bytes that have been transferred.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private long bytesTransferred;
 
         /// <summary>
         /// Stores the number of files that have been transferred.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private long numberOfFilesTransferred;
 
         /// <summary>
         /// Stores the number of files that are failed to be transferred.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private long numberOfFilesSkipped;
 
         /// <summary>
         /// Stores the number of files that are skipped.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private long numberOfFilesFailed;
 
         /// <summary>
@@ -56,6 +75,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.numberOfFilesFailed = 0;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferProgressTracker"/> class.
         /// </summary>
@@ -73,16 +93,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.numberOfFilesSkipped = info.GetInt64(FilesSkippedName);
             this.numberOfFilesFailed = info.GetInt64(FilesFailedName);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferProgressTracker" /> class.
         /// </summary>
         private TransferProgressTracker(TransferProgressTracker other)
         {
-            this.bytesTransferred = other.bytesTransferred;
-            this.numberOfFilesTransferred = other.numberOfFilesTransferred;
-            this.numberOfFilesSkipped = other.numberOfFilesSkipped;
-            this.numberOfFilesFailed = other.numberOfFilesFailed;
+            this.bytesTransferred = other.BytesTransferred;
+            this.numberOfFilesTransferred = other.NumberOfFilesTransferred;
+            this.numberOfFilesSkipped = other.NumberOfFilesSkipped;
+            this.numberOfFilesFailed = other.NumberOfFilesFailed;
         }
 
         /// <summary>
@@ -97,7 +118,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets or sets the progress handler
         /// </summary>
-        public IProgress<TransferProgress> ProgressHandler
+        public IProgress<TransferStatus> ProgressHandler
         {
             get;
             set;
@@ -240,6 +261,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return new TransferProgressTracker(this);
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes transfer progress.
         /// </summary>
@@ -257,6 +279,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             info.AddValue(FilesSkippedName, this.NumberOfFilesSkipped);
             info.AddValue(FilesFailedName, this.NumberOfFilesFailed);
         }
+#endif // BINARY_SERIALIZATION
 
         private void InvokeProgressHandler()
         {
@@ -269,7 +292,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         Interlocked.Exchange(ref this.invokingProgressHandler, 0);
 
                         this.ProgressHandler.Report(
-                            new TransferProgress()
+                            new TransferStatus()
                             {
                                 BytesTransferred = this.BytesTransferred,
                                 NumberOfFilesTransferred = this.NumberOfFilesTransferred,

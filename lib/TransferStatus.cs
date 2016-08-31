@@ -1,14 +1,14 @@
 //-----------------------------------------------------------------------------
-// <copyright file="TransferProgress.cs" company="Microsoft">
+// <copyright file="TransferStatus.cs" company="Microsoft">
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //-----------------------------------------------------------------------------
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     /// <summary>
-    /// Transfer progress
+    /// Transfer status
     /// </summary>
-    public sealed class TransferProgress
+    public sealed class TransferStatus
     {
         /// <summary>
         /// Gets the number of bytes that have been transferred.

@@ -154,6 +154,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
             catch (Exception ex)
             {
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+                while (ex.InnerException != null && !(ex is StorageException)) // unwrap WrappedStorageExceptions
+                    ex = ex.InnerException;
+#endif
                 this.SetErrorState(ex);
                 setFinish = true;
                 exception = ex;
@@ -220,6 +224,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         public void CheckCancellation()
         {
             Utils.CheckCancellation(this.cancellationTokenSource.Token);
+        }
+
+        public void UpdateProgress(Action updateAction)
+        {
+            this.TransferJob.ProgressUpdateLock?.EnterReadLock();
+            updateAction();
+            this.TransferJob.ProgressUpdateLock?.ExitReadLock();
         }
 
         public void UpdateProgressAddBytesTransferred(long bytesTransferredToAdd)
@@ -349,7 +360,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (exist && !this.TransferJob.Overwrite.Value)
             {
                 string exceptionMessage = string.Format(CultureInfo.InvariantCulture, Resources.OverwriteCallbackCancelTransferException, sourceFileName, destFileName);
-                throw new TransferException(TransferErrorCode.NotOverwriteExistingDestination, exceptionMessage);
+                throw new TransferSkippedException(exceptionMessage);
             }
         }
     }

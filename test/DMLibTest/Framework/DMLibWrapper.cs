@@ -6,16 +6,17 @@
 namespace DMLibTest
 {
     using System.Threading.Tasks;
+    using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
 
     public abstract class DMLibWrapper
     {
-        public Task DoTransfer(TransferItem item)
+        public Task<TransferStatus> DoTransfer(TransferItem item)
         {
             Test.Info("Do transfer: {0}", item.ToString());
             return this.DoTransferImp(item);
         }
 
-        protected abstract Task DoTransferImp(TransferItem item);
+        protected abstract Task<TransferStatus> DoTransferImp(TransferItem item);
     }
 }

@@ -9,8 +9,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     using System;
     using System.Runtime.Serialization;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    sealed class FileListContinuationToken : ListContinuationToken, ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    sealed class FileListContinuationToken : ListContinuationToken
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string FilePathName = "FilePath";
 
@@ -19,6 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             this.FilePath = filePath;
         }
 
+#if BINARY_SERIALIZATION
         private FileListContinuationToken(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -28,16 +36,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             this.FilePath = info.GetString(FilePathName);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets relative path of the last listed file.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public string FilePath
         {
             get;
             private set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -52,5 +65,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             info.AddValue(FilePathName, this.FilePath, typeof(string));
         }
+#endif // BINARY_SERIALIZATION
     }
 }

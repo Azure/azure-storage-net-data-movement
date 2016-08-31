@@ -28,7 +28,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             if (checkpoint == null)
             {
+#if BINARY_SERIALIZATION
                 this.Checkpoint = new TransferCheckpoint();
+#else
+                this.Checkpoint = new TransferCheckpoint(null);
+#endif
             }
             else
             {
@@ -82,7 +86,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets or sets the progress update handler.
         /// </summary>
-        public IProgress<TransferProgress> ProgressHandler
+        public IProgress<TransferStatus> ProgressHandler
         {
             get
             {

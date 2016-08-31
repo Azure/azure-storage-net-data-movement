@@ -43,7 +43,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Running md5 hash of the blob being downloaded.
         /// </summary>
-        private MD5 md5hash;
+        private MD5Wrapper md5hash;
 
         /// <summary>
         /// Offset of the transferred bytes. We should calculate MD5hash on all bytes before this offset.
@@ -77,14 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             if (md5hashCheck)
             {
-                if (CloudStorageAccount.UseV1MD5)
-                {
-                    this.md5hash = new MD5CryptoServiceProvider();
-                }
-                else
-                {
-                    this.md5hash = new NativeMD5();
-                }
+                this.md5hash = new MD5Wrapper();
             }
 
             if ((!this.finishedSeparateMd5Calculator)
@@ -113,17 +106,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             get
             {
                 return null != this.md5hash;
-            }
-        }
-
-        /// <summary>
-        /// Gets MD5 hash bytes.
-        /// </summary>
-        public byte[] Hash
-        {
-            get
-            {
-                return null == this.md5hash ? null : this.md5hash.Hash;
             }
         }
 
@@ -206,7 +188,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                     lock (this.md5hash)
                     {
-                        this.md5hash.TransformBlock(buffer, 0, readLength, null, 0);
+                        this.md5hash.UpdateHash(buffer, 0, readLength);
                     }
                 }
                 catch (Exception)
@@ -294,11 +276,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="inputBuffer">The input to compute the hash code for.</param>
         /// <param name="inputOffset">The offset into the input byte array from which to begin using data.</param>
         /// <param name="inputCount">The number of bytes in the input byte array to use as data.</param>
-        /// <param name="outputBuffer">A copy of the part of the input array used to compute the hash code.</param>
-        /// <param name="outputOffset">The offset into the output byte array from which to begin writing data.</param>
         /// <returns>Whether succeeded in calculating MD5 hash 
         /// or not finished the separate thread to calculate MD5 hash at the time. </returns>
-        public bool MD5HashTransformBlock(long streamOffset, byte[] inputBuffer, int inputOffset, int inputCount, byte[] outputBuffer, int outputOffset)
+        public bool MD5HashTransformBlock(long streamOffset, byte[] inputBuffer, int inputOffset, int inputCount)
         {
             if (null == this.md5hash)
             {
@@ -334,7 +314,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.finishedSeparateMd5Calculator,
                     "The separate thread to calculate MD5 hash should have finished or md5hashOffset should get updated.");
 
-                this.md5hash.TransformBlock(inputBuffer, inputOffset, inputCount, outputBuffer, outputOffset);
+                this.md5hash.UpdateHash(inputBuffer, inputOffset, inputCount);
             }
 
             return true;
@@ -343,11 +323,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Computes the hash value for the specified region of the specified byte array.
         /// </summary>
-        /// <param name="inputBuffer">The input to compute the hash code for.</param>
-        /// <param name="inputOffset">The offset into the byte array from which to begin using data.</param>
-        /// <param name="inputCount">The number of bytes in the byte array to use as data.</param>
         /// <returns>An array that is a copy of the part of the input that is hashed.</returns>
-        public byte[] MD5HashTransformFinalBlock(byte[] inputBuffer, int inputOffset, int inputCount)
+        public string MD5HashTransformFinalBlock()
         {
             this.WaitMD5CalculationToFinish();
 
@@ -356,7 +333,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 return null;
             }
 
-            return null == this.md5hash ? null : this.md5hash.TransformFinalBlock(inputBuffer, inputOffset, inputCount);
+            return null == this.md5hash ? null : this.md5hash.ComputeHash();
         }
 
         /// <summary>
@@ -379,7 +356,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 if (null != this.md5hash)
                 {
-                    this.md5hash.Clear();
+                    this.md5hash.Dispose();
                     this.md5hash = null;
                 }
 

@@ -141,8 +141,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 await this.DoFetchAttributesAsync();
             }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+            catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+            {
+                var se = e as StorageException ?? e.InnerException as StorageException;
+#else
             catch (StorageException se)
             {
+#endif
                 // Getting a storage exception is expected if the file doesn't
                 // exist. In this case we won't error out, but set the 
                 // exist flag to false to indicate we're uploading
@@ -360,12 +366,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 return;
             }
 
-            lock (this.TransferJob.CheckPoint.TransferWindowLock)
+            this.Controller.UpdateProgress(() =>
             {
-                this.TransferJob.CheckPoint.TransferWindow.Remove(transferData.StartOffset);
-            }
+                lock (this.TransferJob.CheckPoint.TransferWindowLock)
+                {
+                    this.TransferJob.CheckPoint.TransferWindow.Remove(transferData.StartOffset);
+                }
 
-            this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
+                this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
+            });
 
             if (this.toUploadChunksCountdownEvent.Signal())
             {

@@ -144,9 +144,22 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
                     this.CancellationToken);
             }
-            catch (StorageException e)
+            catch (Exception e)
             {
-                this.HandleFetchAttributesResult(e);
+                if (e is StorageException)
+                {
+                    this.HandleFetchAttributesResult(e);
+                }
+                else if (e.InnerException is StorageException)
+                {
+                    // Newer versions of WindowsAzure.Storage (beginnning with v6.1) may wrap
+                    // the storage exception in a WrappedStorageException.
+                    this.HandleFetchAttributesResult(e.InnerException);
+                }
+                else
+                {
+                    throw;
+                }
                 return;
             }
 
@@ -284,12 +297,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         this.CancellationToken);
                 }
 
-                lock (this.SharedTransferData.TransferJob.CheckPoint.TransferWindowLock)
+                this.Controller.UpdateProgress(() =>
                 {
-                    this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(transferData.StartOffset);
-                }
+                    lock (this.SharedTransferData.TransferJob.CheckPoint.TransferWindowLock)
+                    {
+                        this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(transferData.StartOffset);
+                    }
 
-                this.FinishBlock(transferData.Length);
+                    // update progress
+                    this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
+                });
+
+                this.FinishBlock();
             }
 
             // Do not set hasWork to true because it's always true in State.UploadBlob
@@ -346,7 +365,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
         }
 
-        private void FinishBlock(long length)
+        private void FinishBlock()
         {
             Debug.Assert(
                 this.state == State.UploadBlob || this.state == State.Error,
@@ -361,8 +380,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 return;
             }
-
-            this.Controller.UpdateProgressAddBytesTransferred(length);
 
             if (this.countdownEvent.Signal())
             {

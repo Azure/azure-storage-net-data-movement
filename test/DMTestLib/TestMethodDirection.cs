@@ -5,10 +5,9 @@
 //------------------------------------------------------------------------------
 namespace DMLibTestCodeGen
 {
-    using System.CodeDom;
     using System.Collections.Generic;
 
-    internal abstract class TestMethodDirection
+    public abstract class TestMethodDirection
     {
         public List<string> Tags
         {
@@ -44,7 +43,5 @@ namespace DMLibTestCodeGen
                 yield return extraTag;
             }
         }
-
-        public abstract IEnumerable<CodeStatement> EnumerateUpdateContextStatements();
     }
 }

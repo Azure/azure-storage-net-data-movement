@@ -16,6 +16,9 @@ namespace DMLibTest
 
     [MultiDirectionTestClass]
     public class SearchPatternTest : DMLibDataPreparedTestBase
+#if DNXCORE50
+        , IDisposable
+#endif
     {
         // test class for filepattern option
         // test files for all test cases are organized in a directory as following:
@@ -29,6 +32,8 @@ namespace DMLibTest
         //              +->  subfolder2  -+-> subfolder4 -> test5
         //              |                 |
         //              |                 +-> TESTFILE345
+        //              |                 |        
+        //              |                 +-> testfile234
         //              |                 |
         //              |                 +-> testYfile
         //              |                 |
@@ -72,7 +77,7 @@ namespace DMLibTest
         private static DMLibDataType[] sourceDataTypes;
 
         // local search pattern
-        #region source is local
+#region source is local
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalSource)]
         public void FilePattern_Local_WildChar_1()
@@ -80,9 +85,20 @@ namespace DMLibTest
             HashSet<FileNode> nodesToKeep = new HashSet<FileNode>();
             DMLibDataInfo expectedResult = SourceDataInfo.Clone();
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder1", "testfile2"));
-            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "TESTFILE345"));
+            if (CrossPlatformHelpers.IsWindows)
+            {
+                nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "TESTFILE345"));
+            }
+
+            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testfile234"));
+
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "testfile1"));
-            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "TestFile2"));
+
+            if (CrossPlatformHelpers.IsWindows)
+            {
+                nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "TestFile2"));
+            }
+            
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile1"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile2"));
@@ -99,8 +115,12 @@ namespace DMLibTest
             DMLibDataInfo expectedResult = SourceDataInfo.Clone();
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder1", "testfile2"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "testfile1"));
-            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "TestFile2"));
-            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile"));
+            if (CrossPlatformHelpers.IsWindows)
+            {
+                nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "TestFile2"));
+                nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile"));
+            }
+
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile1"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile2"));
             DMLibDataHelper.RemoveAllFileNodesExcept(expectedResult.RootNode, nodesToKeep);
@@ -143,7 +163,7 @@ namespace DMLibTest
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder1", "4testfile"));
             DMLibDataHelper.RemoveAllFileNodesExcept(expectedResult.RootNode, nodesToKeep);
 
-            this.TestSearchPattern(true, expectedResult, "folder1\\subfolder1\\4testfile");
+            this.TestSearchPattern(true, expectedResult, FormalizeSearchPattern ("folder1\\subfolder1\\4testfile"));
         }
 
         [TestCategory(Tag.Function)]
@@ -152,13 +172,15 @@ namespace DMLibTest
         {
             HashSet<FileNode> nodesToKeep = new HashSet<FileNode>();
             DMLibDataInfo expectedResult = SourceDataInfo.Clone();
+            
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "TESTFILE345"));
+            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testfile234"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testYfile"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "f_arbitrary.exe"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "测试x文件"));
             DMLibDataHelper.RemoveAllFileNodesExcept(expectedResult.RootNode, nodesToKeep);
 
-            this.TestSearchPattern(false, expectedResult, "folder1\\subfolder2\\*");
+            this.TestSearchPattern(false, expectedResult, FormalizeSearchPattern("folder1\\subfolder2\\*"));
         }
 
         [TestCategory(Tag.Function)]
@@ -170,7 +192,7 @@ namespace DMLibTest
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "f_arbitrary.exe"));
             DMLibDataHelper.RemoveAllFileNodesExcept(expectedResult.RootNode, nodesToKeep);
 
-            this.TestSearchPattern(false, expectedResult, "folder1\\subfolder2\\f_arbitrary.exe");
+            this.TestSearchPattern(false, expectedResult, FormalizeSearchPattern("folder1\\subfolder2\\f_arbitrary.exe"));
         }
 
         [TestCategory(Tag.Function)]
@@ -182,6 +204,7 @@ namespace DMLibTest
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder1", "testfile2"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder1", "4testfile"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "subfolder4", "test5"));
+            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testfile234"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "TESTFILE345"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testYfile"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "f_arbitrary.exe"));
@@ -265,10 +288,10 @@ namespace DMLibTest
 
             this.TestSearchPattern(false, expectedResult, "..*");
         }
-        #endregion // source is local
+#endregion // source is local
 
         // cloud file search pattern
-        #region source is cloud file
+#region source is cloud file
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudFileSource)]
         public void FilePattern_CloudFile_FileName_1()
@@ -313,7 +336,7 @@ namespace DMLibTest
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "TestFile2"));
             DMLibDataHelper.RemoveAllFileNodesExcept(expectedResult.RootNode, nodesToKeep);
 
-            this.TestSearchPattern(false, expectedResult, "folder1\\TestFile2");
+            this.TestSearchPattern(false, expectedResult, FormalizeSearchPattern("folder1\\TestFile2"));
         }
 
         [TestCategory(Tag.Function)]
@@ -325,6 +348,7 @@ namespace DMLibTest
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder1", "testfile2"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder1", "4testfile"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "subfolder4", "test5"));
+            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testfile234"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "TESTFILE345"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testYfile"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "f_arbitrary.exe"));
@@ -388,10 +412,10 @@ namespace DMLibTest
         {
             this.TestSearchPatternError(true, "testfile", "Search pattern is not supported in recursive mode when the source is an Azure file directory.");
         }
-        #endregion // source is cloud file
+#endregion // source is cloud file
 
         // cloud blob search pattern
-        #region source is cloud blob
+#region source is cloud blob
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobSource)]
         public void FilePattern_CloudBlob_Prefix_1()
@@ -425,6 +449,7 @@ namespace DMLibTest
             HashSet<FileNode> nodesToKeep = new HashSet<FileNode>();
             DMLibDataInfo expectedResult = SourceDataInfo.Clone();
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "subfolder4", "test5"));
+            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testfile234"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "TESTFILE345"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testYfile"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "f_arbitrary.exe"));
@@ -456,6 +481,7 @@ namespace DMLibTest
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder1", "testfile2"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder1", "4testfile"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "subfolder4", "test5"));
+            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testfile234"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "TESTFILE345"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "testYfile"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "subfolder2", "f_arbitrary.exe"));
@@ -489,7 +515,7 @@ namespace DMLibTest
 
             this.TestSearchPattern(false, expectedResult);
         }
-        #endregion
+#endregion
 
         private static void PrepareSourceData()
         {
@@ -505,8 +531,9 @@ namespace DMLibTest
             DirNode subDir4 = new DirNode("subfolder4");
             subDir4.AddFileNode(GenerateFileNode("test5"));
             subDir2.AddDirNode(subDir4);
-
+            
             subDir2.AddFileNode(GenerateFileNode("TESTFILE345"));
+            subDir2.AddFileNode(GenerateFileNode("testfile234"));
             subDir2.AddFileNode(GenerateFileNode("testYfile"));
             subDir2.AddFileNode(GenerateFileNode("f_arbitrary.exe"));
             subDir2.AddFileNode(GenerateFileNode("测试x文件"));
@@ -604,7 +631,30 @@ namespace DMLibTest
             VerificationHelper.VerifyExceptionErrorMessage(testResult.Exceptions[0], expectedErrorMessage);
         }
 
-        #region Additional test attributes
+        private string FormalizeSearchPattern(string searchPattern)
+        {
+            return CrossPlatformHelpers.IsWindows ? searchPattern : searchPattern.Replace('\\', '/');
+        }
+
+#region Initialization and cleanup methods
+
+#if DNXCORE50
+        public SearchPatternTest()
+        {
+            Test.Info("Class Initialize: SearchPatternTest");
+            MyTestInitialize();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            MyTestCleanup();
+        }
+#endif
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
@@ -646,6 +696,6 @@ namespace DMLibTest
         {
             base.BaseTestCleanup();
         }
-        #endregion
+#endregion
     }
 }

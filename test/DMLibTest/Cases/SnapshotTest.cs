@@ -13,11 +13,31 @@ namespace DMLibTest.Cases
 
     [MultiDirectionTestClass]
     public class SnapshotTest : DMLibTestBase
+#if DNXCORE50
+        , System.IDisposable
+#endif
     {
-        #region Additional test attributes
+        #region Initialization and cleanup methods
+#if DNXCORE50
+        public SnapshotTest()
+        {
+            MyTestInitialize();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            MyTestCleanup();
+        }
+#endif
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
+            Test.Info("Class Initialize: SnapshotTest");
             DMLibTestBase.BaseClassInitialize(testContext);
         }
 

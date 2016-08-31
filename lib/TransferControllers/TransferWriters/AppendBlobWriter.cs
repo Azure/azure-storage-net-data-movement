@@ -139,8 +139,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 this.destExist = true;
             }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+            catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+            {
+                var se = e as StorageException ?? e.InnerException as StorageException;
+#else
             catch (StorageException se)
             {
+#endif
                 // Getting a storage exception is expected if the blob doesn't
                 // exist. In this case we won't error out, but set the 
                 // existingBlob flag to false to indicate we're uploading
@@ -295,8 +301,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             Utils.GenerateOperationContext(this.Controller.TransferContext),
                             this.CancellationToken);
                     }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+                    catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+                    {
+                        var se = e as StorageException ?? e.InnerException as StorageException;
+#else
                     catch (StorageException se)
                     {
+#endif
                         if ((null != se.RequestInformation) &&
                             ((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode) &&
                             (null != se.RequestInformation.ExtendedErrorInformation) &&
@@ -316,13 +328,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         throw new InvalidOperationException(Resources.DestinationChangedException);
                     }
 
-                    lock(this.SharedTransferData.TransferJob.CheckPoint.TransferWindowLock)
+                    this.Controller.UpdateProgress(() =>
                     {
-                        this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(currentOffset);
-                    }
+                        lock (this.SharedTransferData.TransferJob.CheckPoint.TransferWindowLock)
+                        {
+                            this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(currentOffset);
+                        }
 
-                    // update progress
-                    this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
+                        // update progress
+                        this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
+                    });
 
                     if (this.expectedOffset == this.SharedTransferData.TotalLength)
                     {

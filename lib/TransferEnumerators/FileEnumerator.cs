@@ -56,8 +56,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             set
             {
-                Debug.Assert(value is FileListContinuationToken);
                 this.listContinuationToken = value as FileListContinuationToken;
+                Debug.Assert(null == value || null != this.listContinuationToken);
             }
         }
 

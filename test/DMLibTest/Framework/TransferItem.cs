@@ -83,6 +83,18 @@ namespace DMLibTest
             set;
         }
 
+        public TransferStatus FinalStatus
+        {
+            get;
+            set;
+        }
+
+        public Exception Exception
+        {
+            get;
+            set;
+        }
+
         public void CloseStreamIfNecessary()
         {
             Stream sourceStream = this.SourceObject as Stream;
@@ -90,12 +102,20 @@ namespace DMLibTest
             
             if (sourceStream != null)
             {
+#if DNXCORE50
+                sourceStream.Dispose();
+#else
                 sourceStream.Close();
+#endif
             }
 
             if (destStream != null)
             {
+#if DNXCORE50
+                destStream.Dispose();
+#else
                 destStream.Close();
+#endif
             }
         }
 

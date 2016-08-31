@@ -10,8 +10,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Globalization;
     using System.Runtime.Serialization;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal sealed class SerializableTransferLocation : ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    [KnownType(typeof(AzureBlobDirectoryLocation))]
+    [KnownType(typeof(AzureBlobLocation))]
+    [KnownType(typeof(AzureFileDirectoryLocation))]
+    [KnownType(typeof(AzureFileLocation))]
+    [KnownType(typeof(DirectoryLocation))]
+    [KnownType(typeof(FileLocation))]
+    // StreamLocation intentionally omitted because it is not serializable
+    [KnownType(typeof(UriLocation))]
+    internal sealed class SerializableTransferLocation
+#if BINARY_SERIALIZATION
+        : ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string TransferLocationTypeName = "LocationType";
         private const string TransferLocationName = "Location";
@@ -21,6 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.Location = location;
         }
 
+#if BINARY_SERIALIZATION
         private SerializableTransferLocation(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -58,13 +74,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     break;
             }
         }
+#endif // BINARY_SERIALIZATION
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public TransferLocation Location
         {
             get;
             private set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -109,5 +130,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         this.Location.Type));
             }
         }
+#endif // BINARY_SERIALIZATION
     }
 }

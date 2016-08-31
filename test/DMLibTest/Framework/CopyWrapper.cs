@@ -15,15 +15,16 @@ namespace DMLibTest
         {
         }
 
-        protected override Task DoTransferImp(TransferItem item)
+        protected override async Task<TransferStatus> DoTransferImp(TransferItem item)
         {
             if (item.IsDirectoryTransfer)
             {
-                return this.CopyDirectory(item.SourceObject, item.DestObject, item);
+                return await this.CopyDirectory(item.SourceObject, item.DestObject, item);
             }
             else
             {
-                return this.Copy(item.SourceObject, item.DestObject, item);
+                await this.Copy(item.SourceObject, item.DestObject, item);
+                return null;
             }
         }
 
@@ -47,23 +48,19 @@ namespace DMLibTest
             }
         }
 
-        private Task CopyDirectory(dynamic sourceObject, dynamic destObject, TransferItem item)
+        private Task<TransferStatus> CopyDirectory(dynamic sourceObject, dynamic destObject, TransferItem item)
         {
             CopyDirectoryOptions copyDirectoryOptions = item.Options as CopyDirectoryOptions;
             TransferContext transferContext = item.TransferContext;
             CancellationToken cancellationToken = item.CancellationToken;
 
-            if (cancellationToken != null && cancellationToken != CancellationToken.None)
-            {
-                return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.IsServiceCopy, copyDirectoryOptions, transferContext, cancellationToken);
-            }
-            else if (transferContext != null || copyDirectoryOptions != null)
+            if (cancellationToken == null || cancellationToken == CancellationToken.None)
             {
                 return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.IsServiceCopy, copyDirectoryOptions, transferContext);
             }
             else
             {
-                return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.IsServiceCopy);
+                return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.IsServiceCopy, copyDirectoryOptions, transferContext, cancellationToken);
             }
         }
     }

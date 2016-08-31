@@ -37,6 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         private static ConcurrentDictionary<TransferKey, Transfer> allTransfers = new ConcurrentDictionary<TransferKey, Transfer>();
 
+#if REQUEST_EVENT_ARGS_EXPOSES_REQUEST // DNX profiles don't expose the HttpWebRequest through RequestEventArgs, so the user agent cannot be set
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1810:InitializeReferenceTypeStaticFieldsInline", Justification = "Performance")]
         static TransferManager()
         {
@@ -44,17 +45,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 // User agent string format: [UserAgentPrefix] <DMLib product token> <XSCL product token>
                 // e.g. Suppose UserAgentPrefix is "MyApp", the overall user agent string would be like
-                // 'MyApp DataMovement/0.2.0.0 WA-Storage/6.1.0 (.NET CLR 4.0.30319.34014; Win32NT 6.2.9200.0)' 
+                // 'MyApp DataMovement/0.3.0.0 WA-Storage/7.2.0 (.NET CLR 4.0.30319.34014; Win32NT 6.2.9200.0)' 
                 string userAgent = Constants.UserAgent + " " + Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent;
 
                 if (!string.IsNullOrEmpty(configurations.UserAgentPrefix))
                 {
                     userAgent = configurations.UserAgentPrefix + " " + userAgent;
                 }
-
+                
                 args.Request.UserAgent = userAgent;
             };
-        }
+    }
+#endif // REQUEST_EVENT_ARGS_EXPOSES_REQUEST
 
         /// <summary>
         /// Gets or sets the transfer configurations associated with the transfer manager
@@ -276,8 +278,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         /// <param name="sourcePath">Path to the source directory</param>
         /// <param name="destBlobDir">The <see cref="CloudBlobDirectory"/> that is the destination Azure blob directory.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task UploadDirectoryAsync(string sourcePath, CloudBlobDirectory destBlobDir)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> UploadDirectoryAsync(string sourcePath, CloudBlobDirectory destBlobDir)
         {
             return UploadDirectoryAsync(sourcePath, destBlobDir, null, null);
         }
@@ -289,8 +291,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="destBlobDir">The <see cref="CloudBlobDirectory"/> that is the destination Azure blob directory.</param>
         /// <param name="options">An <see cref="UploadDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task UploadDirectoryAsync(string sourcePath, CloudBlobDirectory destBlobDir, UploadDirectoryOptions options, TransferContext context)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> UploadDirectoryAsync(string sourcePath, CloudBlobDirectory destBlobDir, UploadDirectoryOptions options, TransferContext context)
         {
             return UploadDirectoryAsync(sourcePath, destBlobDir, options, context, CancellationToken.None);
         }
@@ -303,8 +305,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="options">An <see cref="UploadDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task UploadDirectoryAsync(string sourcePath, CloudBlobDirectory destBlobDir, UploadDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> UploadDirectoryAsync(string sourcePath, CloudBlobDirectory destBlobDir, UploadDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             DirectoryLocation sourceLocation = new DirectoryLocation(sourcePath);
             AzureBlobDirectoryLocation destLocation = new AzureBlobDirectoryLocation(destBlobDir);
@@ -323,8 +325,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         /// <param name="sourcePath">Path to the source directory</param>
         /// <param name="destFileDir">The <see cref="CloudFileDirectory"/> that is the destination Azure file directory.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task UploadDirectoryAsync(string sourcePath, CloudFileDirectory destFileDir)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> UploadDirectoryAsync(string sourcePath, CloudFileDirectory destFileDir)
         {
             return UploadDirectoryAsync(sourcePath, destFileDir, null, null);
         }
@@ -336,8 +338,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="destFileDir">The <see cref="CloudFileDirectory"/> that is the destination Azure file directory.</param>
         /// <param name="options">An <see cref="UploadDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task UploadDirectoryAsync(string sourcePath, CloudFileDirectory destFileDir, UploadDirectoryOptions options, TransferContext context)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> UploadDirectoryAsync(string sourcePath, CloudFileDirectory destFileDir, UploadDirectoryOptions options, TransferContext context)
         {
             return UploadDirectoryAsync(sourcePath, destFileDir, options, context, CancellationToken.None);
         }
@@ -350,8 +352,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="options">An <see cref="UploadDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task UploadDirectoryAsync(string sourcePath, CloudFileDirectory destFileDir, UploadDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> UploadDirectoryAsync(string sourcePath, CloudFileDirectory destFileDir, UploadDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             DirectoryLocation sourceLocation = new DirectoryLocation(sourcePath);
             AzureFileDirectoryLocation destLocation = new AzureFileDirectoryLocation(destFileDir);
@@ -546,21 +548,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         /// <param name="sourceBlobDir">The <see cref="CloudBlobDirectory"/> that is the source Azure blob directory.</param>
         /// <param name="destPath">Path to the destination directory</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task DownloadDirectoryAsync(CloudBlobDirectory sourceBlobDir, string destPath)
-        {
-            return DownloadDirectoryAsync(sourceBlobDir, destPath, null, null);
-        }
-
-        /// <summary>
-        /// Download an Azure blob directory from Azure Blob Storage.
-        /// </summary>
-        /// <param name="sourceBlobDir">The <see cref="CloudBlobDirectory"/> that is the source Azure blob directory.</param>
-        /// <param name="destPath">Path to the destination directory</param>
         /// <param name="options">A <see cref="DownloadDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task DownloadDirectoryAsync(CloudBlobDirectory sourceBlobDir, string destPath, DownloadDirectoryOptions options, TransferContext context)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> DownloadDirectoryAsync(CloudBlobDirectory sourceBlobDir, string destPath, DownloadDirectoryOptions options, TransferContext context)
         {
             return DownloadDirectoryAsync(sourceBlobDir, destPath, options, context, CancellationToken.None);
         }
@@ -573,8 +564,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="options">A <see cref="DownloadDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task DownloadDirectoryAsync(CloudBlobDirectory sourceBlobDir, string destPath, DownloadDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> DownloadDirectoryAsync(CloudBlobDirectory sourceBlobDir, string destPath, DownloadDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             AzureBlobDirectoryLocation sourceLocation = new AzureBlobDirectoryLocation(sourceBlobDir);
             DirectoryLocation destLocation = new DirectoryLocation(destPath);
@@ -598,21 +589,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         /// <param name="sourceFileDir">The <see cref="CloudFileDirectory"/> that is the source Azure file directory.</param>
         /// <param name="destPath">Path to the destination directory</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task DownloadDirectoryAsync(CloudFileDirectory sourceFileDir, string destPath)
-        {
-            return DownloadDirectoryAsync(sourceFileDir, destPath, null, null);
-        }
-
-        /// <summary>
-        /// Download an Azure file directory from Azure File Storage.
-        /// </summary>
-        /// <param name="sourceFileDir">The <see cref="CloudFileDirectory"/> that is the source Azure file directory.</param>
-        /// <param name="destPath">Path to the destination directory</param>
         /// <param name="options">A <see cref="DownloadOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task DownloadDirectoryAsync(CloudFileDirectory sourceFileDir, string destPath, DownloadDirectoryOptions options, TransferContext context)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> DownloadDirectoryAsync(CloudFileDirectory sourceFileDir, string destPath, DownloadDirectoryOptions options, TransferContext context)
         {
             return DownloadDirectoryAsync(sourceFileDir, destPath, options, context, CancellationToken.None);
         }
@@ -625,8 +605,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="options">A <see cref="DownloadOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task DownloadDirectoryAsync(CloudFileDirectory sourceFileDir, string destPath, DownloadDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> DownloadDirectoryAsync(CloudFileDirectory sourceFileDir, string destPath, DownloadDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             AzureFileDirectoryLocation sourceLocation = new AzureFileDirectoryLocation(sourceFileDir);
             DirectoryLocation destLocation = new DirectoryLocation(destPath);
@@ -999,24 +979,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="isServiceCopy">A flag indicating whether the copy is service-side asynchronous copy or not.
         /// If this flag is set to true, service-side asychronous copy will be used; if this flag is set to false,
         /// file is downloaded from source first, then uploaded to destination.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudBlobDirectory destBlobDir, bool isServiceCopy)
-        {
-            return CopyDirectoryAsync(sourceBlobDir, destBlobDir, isServiceCopy, null, null);
-        }
-
-        /// <summary>
-        /// Copy an Azure blob directory to another Azure blob directory.
-        /// </summary>
-        /// <param name="sourceBlobDir">The <see cref="CloudBlobDirectory"/> that is the source Azure blob directory.</param>
-        /// <param name="destBlobDir">The <see cref="CloudBlobDirectory"/> that is the destination Azure blob directory.</param>
-        /// <param name="isServiceCopy">A flag indicating whether the copy is service-side asynchronous copy or not.
-        /// If this flag is set to true, service-side asychronous copy will be used; if this flag is set to false,
-        /// file is downloaded from source first, then uploaded to destination.</param>
         /// <param name="options">A <see cref="CopyDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudBlobDirectory destBlobDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudBlobDirectory destBlobDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context)
         {
             return CopyDirectoryAsync(sourceBlobDir, destBlobDir, isServiceCopy, options, context, CancellationToken.None);
         }
@@ -1032,8 +998,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="options">A <see cref="CopyDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudBlobDirectory destBlobDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudBlobDirectory destBlobDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             AzureBlobDirectoryLocation sourceLocation = new AzureBlobDirectoryLocation(sourceBlobDir);
             AzureBlobDirectoryLocation destLocation = new AzureBlobDirectoryLocation(destBlobDir);
@@ -1056,24 +1022,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="isServiceCopy">A flag indicating whether the copy is service-side asynchronous copy or not.
         /// If this flag is set to true, service-side asychronous copy will be used; if this flag is set to false,
         /// file is downloaded from source first, then uploaded to destination.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudFileDirectory destFileDir, bool isServiceCopy)
-        {
-            return CopyDirectoryAsync(sourceBlobDir, destFileDir, isServiceCopy, null, null);
-        }
-
-        /// <summary>
-        /// Copy an Azure blob directory to an Azure file directory.
-        /// </summary>
-        /// <param name="sourceBlobDir">The <see cref="CloudBlobDirectory"/> that is the source Azure blob directory.</param>
-        /// <param name="destFileDir">The <see cref="CloudFileDirectory"/> that is the destination Azure file directory.</param>
-        /// <param name="isServiceCopy">A flag indicating whether the copy is service-side asynchronous copy or not.
-        /// If this flag is set to true, service-side asychronous copy will be used; if this flag is set to false,
-        /// file is downloaded from source first, then uploaded to destination.</param>
         /// <param name="options">A <see cref="CopyDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudFileDirectory destFileDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudFileDirectory destFileDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context)
         {
             return CopyDirectoryAsync(sourceBlobDir, destFileDir, isServiceCopy, options, context, CancellationToken.None);
         }
@@ -1089,8 +1041,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="options">A <see cref="CopyDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudFileDirectory destFileDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudFileDirectory destFileDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             AzureBlobDirectoryLocation sourceLocation = new AzureBlobDirectoryLocation(sourceBlobDir);
             AzureFileDirectoryLocation destLocation = new AzureFileDirectoryLocation(destFileDir);
@@ -1113,24 +1065,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="isServiceCopy">A flag indicating whether the copy is service-side asynchronous copy or not.
         /// If this flag is set to true, service-side asychronous copy will be used; if this flag is set to false,
         /// file is downloaded from source first, then uploaded to destination.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudFileDirectory destFileDir, bool isServiceCopy)
-        {
-            return CopyDirectoryAsync(sourceFileDir, destFileDir, isServiceCopy, null, null);
-        }
-
-        /// <summary>
-        /// Copy an Azure file directory to another Azure file directory.
-        /// </summary>
-        /// <param name="sourceFileDir">The <see cref="CloudFileDirectory"/> that is the source Azure file directory.</param>
-        /// <param name="destFileDir">The <see cref="CloudFileDirectory"/> that is the destination Azure file directory.</param>
-        /// <param name="isServiceCopy">A flag indicating whether the copy is service-side asynchronous copy or not.
-        /// If this flag is set to true, service-side asychronous copy will be used; if this flag is set to false,
-        /// file is downloaded from source first, then uploaded to destination.</param>
         /// <param name="options">A <see cref="CopyDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudFileDirectory destFileDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudFileDirectory destFileDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context)
         {
             return CopyDirectoryAsync(sourceFileDir, destFileDir, isServiceCopy, options, context, CancellationToken.None);
         }
@@ -1146,8 +1084,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="options">A <see cref="CopyDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudFileDirectory destFileDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudFileDirectory destFileDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             AzureFileDirectoryLocation sourceLocation = new AzureFileDirectoryLocation(sourceFileDir);
             AzureFileDirectoryLocation destLocation = new AzureFileDirectoryLocation(destFileDir);
@@ -1171,24 +1109,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="isServiceCopy">A flag indicating whether the copy is service-side asynchronous copy or not.
         /// If this flag is set to true, service-side asychronous copy will be used; if this flag is set to false,
         /// file is downloaded from source first, then uploaded to destination.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudBlobDirectory destBlobDir, bool isServiceCopy)
-        {
-            return CopyDirectoryAsync(sourceFileDir, destBlobDir, isServiceCopy, null, null);
-        }
-
-        /// <summary>
-        /// Copy an Azure file directory to an Azure blob directory.
-        /// </summary>
-        /// <param name="sourceFileDir">The <see cref="CloudFileDirectory"/> that is the source Azure file directory.</param>
-        /// <param name="destBlobDir">The <see cref="CloudBlobDirectory"/> that is the destination Azure blob directory.</param>
-        /// <param name="isServiceCopy">A flag indicating whether the copy is service-side asynchronous copy or not.
-        /// If this flag is set to true, service-side asychronous copy will be used; if this flag is set to false,
-        /// file is downloaded from source first, then uploaded to destination.</param>
         /// <param name="options">A <see cref="CopyDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudBlobDirectory destBlobDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudBlobDirectory destBlobDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context)
         {
             return CopyDirectoryAsync(sourceFileDir, destBlobDir, isServiceCopy, options, context, CancellationToken.None);
         }
@@ -1204,8 +1128,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="options">A <see cref="CopyDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="TransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
-        /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
-        public static Task CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudBlobDirectory destBlobDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudBlobDirectory destBlobDir, bool isServiceCopy, CopyDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             AzureFileDirectoryLocation sourceLocation = new AzureFileDirectoryLocation(sourceFileDir);
             AzureBlobDirectoryLocation destLocation = new AzureBlobDirectoryLocation(destBlobDir);
@@ -1244,7 +1168,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return DoTransfer(transfer, context, cancellationToken);
         }
 
-        private static Task UploadDirectoryInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, ITransferEnumerator sourceEnumerator, UploadDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
+        private static async Task<TransferStatus> UploadDirectoryInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, ITransferEnumerator sourceEnumerator, UploadDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             DirectoryTransfer transfer = GetOrCreateDirectoryTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 
@@ -1259,10 +1183,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 transfer.BlobType = options.BlobType;
             }
 
-            return DoTransfer(transfer, context, cancellationToken);
+            await DoTransfer(transfer, context, cancellationToken);
+
+            return TransferManager.CreateTransferSummary(transfer.ProgressTracker);
         }
 
-        private static Task DownloadDirectoryInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, ITransferEnumerator sourceEnumerator, TransferContext context, CancellationToken cancellationToken)
+        private static async Task<TransferStatus> DownloadDirectoryInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, ITransferEnumerator sourceEnumerator, TransferContext context, CancellationToken cancellationToken)
         {
             DirectoryTransfer transfer = GetOrCreateDirectoryTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
             
@@ -1271,10 +1197,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 transfer.SourceEnumerator = sourceEnumerator;
             }
 
-            return DoTransfer(transfer, context, cancellationToken);
+            await DoTransfer(transfer, context, cancellationToken);
+
+            return TransferManager.CreateTransferSummary(transfer.ProgressTracker);
         }
 
-        private static Task CopyDirectoryInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, bool isServiceCopy, ITransferEnumerator sourceEnumerator, CopyDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
+        private static async Task<TransferStatus> CopyDirectoryInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, bool isServiceCopy, ITransferEnumerator sourceEnumerator, CopyDirectoryOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             DirectoryTransfer transfer = GetOrCreateDirectoryTransfer(sourceLocation, destLocation, isServiceCopy ? TransferMethod.AsyncCopy : TransferMethod.SyncCopy, context);
             
@@ -1288,7 +1216,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 transfer.BlobType = options.BlobType;
             }
 
-            return DoTransfer(transfer, context, cancellationToken);
+            await DoTransfer(transfer, context, cancellationToken);
+
+            return TransferManager.CreateTransferSummary(transfer.ProgressTracker);
         }
 
         private static async Task DoTransfer(Transfer transfer, TransferContext transferContext, CancellationToken cancellationToken)
@@ -1443,6 +1373,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 throw new NotSupportedException(Resources.SearchPatternInRecursiveModeFromAzureFileNotSupportedException);
             }
+        }
+
+        private static TransferStatus CreateTransferSummary(TransferProgressTracker progress)
+        {
+            return new TransferStatus()
+            {
+                BytesTransferred = progress.BytesTransferred,
+                NumberOfFilesTransferred = progress.NumberOfFilesTransferred,
+                NumberOfFilesSkipped = progress.NumberOfFilesSkipped,
+                NumberOfFilesFailed = progress.NumberOfFilesFailed
+            };
         }
     }
 }

@@ -365,6 +365,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return exceptionMessage;
         }
 
+#if !DEBUG
         /// <summary>
         /// Returns a string that represents error details of the corresponding <see cref="StorageException"/>.
         /// </summary>
@@ -410,6 +411,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             return messageBuilder.ToString();
         }
+#endif
 
         public static byte[] RequireBuffer(MemoryManager memoryManager, Action checkCancellation)
         {

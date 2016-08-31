@@ -353,7 +353,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 this.Controller.CheckCancellation();
 
-                if (!this.md5HashStream.MD5HashTransformBlock(asyncState.StartOffset, asyncState.MemoryBuffer, 0, asyncState.Length, null, 0))
+                if (!this.md5HashStream.MD5HashTransformBlock(asyncState.StartOffset, asyncState.MemoryBuffer, 0, asyncState.Length))
                 {
                     // Error info has been set in Calculate MD5 action, just return
                     return;
@@ -402,10 +402,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     return;
                 }
 
-                this.md5HashStream.MD5HashTransformFinalBlock(new byte[0], 0, 0);
+                var md5 = this.md5HashStream.MD5HashTransformFinalBlock();
                 this.SharedTransferData.Attributes = new Attributes()
                 {
-                    ContentMD5 = Convert.ToBase64String(this.md5HashStream.Hash),
+                    ContentMD5 = md5,
                     OverWriteAll = false
                 };
 
@@ -419,7 +419,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 if (null != this.inputStream)
                 {
+#if DOTNET5_4
+                    this.inputStream.Dispose();
+#else
                     this.inputStream.Close();
+#endif
                     this.inputStream = null;
                 }
             }

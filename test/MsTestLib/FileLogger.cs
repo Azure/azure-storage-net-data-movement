@@ -15,6 +15,15 @@ namespace MS.Test.Common.MsTestLib
 
         private System.IO.StreamWriter m_file;
 
+#if DOTNET5_4
+        public FileLogger()
+        {
+            // TODO is USER reliable on Linux/OS X?
+            string fileName = Environment.GetEnvironmentVariable("USER") + "_" + Environment.GetEnvironmentVariable("COMPUTERNAME") + " " + DateTime.Now.ToString().Replace('/', '-').Replace(':', '_') + ".txt";
+            var fileStream = new System.IO.FileStream(fileName.ToString(), System.IO.FileMode.OpenOrCreate);
+            m_file = new System.IO.StreamWriter(fileStream, Encoding.UTF8);
+        }
+#else
         /// 
         /// <summary>
         /// Creates a new instance of this class
@@ -26,6 +35,7 @@ namespace MS.Test.Common.MsTestLib
             string fileName = Environment.UserName + "_" + Environment.MachineName + " " + DateTime.Now.ToString().Replace('/', '-').Replace(':', '_') + ".txt";
             m_file = new System.IO.StreamWriter(fileName.ToString(), true);
         }
+#endif
 
         /// 
         /// <summary>
@@ -50,8 +60,13 @@ namespace MS.Test.Common.MsTestLib
         /// 
         public FileLogger(string fileName, bool append)
         {
+#if DOTNET5_4
+            var fileStream = new System.IO.FileStream(fileName.ToString(), System.IO.FileMode.OpenOrCreate);
+            m_file = new System.IO.StreamWriter(fileStream, Encoding.UTF8);
+#else
             // Open the file and assign to member variable
             m_file = new System.IO.StreamWriter(fileName, append);
+#endif
         }
 
         /// 
@@ -185,7 +200,11 @@ namespace MS.Test.Common.MsTestLib
             if (m_file != null)
             {
                 m_file.Flush();
+#if DOTNET5_4
+                m_file.Dispose();
+#else
                 m_file.Close();
+#endif
             }
         }
     }

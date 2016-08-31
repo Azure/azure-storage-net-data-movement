@@ -11,7 +11,9 @@ namespace DMLibTest
     using System.Globalization;
     using System.IO;
     using System.Runtime.Serialization;
+#if BINARY_SERIALIZATION
     using System.Runtime.Serialization.Formatters.Binary;
+#endif
     using System.Threading;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.DataMovement;
@@ -83,8 +85,11 @@ namespace DMLibTest
         {
             //return checkpoint;
             Test.Info("Save and reload checkpoint");
+#if BINARY_SERIALIZATION
             IFormatter formatter = new BinaryFormatter();
-
+#else
+            var formatter = new DataContractSerializer(typeof(TransferCheckpoint));
+#endif
             TransferCheckpoint reloadedCheckpoint;
 
             string tempFileName = Guid.NewGuid().ToString();
@@ -186,22 +191,21 @@ namespace DMLibTest
 
         public static void UploadFromFile(this StorageBlob.CloudBlob cloudBlob,
             string path,
-            FileMode mode,
             AccessCondition accessCondition = null,
             StorageBlob.BlobRequestOptions options = null,
             OperationContext operationContext = null)
         {
             if (StorageBlob.BlobType.BlockBlob == cloudBlob.BlobType)
             {
-                (cloudBlob as StorageBlob.CloudBlockBlob).UploadFromFile(path, mode, accessCondition, options, operationContext);
+                (cloudBlob as StorageBlob.CloudBlockBlob).UploadFromFile(path, accessCondition, options, operationContext);
             }
             else if (StorageBlob.BlobType.PageBlob == cloudBlob.BlobType)
             {
-                (cloudBlob as StorageBlob.CloudPageBlob).UploadFromFile(path, mode, accessCondition, options, operationContext);
+                (cloudBlob as StorageBlob.CloudPageBlob).UploadFromFile(path, accessCondition, options, operationContext);
             }
             else if (StorageBlob.BlobType.AppendBlob == cloudBlob.BlobType)
             {
-                (cloudBlob as StorageBlob.CloudAppendBlob).UploadFromFile(path, mode, accessCondition, options, operationContext);
+                (cloudBlob as StorageBlob.CloudAppendBlob).UploadFromFile(path, accessCondition, options, operationContext);
             }
             else
             {

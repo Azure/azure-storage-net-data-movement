@@ -15,8 +15,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
     /// <summary>
     /// A utility class for serializing and de-serializing <see cref="CloudBlob"/> object.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class SerializableCloudBlob : ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal class SerializableCloudBlob
+#if BINARY_SERIALIZATION
+        : ISerializable
+#endif // BINARY_SERIALIZATION
     {
         /// <summary>
         /// Serialization field name for cloud blob uri.
@@ -35,6 +42,36 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
         { 
         }
 
+        #region Serialization helpers
+
+#if !BINARY_SERIALIZATION
+        [DataMember] private Uri cloudBlobUri;
+        [DataMember] private BlobType cloudBlobType;
+
+        /// <summary>
+        /// Serializes the object by extracting key data from the underlying CloudBlob
+        /// </summary>
+        /// <param name="context"></param>
+        [OnSerializing]
+        private void OnSerializingCallback(StreamingContext context)
+        {
+            cloudBlobUri = null == this.Blob? null : this.Blob.SnapshotQualifiedUri;
+            cloudBlobType = null == this.Blob? BlobType.Unspecified : this.Blob.BlobType;
+        }
+
+        /// <summary>
+        /// Initializes a deserialized CloudBlob
+        /// </summary>
+        /// <param name="context"></param>
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            this.CreateCloudBlobInstance(cloudBlobUri, cloudBlobType, null);
+        }
+#endif // !BINARY_SERIALIZATION
+#endregion // Serialization helpers
+
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="SerializableCloudBlob"/> class.
         /// </summary>
@@ -51,6 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             BlobType blobType = (BlobType)info.GetValue(BlobTypeName, typeof(BlobType));
             this.CreateCloudBlobInstance(blobUri, blobType, null);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets or sets the target <see cref="CloudBlob"/> object.
@@ -61,6 +99,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -84,6 +123,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             info.AddValue(BlobUriName, blobUri, typeof(Uri));
             info.AddValue(BlobTypeName, blobType, typeof(BlobType));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets the target target <see cref="CloudBlob"/> object of a <see cref="SerializableCloudBlob"/> object.

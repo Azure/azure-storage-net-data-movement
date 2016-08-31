@@ -1,0 +1,45 @@
+{
+  "version": "0.3.0.0",
+  "description": "Microsoft.WindowsAzure.Storage.DataMovement Class Library",
+  "authors": [ "Microsoft" ],
+  "packOptions": {
+    "tags": [ "" ],
+    "projectUrl": "",
+    "licenseUrl": ""
+  },
+  "frameworks": {
+    "netstandard1.3": {
+      "dependencies": {
+        "NETStandard.Library": "1.6.0",
+        "System.Threading.Thread": "4.0.0",
+        "System.Dynamic.Runtime": "4.0.11",
+        "System.Security.Cryptography.Algorithms": "4.2.0",
+        "WindowsAzure.Storage": "7.2.0",
+        "System.Runtime.Serialization.Primitives": "4.1.1",
+        "System.Net.Http": "4.1.0"
+      },
+      "imports": [
+        "dnxcore50",
+        "portable-net451+win8"
+      ],
+      "buildOptions": {
+        "define": [ "DOTNET5_4", "GENERIC_MARSHAL_SIZEOF", "RUNTIME_INFORMATION", "TRANSPARENCY_V2", "EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION" ]
+      }
+    }
+  },
+  "buildOptions": {
+    "delaySign": true,
+    "keyFile": "../../tools/strongnamekeys/fake/windows.snk",
+    "allowUnsafe": false,
+    "warningsAsErrors": true,
+    "compile": [
+      "../../lib/**/*.cs"
+    ],
+    "embed": {
+      "include": [
+        "Microsoft.WindowsAzure.Storage.DataMovement.Resources",
+        "../../lib/Resources.resx"
+      ]
+    }
+  }
+}

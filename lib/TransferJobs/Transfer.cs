@@ -16,7 +16,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// <summary>
     /// Base class for transfer operation.
     /// </summary>
-    internal abstract class Transfer : ISerializable, IDisposable
+#if !BINARY_SERIALIZATION
+    [DataContract]
+    [KnownType(typeof(AzureBlobDirectoryLocation))]
+    [KnownType(typeof(AzureBlobLocation))]
+    [KnownType(typeof(AzureFileDirectoryLocation))]
+    [KnownType(typeof(AzureFileLocation))]
+    [KnownType(typeof(DirectoryLocation))]
+    [KnownType(typeof(FileLocation))]
+    // StreamLocation intentionally omitted because it is not serializable
+    [KnownType(typeof(UriLocation))]
+#endif
+    internal abstract class Transfer : IDisposable
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string FormatVersionName = "Version";
         private const string SourceName = "Source";
@@ -36,8 +50,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.Destination = dest;
             this.TransferMethod = transferMethod;
             this.ProgressTracker = new TransferProgressTracker();
+            this.OriginalFormatVersion = Constants.FormatVersion;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="Transfer"/> class.
         /// </summary>
@@ -69,6 +85,24 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.TransferMethod = (TransferMethod)info.GetValue(TransferMethodName, typeof(TransferMethod));
             this.ProgressTracker = (TransferProgressTracker)info.GetValue(TransferProgressName, typeof(TransferProgressTracker));
         }
+#endif // BINARY_SERIALIZATION
+
+#if !BINARY_SERIALIZATION
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            if (!string.Equals(Constants.FormatVersion, OriginalFormatVersion, StringComparison.Ordinal))
+            {
+                throw new System.InvalidOperationException(
+                    string.Format(
+                    CultureInfo.CurrentCulture,
+                    Resources.DeserializationVersionNotMatchException,
+                    "TransferJob",
+                    OriginalFormatVersion,
+                    Constants.FormatVersion));
+            }
+        }
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Transfer"/> class.
@@ -79,12 +113,22 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.Destination = other.Destination;
             this.TransferMethod = other.TransferMethod;
             this.ContentType = other.ContentType;
-            this.ProgressTracker = other.ProgressTracker.Copy();
+            this.OriginalFormatVersion = other.OriginalFormatVersion;
         }
+
+        /// Used to ensure that deserialized transfers are only used
+        /// in scenarios with the same format version they were serialized with.
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
+        private string OriginalFormatVersion { get; set; }
 
         /// <summary>
         /// Gets source location for this transfer.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public TransferLocation Source
         {
             get;
@@ -94,6 +138,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets destination location for this transfer.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public TransferLocation Destination
         {
             get;
@@ -103,6 +150,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets the transfer method used in this transfer.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public TransferMethod TransferMethod
         {
             get;
@@ -139,12 +189,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets the progress tracker for this transfer.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public TransferProgressTracker ProgressTracker
         {
             get;
-            private set;
+            protected set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -165,6 +219,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             info.AddValue(TransferMethodName, this.TransferMethod);
             info.AddValue(TransferProgressName, this.ProgressTracker);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Execute the transfer asynchronously.
@@ -184,21 +239,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     case TransferJobStatus.Monitor:
                         if (transferJob.Status == TransferJobStatus.Failed)
                         {
-                            this.ProgressTracker.AddNumberOfFilesFailed(-1);
+                            UpdateProgress(transferJob, () => this.ProgressTracker.AddNumberOfFilesFailed(-1));
                         }
 
                         break;
 
                     case TransferJobStatus.Skipped:
-                        this.ProgressTracker.AddNumberOfFilesSkipped(1);
+                        UpdateProgress(transferJob, () => this.ProgressTracker.AddNumberOfFilesSkipped(1));
                         break;
 
                     case TransferJobStatus.Finished:
-                        this.ProgressTracker.AddNumberOfFilesTransferred(1);
+                        UpdateProgress(transferJob, () => this.ProgressTracker.AddNumberOfFilesTransferred(1));
                         break;
 
                     case TransferJobStatus.Failed:
-                        this.ProgressTracker.AddNumberOfFilesFailed(1);
+                        UpdateProgress(transferJob, () => this.ProgressTracker.AddNumberOfFilesFailed(1));
                         break;
 
                     case TransferJobStatus.NotStarted:
@@ -209,6 +264,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                 transferJob.Status = targetStatus;
             }
+        }
+
+        private static void UpdateProgress(TransferJob job, Action updateAction)
+        {
+            job.ProgressUpdateLock?.EnterReadLock();
+            updateAction();
+            job.ProgressUpdateLock?.ExitReadLock();
         }
 
         /// <summary>

@@ -11,9 +11,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// <summary>
     /// Represents a checkpoint from which a transfer may be resumed and continue.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
     public class TransferCheckpoint
     {
+
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferCheckpoint"/> class.
         /// </summary>
@@ -21,7 +27,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             this.TransferCollection = new TransferCollection();
         }
-
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferCheckpoint"/> class.
         /// </summary>
@@ -30,10 +36,32 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             this.TransferCollection = other.TransferCollection.Copy();
         }
+#else
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TransferCheckpoint"/> class.
+        /// </summary>
+        /// <param name="other">Another TransferCheckpoint object. </param>
+        internal TransferCheckpoint(TransferCheckpoint other)
+        {
+            if (null == other)
+            {
+                this.TransferCollection = new TransferCollection();
+            }
+            else
+            { 
+                this.TransferCollection = other.TransferCollection.Copy();
+            }
+        }
+#endif
 
         /// <summary>
         /// Gets that container that tracks all transfers associated with this transfer checkpoint
         /// </summary>
+
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         internal TransferCollection TransferCollection
         {
             get;

@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Diagnostics;
@@ -43,7 +44,9 @@ namespace MS.Test.Common.MsTestLib
             Test.Logger.Verbose("Running: {0} {1}", cmd, args);
             ProcessStartInfo psi = new ProcessStartInfo(cmd, args);
             psi.CreateNoWindow = true;
+#if !DOTNET5_4
             psi.WindowStyle = ProcessWindowStyle.Hidden;
+#endif
             psi.UseShellExecute = false;
             psi.RedirectStandardError = true;
             psi.RedirectStandardOutput = true;
@@ -117,7 +120,11 @@ namespace MS.Test.Common.MsTestLib
 
             Test.Logger.Verbose("Stdout: {0}", stdout);
             if (!string.IsNullOrEmpty(stderr)
+#if DOTNET5_4
+                && !string.Equals(stdout, stderr, StringComparison.OrdinalIgnoreCase))
+#else
                 && !string.Equals(stdout, stderr, StringComparison.InvariantCultureIgnoreCase))
+#endif
             {
                 Test.Logger.Verbose("Stderr: {0}", stderr);
             }
@@ -132,7 +139,9 @@ namespace MS.Test.Common.MsTestLib
             Test.Logger.Verbose("Running: {0} {1}", cmd, args);
             ProcessStartInfo psi = new ProcessStartInfo(cmd, args);
             psi.CreateNoWindow = true;
+#if !DOTNET5_4
             psi.WindowStyle = ProcessWindowStyle.Hidden;
+#endif
             psi.UseShellExecute = false;
             psi.RedirectStandardError = true;
             psi.RedirectStandardOutput = true;
@@ -204,7 +213,11 @@ namespace MS.Test.Common.MsTestLib
             {
                 Test.Logger.Verbose("Stdout: {0}", stdout);
                 if (!string.IsNullOrEmpty(stderr)
-                    && !string.Equals(stdout, stderr, StringComparison.InvariantCultureIgnoreCase))
+#if DOTNET5_4
+                && !string.Equals(stdout, stderr, StringComparison.OrdinalIgnoreCase))
+#else
+                && !string.Equals(stdout, stderr, StringComparison.InvariantCultureIgnoreCase))
+#endif
                     Test.Logger.Verbose("Stderr: {0}", stderr);
                 return p.ExitCode;
             }
@@ -219,7 +232,11 @@ namespace MS.Test.Common.MsTestLib
 
                 Test.Logger.Verbose("Stdout: {0}", stdout);
                 if (!string.IsNullOrEmpty(stderr)
-                    && !string.Equals(stdout, stderr, StringComparison.InvariantCultureIgnoreCase))
+#if DOTNET5_4
+                && !string.Equals(stdout, stderr, StringComparison.OrdinalIgnoreCase))
+#else
+                && !string.Equals(stdout, stderr, StringComparison.InvariantCultureIgnoreCase))
+#endif
                     Test.Logger.Verbose("Stderr: {0}", stderr);
                 return int.MinValue;
             }
