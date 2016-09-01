@@ -12,11 +12,32 @@ namespace DMLibTest.Cases
 
     [MultiDirectionTestClass]
     public class ProgressHandlerTest : DMLibTestBase
+#if DNXCORE50
+        , System.IDisposable
+#endif
     {
-        #region Additional test attributes
+        #region Initialization and cleanup methods
+
+#if DNXCORE50
+        public ProgressHandlerTest()
+        {
+            MyTestInitialize();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            MyTestCleanup();
+        }
+#endif
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
+            Test.Info("Class Initialize: ProgressHandlerTest");
             DMLibTestBase.BaseClassInitialize(testContext);
         }
 

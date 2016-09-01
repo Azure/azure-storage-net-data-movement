@@ -10,7 +10,7 @@ namespace DMLibTestCodeGen
     using System.CodeDom.Compiler;
     using System.IO;
     using Microsoft.CSharp;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using MSUnittest = Microsoft.VisualStudio.TestTools.UnitTesting;
 
     internal static class GodeGeneratorConst
     {
@@ -71,14 +71,19 @@ namespace DMLibTestCodeGen
             result.Attributes = MemberAttributes.Public;
             result.BaseTypes.Add(testClass.ClassType);
 
-            CodeAttributeDeclaration testClassAttribute = new CodeAttributeDeclaration(
-                new CodeTypeReference(typeof(TestClassAttribute)));
+            if (FrameworkType.DNetCore == Program.FrameWorkType)
+            {
+                AddXunitLifecycleCode(testClass.ClassType.Name, result);
+            }
+            else if (FrameworkType.DNet == Program.FrameWorkType) // Add initialize and cleanup method for MSTest
+            {
+                CodeAttributeDeclaration testClassAttribute = new CodeAttributeDeclaration(
+                            new CodeTypeReference(typeof(MSUnittest.TestClassAttribute)));
 
-            result.CustomAttributes.Add(testClassAttribute);
-
-            // Add initialize and cleanup method
-            result.Members.Add(this.GetInitCleanupMethod(typeof(ClassInitializeAttribute), testClass));
-            result.Members.Add(this.GetInitCleanupMethod(typeof(ClassCleanupAttribute), testClass));
+                result.CustomAttributes.Add(testClassAttribute);
+                result.Members.Add(this.GetInitCleanupMethod(typeof(MSUnittest.ClassInitializeAttribute), testClass));
+                result.Members.Add(this.GetInitCleanupMethod(typeof(MSUnittest.ClassCleanupAttribute), testClass));
+            }
 
             // No need to generate TestInitialize and TestCleanup Method.
             // Generated class can inherit from base class.
@@ -92,21 +97,73 @@ namespace DMLibTestCodeGen
             return result;
         }
 
+        private static void AddXunitLifecycleCode(string className, CodeTypeDeclaration classDeclaration)
+        {
+            // Add IClassFixture for class-level initialization and cleanup, and
+            // CollectionAttribute to mimic MsTest's assembly-level intialization and cleanup.
+            // (http://xunit.github.io/docs/shared-context.html)
+            classDeclaration.BaseTypes.Add($"Xunit.IClassFixture<{className}Fixture>");
+            var globalCollectionAttribute =
+                new CodeAttributeDeclaration(
+                    new CodeTypeReference(typeof(Xunit.CollectionAttribute)),
+                    new CodeAttributeArgument(new CodeSnippetExpression("Collections.Global")));
+            classDeclaration.CustomAttributes.Add(globalCollectionAttribute);
+
+            // Add a logger field to hold a reference to XunitLogger, which will
+            // redirect output from MsTestLib's Test class to xUnit's logger
+            const string loggerFieldname = "logger";
+            var loggerField = new CodeMemberField
+            {
+                Attributes = MemberAttributes.Private,
+                Name = loggerFieldname,
+                Type = new CodeTypeReference("XunitLogger")
+            };
+            classDeclaration.Members.Add(loggerField);
+            var loggerFieldReference = new CodeFieldReferenceExpression(new CodeThisReferenceExpression(), loggerFieldname);
+
+            const string parameterName = "outputHelper";
+            var constructor = new CodeConstructor();
+            constructor.Parameters.Add(new CodeParameterDeclarationExpression(typeof(Xunit.Abstractions.ITestOutputHelper), parameterName));
+            constructor.Statements.Add(new CodeAssignStatement(loggerFieldReference,
+                new CodeObjectCreateExpression(new CodeTypeReference("XunitLogger"), new CodeSnippetExpression(parameterName))));
+            constructor.Statements.Add(new CodeMethodInvokeExpression(
+                new CodeMethodReferenceExpression(
+                    new CodeTypeReferenceExpression("Test.Logger.Loggers"), "Add"), loggerFieldReference));
+            constructor.Attributes = MemberAttributes.Public;
+            classDeclaration.Members.Add(constructor);
+
+            // Add a Dispose method to ensure the xUnit logger reference doesn't outlive the test class
+            var dispose = new CodeMemberMethod
+            {
+                Attributes = MemberAttributes.Override | MemberAttributes.Family,
+                Name = "Dispose",
+                ReturnType = new CodeTypeReference(typeof(void)),
+            };
+            dispose.Parameters.Add(new CodeParameterDeclarationExpression(typeof(bool), "disposing"));
+            dispose.Statements.Add(new CodeMethodInvokeExpression(
+                new CodeBaseReferenceExpression(), "Dispose", new CodeSnippetExpression("true")));
+            dispose.Statements.Add(new CodeMethodInvokeExpression(
+                new CodeMethodReferenceExpression(
+                    new CodeTypeReferenceExpression("Test.Logger.Loggers"), "Remove"), loggerFieldReference));
+            classDeclaration.Members.Add(dispose);
+        }
+
         private CodeMemberMethod GetInitCleanupMethod(Type methodAttributeType, MultiDirectionTestClass testClass)
         {
             bool isStatic = false;
             string generatedMetholdName = string.Empty;
             string methodToInvokeName = string.Empty;
             CodeParameterDeclarationExpression parameterDec = null;
+            Type acctualAttributeType = methodAttributeType;
 
-            if (methodAttributeType == typeof(ClassInitializeAttribute))
+            if (methodAttributeType == typeof(MSUnittest.ClassInitializeAttribute))
             {
                 isStatic = true;
                 generatedMetholdName = GodeGeneratorConst.ClassInitMethodName;
                 methodToInvokeName = testClass.ClassInit.Name;
-                parameterDec = new CodeParameterDeclarationExpression(typeof(TestContext), "testContext");
+                parameterDec = new CodeParameterDeclarationExpression(typeof(MSUnittest.TestContext), "testContext");
             }
-            else if (methodAttributeType == typeof(ClassCleanupAttribute))
+            else if (methodAttributeType == typeof(MSUnittest.ClassCleanupAttribute))
             {
                 isStatic = true;
                 generatedMetholdName = GodeGeneratorConst.ClassCleanupMethodName;
@@ -140,7 +197,7 @@ namespace DMLibTestCodeGen
 
             // Add methold attribute
             CodeAttributeDeclaration methodAttribute = new CodeAttributeDeclaration(
-                new CodeTypeReference(methodAttributeType));
+                new CodeTypeReference(acctualAttributeType));
             result.CustomAttributes.Add(methodAttribute);
 
             // Add invoke statement
@@ -178,12 +235,20 @@ namespace DMLibTestCodeGen
                     this.AddTestCategoryAttribute(generatedMethod, tag);
                 }
 
-                CodeAttributeDeclaration testMethodAttribute = new CodeAttributeDeclaration(
-                    new CodeTypeReference(typeof(TestMethodAttribute)));
+                CodeAttributeDeclaration testMethodAttribute = null;
+
+                testMethodAttribute = new CodeAttributeDeclaration(
+                    new CodeTypeReference(typeof(MSUnittest.TestMethodAttribute)));
 
                 generatedMethod.CustomAttributes.Add(testMethodAttribute);
 
-                foreach (var statement in transferDirection.EnumerateUpdateContextStatements())
+                if (Program.FrameWorkType == FrameworkType.DNetCore)
+                {
+                    // add TestStartEndAttribute to ensure Test.Start and Test.End will be called as expected
+                    generatedMethod.CustomAttributes.Add(new CodeAttributeDeclaration("TestStartEnd"));
+                }
+
+                foreach (var statement in TransferDirectionExtensions.EnumerateUpdateContextStatements(transferDirection as DMLibTransferDirection))
                 {
                     generatedMethod.Statements.Add(statement);
                 }
@@ -200,7 +265,7 @@ namespace DMLibTestCodeGen
         {
             foreach (var customAttribute in testMethod.MethodInfoObj.CustomAttributes)
             {
-                if (customAttribute.AttributeType == typeof(TestCategoryAttribute))
+                if (customAttribute.AttributeType == typeof(MSUnittest.TestCategoryAttribute))
                 {
                     if (customAttribute.ConstructorArguments.Count != 1)
                     {
@@ -224,9 +289,10 @@ namespace DMLibTestCodeGen
         {
             CodeAttributeArgument testCategoryTag = new CodeAttributeArgument(expression);
 
-            CodeAttributeDeclaration testCategoryAttribute = new CodeAttributeDeclaration(
-                new CodeTypeReference(typeof(TestCategoryAttribute)),
-                testCategoryTag);
+            CodeAttributeDeclaration testCategoryAttribute = null;
+
+            testCategoryAttribute = new CodeAttributeDeclaration(
+                new CodeTypeReference(typeof(MSUnittest.TestCategoryAttribute)), testCategoryTag);
 
             method.CustomAttributes.Add(testCategoryAttribute);
         }

@@ -18,15 +18,16 @@ namespace DMLibTest
         {
         }
 
-        protected override Task DoTransferImp(TransferItem item)
+        protected override async Task<TransferStatus> DoTransferImp(TransferItem item)
         {
             if (item.IsDirectoryTransfer)
             {
-                return this.UploadDirectory(item.DestObject, item);
+                return await this.UploadDirectory(item.DestObject, item);
             }
             else
             {
-                return this.Upload(item.DestObject, item);
+                await this.Upload(item.DestObject, item);
+                return null;
             }
         }
 
@@ -73,7 +74,7 @@ namespace DMLibTest
             }
         }
 
-        private Task UploadDirectory(dynamic destObject, TransferItem item)
+        private Task<TransferStatus> UploadDirectory(dynamic destObject, TransferItem item)
         {
             UploadDirectoryOptions uploadDirectoryOptions = item.Options as UploadDirectoryOptions;
             TransferContext transferContrext = item.TransferContext;

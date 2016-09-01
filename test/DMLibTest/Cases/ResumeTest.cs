@@ -17,11 +17,32 @@ namespace DMLibTest
 
     [MultiDirectionTestClass]
     public class ResumeTest : DMLibTestBase
+#if DNXCORE50
+        , IDisposable
+#endif
     {
-        #region Additional test attributes
+        #region Initialization and cleanup methods
+
+#if DNXCORE50
+        public ResumeTest()
+        {
+            MyTestInitialize();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            MyTestCleanup();
+        }
+#endif
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
+            Test.Info("Class Initialize: ResumeTest");
             DMLibTestBase.BaseClassInitialize(testContext);
         }
 
@@ -75,7 +96,6 @@ namespace DMLibTest
 
                     // Store the first checkpoint
                     firstCheckpoint = transferContext.LastCheckpoint;
-                    Thread.Sleep(1000);
 
                     // Cancel the transfer and store the second checkpoint
                     tokenSource.Cancel();
@@ -265,7 +285,7 @@ namespace DMLibTest
 
                 // Store the first checkpoint
                 firstCheckpoint = transferContext.LastCheckpoint;
-                Thread.Sleep(1000);
+                Thread.Sleep(100);
 
                 // Cancel the transfer and store the second checkpoint
                 tokenSource.Cancel();
@@ -304,6 +324,7 @@ namespace DMLibTest
             result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
 
             VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0);
+            VerificationHelper.VerifySingleTransferStatus(result, totalFileNum, 0, 0, totalSizeInBytes);
             VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
 
             // resume with secondResumeCheckpoint
@@ -326,6 +347,7 @@ namespace DMLibTest
             result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
 
             VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0);
+            VerificationHelper.VerifySingleTransferStatus(result, totalFileNum, 0, 0, totalSizeInBytes);
             VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
         }
 

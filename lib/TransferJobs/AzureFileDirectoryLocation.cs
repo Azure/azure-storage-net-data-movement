@@ -13,11 +13,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper;
     using Microsoft.WindowsAzure.Storage.File;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class AzureFileDirectoryLocation : TransferLocation, ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal class AzureFileDirectoryLocation : TransferLocation
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string FileDirName = "FileDir";
-
+        
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private SerializableCloudFileDirectory fileDirectorySerializer;
 
         /// <summary>
@@ -35,6 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.fileDirectorySerializer = new SerializableCloudFileDirectory(fileDir);
         }
 
+#if BINARY_SERIALIZATION
         private AzureFileDirectoryLocation(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -44,6 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             this.fileDirectorySerializer = (SerializableCloudFileDirectory)info.GetValue(FileDirName, typeof(SerializableCloudFileDirectory));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets transfer location type.
@@ -75,7 +87,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             get;
             set;
         }
-        
+
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -90,13 +103,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             info.AddValue(FileDirName, this.fileDirectorySerializer, typeof(SerializableCloudFileDirectory));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Validates the transfer location.
         /// </summary>
         public override void Validate()
         {
-            this.FileDirectory.CreateIfNotExists(Transfer_RequestOptions.DefaultFileRequestOptions);
+            this.FileDirectory.CreateIfNotExistsAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
         }
 
         /// <summary>

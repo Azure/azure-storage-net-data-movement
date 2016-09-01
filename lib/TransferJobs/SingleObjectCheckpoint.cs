@@ -7,12 +7,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
     using System.Collections.Generic;
+    using System.Runtime.Serialization;
 
     /// <summary>
     /// Represents checkpoint of a single transfer job, 
     /// includes position of transferred bytes and transfer window.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
     internal sealed class SingleObjectCheckpoint
     {
         /// <summary>
@@ -40,10 +45,22 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
         }
 
+#if !BINARY_SERIALIZATION
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            // Constructors aren't called by DCS, so initialize non-serialized members here
+            this.TransferWindowLock = new object();
+        }
+#endif
+
         /// <summary>
         /// Gets or sets transferred offset of this transfer entry.
         /// </summary>
         /// <value>Transferred offset of this transfer entry.</value>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public long EntryTransferOffset
         {
             get;
@@ -54,12 +71,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Gets or sets transfer window of this transfer entry.
         /// </summary>
         /// <value>Transfer window of this transfer entry.</value>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public List<long> TransferWindow
         {
             get;
             set;
         }
-
+        
         public object TransferWindowLock
         {
             get;

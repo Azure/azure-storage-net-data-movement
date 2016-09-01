@@ -103,7 +103,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     AccessCondition.GenerateIfMatchCondition(this.SourceBlob.Properties.ETag);
 
                 return this.destBlob.StartCopyAsync(
-                         this.SourceBlob.GenerateUriWithCredentials(),
+                         this.SourceBlob.GenerateCopySourceUri(),
                          sourceAccessCondition,
                          destAccessCondition,
                          Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),

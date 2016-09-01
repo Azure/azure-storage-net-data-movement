@@ -22,7 +22,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// <summary>
     /// Represents a multiple objects transfer operation.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
     internal abstract class MultipleObjectsTransfer : Transfer
     {
         /// <summary>
@@ -38,6 +42,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// List continuation token from which enumeration begins.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private SerializableListContinuationToken enumerateContinuationToken;
 
         /// <summary>
@@ -48,7 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Timeout used in reset event waiting.
         /// </summary>
-        private readonly TimeSpan EnumerationWaitTimeOut = TimeSpan.FromSeconds(10);
+        private TimeSpan EnumerationWaitTimeOut = TimeSpan.FromSeconds(10);
 
         /// <summary>
         /// Used to block enumeration when have enumerated enough transfer entries.
@@ -63,11 +70,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Number of outstandings tasks started by this transfer.
         /// </summary>
-        private int outstandingTasks;
+        private long outstandingTasks;
+
+        private ReaderWriterLockSlim progressUpdateLock = new ReaderWriterLockSlim();
 
         /// <summary>
         /// Storres sub transfers.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private TransferCollection subTransfers;
 
         private TaskCompletionSource<object> allTransfersCompleteSource;
@@ -85,6 +97,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.subTransfers.OverallProgressTracker.Parent = this.ProgressTracker;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="MultipleObjectsTransfer"/> class.
         /// </summary>
@@ -97,6 +110,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.subTransfers = (TransferCollection)info.GetValue(SubTransfersName, typeof(TransferCollection));
             this.subTransfers.OverallProgressTracker.Parent = this.ProgressTracker;
         }
+#endif // BINARY_SERIALIZATION
+
+        // Initialize a new MultipleObjectsTransfer object after deserialization
+#if !BINARY_SERIALIZATION
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            // Constructors and field initializers are not called by DCS, so initialize things here
+            progressUpdateLock = new ReaderWriterLockSlim();
+            lockEnumerateContinuationToken = new object();
+            EnumerationWaitTimeOut = TimeSpan.FromSeconds(10);
+
+            this.subTransfers.OverallProgressTracker.Parent = this.ProgressTracker;
+        }
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultipleObjectsTransfer"/> class.
@@ -105,6 +133,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         protected MultipleObjectsTransfer(MultipleObjectsTransfer other)
             : base(other)
         {
+            other.progressUpdateLock?.EnterWriteLock();
+            this.ProgressTracker = other.ProgressTracker.Copy();
             lock (other.lockEnumerateContinuationToken)
             {
                 // copy enumerator
@@ -113,8 +143,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 // copy transfers
                 this.subTransfers = other.subTransfers.Copy();
             }
-
             this.subTransfers.OverallProgressTracker.Parent = this.ProgressTracker;
+            other.progressUpdateLock?.ExitWriteLock();
         }
 
         /// <summary>
@@ -135,6 +165,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -150,6 +181,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             // serialize sub transfers
             info.AddValue(SubTransfersName, this.subTransfers, typeof(TransferCollection));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Execute the transfer asynchronously.
@@ -173,18 +205,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 throw this.enumerateException;
             }
-            else if (this.subTransfers.Count != 0)
-            {
-                string errorMessage = string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.SubTransferFailsException,
-                    this.subTransfers.Count);
 
-                throw new TransferException(TransferErrorCode.SubTransferFails, errorMessage);
-            }
+            this.ProgressTracker.AddBytesTransferred(0);
         }
 
-        protected abstract Transfer CreateTransfer(TransferEntry entry);
+        protected abstract SingleObjectTransfer CreateTransfer(TransferEntry entry);
 
         protected abstract void UpdateTransfer(Transfer transfer);
 
@@ -192,17 +217,29 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             if (disposing)
             {
+                SpinWait sw = new SpinWait();
+                while (Interlocked.Read(ref this.outstandingTasks) != 0)
+                {
+                    sw.SpinOnce();
+                }
+
                 if (this.enumerationResetEvent != null)
                 {
                     this.enumerationResetEvent.Dispose();
                     this.enumerationResetEvent = null;
+                }
+
+                if (null != this.progressUpdateLock)
+                {
+                    this.progressUpdateLock.Dispose();
+                    this.progressUpdateLock = null;
                 }
             }
 
             base.Dispose(disposing);
         }
 
-        private IEnumerable<Transfer> AllTransfers(CancellationToken cancellationToken)
+        private IEnumerable<SingleObjectTransfer> AllTransfers(CancellationToken cancellationToken)
         {
             // return all existing transfers in subTransfers
             foreach (var transfer in this.subTransfers.GetEnumerator())
@@ -212,7 +249,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 transfer.ContentType = this.ContentType;
 
                 this.UpdateTransfer(transfer);
-                yield return transfer;
+                yield return transfer as SingleObjectTransfer;
             }
 
             // list new transfers
@@ -251,7 +288,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     }
                 }
 
-                Transfer transfer = this.CreateTransfer(entry);
+                SingleObjectTransfer transfer = this.CreateTransfer(entry);
 
                 lock (this.lockEnumerateContinuationToken)
                 {
@@ -273,8 +310,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 foreach (var transfer in this.AllTransfers(cancellationToken))
                 {
                     this.CheckAndPauseEnumeration(cancellationToken);
-
-                    Task unused = this.DoTransfer(transfer, scheduler, cancellationToken);
+                    transfer.UpdateProgressLock(this.progressUpdateLock);                    
+                    this.DoTransfer(transfer, scheduler, cancellationToken);
                 }
             }
             catch (Exception ex)
@@ -319,7 +356,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
 
-        private async Task DoTransfer(Transfer transfer, TransferScheduler scheduler, CancellationToken cancellationToken)
+        private async void DoTransfer(Transfer transfer, TransferScheduler scheduler, CancellationToken cancellationToken)
         {
             using (transfer)
             {
@@ -343,13 +380,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         this.subTransfers.RemoveTransfer(transfer);
                     }
 
+                    this.enumerationResetEvent.Set();
+
                     if (Interlocked.Decrement(ref this.outstandingTasks) == 0)
                     {
                         // all transfers are done
                         this.allTransfersCompleteSource.SetResult(null);
                     }
-
-                    this.enumerationResetEvent.Set();
                 }
             }
         }

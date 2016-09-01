@@ -136,8 +136,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 await this.DoFetchAttributesAsync();
             }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+            catch (Exception ex) when (ex is StorageException || ex.InnerException is StorageException)
+            {
+                var e = ex as StorageException ?? ex.InnerException as StorageException;
+#else
             catch (StorageException e)
             {
+#endif
                 // Getting a storage exception is expected if the blob doesn't
                 // exist. For those cases that indicate the blob doesn't exist
                 // we will set a specific error state.

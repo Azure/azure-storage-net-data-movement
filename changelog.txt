@@ -1,3 +1,11 @@
+2016.08.26 Version 0.3.0
+ * Upgrade azure storage client library to 7.2.0
+ * Fixed a bug that ParallelOperations setting doesn't take effect
+ * Fixed a bug of randomly throwing exception when transferring a directory
+ * Removed directory downloading/copying interfaces without DownloadOptions/CopyOptions 
+ * Changed the return value for directory transferring interfaces from Task to Task<TransferStatus> 
+ * Support to work with the RTM release of .Net Core 1.0 
+
 2015.12.28 Version 0.2.0
  * Support download, upload, copy directory (local file directory, blob virtual directory, file share directory) 
  * Support transfer directory in recursive mode or flat mode 

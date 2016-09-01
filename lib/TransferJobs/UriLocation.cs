@@ -9,8 +9,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System;
     using System.Runtime.Serialization;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class UriLocation : TransferLocation, ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal class UriLocation : TransferLocation
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string UriName = "Uri";
 
@@ -28,6 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.Uri = uri;
         }
 
+#if BINARY_SERIALIZATION
         private UriLocation(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -37,6 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             this.Uri = (Uri)info.GetValue(UriName, typeof(Uri));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets transfer location type.
@@ -52,12 +61,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets Uri to the location.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public Uri Uri
         {
             get;
             private set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -72,6 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             info.AddValue(UriName, this.Uri, typeof(Uri));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Validates the transfer location.

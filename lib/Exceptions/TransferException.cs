@@ -12,8 +12,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// <summary>
     /// Base exception class for exceptions thrown by Blob/FileTransferJobs.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
-    public sealed class TransferException : Exception
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    public class TransferException : Exception
     {
         /// <summary>
         /// Version of current TransferException serialization format.
@@ -33,6 +37,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Transfer error code.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private TransferErrorCode errorCode;
 
         /// <summary>
@@ -99,12 +106,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.errorCode = errorCode;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferException" /> class.
         /// </summary>
         /// <param name="info">Serialization information.</param>
         /// <param name="context">Streaming context.</param>
-        private TransferException(
+        protected TransferException(
             SerializationInfo info, 
             StreamingContext context)
             : base(info, context)
@@ -116,6 +124,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 this.errorCode = (TransferErrorCode)info.GetInt32(ErrorCodeFieldName);
             }
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets the detailed error code.
@@ -129,6 +138,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the exception.
         /// </summary>
@@ -148,5 +158,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             base.GetObjectData(info, context);
         }
+#endif //BINARY_SERIALIZATION
     }
 }

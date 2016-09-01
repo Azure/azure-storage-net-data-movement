@@ -18,11 +18,32 @@ namespace DMLibTest
 
     [MultiDirectionTestClass]
     public class BVT : DMLibTestBase
+#if DNXCORE50
+        , IDisposable
+#endif
     {
-        #region Additional test attributes
+        #region Initialization and cleanup methods
+
+#if DNXCORE50
+        public BVT()
+        {
+            MyTestInitialize();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            MyTestCleanup();
+        }
+#endif
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
+            Test.Info("Class Initialize: BVT");
             DMLibTestBase.BaseClassInitialize(testContext);
             BVT.UnicodeFileName = FileOp.NextString(random, random.Next(6, 10));
             Test.Info("Use file name {0} in BVT.", UnicodeFileName);
@@ -45,7 +66,7 @@ namespace DMLibTest
         {
             base.BaseTestCleanup();
         }
-        #endregion
+#endregion
 
         private static string UnicodeFileName;
 

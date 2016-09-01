@@ -14,11 +14,32 @@ namespace DMLibTest.Cases
 
     [MultiDirectionTestClass]
     public class CheckContentMD5Test : DMLibTestBase
+#if DNXCORE50
+        , IDisposable
+#endif
     {
-        #region Additional test attributes
+        #region Initialization and cleanup methods
+
+#if DNXCORE50
+        public CheckContentMD5Test()
+        {
+            MyTestInitialize();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            MyTestCleanup();
+        }
+#endif
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
+            Test.Info("Class Initialize: CheckContentMD5Test");
             DMLibTestBase.BaseClassInitialize(testContext);
         }
 
@@ -138,6 +159,11 @@ namespace DMLibTest.Cases
 
             ProgressChecker progressChecker = new ProgressChecker(4, totalSize, 3, 1, 0, totalSize);
             context.ProgressHandler = progressChecker.GetProgressHandler();
+            List<Exception> transferExceptions = new List<Exception>();
+            context.FileFailed += (eventSource, eventArgs) =>
+            {
+                transferExceptions.Add(eventArgs.Exception);
+            };
 
             TransferItem checkMD5Item = new TransferItem()
             {
@@ -185,13 +211,13 @@ namespace DMLibTest.Cases
             Test.Assert(failureReported, "Verify md5 check failure is reported.");
             VerificationHelper.VerifyFinalProgress(progressChecker, 3, 0, 1);
 
-            if (testResult.Exceptions.Count != 1)
+            if (testResult.Exceptions.Count != 0 || transferExceptions.Count != 1)
             {
                 Test.Error("Expect one exception but actually no exception is thrown.");
             }
             else
             {
-                VerificationHelper.VerifyTransferException(testResult.Exceptions[0], TransferErrorCode.SubTransferFails, "1 sub transfer(s) failed.");
+                VerificationHelper.VerifyExceptionErrorMessage(transferExceptions[0], new string[] { "The MD5 hash calculated from the downloaded data does not match the MD5 hash stored in the property of source" });
             }
         }
     }

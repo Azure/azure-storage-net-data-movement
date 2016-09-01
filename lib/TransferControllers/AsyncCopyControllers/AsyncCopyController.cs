@@ -112,7 +112,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     delegate(object timerState)
                     {
                         this.hasWork = true;
-                    }));
+#if DOTNET5_4
+                    }), null, -1, Timeout.Infinite);
+#else
+                }));
+#endif
 
             this.SetInitialStatus();
         }
@@ -326,8 +330,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 await this.DoFetchSourceAttributesAsync();
             }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+            catch (Exception ex) when (ex is StorageException || ex.InnerException is StorageException)
+            {
+                var e = ex as StorageException ?? ex.InnerException as StorageException;
+#else
             catch (StorageException e)
             {
+#endif
                 HandleFetchSourceAttributesException(e);
                 throw;
             }
@@ -350,8 +360,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             // Getting a storage exception is expected if the source doesn't
             // exist. For those cases that indicate the source doesn't exist
             // we will set a specific error state.
-            if (null != e.RequestInformation &&
-                e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+            if (e?.RequestInformation?.HttpStatusCode == (int)HttpStatusCode.NotFound)
             {
                 throw new InvalidOperationException(Resources.SourceDoesNotExistException);
             }
@@ -370,8 +379,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 await this.DoFetchDestAttributesAsync();
             }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+            catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+            {
+                var se = e as StorageException ?? e.InnerException as StorageException;
+#else
             catch (StorageException se)
             {
+#endif
                 if (!this.HandleGetDestinationResult(se))
                 {
                     throw se;
@@ -450,8 +465,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 this.TransferJob.CopyId = await this.DoStartCopyAsync();
             }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+            catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+            {
+                var se = e as StorageException ?? e.InnerException as StorageException;
+#else
             catch (StorageException se)
             {
+#endif
                 if (!this.HandleStartCopyResult(se))
                 {
                     throw;
@@ -543,8 +564,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 copyState = await this.FetchCopyStateAsync();
             }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+            catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+            {
+                var se = e as StorageException ?? e.InnerException as StorageException;
+#else
             catch (StorageException se)
             {
+#endif
                 if (null != se.RequestInformation &&
                        se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                 {
@@ -635,7 +662,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 if (this.TransferContext != null)
                 {
                     long bytesTransferred = copyState.BytesCopied.Value;
-                    this.UpdateProgressAddBytesTransferred(bytesTransferred - this.lastBytesCopied);
+
+                    this.UpdateProgress(() =>
+                    {
+                        this.UpdateProgressAddBytesTransferred(bytesTransferred - this.lastBytesCopied);
+                    });
 
                     this.lastBytesCopied = bytesTransferred;
                 }

@@ -8,11 +8,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers;
-    using System.Diagnostics;
 
     /// <summary>
     /// TransferScheduler class, used for  transferring Microsoft Azure
@@ -69,7 +70,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         private object disposeLock = new object();
 
-        private SemaphoreSlim scheduleSemaphore;
+        private volatile int ongoingTasks;
 
         /// <summary>
         /// Indicate whether the instance has been disposed.
@@ -104,9 +105,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             this.randomGenerator = new Random();
 
-            this.scheduleSemaphore = new SemaphoreSlim(
-                this.transferOptions.ParallelOperations, 
-                this.transferOptions.ParallelOperations);
+            this.ongoingTasks = 0;
 
             this.StartSchedule();
         }
@@ -208,10 +207,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 await controller.TaskCompletionSource.Task;
             }
-            catch(StorageException sex)
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+            catch (Exception ex) when (ex is StorageException || ex.InnerException is StorageException)
             {
-                throw new TransferException(TransferErrorCode.Unknown, Resources.UncategorizedException, sex);
+                var storageException = ex as StorageException ?? ex.InnerException as StorageException;
+                throw new TransferException(TransferErrorCode.Unknown,
+                    string.Format(CultureInfo.CurrentCulture, Resources.UncategorizedException, storageException.Message),
+                    storageException);
             }
+#else
+            catch (StorageException se)
+            {
+                throw new TransferException(
+                    TransferErrorCode.Unknown, 
+                    string.Format(CultureInfo.CurrentCulture, Resources.UncategorizedException, se.Message), 
+                    se);
+            }
+#endif
             finally
             {
                 controller.Dispose();
@@ -271,7 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             // there might be running "work" when the transfer is cancelled.
             // wait until all running "work" is done.
             SpinWait sw = new SpinWait();
-            while (this.scheduleSemaphore.CurrentCount != this.transferOptions.ParallelOperations)
+            while (this.ongoingTasks != 0)
             {
                 sw.SpinOnce();
             }
@@ -322,12 +334,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         {
                             this.controllerResetEvent.Dispose();
                             this.controllerResetEvent = null;
-                        }
-
-                        if (null != this.scheduleSemaphore)
-                        {
-                            this.scheduleSemaphore.Dispose();
-                            this.scheduleSemaphore = null;
                         }
 
                         this.memoryManager = null;
@@ -401,9 +407,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 int idx = this.randomGenerator.Next(activeItemsWithWork.Count);
                 ITransferController transferController = activeItemsWithWork[idx].Key;
 
-                DoControllerWork(transferController);
-
-                return true;
+                if (Interlocked.Increment(ref this.ongoingTasks) <= TransferManager.Configurations.ParallelOperations)
+                {
+                    DoControllerWork(transferController);
+                    return true;
+                }
+                else
+                {
+                    Interlocked.Decrement(ref this.ongoingTasks);
+                    return false;
+                }
             }
 
             return false;
@@ -411,9 +424,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private async void DoControllerWork(ITransferController controller)
         {
-            this.scheduleSemaphore.Wait();
-            bool finished = await controller.DoWorkAsync();
-            this.scheduleSemaphore.Release();
+            bool finished = false;
+            try
+            {
+                finished = await controller.DoWorkAsync();
+            }
+            finally
+            {
+                Interlocked.Decrement(ref this.ongoingTasks);
+            }
 
             if (finished)
             {

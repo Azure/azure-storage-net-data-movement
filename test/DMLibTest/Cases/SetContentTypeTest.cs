@@ -12,11 +12,31 @@ namespace DMLibTest.Cases
 
     [MultiDirectionTestClass]
     public class SetContentTypeTest : DMLibTestBase
+#if DNXCORE50
+        , System.IDisposable
+#endif
     {
-        #region Additional test attributes
+        #region Initialization and cleanup methods
+#if DNXCORE50
+        public SetContentTypeTest()
+        {
+            MyTestInitialize();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            MyTestCleanup();
+        }
+#endif
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
+            Test.Info("Class Initialize: SetContentTypeTest");
             DMLibTestBase.BaseClassInitialize(testContext);
         }
 
@@ -43,7 +63,7 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
         public void TestSetContentType()
         {
-            string contentType = "contenttype";
+            string contentType = "contenttype/subtype";
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
             DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, 1024);
 
@@ -51,7 +71,7 @@ namespace DMLibTest.Cases
             options.TransferItemModifier = (fileNode, transferItem) =>
             {
                 UploadOptions uploadOptions = new UploadOptions();
-                uploadOptions.ContentType = "contenttype";
+                uploadOptions.ContentType = contentType;
 
                 transferItem.Options = uploadOptions;
             };
@@ -69,7 +89,7 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalSource)]
         public void TestDirectorySetContentType()
         {
-            string contentType = "contenttype";
+            string contentType = "contenttype/subtype";
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
             int[] fileSizes = new int[] {1024, 1024, 1024 };
             DMLibDataHelper.AddMultipleFilesDifferentSize(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizes);
@@ -79,7 +99,7 @@ namespace DMLibTest.Cases
             options.TransferItemModifier = (fileNode, transferItem) =>
             {
                 dynamic uploadOptions = DefaultTransferDirectoryOptions;
-                uploadOptions.ContentType = "contenttype";
+                uploadOptions.ContentType = contentType;
 
                 transferItem.Options = uploadOptions;
             };

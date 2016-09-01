@@ -25,6 +25,12 @@ namespace DMLibTest
             get;
         }
 
+        public List<TransferItem> TransferItems
+        {
+            set;
+            get;
+        }
+
         public List<Exception> Exceptions
         {
             get

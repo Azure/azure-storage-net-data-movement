@@ -15,13 +15,38 @@ namespace DMLibTest
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
 
+#if DNXCORE50
+    using Xunit;
+
+    [Collection(Collections.Global)]
+    public class AllTransferDirectionTest : DMLibTestBase, IClassFixture<AllTransferDirectionFixture>, IDisposable
+    {
+        public AllTransferDirectionTest()
+        {
+            MyTestInitialize();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            MyTestCleanup();
+        }
+#else
     [TestClass]
     public class AllTransferDirectionTest : DMLibTestBase
     {
-        #region Additional test attributes
+#endif
+
+#region Additional test attributes
+
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
+            Test.Info("Class Initialize: AllTransferDirectionTest");
             DMLibTestBase.BaseClassInitialize(testContext);
 
             DMLibTestBase.CleanupSource = false;
@@ -48,7 +73,7 @@ namespace DMLibTest
         {
             base.BaseTestCleanup();
         }
-        #endregion
+#endregion
 
         private static Dictionary<string, DMLibDataInfo> sourceDataInfos = new Dictionary<string, DMLibDataInfo>();
         private static Dictionary<string, FileNode> expectedFileNodes = new Dictionary<string, FileNode>();

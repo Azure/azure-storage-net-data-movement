@@ -97,7 +97,9 @@ namespace DMLibTest
         public static void BaseClassInitialize(TestContext testContext)
         {
             Test.Info("ClassInitialize");
+#if !DNXCORE50
             Test.FullClassName = testContext.FullyQualifiedTestClassName;
+#endif
 
             MultiDirectionTestBase<TDataInfo, TDataType>.CleanupSource = true;
             MultiDirectionTestBase<TDataInfo, TDataType>.CleanupDestination = true;
@@ -130,7 +132,9 @@ namespace DMLibTest
 
         public virtual void BaseTestInitialize()
         {
+#if !DNXCORE50
             Test.Start(TestContext.FullyQualifiedTestClassName, TestContext.TestName);
+#endif
             Test.Info("TestInitialize");
 
             MultiDirectionTestInfo.Cleanup();
@@ -144,7 +148,9 @@ namespace DMLibTest
             }
 
             Test.Info("TestCleanup");
+#if !DNXCORE50
             Test.End(TestContext.FullyQualifiedTestClassName, TestContext.TestName);
+#endif
 
             try
             {

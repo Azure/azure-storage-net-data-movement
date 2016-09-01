@@ -1,0 +1,7 @@
+Tracking Breaking Changes since 0.2.0
+
+  - Removed directory downloading/copying interfaces without DownloadOptions/CopyOptions
+  - Changed the return value for directory transferring interfaces from Task to Task<TransferStatus>. 
+    This will no longer throw an exception if any of the subtransfers fail. 
+    In addition, you can now get the count for transferred files, failed files, and skipped files. 
+    If you'd like to see the detailed reason for a subtransfer failure, please use the FileFailed event in TransferContext.

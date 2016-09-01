@@ -8,14 +8,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Globalization;
     using System.IO;
-    using System.Runtime.InteropServices;
     using System.Security;
-    using System.Security.Permissions;
     using System.Threading;
-    using Microsoft.Win32.SafeHandles;
+    using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
+
+#if CODE_ACCESS_SECURITY
+    using System.Security.Permissions;
+#endif // CODE_ACCESS_SECURITY
 
     /// <summary>
     /// Inter-op methods for enumerating files and directory.
@@ -40,6 +40,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         /// <param name="cancellationToken">CancellationToken to cancel the method.</param>
         /// <returns>An enumerable collection of file names in the directory specified by path and that match 
         /// searchPattern and searchOption.</returns>
+#if TRANSPARENCY_V2
+        // CAS versions of the library demand path discovery permission to EnumerateFiles, so when using
+        // transparency (instead of CAS) make sure that partially trusted code cannot call this method.
+        [SecurityCritical]
+#endif // TRANSPARENCY_V2
         public static IEnumerable<string> EnumerateFiles(
             string path,
             string searchPattern,
@@ -76,13 +81,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             // Check path permissions.
             string fullPath = Path.GetFullPath(path);
+#if CODE_ACCESS_SECURITY
             CheckPathDiscoveryPermission(fullPath);
+#endif // CODE_ACCESS_SECURITY
 
             string patternDirectory = Path.GetDirectoryName(searchPattern);
+#if CODE_ACCESS_SECURITY
             if (!string.IsNullOrEmpty(patternDirectory))
             {
                 CheckPathDiscoveryPermission(Path.Combine(fullPath, patternDirectory));
             }
+#endif // CODE_ACCESS_SECURITY
 
             if (!string.IsNullOrEmpty(fromFilePath)
                 && !string.IsNullOrEmpty(patternDirectory))
@@ -112,6 +121,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             return InternalEnumerateFiles(directoryName, filePattern, fromFilePath, searchOption, cancellationToken);
         }
 
+#if TRANSPARENCY_V2
+        [SecurityCritical]
+#endif // TRANSPARENCY_V2
         private static IEnumerable<string> InternalEnumerateFiles(
             string directoryName,
             string filePattern,
@@ -142,6 +154,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
                 Utils.CheckCancellation(cancellationToken);
 
+                // Skip non-existent folders
+                if (!Directory.Exists(folder))
+                {
+                    continue;
+                }
+
+#if CODE_ACCESS_SECURITY // Only accessible to fully trusted code in non-CAS models
                 try
                 {
                     CheckPathDiscoveryPermission(folder);
@@ -151,9 +170,30 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     // Ignore this folder if we have no right to discovery it.
                     continue;
                 }
+#else // CODE_ACCESS_SECURITY
+                try
+                {
+                    // In non-CAS scenarios, it's still important to check for folder accessibility
+                    // since the OS can block access to some paths. Getting files from a location
+                    // will force path discovery checks which will indicate whether or not the user
+                    // is authorized to access the directory.
+                    Directory.GetFiles(folder);
+                }
+                catch (SecurityException)
+                {
+                    // Ignore this folder if we have no right to discovery it.
+                    continue;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // Ignore this folder if we have no right to discovery it.
+                    continue;
+                }
+#endif // CODE_ACCESS_SECURITY
 
-                NativeMethods.WIN32_FIND_DATA findFileData;
-
+                // Return all files contained directly in this folder (which occur after the continuationTokenFile)
+                // Only consider the folder if the continuation token is already past or the continuation token may be passed by
+                // a file within this directory (based on pathSegListIndex and the patSegList.Length)
                 if (passedContinuationToken
                     || (pathSegList.Length - 1 == pathSegListIndex))
                 {
@@ -165,38 +205,70 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     }
 
                     // Load files directly under this folder.
-                    using (var findHandle = NativeMethods.FindFirstFile(folder + filePattern, out findFileData))
+                    foreach (var filePath in Directory.EnumerateFileSystemEntries(folder, filePattern, SearchOption.TopDirectoryOnly))
                     {
-                        if (!findHandle.IsInvalid)
-                        {
-                            do
-                            {
-                                Utils.CheckCancellation(cancellationToken);
+                        Utils.CheckCancellation(cancellationToken);
 
-                                if (FileAttributes.Directory != (findFileData.FileAttributes & FileAttributes.Directory))
+                        FileAttributes fileAttributes = FileAttributes.Normal;
+                        string fileName = null;
+
+                        try
+                        {
+                            fileName = Path.GetFileName(filePath);
+                            fileAttributes = File.GetAttributes(filePath);
+                        }
+                        // Cross-plat file system accessibility settings may cause exceptions while
+                        // retrieving attributes from inaccessible paths. These paths shold be skipped.
+                        catch (FileNotFoundException) { }
+                        catch (IOException) { }
+                        catch (UnauthorizedAccessException) { }
+
+                        if (fileName == null)
+                        {
+                            continue;
+                        }
+
+                        if (FileAttributes.Directory != (fileAttributes & FileAttributes.Directory))
+                        {
+                            if (passedContinuationToken)
+                            {
+                                yield return Path.Combine(folder, fileName);
+                            }
+                            else
+                            {
+                                if (CrossPlatformHelpers.IsLinux)
                                 {
-                                    if (passedContinuationToken)
+                                    if (!passedContinuationToken)
                                     {
-                                        yield return Path.Combine(folder, findFileData.FileName);
+                                        if (string.Equals(fileName, continuationTokenFile, StringComparison.Ordinal))
+                                        {
+                                            passedContinuationToken = true;
+                                        }
                                     }
                                     else
                                     {
-                                        int compareResult = string.Compare(findFileData.FileName, continuationTokenFile, StringComparison.OrdinalIgnoreCase);
-                                        if (compareResult < 0)
-                                        {
-                                            continue;
-                                        }
+                                        yield return Path.Combine(folder, fileName);
+                                    }
+                                }
+                                else
+                                {
+                                    // Windows file system is case-insensitive; OSX and Linux are case-sensitive
+                                    var comparison = CrossPlatformHelpers.IsWindows ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                                    int compareResult = string.Compare(fileName, continuationTokenFile, comparison);
+                                    if (compareResult < 0)
+                                    {
+                                        // Skip files prior to the continuation token file
+                                        continue;
+                                    }
 
-                                        passedContinuationToken = true;
+                                    passedContinuationToken = true;
 
-                                        if (compareResult > 0)
-                                        {
-                                            yield return Path.Combine(folder, findFileData.FileName);
-                                        }
+                                    if (compareResult > 0)
+                                    {
+                                        yield return Path.Combine(folder, fileName);
                                     }
                                 }
                             }
-                            while (NativeMethods.FindNextFile(findHandle, out findFileData));
                         }
                     }
 
@@ -205,6 +277,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     passedContinuationToken = true;
                 }
 
+                // Next add sub-folders for processing
                 if (SearchOption.AllDirectories == searchOption)
                 {
                     string fromSubfolder = null;
@@ -216,44 +289,69 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     }
 
                     // Add sub-folders.
-                    using (var findHandle = NativeMethods.FindFirstFile(folder + '*', out findFileData))
+                    foreach (var filePath in Directory.EnumerateFileSystemEntries(folder, "*", SearchOption.TopDirectoryOnly))
                     {
-                        if (!findHandle.IsInvalid)
+                        Utils.CheckCancellation(cancellationToken);
+
+                        FileAttributes fileAttributes = FileAttributes.Normal;
+                        string fileName = null;
+
+                        try
                         {
-                            do
+                            fileName = Path.GetFileName(filePath);
+                            fileAttributes = File.GetAttributes(filePath);
+                        }
+                        // Cross-plat file system accessibility settings may cause exceptions while
+                        // retrieving attributes from inaccessible paths. These paths shold be skipped.
+                        catch (FileNotFoundException) { }
+                        catch (IOException) { }
+                        catch (UnauthorizedAccessException) { }
+
+                        if (fileName == null)
+                        {
+                            continue;
+                        }
+
+                        if (FileAttributes.Directory == (fileAttributes & FileAttributes.Directory) &&
+                            !fileName.Equals(@".") &&
+                            !fileName.Equals(@".."))
+                        {
+                            // TODO: Ignore junction point or not. Make it configurable.
+                            if (FileAttributes.ReparsePoint != (fileAttributes & FileAttributes.ReparsePoint))
                             {
-                                Utils.CheckCancellation(cancellationToken);
-
-                                if (FileAttributes.Directory == (findFileData.FileAttributes & FileAttributes.Directory) &&
-                                    !findFileData.FileName.Equals(@".") &&
-                                    !findFileData.FileName.Equals(@".."))
+                                if (passedSubfoler)
                                 {
-                                    // TODO: Ignore junction point or not. Make it configurable.
-                                    if (FileAttributes.ReparsePoint != (findFileData.FileAttributes & FileAttributes.ReparsePoint))
+                                    currentFolderSubFolders.Push(Path.Combine(folder, fileName));
+                                }
+                                else
+                                {
+                                    if (CrossPlatformHelpers.IsLinux)
                                     {
-                                        if (passedSubfoler)
+                                        if (string.Equals(fileName, fromSubfolder, StringComparison.Ordinal))
                                         {
-                                            currentFolderSubFolders.Push(Path.Combine(folder, findFileData.FileName));
+                                            passedSubfoler = true;
+                                            currentFolderSubFolders.Push(Path.Combine(folder, fileName));
                                         }
-                                        else
+                                    }
+                                    else
+                                    {
+                                        // Windows file system is case-insensitive; OSX and Linux are case-sensitive
+                                        var comparison = CrossPlatformHelpers.IsWindows ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                                        int compareResult = string.Compare(fileName, fromSubfolder, comparison);
+
+                                        if (compareResult >= 0)
                                         {
-                                            int compareResult = string.Compare(findFileData.FileName, fromSubfolder, StringComparison.OrdinalIgnoreCase);
+                                            passedSubfoler = true;
+                                            currentFolderSubFolders.Push(Path.Combine(folder, fileName));
 
-                                            if (compareResult >= 0)
+                                            if (compareResult > 0)
                                             {
-                                                passedSubfoler = true;
-                                                currentFolderSubFolders.Push(Path.Combine(folder, findFileData.FileName));
-
-                                                if (compareResult > 0)
-                                                {
-                                                    passedContinuationToken = true;
-                                                }
+                                                passedContinuationToken = true;
                                             }
                                         }
                                     }
                                 }
                             }
-                            while (NativeMethods.FindNextFile(findHandle, out findFileData));
                         }
                     }
 
@@ -310,74 +408,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             }
         }
 
+#if CODE_ACCESS_SECURITY
         private static void CheckPathDiscoveryPermission(string dir)
         {
             string checkDir = AppendDirectorySeparator(dir) + '.';
 
             new FileIOPermission(FileIOPermissionAccess.PathDiscovery, checkDir).Demand();
         }
-
-        /// <summary>
-        /// Defines all native methods.
-        /// </summary>
-        internal static class NativeMethods
-        {
-            [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-            public static extern SafeFindHandle FindFirstFile(string fileName, out WIN32_FIND_DATA findFileData);
-
-            [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            public static extern bool FindNextFile(SafeHandle findFileHandle, out WIN32_FIND_DATA findFileData);
-
-            [DllImport("kernel32.dll", SetLastError = true)]
-            [return: MarshalAs(UnmanagedType.Bool)]
-            public static extern bool FindClose(SafeHandle findFileHandle);
-
-            [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto), BestFitMapping(false)]
-            public struct WIN32_FIND_DATA
-            {
-                public FileAttributes FileAttributes;
-                public System.Runtime.InteropServices.ComTypes.FILETIME CreationTime;
-                public System.Runtime.InteropServices.ComTypes.FILETIME LastAccessTime;
-                public System.Runtime.InteropServices.ComTypes.FILETIME LastWriteTime;
-                public uint FileSizeHigh;
-                public uint FileSizeLow;
-                public int Reserved0;
-                public int Reserved1;
-                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
-                public string FileName;
-                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)]
-                public string AlternateFileName;
-            }
-
-            public sealed class SafeFindHandle : SafeHandleZeroOrMinusOneIsInvalid
-            {
-                [SecurityCritical]
-                internal SafeFindHandle()
-                    : base(true)
-                {
-                }
-
-                protected override bool ReleaseHandle()
-                {
-                    if (!(this.IsInvalid || this.IsClosed))
-                    {
-                        return NativeMethods.FindClose(this);
-                    }
-
-                    return this.IsInvalid || this.IsClosed;
-                }
-
-                protected override void Dispose(bool disposing)
-                {
-                    if (!(this.IsInvalid || this.IsClosed))
-                    {
-                        NativeMethods.FindClose(this);
-                    }
-
-                    base.Dispose(disposing);
-                }
-            }
-        }
+#endif // CODE_ACCESS_SECURITY
     }
 }

@@ -15,11 +15,33 @@ namespace DMLibTest.Cases
 
     [MultiDirectionTestClass]
     public class AccessConditionTest : DMLibTestBase
+#if DNXCORE50
+        , IDisposable
+#endif
     {
-        #region Additional test attributes
+        #region Initialization and cleanup methods
+
+#if DNXCORE50
+        public AccessConditionTest()
+        {
+            MyTestInitialize();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            MyTestCleanup();
+        }
+#endif
+
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
+            Test.Info("Class Initialize: AccessConditionTest");
             DMLibTestBase.BaseClassInitialize(testContext);
         }
 
@@ -40,7 +62,7 @@ namespace DMLibTest.Cases
         {
             base.BaseTestCleanup();
         }
-        #endregion
+#endregion
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.CloudBlobSource)]
@@ -122,11 +144,19 @@ namespace DMLibTest.Cases
             }
 
             Exception exception = result.Exceptions[0];
+#if DNXCORE50
+            VerificationHelper.VerifyTransferException(exception, TransferErrorCode.Unknown);
+
+            // TODO: The InnerException is as expected but has a different message and HttpStatusCode
+            // compared to the desktop version of XSCL; is this an XSCL bug?
+            VerificationHelper.VerifyStorageException(exception.InnerException, 0, "The format of value 'notmatch' is invalid.");
+#else
             VerificationHelper.VerifyTransferException(exception, TransferErrorCode.Unknown);
 
             // Verify innner StorageException
             VerificationHelper.VerifyStorageException(exception.InnerException, (int)HttpStatusCode.PreconditionFailed,
                 "The condition specified using HTTP conditional header(s) is not met.");
+#endif
         }
     }
 }

@@ -13,8 +13,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper;
     using Microsoft.WindowsAzure.Storage.File;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class AzureFileLocation : TransferLocation, ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    [KnownType(typeof(SerializableFileRequestOptions))]
+    internal class AzureFileLocation : TransferLocation
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string AzureFileName = "AzureFile";
         private const string AccessConditionName = "AccessCondition";
@@ -22,8 +30,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private const string RequestOptionsName = "RequestOptions";
         private const string ETagName = "ETag";
 
+        [DataMember]
         private SerializableAccessCondition accessCondition;
+
+        [DataMember]
         private SerializableRequestOptions requestOptions;
+
+        [DataMember]
         private SerializableCloudFile fileSerializer;
 
         
@@ -42,6 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.AzureFile = azureFile;
         }
 
+#if BINARY_SERIALIZATION
         private AzureFileLocation(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -55,6 +69,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.requestOptions = (SerializableRequestOptions)info.GetValue(RequestOptionsName, typeof(SerializableRequestOptions));
             this.ETag = info.GetString(ETagName);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets transfer location type.
@@ -109,12 +124,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         internal string ETag
         {
             get;
             set;
         }
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         internal bool CheckedAccessCondition
         {
             get;
@@ -143,9 +164,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         public override void Validate()
         {
-            this.AzureFile.Parent.FetchAttributes(null, Transfer_RequestOptions.DefaultFileRequestOptions);
+            this.AzureFile.Parent.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -164,6 +186,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             info.AddValue(RequestOptionsName, this.requestOptions, typeof(SerializableRequestOptions));
             info.AddValue(ETagName, this.ETag);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Update credentials of blob or azure file location.

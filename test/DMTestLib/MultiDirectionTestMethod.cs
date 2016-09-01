@@ -10,7 +10,7 @@ namespace DMLibTestCodeGen
     using System.Linq;
     using System.Reflection;
 
-    internal class MultiDirectionTestMethod
+    public class MultiDirectionTestMethod
     {
         private HashSet<TestMethodDirection> transferDirections;
 

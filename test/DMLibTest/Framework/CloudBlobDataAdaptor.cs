@@ -157,7 +157,7 @@ namespace DMLibTest
                 StoreBlobContentMD5 = true,
             };
 
-            cloudBlob.UploadFromFile(localFilePath, FileMode.Open, options: storeMD5Options);
+            cloudBlob.UploadFromFile(localFilePath, null, storeMD5Options);
 
             if (null != fileNode.MD5 ||
                 null != fileNode.ContentType ||

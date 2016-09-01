@@ -51,7 +51,11 @@ namespace DMLibTest
                     {
                         return blockBlob.DownloadBlockList(BlockListingFilter.All, options: HelperConst.DefaultBlobOptions).Any();
                     }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+                    catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+#else
                     catch (StorageException)
+#endif
                     {
                         return false;
                     }

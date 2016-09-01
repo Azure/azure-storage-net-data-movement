@@ -1,0 +1,50 @@
+{
+  "version": "1.0.0-*",
+  "description": "DMLibTest Class Library",
+  "authors": [ "emmazhu" ],
+  "packOptions": {
+    "tags": [ "" ],
+    "projectUrl": "",
+    "licenseUrl": ""
+  },
+  "testRunner": "xunit",
+  "dependencies": {
+    "xunit": "2.2.0-beta2-build3300",
+    "dotnet-test-xunit": "2.2.0-preview2-build1029"
+  },
+  "frameworks": {
+    "netcoreapp1.0": {
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.0"
+        },
+        "Microsoft.WindowsAzure.Storage.DataMovement": "0.3.0",
+        "WindowsAzure.Storage": "7.2.0",
+        "DMTestLib": "1.0.0-*",
+        "MsTestLib": "0.0.0-*",
+        "System.Runtime.Serialization.Xml": "4.1.1",
+        "System.Runtime.Serialization.Primitives": "4.1.1"
+      },
+      "imports": [
+        "dnxcore50",
+        "portable-net45+win8"
+      ],
+      "buildOptions": {
+        "allowUnsafe": false,
+        "define": [ "DNXCORE50", "EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION", "RUNTIME_INFORMATION" ]
+      }
+    }
+  },
+  "buildOptions": {
+    "compile": [
+      "**/*.cs",
+      "../../test/DMLibTest/*.cs",
+      "../../test/DMLibTest/Cases/*.cs",
+      "../../test/DMLibTest/Framework/*.cs",
+      "../../test/DMLibTest/Generated/*.cs",
+      "../../test/DMLibTest/Properties/*.cs",
+      "../../test/DMLibTest/Util/*.cs"
+    ]
+  }
+}

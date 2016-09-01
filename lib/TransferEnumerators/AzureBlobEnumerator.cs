@@ -57,8 +57,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             set
             {
-                Debug.Assert(value is AzureBlobListContinuationToken);
                 this.listContinuationToken = value as AzureBlobListContinuationToken;
+                Debug.Assert(null == value || null != this.listContinuationToken);
             }
         }
 
@@ -105,15 +105,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 Utils.CheckCancellation(cancellationToken);
                 try
                 {
-                    // TODO: Currently keep it to be a sync call here. We may need to change this to be async and cancellable in the future.
-                    resultSegment = container.ListBlobsSegmented(
+                    resultSegment = container.ListBlobsSegmentedAsync(
                         patternPrefix,
                         true,
                         BlobListingDetails.Snapshots,
                         ListBlobsSegmentSize,
                         continuationToken,
                         requestOptions,
-                        null);
+                        null,
+                        cancellationToken).Result;
                 }
                 catch (Exception ex)
                 {

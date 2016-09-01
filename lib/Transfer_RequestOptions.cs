@@ -137,10 +137,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             /// </summary>
             private ExponentialRetry retryPolicy;
 
+#if !DOTNET5_4
             /// <summary>
             /// Indicate whether has met x-ms once or more.
             /// </summary>
             private bool gotXMsError = false;
+#endif
 
             /// <summary>
             /// Initializes a new instance of the <see cref="TransferRetryPolicy"/> class.
@@ -253,6 +255,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 int currentRetryCount,
                 Exception lastException)
             {
+#if DOTNET5_4
+                return true;
+#else
                 if (this.gotXMsError)
                 {
                     return true;
@@ -299,6 +304,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 }
 
                 return false;
+#endif
             }
         }
     }

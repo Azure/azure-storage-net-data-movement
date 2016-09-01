@@ -9,15 +9,37 @@ namespace DMLibTest.Cases
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
+    using System;
     using System.Threading;
 
     [MultiDirectionTestClass]
     public class OverwriteTest : DMLibTestBase
+#if DNXCORE50
+        , IDisposable
+#endif
     {
-        #region Additional test attributes
+        #region Initialization and cleanup methods
+
+#if DNXCORE50
+        public OverwriteTest()
+        {
+            MyTestInitialize();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            MyTestCleanup();
+        }
+#endif
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
+            Test.Info("Class Initialize: OverwriteTest");
             DMLibTestBase.BaseClassInitialize(testContext);
         }
 
@@ -196,11 +218,13 @@ namespace DMLibTest.Cases
             // Verify exception
             if (DMLibTestContext.DestType != DMLibDataType.Stream)
             {
+                VerificationHelper.VerifySingleTransferStatus(result, 2, 1, 0, 1024 * 2);
                 Test.Assert(successCount == 2, "Verify success transfers");
                 Test.Assert(skipCount == 1, "Verify skipped transfer");
             }
             else
             {
+                VerificationHelper.VerifySingleTransferStatus(result, 3, 0, 0, 1024 * 3);
                 Test.Assert(successCount == 3, "Very all transfers are success");
                 Test.Assert(skipCount == 0, "Very no transfer is skipped");
             }

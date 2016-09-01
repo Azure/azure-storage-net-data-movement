@@ -7,12 +7,21 @@ namespace DMLibTestCodeGen
 {
     using System;
     using System.Reflection;
+    using System.Threading;
+
+    public enum FrameworkType
+    { 
+        DNet,
+        DNetCore
+    };
 
     public class Program
     {
+        public static FrameworkType FrameWorkType = FrameworkType.DNet;
+
         public static void Main(string[] args)
         {
-            if (args == null || args.Length != 2)
+            if (args == null || (args.Length != 2 && args.Length != 3))
             {
                 PrintHelp();
                 return;
@@ -20,6 +29,11 @@ namespace DMLibTestCodeGen
 
             string dllName = args[0];
             string sourceFolder = args[1];
+
+            if (args.Length == 3)
+            {
+                FrameWorkType = (FrameworkType)Enum.Parse(typeof(FrameworkType), args[2]);
+            }
 
             GenerateCode(dllName, sourceFolder);
         }
@@ -42,7 +56,7 @@ namespace DMLibTestCodeGen
 
         private static void PrintHelp()
         {
-            Console.WriteLine("Usage: DMLibTestCodeGen.exe [InputDll] [OutputSourceFolder]");
+            Console.WriteLine("Usage: DMLibTestCodeGen.exe [InputDll] [OutputSourceFolder] [FramworkType]");
         }
     }
 }

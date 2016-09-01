@@ -78,5 +78,42 @@ namespace DMLibTest
                 Test.Assert(progressChecker.FailedFilesNumber == (int)failedFilesNum, "Verify failed files number: expected {0}, actual {1}.", failedFilesNum, progressChecker.FailedFilesNumber);
             }
         }
+
+        public static void VerifySingleTransferStatus(TestResult<DMLibDataInfo> result, long? transferredFilesNum, long? skippedFilesNum, long? failedFilesNum, long? transferredBytes)
+        {
+            if (result.TransferItems.Count != 1)
+            {
+                Test.Error(string.Format("Expect exact one transfer item. Actaul {0}", result.TransferItems.Count));
+                return;
+            }
+
+            TransferStatus status = result.TransferItems[0].FinalStatus;
+
+            if (status == null)
+            {
+                Test.Error("Transfer status should not be null");
+                return;
+            }
+
+            if (transferredFilesNum != null)
+            {
+                Test.Assert(status.NumberOfFilesTransferred == transferredFilesNum, "Verify transferred files number: expected {0}, actual {1}.", transferredFilesNum, status.NumberOfFilesTransferred);
+            }
+
+            if (skippedFilesNum != null)
+            {
+                Test.Assert(status.NumberOfFilesSkipped == skippedFilesNum, "Verify skipped files number: expected {0}, actual {1}.", skippedFilesNum, status.NumberOfFilesSkipped);
+            }
+
+            if (failedFilesNum != null)
+            {
+                Test.Assert(status.NumberOfFilesFailed == failedFilesNum, "Verify failed files number: expected {0}, actual {1}.", failedFilesNum, status.NumberOfFilesFailed);
+            }
+
+            if (transferredBytes != null)
+            {
+                Test.Assert(status.BytesTransferred == transferredBytes, "Verify transferred bytes: expected {0}, actual {1}", transferredBytes, status.BytesTransferred);
+            }
+        }
     }
 }

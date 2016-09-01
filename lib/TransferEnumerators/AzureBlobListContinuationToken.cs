@@ -10,8 +10,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     using System.Runtime.Serialization;
     using Microsoft.WindowsAzure.Storage.Blob;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal sealed class AzureBlobListContinuationToken : ListContinuationToken, ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal sealed class AzureBlobListContinuationToken : ListContinuationToken
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string BlobContinuationTokenName = "BlobContinuationToken";
         private const string BlobNameName = "BlobName";
@@ -25,6 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             this.SnapshotTime = snapshotTime;
         }
 
+#if BINARY_SERIALIZATION
         private AzureBlobListContinuationToken(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -44,25 +52,36 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 this.SnapshotTime = null;
             }
         }
+#endif // BINARY_SERIALIZATION
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public BlobContinuationToken BlobContinuationToken
         {
             get;
             private set;
         }
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public string BlobName
         {
             get;
             private set;
         }
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public DateTimeOffset? SnapshotTime
         {
             get;
             private set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -84,5 +103,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 info.AddValue(SnapshotTimeName, this.SnapshotTime.Value, typeof(DateTimeOffset));
             }
         }
+#endif // BINARY_SERIALIZATION
     }
 }

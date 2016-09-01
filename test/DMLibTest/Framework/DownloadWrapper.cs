@@ -16,15 +16,16 @@ namespace DMLibTest
         {
         }
 
-        protected override Task DoTransferImp(TransferItem item)
+        protected override async Task<TransferStatus> DoTransferImp(TransferItem item)
         {
             if (item.IsDirectoryTransfer)
             {
-                return this.DownloadDirectory(item.SourceObject, item);
+                return await this.DownloadDirectory(item.SourceObject, item);
             }
             else
             {
-                return this.Download(item.SourceObject, item);
+                await this.Download(item.SourceObject, item);
+                return null;
             }
         }
 
@@ -71,24 +72,20 @@ namespace DMLibTest
             }
         }
 
-        private Task DownloadDirectory(dynamic sourceObject, TransferItem item)
+        private Task<TransferStatus> DownloadDirectory(dynamic sourceObject, TransferItem item)
         {
             DownloadDirectoryOptions downloadDirectoryOptions = item.Options as DownloadDirectoryOptions;
             TransferContext transferContext = item.TransferContext;
             CancellationToken cancellationToken = item.CancellationToken;
             string destPath = item.DestObject as string;
 
-            if (cancellationToken != null && cancellationToken != CancellationToken.None)
-            {
-                return TransferManager.DownloadDirectoryAsync(sourceObject, destPath, downloadDirectoryOptions, transferContext, cancellationToken);
-            }
-            else if (transferContext != null || downloadDirectoryOptions != null)
+            if (cancellationToken == null || cancellationToken == CancellationToken.None)
             {
                 return TransferManager.DownloadDirectoryAsync(sourceObject, destPath, downloadDirectoryOptions, transferContext);
             }
             else
             {
-                return TransferManager.DownloadDirectoryAsync(sourceObject, destPath);
+                return TransferManager.DownloadDirectoryAsync(sourceObject, destPath, downloadDirectoryOptions, transferContext, cancellationToken);
             }
         }
     }

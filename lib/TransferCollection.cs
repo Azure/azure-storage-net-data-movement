@@ -9,6 +9,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Globalization;
     using System.Runtime.Serialization;
     using TransferKey = System.Tuple<TransferLocation, TransferLocation>;
@@ -16,8 +17,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// <summary>
     /// A collection of transfers.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class TransferCollection : ISerializable
+#else
+    [DataContract]
+    [KnownType(typeof(DirectoryTransfer))]
+    [KnownType(typeof(SingleObjectTransfer))]
+    [KnownType(typeof(MultipleObjectsTransfer))]
+#endif // BINARY_SERIALIZATION
+    internal class TransferCollection
+#if BINARY_SERIALIZATION
+        : ISerializable
+#endif // BINARY_SERIALIZATION
     {
         /// <summary>
         /// Serialization field name for single object transfers.
@@ -38,6 +49,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Overall transfer progress tracker.
         /// </summary>
         private TransferProgressTracker overallProgressTracker = new TransferProgressTracker();
+
+#if BINARY_SERIALIZATION
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferCollection"/> class.
@@ -76,6 +89,48 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 this.OverallProgressTracker.AddProgress(transfer.ProgressTracker);
             }
         }
+#endif // BINARY_SERIALIZATION
+
+#region Serialization helpers
+
+#if !BINARY_SERIALIZATION
+        [DataMember]
+        private Transfer[] serializedTransfers;
+
+        /// <summary>
+        /// Initializes a deserialized TransferCollection (by rebuilding the the transfer
+        /// dictionary and progress tracker)
+        /// </summary>
+        /// <param name="context"></param>
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            // DCS doesn't invoke ctors, so all initialization must be done here
+            transfers = new ConcurrentDictionary<TransferKey, Transfer>();
+            overallProgressTracker = new TransferProgressTracker();
+
+            foreach (Transfer t in serializedTransfers)
+            {
+                this.AddTransfer(t);
+            }
+
+            foreach (Transfer transfer in this.transfers.Values)
+            {
+                this.OverallProgressTracker.AddProgress(transfer.ProgressTracker);
+            }
+        }
+
+        /// <summary>
+        /// Serializes the object by storing the trasnfers in a more DCS-friendly format
+        /// </summary>
+        /// <param name="context"></param>
+        [OnSerializing]
+        private void OnSerializingCallback(StreamingContext context)
+        {
+            serializedTransfers = this.transfers.Select(kv => kv.Value).Where(t => t != null).ToArray();
+        }
+#endif //!BINARY_SERIALIZATION
+#endregion // Serialization helpers
 
         /// <summary>
         /// Gets the number of transfers currently in the collection.
@@ -99,6 +154,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the checkpoint.
         /// </summary>
@@ -144,6 +200,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 info.AddValue(string.Format(CultureInfo.InvariantCulture, "{0}{1}", DirectoryTransfersName, i), directoryTransfers[i], typeof(DirectoryTransfer));
             }
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Adds a transfer.

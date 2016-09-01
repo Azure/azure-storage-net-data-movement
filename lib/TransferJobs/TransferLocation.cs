@@ -6,6 +6,11 @@
 
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
+    using System.Runtime.Serialization;
+
+#if !BINARY_SERIALIZATION
+    [DataContract]
+#endif
     internal abstract class TransferLocation
     {
         /// <summary>

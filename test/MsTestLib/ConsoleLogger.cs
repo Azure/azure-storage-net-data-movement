@@ -22,7 +22,11 @@ namespace MS.Test.Common.MsTestLib
 
         public ConsoleLogger()
         {
+#if DOTNET5_4
+            m_prevFGColor = INFO_FG_COLOR;
+#else
             m_prevFGColor = Console.ForegroundColor;
+#endif
         }
 
         /// 

@@ -10,7 +10,7 @@ namespace DMLibTest
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
 
-    public class ProgressChecker : IProgress<TransferProgress>
+    public class ProgressChecker : IProgress<TransferStatus>
     {
         private ProgressValue<long> transferedNumber;
         private ProgressValue<long> failedNumber;
@@ -75,12 +75,12 @@ namespace DMLibTest
             };
         }
 
-        public IProgress<TransferProgress> GetProgressHandler()
+        public IProgress<TransferStatus> GetProgressHandler()
         {
             return this;
         }
 
-        public void Report(TransferProgress progress)
+        public void Report(TransferStatus progress)
         {
             if (progress.BytesTransferred > 0)
             {

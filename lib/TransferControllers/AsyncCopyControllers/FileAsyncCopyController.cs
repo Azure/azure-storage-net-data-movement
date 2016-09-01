@@ -89,7 +89,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             else if (null != this.SourceBlob)
             {
                 return this.destFile.StartCopyAsync(
-                    this.SourceBlob.GenerateCopySourceBlob(),
+                    this.SourceBlob.GenerateCopySourceUri(),
                     null,
                     null,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
@@ -99,7 +99,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             else
             {
                 return this.destFile.StartCopyAsync(
-                    this.SourceFile.GenerateCopySourceFile(),
+                    this.SourceFile.GenerateCopySourceUri(),
                     null,
                     null,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),

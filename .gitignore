@@ -5,6 +5,7 @@
 *.suo
 *.user
 *.sln.docstates
+.vs/
 
 # Build results
 [Dd]ebug/
@@ -176,6 +177,9 @@ UpgradeLog*.htm
 # Microsoft Fakes
 FakesAssemblies/
 
-
 # local build nupkg
 *.nupkg
+
+# DNX
+project.lock.json
+artifacts/

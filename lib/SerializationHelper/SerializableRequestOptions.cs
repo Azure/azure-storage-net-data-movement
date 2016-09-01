@@ -12,13 +12,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal abstract class SerializableRequestOptions : ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal abstract class SerializableRequestOptions
+#if BINARY_SERIALIZATION
+        : ISerializable
+#endif // BINARY_SERIALIZATION
     {
         protected SerializableRequestOptions()
         { 
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="SerializableRequestOptions"/> class.
         /// </summary>
@@ -31,6 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
                 throw new System.ArgumentNullException("info");
             }
         }
+#endif // BINARY_SERIALIZATION
 
         protected abstract IRequestOptions RequestOptions
         {
@@ -38,6 +47,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -50,6 +60,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
                 throw new System.ArgumentNullException("info");
             }
         }
+#endif // BINARY_SERIALIZATION
 
         internal static IRequestOptions GetRequestOptions(SerializableRequestOptions serializer)
         {

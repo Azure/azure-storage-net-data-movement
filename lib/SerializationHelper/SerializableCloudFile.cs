@@ -15,8 +15,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
     /// <summary>
     /// A utility class for serializing and de-serializing <see cref="CloudFile"/> object.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class SerializableCloudFile : ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal class SerializableCloudFile
+#if BINARY_SERIALIZATION
+        : ISerializable
+#endif // BINARY_SERIALIZATION
     {
         /// <summary>
         /// Serialization field name for cloud file uri.
@@ -30,6 +37,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
         {
         }
 
+#region Serialization helpers
+#if !BINARY_SERIALIZATION
+        [DataMember] private Uri cloudFileUri;
+
+        /// <summary>
+        /// Serializes the object by extracting key data from the underlying CloudFile
+        /// </summary>
+        /// <param name="context"></param>
+        [OnSerializing]
+        private void OnSerializingCallback(StreamingContext context)
+        {
+            cloudFileUri = null == this.File ? null : this.File.Uri;
+        }
+
+        /// <summary>
+        /// Initializes a deserialized CloudFile
+        /// </summary>
+        /// <param name="context"></param>
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            this.CreateCloudFileInstance(cloudFileUri, null);
+        }
+#endif // !BINARY_SERIALIZATION
+#endregion // Serialization helpers
+
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="SerializableCloudFile"/> class.
         /// </summary>
@@ -45,6 +79,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             Uri fileUri = (Uri)info.GetValue(FileUriName, typeof(Uri));
             this.CreateCloudFileInstance(fileUri, null);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets or sets the target <see cref="CloudFile"/> object.
@@ -55,6 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -75,6 +111,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
 
             info.AddValue(FileUriName, fileUri, typeof(Uri));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets the target target <see cref="CloudFile"/> object of a <see cref="SerializableCloudFile"/> object.

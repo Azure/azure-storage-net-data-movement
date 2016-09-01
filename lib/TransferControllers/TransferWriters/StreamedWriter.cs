@@ -275,9 +275,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     transferData.StartOffset,
                     transferData.MemoryBuffer,
                     0,
-                    transferData.Length,
-                    null,
-                    0))
+                    transferData.Length))
                 {
                     return;
                 }
@@ -290,15 +288,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             int blockSize = this.Scheduler.TransferOptions.BlockSize;
             long chunkStartOffset = (currentWriteOffset / blockSize) * blockSize;
 
-            if ((currentWriteOffset + transferData.Length) >= Math.Min(chunkStartOffset + blockSize, this.SharedTransferData.TotalLength))
+            this.Controller.UpdateProgress(() =>
             {
-                lock (this.TransferJob.CheckPoint.TransferWindowLock)
+                if ((currentWriteOffset + transferData.Length) >= Math.Min(chunkStartOffset + blockSize, this.SharedTransferData.TotalLength))
                 {
-                    this.TransferJob.CheckPoint.TransferWindow.Remove(chunkStartOffset);
+                    lock (this.TransferJob.CheckPoint.TransferWindowLock)
+                    {
+                        this.TransferJob.CheckPoint.TransferWindow.Remove(chunkStartOffset);
+                    }
                 }
-            }
 
-            this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
+                this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
+            });
+
             this.SetHasWorkOrFinished();
         }
 
@@ -309,9 +311,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 Exception ex = null;
                 if (this.md5HashStream.CheckMd5Hash && this.md5HashStream.SucceededSeparateMd5Calculator)
                 {
-                    this.md5HashStream.MD5HashTransformFinalBlock(new byte[0], 0, 0);
-
-                    string calculatedMd5 = Convert.ToBase64String(this.md5HashStream.Hash);
+                    string calculatedMd5 = this.md5HashStream.MD5HashTransformFinalBlock();
+                    
                     string storedMd5 = this.SharedTransferData.Attributes.ContentMD5;
 
                     if (!calculatedMd5.Equals(storedMd5))
@@ -348,7 +349,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 if (null != this.outputStream)
                 {
+#if DOTNET5_4
+                    this.outputStream.Dispose();
+#else
                     this.outputStream.Close();
+#endif
                     this.outputStream = null;
                 }
             }

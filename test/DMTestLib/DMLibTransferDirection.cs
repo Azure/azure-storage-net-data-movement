@@ -5,10 +5,9 @@
 //------------------------------------------------------------------------------
 namespace DMLibTestCodeGen
 {
-    using System.CodeDom;
     using System.Collections.Generic;
 
-    internal class DMLibTransferDirection : TestMethodDirection, ITestDirection<DMLibDataType>
+    public class DMLibTransferDirection : TestMethodDirection, ITestDirection<DMLibDataType>
     {
         public DMLibTransferDirection(
             DMLibDataType sourceType,
@@ -80,34 +79,6 @@ namespace DMLibTestCodeGen
             {
                 yield return MultiDirectionTag.Async;
             }
-        }
-
-        public override IEnumerable<CodeStatement> EnumerateUpdateContextStatements()
-        {
-            CodeFieldReferenceExpression sourceType = new CodeFieldReferenceExpression(
-                new CodeTypeReferenceExpression(typeof(DMLibDataType)),
-                this.SourceType.ToString());
-            CodeFieldReferenceExpression destType = new CodeFieldReferenceExpression(
-                new CodeTypeReferenceExpression(typeof(DMLibDataType)),
-                this.DestType.ToString());
-
-            CodePropertyReferenceExpression sourceTypeProperty = new CodePropertyReferenceExpression(
-                new CodeTypeReferenceExpression(typeof(DMLibTestContext)),
-                "SourceType");
-
-            CodePropertyReferenceExpression destTypeProperty = new CodePropertyReferenceExpression(
-                new CodeTypeReferenceExpression(typeof(DMLibTestContext)),
-                "DestType");
-
-            CodePropertyReferenceExpression isAsyncProperty = new CodePropertyReferenceExpression(
-                new CodeTypeReferenceExpression(typeof(DMLibTestContext)),
-                "IsAsync");
-
-            yield return new CodeAssignStatement(sourceTypeProperty, sourceType);
-
-            yield return new CodeAssignStatement(destTypeProperty, destType);
-
-            yield return new CodeAssignStatement(isAsyncProperty, new CodePrimitiveExpression(this.IsAsync));
         }
     }
 }

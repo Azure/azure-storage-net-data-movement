@@ -11,8 +11,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.IO;
     using System.Runtime.Serialization;
 
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class DirectoryLocation : TransferLocation, ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal class DirectoryLocation : TransferLocation
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string DirPathName = "DirPath";
 
@@ -41,6 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.DirectoryPath = dirPath;
         }
 
+#if BINARY_SERIALIZATION
         private DirectoryLocation(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -50,6 +58,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             this.DirectoryPath = info.GetString(DirPathName);
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Gets transfer location type.
@@ -65,12 +74,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets path to the local directory location.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public string DirectoryPath
         {
             get;
             private set;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -85,6 +98,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             info.AddValue(DirPathName, this.DirectoryPath, typeof(string));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Validates the transfer location.

@@ -15,8 +15,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
     /// <summary>
     /// A utility class for serializing and de-serializing <see cref="CloudBlobDirectory"/> object.
     /// </summary>
+#if BINARY_SERIALIZATION
     [Serializable]
-    internal class SerializableCloudBlobDirectory : ISerializable
+#else
+    [DataContract]
+#endif // BINARY_SERIALIZATION
+    internal class SerializableCloudBlobDirectory
+#if BINARY_SERIALIZATION
+        : ISerializable
+#endif // BINARY_SERIALIZATION
     {
         /// <summary>
         /// Serialization field name for cloud blob container uri.
@@ -31,11 +38,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
         /// <summary>
         /// Cloud blob container uri for the blob directory.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private Uri containerUri;
 
         /// <summary>
         /// Prefix of the cloud blob directory.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private string relativeAddress;
 
         /// <summary>
@@ -54,6 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             this.relativeAddress = this.blobDir.Prefix;
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Initializes a new instance of the <see cref="SerializableCloudBlobDirectory"/> class.
         /// </summary>
@@ -70,6 +84,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             this.relativeAddress = info.GetString(RelativeAddressName);
             this.CreateCloudBlobDirectoryInstance(null);
         }
+#endif // BINARY_SERIALIZATION
+
+#if !BINARY_SERIALIZATION
+        /// <summary>
+        /// Initializes an instance of SerializableCloudBlobDirectory after
+        /// deserialization via DCS
+        /// </summary>
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            this.CreateCloudBlobDirectoryInstance(null);
+        }
+#endif
 
         /// <summary>
         /// Gets the target <see cref="CloudBlobDirectory"/> object.
@@ -82,6 +109,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             }
         }
 
+#if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
         /// </summary>
@@ -97,6 +125,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             info.AddValue(ContainerUriName, this.containerUri, typeof(Uri));
             info.AddValue(RelativeAddressName, this.relativeAddress, typeof(string));
         }
+#endif // BINARY_SERIALIZATION
 
         /// <summary>
         /// Updates the account credentials associated with the target <see cref="CloudBlobDirectory"/> object.
