@@ -6,11 +6,13 @@
 namespace DataMovementSamples
 {
     using System;
-    using Microsoft.WindowsAzure;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
-
+    using System.Threading.Tasks;
+    using System.IO;
+    using Newtonsoft.Json.Linq;
+    
     /// <summary>
     /// A helper class provides convenient operations against storage account configured in the App.config.
     /// </summary>
@@ -26,12 +28,12 @@ namespace DataMovementSamples
         /// <param name="containerName">Container name.</param>
         /// <param name="blobName">Blob name.</param>
         /// <param name="blobType">Type of blob.</param>
-        /// <returns>A CloudBlob instance with the specified name and type in the given container.</returns>
-        public static CloudBlob GetCloudBlob(string containerName, string blobName, BlobType blobType)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudBlob"/> that represents the asynchronous operation.</returns>
+        public static async Task<CloudBlob> GetCloudBlobAsync(string containerName, string blobName, BlobType blobType)
         {
             CloudBlobClient client = GetCloudBlobClient();
             CloudBlobContainer container = client.GetContainerReference(containerName);
-            container.CreateIfNotExists();
+            await container.CreateIfNotExistsAsync();
 
             CloudBlob cloudBlob;
             switch (blobType)
@@ -58,12 +60,12 @@ namespace DataMovementSamples
         /// </summary>
         /// <param name="containerName">Container name.</param>
         /// <param name="directoryName">Blob directory name.</param>
-        /// <returns>A CloudBlobDirectory instance with the specified name in the given container.</returns>
-        public static CloudBlobDirectory GetCloudBlobDirectory(string containerName, string directoryName)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudBlobDirectory"/> that represents the asynchronous operation.</returns>
+        public static async Task<CloudBlobDirectory> GetCloudBlobDirectoryAsync(string containerName, string directoryName)
         {
             CloudBlobClient client = GetCloudBlobClient();
             CloudBlobContainer container = client.GetContainerReference(containerName);
-            container.CreateIfNotExists();
+            await container.CreateIfNotExistsAsync();
 
             return container.GetDirectoryReference(directoryName);
         }
@@ -73,12 +75,12 @@ namespace DataMovementSamples
         /// </summary>
         /// <param name="shareName">Share name.</param>
         /// <param name="fileName">File name.</param>
-        /// <returns>A CloudFile instance with the specified name in the given share.</returns>
-        public static CloudFile GetCloudFile(string shareName, string fileName)
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="CloudFile"/> that represents the asynchronous operation.</returns>
+        public static async Task<CloudFile> GetCloudFileAsync(string shareName, string fileName)
         {
             CloudFileClient client = GetCloudFileClient();
             CloudFileShare share = client.GetShareReference(shareName);
-            share.CreateIfNotExists();
+            await share.CreateIfNotExistsAsync();
 
             CloudFileDirectory rootDirectory = share.GetRootDirectoryReference();
             return rootDirectory.GetFileReference(fileName);
@@ -88,22 +90,22 @@ namespace DataMovementSamples
         /// Delete the share with the specified name if it exists.
         /// </summary>
         /// <param name="shareName">Name of share to delete.</param>
-        public static void DeleteShare(string shareName)
+        public static async Task DeleteShareAsync(string shareName)
         {
             CloudFileClient client = GetCloudFileClient();
             CloudFileShare share = client.GetShareReference(shareName);
-            share.DeleteIfExists();
+            await share.DeleteIfExistsAsync();
         }
 
         /// <summary>
         /// Delete the container with the specified name if it exists.
         /// </summary>
         /// <param name="containerName">Name of container to delete.</param>
-        public static void DeleteContainer(string containerName)
+        public static async Task DeleteContainerAsync(string containerName)
         {
             CloudBlobClient client = GetCloudBlobClient();
             CloudBlobContainer container = client.GetContainerReference(containerName);
-            container.DeleteIfExists();
+            await container.DeleteIfExistsAsync();
         }
 
         private static CloudBlobClient GetCloudBlobClient()
@@ -129,7 +131,13 @@ namespace DataMovementSamples
         private static string LoadConnectionStringFromConfigration()
         {
             // How to create a storage connection string: http://msdn.microsoft.com/en-us/library/azure/ee758697.aspx
-            return CloudConfigurationManager.GetSetting("StorageConnectionString");
+#if DOTNET5_4
+            //For .Net Core,  will get Storage Connection string from Config.json file
+            return JObject.Parse(File.ReadAllText("Config.json"))["StorageConnectionString"].ToString(); 
+#else
+            //For .net, will get Storage Connection string from App.Config file
+            return System.Configuration.ConfigurationManager.AppSettings["StorageConnectionString"];
+#endif
         }
 
         private static CloudStorageAccount GetStorageAccount()

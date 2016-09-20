@@ -378,7 +378,7 @@ namespace S3ToAzureSample
     /// <summary>
     /// A helper class to record progress reported by data movement library.
     /// </summary>
-    class ProgressRecorder : IProgress<TransferProgress>
+    class ProgressRecorder : IProgress<TransferStatus>
     {
         private long latestBytesTransferred;
         private long latestNumberOfFilesTransferred;
@@ -389,7 +389,7 @@ namespace S3ToAzureSample
         /// Callback to get the progress from data movement library.
         /// </summary>
         /// <param name="progress">Transfer progress.</param>
-        public void Report(TransferProgress progress)
+        public void Report(TransferStatus progress)
         {
             this.latestBytesTransferred = progress.BytesTransferred;
             this.latestNumberOfFilesTransferred = progress.NumberOfFilesTransferred;
