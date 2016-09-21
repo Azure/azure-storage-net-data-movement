@@ -1,4 +1,4 @@
-# Microsoft Azure Storage Data Movement Library (0.2.0)
+# Microsoft Azure Storage Data Movement Library (0.3.0)
 
 The Microsoft Azure Storage Data Movement Library designed for high-performance uploading, downloading and copying Azure Storage Blob and File. This library is based on the core data movement framework that powers [AzCopy](https://azure.microsoft.com/documentation/articles/storage-use-azcopy/).
 
@@ -28,6 +28,10 @@ For more information about the Azure Storage, please visit [Microsoft Azure Stor
 
 For the best development experience, we recommend that developers use the official Microsoft NuGet packages for libraries. NuGet packages are regularly updated with new functionality and hotfixes.
 
+## Target Frameworks
+
+- .NET Framework 4.5 or above
+- Netstandard1.3 (CoreCLR RTM)
 
 ## Requirements
 
@@ -56,9 +60,9 @@ within your project you can also have them installed by the .NET package manager
 
 ## Dependencies
 
-### Azure Storage Client Library for .NET
+### Azure Storage Client Library
 
-This version depends on Azure Storage Client Library for .NET.
+This version depends on Azure Storage Client Library
 
 - [WindowsAzure.Storage](https://www.nuget.org/packages/WindowsAzure.Storage/)
 
@@ -66,7 +70,7 @@ This version depends on Azure Storage Client Library for .NET.
 
 ## Code Samples
 
-Find more samples at the [sample folder](https://github.com/Azure/azure-storage-net-data-movement/tree/master/samples?).
+Find more samples at the [sample folder](https://github.com/Azure/azure-storage-net-data-movement/tree/dev/samples?).
 
 ### Upload a blob
 
@@ -99,7 +103,7 @@ Once you setup the storage blob context, you can start to use `WindowsAzure.Stor
 TransferManager.Configurations.ParallelOperations = 64;
 // Setup the transfer context and track the upoload progress
 TransferContext context = new TransferContext();
-context.ProgressHandler = new Progress<TransferProgress>((progress) =>
+context.ProgressHandler = new Progress<TransferStatus>((progress) =>
 {
 	Console.WriteLine("Bytes uploaded: {0}", progress.BytesTransferred);
 });
