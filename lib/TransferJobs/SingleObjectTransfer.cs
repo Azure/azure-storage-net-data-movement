@@ -21,6 +21,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if BINARY_SERIALIZATION
     [Serializable]
 #else
+    [KnownType(typeof(AzureBlobDirectoryLocation))]
+    [KnownType(typeof(AzureBlobLocation))]
+    [KnownType(typeof(AzureFileDirectoryLocation))]
+    [KnownType(typeof(AzureFileLocation))]
+    [KnownType(typeof(DirectoryLocation))]
+    [KnownType(typeof(FileLocation))]
+    [KnownType(typeof(StreamLocation))]
+    // StreamLocation intentionally omitted because it is not serializable
+    [KnownType(typeof(UriLocation))]
     [DataContract]
 #endif // BINARY_SERIALIZATION
     internal class SingleObjectTransfer : Transfer
@@ -143,7 +152,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Creates a copy of current transfer object.
         /// </summary>
         /// <returns>A copy of current transfer object.</returns>
-        public SingleObjectTransfer Copy()
+        public override Transfer Copy()
         {
             return new SingleObjectTransfer(this);
         }
@@ -167,7 +176,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 return;
             }
 
-            TransferEventArgs eventArgs = new TransferEventArgs(this.Source.ToString(), this.Destination.ToString());
+            TransferEventArgs eventArgs = new TransferEventArgs(this.Source.Instance, this.Destination.Instance);
             eventArgs.StartTime = DateTime.UtcNow;
 
             if (this.transferJob.Status == TransferJobStatus.Failed)
@@ -190,7 +199,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                 eventArgs.EndTime = DateTime.UtcNow;
 
-                if(this.Context != null)
+                if (this.Context != null)
                 {
                     this.Context.OnTransferSuccess(eventArgs);
                 }
@@ -213,13 +222,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 }
                 else
                 {
-                    // transfer failed
-                    this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Failed);
-                    if (this.Context != null)
-                    {
-                        this.Context.OnTransferFailed(eventArgs);
-                    }
-
+                    this.OnTransferFailed(eventArgs);
                     throw;
                 }
             }
@@ -228,15 +231,32 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 eventArgs.EndTime = DateTime.UtcNow;
                 eventArgs.Exception = ex;
 
-                // transfer failed
-                this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Failed);
-
-                if (this.Context != null)
-                {
-                    this.Context.OnTransferFailed(eventArgs);
-                }
+                this.OnTransferFailed(eventArgs);
 
                 throw;
+            }
+
+            this.Journal?.RemoveTransfer(this);
+        }
+
+        public void OnTransferFailed(Exception ex)
+        {
+            TransferEventArgs eventArgs = new TransferEventArgs(this.Source.Instance, this.Destination.Instance);
+            eventArgs.StartTime = DateTime.UtcNow;
+            eventArgs.EndTime = DateTime.UtcNow;
+            eventArgs.Exception = ex;
+
+            this.OnTransferFailed(eventArgs);
+        }
+
+        private void OnTransferFailed(TransferEventArgs eventArgs)
+        {
+            // transfer failed
+            this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Failed);
+
+            if (this.Context != null)
+            {
+                this.Context.OnTransferFailed(eventArgs);
             }
         }
     }

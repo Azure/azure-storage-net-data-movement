@@ -17,6 +17,7 @@ namespace S3ToAzureSample
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.WindowsAzure.Storage.File;
 
     /// <summary>
     /// This sample demonstrates how to copy all objects from an Amazon s3 bucket into a Microsoft Azure blob container
@@ -167,21 +168,21 @@ namespace S3ToAzureSample
             CloudBlobContainer container = client.GetContainerReference(AzureContainerName);
             container.CreateIfNotExists();
 
-            TransferContext context = new TransferContext();
+            SingleTransferContext context = new SingleTransferContext();
 
             // Add progress handler
             context.ProgressHandler = progressRecorder;
 
-            context.OverwriteCallback = Program.OverwritePrompt;
+            context.ShouldOverwriteCallback = Program.OverwritePrompt;
 
-            while(!jobQueue.IsCompleted)
+            while (!jobQueue.IsCompleted)
             {
                 S3ToAzureTransferJob job = null;
                 try
                 {
                     job = jobQueue.Take();
                 }
-                catch(InvalidOperationException)
+                catch (InvalidOperationException)
                 {
                     // No more jobs to do
                 }
@@ -215,7 +216,7 @@ namespace S3ToAzureSample
                         task = TransferManager.CopyAsync(new Uri(job.Source), cloudBlob, true, null, context);
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     ConsoleWriteLine("Error occurs when transferring {0}: {1}", job.Name, e.ToString());
                 }
@@ -308,14 +309,14 @@ namespace S3ToAzureSample
         /// Overwrite callback used in <see cref="Microsoft.WindowsAzure.Storage.DataMovement.TransferContext"/> to query user if overwrite
         /// an existing destination blob.
         /// </summary>
-        /// <param name="source">Path of the source used to overwrite the destination.</param>
-        /// <param name="destination">Path of the destination to be overwritten.</param>
+        /// <param name="source">Instance of source used to overwrite the destination.</param>
+        /// <param name="destination">Instance of the destination to be overwritten.</param>
         /// <returns>True if the destination should be overwritten; otherwise false.</returns>
-        private static bool OverwritePrompt(string source, string destination)
+        private static bool OverwritePrompt(object source, object destination)
         {
             lock (consoleLock)
             {
-                Console.WriteLine("{0} already exists. Do you want to overwrite it with {1}? (Y/N)", destination, source);
+                Console.WriteLine("{0} already exists. Do you want to overwrite it with {1}? (Y/N)", ToString(destination), ToString(source));
 
                 while (true)
                 {
@@ -362,6 +363,25 @@ namespace S3ToAzureSample
             {
                 Console.Write(format, args);
             }
+        }
+
+        public static string ToString(object transferTarget)
+        {
+            CloudBlob blob = transferTarget as CloudBlob;
+
+            if (null != blob)
+            {
+                return blob.SnapshotQualifiedUri.AbsoluteUri;
+            }
+
+            CloudFile file = transferTarget as CloudFile;
+
+            if (null != file)
+            {
+                return file.Uri.AbsoluteUri;
+            }
+
+            return transferTarget.ToString();
         }
     }
 

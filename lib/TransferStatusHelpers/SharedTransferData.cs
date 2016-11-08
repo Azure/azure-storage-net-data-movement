@@ -33,11 +33,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public bool DisableContentMD5Validation { get; set; }
 
         /// <summary>
-        /// Gets or sets string which representing source location.
-        /// </summary>
-        public string SourceLocation { get; set; }
-
-        /// <summary>
         /// Gets or sets attribute for blob/azure file.
         /// </summary>
         public Attributes Attributes { get; set; }

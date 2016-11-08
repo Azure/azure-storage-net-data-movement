@@ -10,6 +10,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// </summary>
     public sealed class DownloadDirectoryOptions : DirectoryOptions
     {
+        private char delimiter = '/';
+
         /// <summary>
         /// Gets or sets a flag that indicates whether to validate content MD5 or not when reading data from the source object.
         /// If set to true, source object content MD5 will be validated; otherwise, source object content MD5 will not be validated.
@@ -26,6 +28,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// name without extension and 'y' is the file name extension, the destination file name of blob
         /// snapshot is formatted as "x (%snapshot_time_stamp%).y".
         /// </remarks>
-        public bool IncludeSnapshots { get; set; } 
+        public bool IncludeSnapshots { get; set; }
+
+        /// <summary>
+        /// Gets or sets a char that indicates the delimiter character used to delimit virtual directories in a blob name.
+        /// </summary>
+        public char Delimiter
+        {
+            get
+            {
+                return this.delimiter;
+            }
+            set
+            {
+                this.delimiter = value;
+            }
+        }
     }
 }

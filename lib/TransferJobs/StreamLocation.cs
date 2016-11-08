@@ -7,8 +7,13 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
+    using System.Globalization;
     using System.IO;
+    using System.Runtime.Serialization;
 
+#if !BINARY_SERIALIZATION
+    [DataContract]
+#endif
     internal class StreamLocation : TransferLocation
     {
         /// <summary>
@@ -25,6 +30,34 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.Stream = stream;
         }
 
+#if !BINARY_SERIALIZATION
+        /// <summary>
+        /// Deserializes the SerializableTransferLocation.
+        /// </summary>
+        /// <param name="context"></param>
+        [OnSerializing]
+        private void OnSerializingCallback(StreamingContext context)
+        {
+            throw new InvalidOperationException(string.Format(
+                CultureInfo.CurrentCulture,
+                Resources.CannotDeserializeLocationType,
+                TransferLocationType.Stream));
+        }
+
+        /// <summary>
+        /// Deserializes the SerializableTransferLocation.
+        /// </summary>
+        /// <param name="context"></param>
+        [OnDeserializing]
+        private void OnDeserializingCallback(StreamingContext context)
+        {
+            throw new InvalidOperationException(string.Format(
+                CultureInfo.CurrentCulture,
+                Resources.CannotDeserializeLocationType,
+                TransferLocationType.Stream));
+        }
+#endif
+
         /// <summary>
         /// Gets transfer location type.
         /// </summary>
@@ -37,7 +70,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Gets an stream instance representing the location for this instance.
+        /// Get source/destination instance in transfer.
+        /// </summary>
+        public override object Instance
+        {
+            get
+            {
+                return this.Stream;
+            }
+        }
+
+        /// <summary>
+        /// Gets a stream instance representing the location for this instance.
         /// </summary>
         public Stream Stream
         {

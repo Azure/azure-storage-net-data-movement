@@ -15,9 +15,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     {
         private MemoryPool memoryPool;
 
+        private long currentCapacity;
+
+        private readonly int BufferSize;
+
         public MemoryManager(
             long capacity, int bufferSize)
         {
+            BufferSize = bufferSize;
+            long currentCapacity = capacity;
             long availableCells = capacity / bufferSize;
 
             int cellNumber = (int)Math.Min((long)Constants.MemoryManagerCellsMaximum, availableCells);
@@ -35,10 +41,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.memoryPool.AddBuffer(buffer);
         }
 
+        internal void SetMemoryLimitation(long memoryLimitation)
+        {
+            if (memoryLimitation > this.currentCapacity)
+            {
+                this.currentCapacity = memoryLimitation;
+
+                long availableCells = this.currentCapacity / BufferSize;
+                int cellNumber = (int)Math.Min((long)Constants.MemoryManagerCellsMaximum, availableCells);
+                this.memoryPool.SetCapacity(cellNumber);
+            }
+        }
+
         private class MemoryPool
         {
             public readonly int BufferSize;
 
+            private int maxCellCount;
             private int availableCells;
             private int allocatedCells;
             private object cellsListLock;
@@ -49,11 +68,27 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 this.BufferSize = bufferSize;
 
+                this.maxCellCount = cellsCount;
                 this.availableCells = cellsCount;
                 this.allocatedCells = 0;
                 this.cellsListLock = new object();
                 this.cellsListHeadCell = null;
                 this.cellsInUse = new ConcurrentDictionary<byte[], MemoryCell>();
+            }
+
+            public void SetCapacity(int cellsCount)
+            {
+                if (cellsCount > this.maxCellCount)
+                {
+                    lock (this.cellsListLock)
+                    {
+                        if (cellsCount > this.maxCellCount)
+                        {
+                            this.availableCells += (cellsCount - this.maxCellCount);
+                            this.maxCellCount = cellsCount;
+                        }
+                    }
+                }
             }
 
             public byte[] GetBuffer()

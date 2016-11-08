@@ -34,6 +34,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets or sets a boolean that indicates whether to include subdirectories when doing a directory transfer operation.
         /// </summary>
-        public bool Recursive { get; set; } 
+        public bool Recursive { get; set; }
     }
 }

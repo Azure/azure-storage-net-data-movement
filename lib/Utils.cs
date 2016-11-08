@@ -5,18 +5,19 @@
 //------------------------------------------------------------------------------
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Globalization;
-    using System.Text;
-    using System.Threading;
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
-
-    /// <summary>
-    /// Class for various utils.
-    /// </summary>
+    using System;
+    using System.Collections.Generic;
+    using System.Globalization;
+    using System.IO;    
+    using System.Net;
+    using System.Text;
+    using System.Threading;
+/// <summary>
+                        /// Class for various utils.
+                        /// </summary>
     internal static class Utils
     {
         private const int RequireBufferMaxRetryCount = 10;
@@ -213,6 +214,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
+        public static bool CompareProperties(Attributes first, Attributes second)
+        {
+            return string.Equals(first.CacheControl, second.CacheControl)
+                && string.Equals(first.ContentDisposition, second.ContentDisposition)
+                && string.Equals(first.ContentEncoding, second.ContentEncoding)
+                && string.Equals(first.ContentLanguage, second.ContentLanguage)
+                && string.Equals(first.ContentMD5, second.ContentMD5)
+                && string.Equals(first.ContentType, second.ContentType);
+        }
+
         /// <summary>
         /// Generate an AccessCondition instance with lease id customer condition.
         /// For upload/copy, if it succeeded at the first operation to fetching destination attribute with customer condition,
@@ -247,18 +258,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Others, we should the custom ones.
         /// </summary>
         /// <param name="customRequestOptions">BlobRequestOptions customer input in TransferLocation.</param>
+        /// <param name="isCreationRequest">Indicate whether to generate request options for a CREATE requestion which requires shorter server timeout. </param>
         /// <returns>BlobRequestOptions instance with custom BlobRequestOptions properties.</returns>
         public static BlobRequestOptions GenerateBlobRequestOptions(
-            BlobRequestOptions customRequestOptions)
+            BlobRequestOptions customRequestOptions, bool isCreationRequest = false)
         {
-            if (null == customRequestOptions)
-            {
-                return Transfer_RequestOptions.DefaultBlobRequestOptions;
-            }
-            else
-            {
-                BlobRequestOptions requestOptions = Transfer_RequestOptions.DefaultBlobRequestOptions;
 
+            var requestOptions = Transfer_RequestOptions.DefaultBlobRequestOptions;
+
+            if (isCreationRequest)
+            {
+                requestOptions.ServerTimeout = Transfer_RequestOptions.DefaultCreationServerTimeout;
+            }
+            
+            if (null != customRequestOptions)
+            {
                 AssignToRequestOptions(requestOptions, customRequestOptions);
 
                 if (null != customRequestOptions.UseTransactionalMD5)
@@ -267,8 +281,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 }
 
                 requestOptions.DisableContentMD5Validation = customRequestOptions.DisableContentMD5Validation;
-                return requestOptions;
             }
+
+            return requestOptions;
         }
 
         /// <summary>
@@ -278,18 +293,20 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Others, we should the custom ones.
         /// </summary>
         /// <param name="customRequestOptions">FileRequestOptions customer input in TransferLocation.</param>
+        /// <param name="isCreationRequest">Indicate whether to generate request options for a CREATE requestion which requires shorter server timeout. </param>
         /// <returns>FileRequestOptions instance with custom FileRequestOptions properties.</returns>
         public static FileRequestOptions GenerateFileRequestOptions(
-            FileRequestOptions customRequestOptions)
+            FileRequestOptions customRequestOptions, bool isCreationRequest = false)
         {
-            if (null == customRequestOptions)
-            {
-                return Transfer_RequestOptions.DefaultFileRequestOptions;
-            }
-            else
-            {
-                FileRequestOptions requestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
+            var requestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
 
+            if (isCreationRequest)
+            {
+                requestOptions.ServerTimeout = Transfer_RequestOptions.DefaultCreationServerTimeout;
+            }
+
+            if (null != customRequestOptions)
+            {
                 AssignToRequestOptions(requestOptions, customRequestOptions);
 
                 if (null != customRequestOptions.UseTransactionalMD5)
@@ -298,8 +315,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 }
 
                 requestOptions.DisableContentMD5Validation = customRequestOptions.DisableContentMD5Validation;
-                return requestOptions;
             }
+
+            return requestOptions;
         }
 
         /// <summary>
@@ -314,12 +332,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 return null;
             }
-            
-            return new OperationContext()
+
+            OperationContext operationContext = new OperationContext()
             {
-                ClientRequestID = transferContext.ClientRequestId,
-                LogLevel = transferContext.LogLevel,
+                LogLevel = transferContext.LogLevel
             };
+
+            if (transferContext.ClientRequestId != null)
+            {
+                operationContext.ClientRequestID = transferContext.ClientRequestId;
+            }
+
+            return operationContext;
         }
 
         public static CloudBlob GetBlobReference(Uri blobUri, StorageCredentials credentials, BlobType blobType)
@@ -364,8 +388,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             return exceptionMessage;
         }
-
-#if !DEBUG
+        
         /// <summary>
         /// Returns a string that represents error details of the corresponding <see cref="StorageException"/>.
         /// </summary>
@@ -411,7 +434,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             return messageBuilder.ToString();
         }
-#endif
 
         public static byte[] RequireBuffer(MemoryManager memoryManager, Action checkCancellation)
         {
@@ -442,6 +464,57 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             return buffer;
         }
+
+        public static bool IsExpectedHttpStatusCodes(StorageException e, params HttpStatusCode[] expectedStatusCodes)
+        {
+            if (e == null || e.RequestInformation == null)
+            {
+                return false;
+            }
+
+            int statusCode = e.RequestInformation.HttpStatusCode;
+            foreach(HttpStatusCode expectedStatusCode in expectedStatusCodes)
+            {
+                if (statusCode == (int)expectedStatusCode)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+#if DEBUG
+        /// <summary>
+        /// Append snapshot time to a file name.
+        /// </summary>
+        /// <param name="fileName">Original file name.</param>
+        /// <param name="snapshotTime">Snapshot time to append.</param>
+        /// <returns>A file name with appended snapshot time.</returns>
+        public static string AppendSnapShotTimeToFileName(string fileName, DateTimeOffset? snapshotTime)
+        {
+            string resultName = fileName;
+
+            if (snapshotTime.HasValue)
+            {
+                string pathAndFileNameNoExt = Path.ChangeExtension(fileName, null);
+                string extension = Path.GetExtension(fileName);
+                string timeStamp = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0:yyyy-MM-dd HHmmss fff}",
+                    snapshotTime.Value);
+
+                resultName = string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0} ({1}){2}",
+                    pathAndFileNameNoExt,
+                    timeStamp,
+                    extension);
+            }
+
+            return resultName;
+        }
+#endif
 
         private static void AssignToRequestOptions(IRequestOptions targetRequestOptions, IRequestOptions customRequestOptions)
         {

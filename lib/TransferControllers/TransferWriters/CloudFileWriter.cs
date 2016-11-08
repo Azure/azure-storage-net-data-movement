@@ -80,17 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             await this.cloudFile.CreateAsync(
                 size,
                 null,
-                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
-                Utils.GenerateOperationContext(this.Controller.TransferContext),
-                this.CancellationToken);
-        }
-
-        protected override async Task DoResizeAsync(long size)
-        {
-            await this.cloudFile.ResizeAsync(
-                size,
-                null,
-                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
+                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions, true),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
         }
@@ -112,7 +102,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             FileRequestOptions fileRequestOptions = Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
 
-            if (!this.destExist)
+            if (!this.Controller.IsForceOverwrite && !this.destExist)
             {
                 await this.cloudFile.FetchAttributesAsync(
                     null,
@@ -123,6 +113,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             var originalMetadata = new Dictionary<string, string>(this.cloudFile.Metadata);
             Utils.SetAttributes(this.cloudFile, this.SharedTransferData.Attributes);
+            await this.Controller.SetCustomAttributesAsync(this.cloudFile);
 
             await this.cloudFile.SetPropertiesAsync(
                 null,

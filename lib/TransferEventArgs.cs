@@ -15,27 +15,27 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferEventArgs"/> class.
         /// </summary>
-        /// <param name="source">String representation of transfer source location.</param>
-        /// <param name="destination">String representation of transfer destination location.</param>
-        public TransferEventArgs(string source, string destination)
+        /// <param name="source">Instance representation of transfer source location.</param>
+        /// <param name="destination">Instance representation of transfer destination location.</param>
+        public TransferEventArgs(object source, object destination)
         {
             this.Source = source;
             this.Destination = destination;
         }
 
         /// <summary>
-        /// Gets the string representation of transfer source location.
+        /// Gets the instance representation of transfer source location.
         /// </summary>
-        public string Source
+        public object Source
         {
             get;
             private set;
         }
 
         /// <summary>
-        /// Gets the string representation of transfer destination location.
+        /// Gets the instance representation of transfer destination location.
         /// </summary>
-        public string Destination
+        public object Destination
         {
             get;
             private set;

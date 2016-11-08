@@ -84,10 +84,16 @@ namespace DataMovementSamples
 
             // Use UploadOptions to set ContentType of destination CloudBlob
             UploadOptions options = new UploadOptions();
-            options.ContentType = "image/png";
+
+            SingleTransferContext context = new SingleTransferContext();
+            context.SetAttributesCallback = (destination) =>
+            {
+                CloudBlob destBlob = destination as CloudBlob;
+                destBlob.Properties.ContentType = "image/png";
+            };
 
             // Start the upload
-            await TransferManager.UploadAsync(sourceFileName, destinationBlob, options, null /* context */);
+            await TransferManager.UploadAsync(sourceFileName, destinationBlob, options, context);
             Console.WriteLine("File {0} is uploaded to {1} successfully.", sourceFileName, destinationBlob.Uri.ToString());
         }
 
@@ -129,7 +135,7 @@ namespace DataMovementSamples
             CancellationTokenSource cancellationSource = new CancellationTokenSource();
 
             TransferCheckpoint checkpoint = null;
-            TransferContext context = new TransferContext();
+            SingleTransferContext context = new SingleTransferContext();
 
             // Start the transfer
             try
@@ -153,7 +159,7 @@ namespace DataMovementSamples
             checkpoint = context.LastCheckpoint;
 
             // Create a new TransferContext with the store checkpoint
-            TransferContext resumeContext = new TransferContext(checkpoint);
+            SingleTransferContext resumeContext = new SingleTransferContext(checkpoint);
 
             // Resume transfer from the stored checkpoint
             Console.WriteLine("Resume the cancelled transfer.");
@@ -180,10 +186,10 @@ namespace DataMovementSamples
             CloudBlob sourceBlob2 = await Util.GetCloudBlobAsync(ContainerName, sourceBlobName2, BlobType.BlockBlob);
 
             // Create a TransferContext shared by both transfers
-            TransferContext sharedTransferContext = new TransferContext();
+            SingleTransferContext sharedTransferContext = new SingleTransferContext();
 
             // Show overwrite prompt in console when OverwriteCallback is triggered
-            sharedTransferContext.OverwriteCallback = (source, destination) =>
+            sharedTransferContext.ShouldOverwriteCallback = (source, destination) =>
                 {
                     Console.WriteLine("{0} already exists. Do you want to overwrite it with {1}? (Y/N)", destination, source);
 
@@ -266,15 +272,26 @@ namespace DataMovementSamples
             {
                 SearchPattern = "azure*.png",
                 Recursive = false,
-                BlobType = BlobType.BlockBlob,
-                ContentType = "image/png",
+                BlobType = BlobType.BlockBlob
             };
 
-            // Register for transfer event. It's optional and also applicable to single object transfer after v0.2.0.
-            TransferContext context = new TransferContext();
+            // Register for transfer event.
+            DirectoryTransferContext context = new DirectoryTransferContext();
             context.FileTransferred += FileTransferredCallback;
             context.FileFailed +=FileFailedCallback;
             context.FileSkipped += FileSkippedCallback;
+
+            context.SetAttributesCallback = (destination) =>
+            {
+                CloudBlob destBlob = destination as CloudBlob;
+                destBlob.Properties.ContentType = "image/png";
+            };
+
+            context.ShouldTransferCallback = (source, destination) =>
+            {
+                // Can add more logic here to evaluate whether really need to transfer the target.
+                return true;
+            };
 
             // Start the upload
             var trasferStatus = await TransferManager.UploadDirectoryAsync(sourceDirPath, destDir, options, context);
@@ -312,7 +329,7 @@ namespace DataMovementSamples
                 Recursive = true,
             };
 
-            TransferContext context = new TransferContext();
+            DirectoryTransferContext context = new DirectoryTransferContext();
             context.FileTransferred += FileTransferredCallback;
             context.FileFailed += FileFailedCallback;
             context.FileSkipped += FileSkippedCallback;
@@ -365,7 +382,7 @@ namespace DataMovementSamples
             File.Delete(tempFileName);
 
             // Create a new TransferContext with the store checkpoint
-            TransferContext resumeContext = new TransferContext(checkpoint);
+            DirectoryTransferContext resumeContext = new DirectoryTransferContext(checkpoint);
             resumeContext.FileTransferred += FileTransferredCallback;
             resumeContext.FileFailed += FileFailedCallback;
             resumeContext.FileSkipped += FileSkippedCallback;

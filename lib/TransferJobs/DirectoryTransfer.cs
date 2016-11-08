@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 // <copyright file="DirectoryTransfer.cs" company="Microsoft">
 //    Copyright (c) Microsoft Corporation
 // </copyright>
@@ -8,7 +8,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
     using System.Diagnostics;
+    using System.Globalization;
     using System.IO;
+    using System.Net;
     using System.Runtime.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
@@ -27,6 +29,34 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     internal class DirectoryTransfer : MultipleObjectsTransfer
     {
         /// <summary>
+        /// These filenames are reserved on windows, regardless of the file extension.
+        /// </summary>
+        private static readonly string[] ReservedBaseFileNames = new string[]
+            {
+                "CON", "PRN", "AUX", "NUL",
+                "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+                "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+            };
+
+        /// <summary>
+        /// These filenames are reserved on windows, only if the full filename matches.
+        /// </summary>
+        private static readonly string[] ReservedFileNames = new string[]
+            {
+                "CLOCK$",
+            };
+
+        /// <summary>
+        /// Serialization field name for bool to indicate whether delimiter is set.
+        /// </summary>
+        private const string HasDelimiterName = "HasDelimiter";
+
+        /// <summary>
+        /// Serialization field name for delimiter.
+        /// </summary>
+        private const string DelimiterName = "Delimiter";
+
+        /// <summary>
         /// Name resolver.
         /// </summary>
         private INameResolver nameResolver;
@@ -35,6 +65,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Records last Azure file directory created to optimize Azure file directory check.
         /// </summary>
         private CloudFileDirectory lastAzureFileDirectory = null;
+
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif // BINARY_SERIALIZATION
+        private char? delimiter = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryTransfer"/> class.
@@ -45,7 +80,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public DirectoryTransfer(TransferLocation source, TransferLocation dest, TransferMethod transferMethod)
             : base(source, dest, transferMethod)
         {
-            this.Initialize();
         }
 
 #if BINARY_SERIALIZATION
@@ -57,7 +91,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         protected DirectoryTransfer(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
-            this.Initialize();
+            if ((bool)info.GetValue(HasDelimiterName, typeof(bool)))
+            {
+                this.delimiter = (char)info.GetValue(DelimiterName, typeof(char));
+            }
         }
 #endif // BINARY_SERIALIZATION
 
@@ -66,7 +103,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         [OnDeserialized]
         private void OnDeserializedCallback(StreamingContext context)
         {
-            this.Initialize();
         }
 #endif
 
@@ -77,8 +113,34 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private DirectoryTransfer(DirectoryTransfer other)
             : base(other)
         {
-            this.Initialize();
         }
+
+        public char? Delimiter
+        {
+            get
+            {
+                return this.delimiter;
+            }
+
+            set
+            {
+                this.delimiter = value;
+            }
+        }
+
+        public bool IsForceOverwrite
+        {
+            get
+            {
+                if (this.DirectoryContext == null)
+                {
+                    return false;
+                }
+
+                return this.DirectoryContext.ShouldOverwriteCallback == TransferContext.ForceOverwrite;
+            }
+        }
+
 
 #if BINARY_SERIALIZATION
         /// <summary>
@@ -89,6 +151,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
+
+            // serialize sub transfers
+            info.AddValue(HasDelimiterName, this.delimiter.HasValue, typeof(bool));
+
+            if (this.delimiter.HasValue)
+            {
+                info.AddValue(DelimiterName, this.delimiter.Value);
+            }
         }
 #endif // BINARY_SERIALIZATION
 
@@ -96,7 +166,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Creates a copy of current transfer object.
         /// </summary>
         /// <returns>A copy of current transfer object.</returns>
-        public DirectoryTransfer Copy()
+        public override Transfer Copy()
         {
             return new DirectoryTransfer(this);
         }
@@ -113,17 +183,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 this.Destination.Validate();
             }
-            catch(Exception ex)
+            catch (StorageException se)
             {
-                throw new TransferException(TransferErrorCode.FailToVadlidateDestination, Resources.FailedToValidateDestinationException, ex);
+                throw new TransferException(TransferErrorCode.FailToVadlidateDestination,
+                    string.Format(Resources.FailedToValidateDestinationException,
+                        se.ToErrorDetail(),
+                        CultureInfo.CurrentCulture),
+                    se);
+            }
+            catch (Exception ex)
+            {
+                throw new TransferException(TransferErrorCode.FailToVadlidateDestination,
+                    string.Format(Resources.FailedToValidateDestinationException,
+                        ex.Message,
+                        CultureInfo.CurrentCulture),
+                    ex);
             }
 
+            this.nameResolver = GetNameResolver(this.Source, this.Destination, this.Delimiter);
             await base.ExecuteAsync(scheduler, cancellationToken);
-        }
-
-        private void Initialize()
-        {
-            this.nameResolver = GetNameResolver(this.Source, this.Destination);
         }
 
         private static TransferLocation GetSourceTransferLocation(TransferLocation dirLocation, TransferEntry entry)
@@ -159,14 +237,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             string destRelativePath = this.nameResolver.ResolveName(entry);
 
-            switch(dirLocation.Type)
+            AzureBlobEntry sourceBlobEntry = entry as AzureBlobEntry;
+
+            switch (dirLocation.Type)
             {
                 case TransferLocationType.AzureBlobDirectory:
                     {
                         AzureBlobDirectoryLocation blobDirLocation = dirLocation as AzureBlobDirectoryLocation;
                         BlobType destBlobType = this.BlobType;
 
-                        AzureBlobEntry sourceBlobEntry = entry as AzureBlobEntry;
                         if (sourceBlobEntry != null)
                         {
                             // if source is Azure blob storage, source and destination blob share the same blob type
@@ -199,7 +278,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     {
                         AzureFileDirectoryLocation fileDirLocation = dirLocation as AzureFileDirectoryLocation;
                         CloudFile file = fileDirLocation.FileDirectory.GetFileReference(destRelativePath);
-                        CreateParentDirectoryIfNotExists(file);
 
                         AzureFileLocation retLocation = new AzureFileLocation(file);
                         retLocation.FileRequestOptions = fileDirLocation.FileRequestOptions;
@@ -210,13 +288,57 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     {
                         DirectoryLocation localDirLocation = dirLocation as DirectoryLocation;
                         string path = Path.Combine(localDirLocation.DirectoryPath, destRelativePath);
-                        CreateParentDirectoryIfNotExists(path);
-
+                        
                         return new FileLocation(path);
                     }
 
                 default:
                     throw new ArgumentException("TransferLocationType");
+            }
+        }
+
+        protected override void CreateParentDirectory(SingleObjectTransfer transfer)
+        {
+            switch (transfer.Destination.Type)
+            {
+                case TransferLocationType.FilePath:
+                    var filePath = (transfer.Destination as FileLocation).FilePath;
+                    ValidateDestinationPath(transfer.Source.Instance.ConvertToString(), filePath);
+                    CreateParentDirectoryIfNotExists(filePath);
+                    break;
+                case TransferLocationType.AzureFile:
+                    try
+                    {
+                        CreateParentDirectoryIfNotExists((transfer.Destination as AzureFileLocation).AzureFile);
+                    }
+                    catch (Exception ex)
+                    {
+                        AggregateException aggregateException = ex as AggregateException;
+                        StorageException storageException = null;
+                        if (aggregateException != null)
+                        {
+                            storageException = aggregateException.Flatten().InnerExceptions[0] as StorageException;
+                        }
+
+                        if (storageException == null)
+                        {
+                            storageException = ex as StorageException;
+                        }
+
+                        if (storageException != null)
+                        {
+                            throw new TransferException(TransferErrorCode.FailToVadlidateDestination, 
+                                string.Format(CultureInfo.CurrentCulture,
+                                    Resources.FailedToValidateDestinationException,
+                                    storageException.ToErrorDetail()),
+                                storageException);
+                        }
+
+                        throw;
+                    }
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -228,7 +350,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             TransferLocation destLocation = GetDestinationTransferLocation(this.Destination, entry);
             SingleObjectTransfer transfer = new SingleObjectTransfer(sourceLocation, destLocation, this.TransferMethod);
             transfer.Context = this.Context;
-            transfer.ContentType = this.ContentType;
             return transfer;
         }
 
@@ -252,7 +373,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
-        private static INameResolver GetNameResolver(TransferLocation sourceLocation, TransferLocation destLocation)
+        private static INameResolver GetNameResolver(TransferLocation sourceLocation, TransferLocation destLocation, char? delimiter)
         {
             Debug.Assert(sourceLocation != null, "sourceLocation");
             Debug.Assert(destLocation != null, "destLocation");
@@ -266,11 +387,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     }
                     else if(destLocation.Type == TransferLocationType.AzureFileDirectory)
                     {
-                        return new AzureBlobToAzureFileNameResolver(null);
+                        return new AzureBlobToAzureFileNameResolver(delimiter);
                     }
                     else if(destLocation.Type == TransferLocationType.LocalDirectory)
                     {
-                        return new AzureToFileNameResolver(null);
+                        return new AzureToFileNameResolver(delimiter);
                     }
                     break;
 
@@ -304,13 +425,74 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             throw new ArgumentException("Unsupported destination location", "destLocation");
         }
 
+        private static void ValidateDestinationPath(string sourcePath, string destPath)
+        {
+            if (destPath.Length > Constants.MaxFilePathLength)
+            {
+                throw new TransferException(
+                    string.Format(CultureInfo.CurrentCulture,
+                    Resources.FilePathTooLong,
+                    destPath));
+            }
+
+            if (Interop.CrossPlatformHelpers.IsWindows)
+            {
+                if (!IsValidWindowsFileName(destPath))
+                {
+                    throw new TransferException(
+                        string.Format(
+                            CultureInfo.CurrentCulture,
+                            Resources.SourceNameInvalidInFileSystem,
+                            sourcePath));
+                }
+            }
+        }
+
+        private static bool IsValidWindowsFileName(string fileName)
+        {
+            string fileNameNoExt = Path.GetFileNameWithoutExtension(fileName);
+            string fileNameWithExt = Path.GetFileName(fileName);
+
+            if (Array.Exists<string>(ReservedBaseFileNames, delegate (string s) { return fileNameNoExt.Equals(s, StringComparison.OrdinalIgnoreCase); }))
+            {
+                return false;
+            }
+
+            if (Array.Exists<string>(ReservedFileNames, delegate (string s) { return fileNameWithExt.Equals(s, StringComparison.OrdinalIgnoreCase); }))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(fileNameWithExt))
+            {
+                return false;
+            }
+
+            bool allDotsOrWhiteSpace = true;
+            for (int i = 0; i < fileName.Length; ++i)
+            {
+                if (fileName[i] != '.' && !char.IsWhiteSpace(fileName[i]))
+                {
+                    allDotsOrWhiteSpace = false;
+                    break;
+                }
+            }
+
+            if (allDotsOrWhiteSpace)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         private void CreateParentDirectoryIfNotExists(CloudFile file)
         {
             FileRequestOptions fileRequestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
             CloudFileDirectory parent = file.Parent;
             if (!this.IsLastDirEqualsOrSubDirOf(parent))
             {
-                if (!parent.ExistsAsync(fileRequestOptions, null).Result)
+                if (this.IsForceOverwrite || !parent.ExistsAsync(fileRequestOptions, null).Result)
                 {
                     CreateCloudFileDirectoryRecursively(parent);
                 }
@@ -350,7 +532,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
-        private static void CreateCloudFileDirectoryRecursively(CloudFileDirectory dir)
+        private void CreateCloudFileDirectoryRecursively(CloudFileDirectory dir)
         {
             if (null == dir)
             {
@@ -364,8 +546,44 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             if (null != parent)
             {
                 CreateCloudFileDirectoryRecursively(parent);
-                dir.CreateIfNotExistsAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
+
+                try
+                {
+                    // create anyway, ignore 409 and 403
+                    dir.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
+                }
+                catch (AggregateException e)
+                {
+                    StorageException innnerException = e.Flatten().InnerExceptions[0] as StorageException;
+                    if (!IgnoreDirectoryCreationError(innnerException))
+                    {
+                        throw;
+                    }
+                }
             }
+        }
+
+        private static bool IgnoreDirectoryCreationError(StorageException se)
+        {
+            if (null == se)
+            {
+                return false;
+            }
+
+            if (Utils.IsExpectedHttpStatusCodes(se, HttpStatusCode.Forbidden))
+            {
+                return true;
+            }
+
+            if (null != se.RequestInformation
+                && se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict
+                && null != se.RequestInformation.ExtendedErrorInformation
+                && string.Equals(se.RequestInformation.ExtendedErrorInformation.ErrorCode, "ResourceAlreadyExists"))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private static string AppendSlash(string input)

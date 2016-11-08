@@ -108,17 +108,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             await this.pageBlob.CreateAsync(
                 size,
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                Utils.GenerateOperationContext(this.Controller.TransferContext),
-                this.CancellationToken);
-        }
-
-        protected override async Task DoResizeAsync(long size)
-        {
-            await this.pageBlob.ResizeAsync(
-                size,
-                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions, true),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
         }
@@ -140,7 +130,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
 
-            if (!this.destExist)
+            if (!this.Controller.IsForceOverwrite && !this.destExist)
             {
                 await this.pageBlob.FetchAttributesAsync(
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
@@ -151,6 +141,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             var originalMetadata = new Dictionary<string, string>(this.pageBlob.Metadata);
             Utils.SetAttributes(this.pageBlob, this.SharedTransferData.Attributes);
+            await this.Controller.SetCustomAttributesAsync(this.pageBlob);
 
             await this.pageBlob.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),

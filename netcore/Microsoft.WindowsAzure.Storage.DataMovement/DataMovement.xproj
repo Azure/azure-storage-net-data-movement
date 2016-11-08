@@ -32,6 +32,8 @@
     </EmbeddedResource>
     <Compile Include="..\..\lib\**\*.cs">
 	</Compile>
+    <Compile Include="..\..\tools\AssemblyInfo\*.cs">
+    </Compile>
   </ItemGroup>
   <PropertyGroup>
     <SchemaVersion>2.0</SchemaVersion>

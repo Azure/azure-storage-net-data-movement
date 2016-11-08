@@ -186,6 +186,10 @@ MD5 in property: {2}</value>
     <value>Failed to open file {0}: {1}.</value>
     <comment>{0} is file name, {1} is detailed error message.</comment>
   </data>
+  <data name="FilePathTooLong" xml:space="preserve">
+    <value>The specified path, file name, or both are too long for file: "{0}"</value>
+    <comment>{0} is the relative path.</comment>
+  </data>
   <data name="InvalidInitialEntryStatusForControllerException" xml:space="preserve">
     <value>The initial entry status {0} is invalid for {1}.</value>
     <comment>{0} is the initial entry status, {1} is the controller.</comment>
@@ -210,6 +214,10 @@ MD5 in property: {2}</value>
   <data name="ParameterCannotBeNullException" xml:space="preserve">
     <value>{0} cannot be null.</value>
     <comment>{0} is the property or parameter name.</comment>
+  </data>
+  <data name="PathNotFound" xml:space="preserve">
+    <value>Cannot find the path '{0}'.</value>
+  <comment>{0} is the path.</comment>
   </data>
   <data name="ProvideExactlyOneOfThreeParameters" xml:space="preserve">
     <value>Exactly one of these parameters must be provided: {0}, {1}, {2}.</value>
@@ -272,6 +280,10 @@ MD5 in property: {2}</value>
   <data name="SourceBlobTypeNotMatch" xml:space="preserve">
     <value>User specified blob type does not match the blob type of the existing source blob.</value>
   </data>
+  <data name="SourceNameInvalidInFileSystem" xml:space="preserve">
+    <value>The corresponding destination path for source "{0}" is invalid in Windows system.</value>
+  <comment>{0} is the source uri.</comment>
+  </data>
   <data name="StreamMustSupportReadException" xml:space="preserve">
     <value>{0} must support Read.</value>
   </data>
@@ -325,7 +337,7 @@ MD5 in property: {2}</value>
     <comment>{0} is the directory path, {1} is file pattern.</comment>
   </data>
   <data name="FailedToValidateDestinationException" xml:space="preserve">
-    <value>Failed to validate destination.</value>
+    <value>Failed to validate destination: {0}</value>
   </data>
   <data name="SearchPatternInRecursiveModeFromAzureFileNotSupportedException" xml:space="preserve">
     <value>Search pattern is not supported in recursive mode when the source is an Azure file directory.</value>
@@ -333,5 +345,11 @@ MD5 in property: {2}</value>
   <data name="SubTransferFailsException" xml:space="preserve">
     <value>{0} sub transfer(s) failed. </value>
     <comment>{0} is the number of failed sub transfers.</comment>
+  </data>
+  <data name="RestartableLogCorrupted" xml:space="preserve">
+    <value>The journal stream is corrupted.</value>
+  </data>
+  <data name="OnlyOneTransferAllowed" xml:space="preserve">
+    <value>Only one transfer is allowed with stream journal.</value>
   </data>
 </root>

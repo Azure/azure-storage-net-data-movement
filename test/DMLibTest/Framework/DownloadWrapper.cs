@@ -32,7 +32,7 @@ namespace DMLibTest
         private Task Download(dynamic sourceObject, TransferItem item)
         {
             DownloadOptions downloadOptions = item.Options as DownloadOptions;
-            TransferContext transferContext = item.TransferContext;
+            SingleTransferContext transferContext = item.TransferContext as SingleTransferContext;
             CancellationToken cancellationToken = item.CancellationToken;
             string destPath = item.DestObject as string;
             Stream destStream = item.DestObject as Stream;
@@ -75,7 +75,7 @@ namespace DMLibTest
         private Task<TransferStatus> DownloadDirectory(dynamic sourceObject, TransferItem item)
         {
             DownloadDirectoryOptions downloadDirectoryOptions = item.Options as DownloadDirectoryOptions;
-            TransferContext transferContext = item.TransferContext;
+            DirectoryTransferContext transferContext = item.TransferContext as DirectoryTransferContext;
             CancellationToken cancellationToken = item.CancellationToken;
             string destPath = item.DestObject as string;
 

@@ -6,6 +6,7 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
+    using System.IO;
     using System.Runtime.Serialization;
 
     /// <summary>
@@ -17,7 +18,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     [DataContract]
 #endif // BINARY_SERIALIZATION
     public class TransferCheckpoint
+#if BINARY_SERIALIZATION
+        : ISerializable
+#endif
     {
+        private const string TransferCollectionName = "TransferCollection";
+
+        private StreamJournal Journal = null;
 
 #if BINARY_SERIALIZATION
         /// <summary>
@@ -25,9 +32,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         internal TransferCheckpoint()
         {
-            this.TransferCollection = new TransferCollection();
+            this.TransferCollection = new TransferCollection<Transfer>();
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferCheckpoint"/> class.
         /// </summary>
@@ -37,7 +44,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.TransferCollection = other.TransferCollection.Copy();
         }
 #else
-
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferCheckpoint"/> class.
         /// </summary>
@@ -46,12 +52,45 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             if (null == other)
             {
-                this.TransferCollection = new TransferCollection();
+                this.TransferCollection = new TransferCollection<Transfer>();
             }
             else
             { 
                 this.TransferCollection = other.TransferCollection.Copy();
             }
+        }
+#endif
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TransferCheckpoint"/> class.
+        /// </summary>
+        /// <param name="journalStream">Stream to write checkpoint journal to. </param>
+        internal TransferCheckpoint(Stream journalStream)
+        {
+            this.TransferCollection = new TransferCollection<Transfer>();
+            this.Journal = new StreamJournal(journalStream);
+            Transfer transferInstance = this.Journal.Initialize();
+
+            if (null != transferInstance)
+            {
+                this.TransferCollection.AddTransfer(transferInstance);
+            }
+        }
+
+#if BINARY_SERIALIZATION
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StreamJournal"/> class.
+        /// </summary>
+        /// <param name="info">Serialization information.</param>
+        /// <param name="context">Streaming context.</param>
+        protected TransferCheckpoint(SerializationInfo info, StreamingContext context)
+        {
+            if (info == null)
+            {
+                throw new System.ArgumentNullException("info");
+            }
+
+            this.TransferCollection = (TransferCollection<Transfer>)info.GetValue(TransferCollectionName, typeof(TransferCollection<Transfer>));
         }
 #endif
 
@@ -62,11 +101,28 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if !BINARY_SERIALIZATION
         [DataMember]
 #endif
-        internal TransferCollection TransferCollection
+        internal TransferCollection<Transfer> TransferCollection
         {
             get;
             private set;
         }
+
+#if BINARY_SERIALIZATION
+        /// <summary>
+        /// Serializes the object.
+        /// </summary>
+        /// <param name="info">Serialization info object.</param>
+        /// <param name="context">Streaming context.</param>
+        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            if (info == null)
+            {
+                throw new ArgumentNullException("info");
+            }
+
+            info.AddValue(TransferCollectionName, this.TransferCollection, typeof(TransferCollection<Transfer>));
+        }
+#endif
 
         /// <summary>
         /// Adds a transfer to the transfer checkpoint.
@@ -74,6 +130,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="transfer">The transfer to be kept track of.</param>
         internal void AddTransfer(Transfer transfer)
         {
+            this.Journal?.AddTransfer(transfer);
             this.TransferCollection.AddTransfer(transfer);
         }
 

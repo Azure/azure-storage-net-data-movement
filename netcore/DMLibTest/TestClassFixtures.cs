@@ -69,6 +69,19 @@ namespace DMLibTest
         }
     }
 
+    public class DelimiterTestFixture : IDisposable
+    {
+        public DelimiterTestFixture()
+        {
+            DelimiterTest.MyClassInitialize(null);
+        }
+
+        public void Dispose()
+        {
+            DelimiterTest.MyClassCleanup();
+        }
+    }
+
     public class MetadataTestFixture : IDisposable
     {
         public MetadataTestFixture()
@@ -134,16 +147,29 @@ namespace DMLibTest
         }
     }
 
-    public class SetContentTypeTestFixture : IDisposable
+    public class SetAttributesTestFixture : IDisposable
     {
-        public SetContentTypeTestFixture()
+        public SetAttributesTestFixture()
         {
-            SetContentTypeTest.MyClassInitialize(null);
+            SetAttributesTest.MyClassInitialize(null);
         }
 
         public void Dispose()
         {
-            SetContentTypeTest.MyClassCleanup();
+            SetAttributesTest.MyClassCleanup();
+        }
+    }
+
+    public class ShouldTransferTestFixture : IDisposable
+    {
+        public ShouldTransferTestFixture()
+        {
+            ShouldTransferTest.MyClassInitialize(null);
+        }
+
+        public void Dispose()
+        {
+            ShouldTransferTest.MyClassCleanup();
         }
     }
 

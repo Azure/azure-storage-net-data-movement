@@ -7,7 +7,6 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
-    using System.Globalization;
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
@@ -127,6 +126,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             CloudBlob copySourceBlob = cloudBlob.GenerateCopySourceBlob();
             return copySourceBlob.ServiceClient.Credentials.TransformUri(copySourceBlob.SnapshotQualifiedUri);
+        }
+
+        internal static string ConvertToString(this object instance)
+        {
+            CloudBlob blob = instance as CloudBlob;
+
+            if (null != blob)
+            {
+                return blob.SnapshotQualifiedUri.AbsoluteUri;
+            }
+
+            CloudFile file = instance as CloudFile;
+
+            if (null != file)
+            {
+                return file.Uri.AbsoluteUri;
+            }
+
+            return instance.ToString();
         }
 
         private static string GetBlobSasToken(CloudBlob blob)

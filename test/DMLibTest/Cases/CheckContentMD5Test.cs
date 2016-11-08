@@ -145,7 +145,7 @@ namespace DMLibTest.Cases
             SourceAdaptor.GenerateData(sourceDataInfo);
 
             TransferEventChecker eventChecker = new TransferEventChecker();
-            TransferContext context = new TransferContext();
+            TransferContext context = new DirectoryTransferContext();
             eventChecker.Apply(context);
             
             bool failureReported = false;

@@ -10,20 +10,20 @@ namespace DMLibTest
 
     public static class DMLibInputHelper
     {
-        public static OverwriteCallback GetDefaultOverwiteCallbackY()
+        public static ShouldOverwriteCallback GetDefaultOverwiteCallbackY()
         {
-            return (sourcePath, destPath) =>
+            return (source, dest) =>
             {
-                Test.Info("Overwrite true: {0} -> {1}", sourcePath, destPath);
+                Test.Info("Overwrite true: {0} -> {1}", DMLibTestHelper.TransferInstanceToString(source), DMLibTestHelper.TransferInstanceToString(dest));
                 return true;
             };
         }
 
-        public static OverwriteCallback GetDefaultOverwiteCallbackN()
+        public static ShouldOverwriteCallback GetDefaultOverwiteCallbackN()
         {
-            return (sourcePath, destPath) =>
+            return (source, dest) =>
             {
-                Test.Info("Overwrite false: {0} -> {1}", sourcePath, destPath);
+                Test.Info("Overwrite false: {0} -> {1}", DMLibTestHelper.TransferInstanceToString(source), DMLibTestHelper.TransferInstanceToString(dest));
                 return false;
             };
         }

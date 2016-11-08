@@ -8,6 +8,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
     using System.Globalization;
+    using System.IO;
     using System.Runtime.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
@@ -26,8 +27,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     [KnownType(typeof(FileLocation))]
     // StreamLocation intentionally omitted because it is not serializable
     [KnownType(typeof(UriLocation))]
+    [KnownType(typeof(SingleObjectTransfer))]
+    [KnownType(typeof(MultipleObjectsTransfer))]
+    [KnownType(typeof(DirectoryTransfer))]
 #endif
-    internal abstract class Transfer : IDisposable
+    internal abstract class Transfer : JournalItem, IDisposable
 #if BINARY_SERIALIZATION
         , ISerializable
 #endif // BINARY_SERIALIZATION
@@ -37,6 +41,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private const string DestName = "Dest";
         private const string TransferMethodName = "TransferMethod";
         private const string TransferProgressName = "Progress";
+
+        // Currently, we have two ways to persist the transfer instance:
+        // 1. User can persist a TransferCheckpoint instance with all transfer instances in it.
+        // 2. User can input a stream to TransferCheckpoint that DMLib will persistant ongoing transfer instances to the stream.
+        // 2# solution is used to transfer large amount of files without occupying too much memory. 
+        // With this solution, 
+        // a. when persisting a DirectoryTransfer, we don't save its subtransfers with it, instead we'll allocate a new 
+        //    transfer chunk for each subtransfer. 
+        // b. We don't persist its TransferProgressTracker with Transfer instance, intead we save the TransferProgressTracker to a separate place.
+        // Please referece to explaination in StreamJournal for details.
+
+#if !BINARY_SERIALIZATION
+        [DataMember]
+        private TransferProgressTracker progressTracker;
+#endif
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Transfer"/> class.
@@ -83,11 +102,28 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.Source = serializableSourceLocation.Location;
             this.Destination = serializableDestLocation.Location;
             this.TransferMethod = (TransferMethod)info.GetValue(TransferMethodName, typeof(TransferMethod));
-            this.ProgressTracker = (TransferProgressTracker)info.GetValue(TransferProgressName, typeof(TransferProgressTracker));
+
+            if (null == context.Context || !(context.Context is StreamJournal))
+            {
+                this.ProgressTracker = (TransferProgressTracker)info.GetValue(TransferProgressName, typeof(TransferProgressTracker));
+            }
+            else
+            {
+                this.ProgressTracker = new TransferProgressTracker();
+            }
         }
 #endif // BINARY_SERIALIZATION
 
 #if !BINARY_SERIALIZATION
+        [OnSerializing]
+        private void OnSerializingCallback(StreamingContext context)
+        {
+            if (!IsStreamJournal)
+            {
+                this.progressTracker = this.ProgressTracker;
+            }
+        }
+
         [OnDeserialized]
         private void OnDeserializedCallback(StreamingContext context)
         {
@@ -101,6 +137,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     OriginalFormatVersion,
                     Constants.FormatVersion));
             }
+
+            if (!IsStreamJournal)
+            {
+                this.ProgressTracker = this.progressTracker;
+            }
+            else
+            {
+                this.ProgressTracker = new TransferProgressTracker();
+            }
         }
 #endif
 
@@ -112,7 +157,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.Source = other.Source;
             this.Destination = other.Destination;
             this.TransferMethod = other.TransferMethod;
-            this.ContentType = other.ContentType;
             this.OriginalFormatVersion = other.OriginalFormatVersion;
         }
 
@@ -159,19 +203,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             private set;
         }
 
+#if !BINARY_SERIALIZATION
+        /// <summary>
+        /// Gets or sets a variable to indicate whether the transfer will be saved to a streamed journal.
+        /// </summary>
+        [DataMember]
+        public bool IsStreamJournal { get; set; }
+#endif
+
         /// <summary>
         /// Gets or sets the transfer context of this transfer.
         /// </summary>
-        public TransferContext Context
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Gets or sets content type to set to destination in uploading.
-        /// </summary>
-        public string ContentType
+        public virtual TransferContext Context
         {
             get;
             set;
@@ -189,9 +232,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets the progress tracker for this transfer.
         /// </summary>
-#if !BINARY_SERIALIZATION
-        [DataMember]
-#endif
         public TransferProgressTracker ProgressTracker
         {
             get;
@@ -217,7 +257,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             info.AddValue(SourceName, serializableSourceLocation, typeof(SerializableTransferLocation));
             info.AddValue(DestName, serializableDestLocation, typeof(SerializableTransferLocation));
             info.AddValue(TransferMethodName, this.TransferMethod);
-            info.AddValue(TransferProgressName, this.ProgressTracker);
+
+            if (null == context.Context || !(context.Context is StreamJournal))
+            {
+                info.AddValue(TransferProgressName, this.ProgressTracker);
+            }
         }
 #endif // BINARY_SERIALIZATION
 
@@ -264,13 +308,28 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                 transferJob.Status = targetStatus;
             }
+
+            transferJob.Transfer.UpdateJournal();
+        }
+
+        public abstract Transfer Copy();
+
+        public void UpdateJournal()
+        {
+            this.Journal?.UpdateJournalItem(this);
         }
 
         private static void UpdateProgress(TransferJob job, Action updateAction)
         {
-            job.ProgressUpdateLock?.EnterReadLock();
-            updateAction();
-            job.ProgressUpdateLock?.ExitReadLock();
+            try
+            {
+                job.ProgressUpdateLock?.EnterReadLock();
+                updateAction();
+            }
+            finally
+            {
+                job.ProgressUpdateLock?.ExitReadLock();
+            }
         }
 
         /// <summary>

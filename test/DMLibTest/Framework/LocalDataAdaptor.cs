@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
+    using Microsoft.WindowsAzure.Storage.Auth;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -19,8 +20,13 @@ namespace DMLibTest
             this.useStream = useStream;
         }
 
-        public override object GetTransferObject(string rootPath, FileNode fileNode)
+        public override object GetTransferObject(string rootPath, FileNode fileNode, StorageCredentials credentials = null)
         {
+            if (credentials != null)
+            {
+                throw new NotSupportedException("Credentials is not supported in LocalDataAdaptor.");
+            }
+
             string filePath = Path.Combine(this.BasePath, rootPath, fileNode.GetLocalRelativePath());
 
             if (this.useStream)
@@ -40,11 +46,16 @@ namespace DMLibTest
             }
         }
 
-        public override object GetTransferObject(string rootPath, DirNode dirNode)
+        public override object GetTransferObject(string rootPath, DirNode dirNode, StorageCredentials credentials = null)
         {
             if (this.useStream)
             {
                 throw new InvalidOperationException("Can't get directory transfer object in stream data adaptor.");
+            }
+
+            if (credentials != null)
+            {
+                throw new NotSupportedException("Credentials is not supported in LocalDataAdaptor.");
             }
 
             return Path.Combine(this.BasePath, rootPath, dirNode.GetLocalRelativePath());

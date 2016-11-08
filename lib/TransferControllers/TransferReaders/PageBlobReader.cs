@@ -66,7 +66,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.SharedTransferData.Attributes = Utils.GenerateAttributes(this.pageBlob);
             this.SharedTransferData.TotalLength = this.pageBlob.Properties.Length;
-            this.SharedTransferData.SourceLocation = this.pageBlob.Uri.ToString();
         }
 
         protected override async Task<List<Range>> DoGetRangesAsync(RangesSpan rangesSpan)

@@ -13,11 +13,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     public sealed class UploadDirectoryOptions : DirectoryOptions
     {
         /// <summary>
-        /// Gets or sets a string that indicates the content-type of the destination Azure blob or Azure file.
-        /// </summary>
-        public string ContentType { get; set; }
-
-        /// <summary>
         /// Gets or sets type of destination blob. This option takes effect only when uploading to Azure blob storage.
         /// If blob type is not specified, BlockBlob is used.
         /// </summary>

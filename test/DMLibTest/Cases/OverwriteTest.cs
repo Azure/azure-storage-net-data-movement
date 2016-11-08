@@ -7,6 +7,7 @@ namespace DMLibTest.Cases
 {
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
     using System;
@@ -88,19 +89,19 @@ namespace DMLibTest.Cases
             options.TransferItemModifier = (fileNode, transferItem) =>
             {
                 string fileName = fileNode.Name;
-                TransferContext transferContext = new TransferContext();
+                TransferContext transferContext = new SingleTransferContext();
 
                 if (fileName.Equals(destExistYName))
                 {
-                    transferContext.OverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY();
+                    transferContext.ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY();
                 }
                 else if (fileName.Equals(destExistNName))
                 {
-                    transferContext.OverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackN();
+                    transferContext.ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackN();
                 }
                 else if (fileName.Equals(destNotExistYName))
                 {
-                    transferContext.OverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY();
+                    transferContext.ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY();
                 }
 
                 transferItem.TransferContext = transferContext;
@@ -152,10 +153,10 @@ namespace DMLibTest.Cases
             DMLibDataHelper.AddOneFileInBytes(destDataInfo.RootNode, destExistYName, 1024);
             DMLibDataHelper.AddOneFileInBytes(destDataInfo.RootNode, destExistNName, 1024);
 
-            TransferContext transferContext = new TransferContext();
-            transferContext.OverwriteCallback = (string sourcePath, string destinationPath) =>
+            TransferContext transferContext = new DirectoryTransferContext();
+            transferContext.ShouldOverwriteCallback = (source, destination) =>
             {
-                if (sourcePath.EndsWith(destExistNName))
+                if (DMLibTestHelper.TransferInstanceToString(source).EndsWith(destExistNName))
                 {
                     return false;
                 }
@@ -228,6 +229,142 @@ namespace DMLibTest.Cases
                 Test.Assert(successCount == 3, "Very all transfers are success");
                 Test.Assert(skipCount == 0, "Very no transfer is skipped");
             }
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirection)]
+        public void ForceOverwriteTest()
+        {
+            string destExistName = "destExist";
+            string destNotExistName = "destNotExist";
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            DMLibDataHelper.AddOneFileInBytes(sourceDataInfo.RootNode, destExistName, 1024);
+            DMLibDataHelper.AddOneFileInBytes(sourceDataInfo.RootNode, destNotExistName, 1024);
+
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(string.Empty);
+            DMLibDataHelper.AddOneFileInBytes(destDataInfo.RootNode, destExistName, 1024);
+
+            TransferContext transferContext = new SingleTransferContext();
+            transferContext.ShouldOverwriteCallback = TransferContext.ForceOverwrite;
+
+            int skipCount = 0;
+            int successCount = 0;
+            transferContext.FileSkipped += (object sender, TransferEventArgs args) =>
+            {
+                Interlocked.Increment(ref skipCount);
+            };
+
+            transferContext.FileTransferred += (object sender, TransferEventArgs args) =>
+            {
+                Interlocked.Increment(ref successCount);
+            };
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            if (DMLibTestContext.DestType != DMLibDataType.Stream)
+            {
+                options.DestTransferDataInfo = destDataInfo;
+            }
+
+            if (IsCloudService(DMLibTestContext.DestType))
+            {
+                SharedAccessPermissions permissions;
+
+                if (DMLibTestContext.IsAsync)
+                {
+                    permissions = SharedAccessPermissions.Write | SharedAccessPermissions.Read;
+                }
+                else
+                {
+                    permissions = SharedAccessPermissions.Write;
+                }
+
+                StorageCredentials destSAS = new StorageCredentials(DestAdaptor.GenerateSAS(permissions, (int)new TimeSpan(1, 0, 0, 0).TotalSeconds));
+                options.DestCredentials = destSAS;
+            }
+
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                transferItem.TransferContext = transferContext;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            // Verify transfer result
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            Test.Assert(successCount == 2, "Verify success transfers");
+            Test.Assert(skipCount == 0, "Verify skipped transfer");
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirAllValidDirection)]
+        public void DirectoryForceOverwriteTest()
+        {
+            string destExistName = "destExist";
+            string destNotExistName = "destNotExist";
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            DMLibDataHelper.AddOneFileInBytes(sourceDataInfo.RootNode, destExistName, 1024);
+            DMLibDataHelper.AddOneFileInBytes(sourceDataInfo.RootNode, destNotExistName, 1024);
+
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(string.Empty);
+            DMLibDataHelper.AddOneFileInBytes(destDataInfo.RootNode, destExistName, 1024);
+
+            TransferContext transferContext = new DirectoryTransferContext();
+            transferContext.ShouldOverwriteCallback = TransferContext.ForceOverwrite;
+
+            int skipCount = 0;
+            int successCount = 0;
+            transferContext.FileSkipped += (object sender, TransferEventArgs args) =>
+            {
+                Interlocked.Increment(ref skipCount);
+            };
+
+            transferContext.FileTransferred += (object sender, TransferEventArgs args) =>
+            {
+                Interlocked.Increment(ref successCount);
+            };
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.IsDirectoryTransfer = true;
+            if (DMLibTestContext.DestType != DMLibDataType.Stream)
+            {
+                options.DestTransferDataInfo = destDataInfo;
+            }
+
+            if (IsCloudService(DMLibTestContext.DestType))
+            {
+                SharedAccessPermissions permissions;
+
+                if (DMLibTestContext.IsAsync)
+                {
+                    permissions = SharedAccessPermissions.Write | SharedAccessPermissions.Read;
+                }
+                else
+                {
+                    permissions = SharedAccessPermissions.Write;
+                }
+
+                StorageCredentials destSAS = new StorageCredentials(DestAdaptor.GenerateSAS(permissions, (int)new TimeSpan(1, 0, 0, 0).TotalSeconds));
+                options.DestCredentials = destSAS;
+            }
+
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                transferItem.TransferContext = transferContext;
+
+                dynamic transferOptions = DefaultTransferDirectoryOptions;
+                transferOptions.Recursive = true;
+                transferItem.Options = transferOptions;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            // Verify transfer result
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            VerificationHelper.VerifySingleTransferStatus(result, 2, 0, 0, 1024 * 2);
+            Test.Assert(successCount == 2, "Verify success transfers");
+            Test.Assert(skipCount == 0, "Verify skipped transfer");
         }
     }
 }
