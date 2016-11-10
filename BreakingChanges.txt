@@ -1,3 +1,9 @@
+Tracking Breaking Changes since 0.3.0
+
+  - Changed TransferContext to SingleTransferContext for single file uploading/downloading/copying and DirectoryTransferContext for directory uploading/downloading/copying
+  - Renamed OverwriteCallback to ShouldOverwriteCallback
+  - Removed ContentType property that SetAttributesCallback can be used to set destination content type
+
 Tracking Breaking Changes since 0.2.0
 
   - Removed directory downloading/copying interfaces without DownloadOptions/CopyOptions
