@@ -15,10 +15,6 @@
   </HelpKINode>
   <HelpKINode Title="Constants.DefaultBlockSize field" Url="html/3b8251ae-a06c-72a1-7d56-0da152a2600e.htm" />
   <HelpKINode Title="Constants.MaxBlockSize field" Url="html/a2df5e34-81e5-c3c5-2f7d-573247d74f2b.htm" />
-  <HelpKINode Title="ContentType property">
-    <HelpKINode Title="UploadDirectoryOptions.ContentType Property " Url="html/8211faca-61c1-476e-cb80-f4d2c5a41e95.htm" />
-    <HelpKINode Title="UploadOptions.ContentType Property " Url="html/3ba711da-c953-d4c2-89b9-5ab08b14e594.htm" />
-  </HelpKINode>
   <HelpKINode Title="CopyAsync method" Url="html/c81c7fea-ea59-72cf-676e-28b326c50935.htm" />
   <HelpKINode Title="CopyDirectoryAsync method" Url="html/b4cb93b5-13fd-3836-11e4-4a2280f05812.htm" />
   <HelpKINode Title="CopyDirectoryOptions class">
@@ -30,6 +26,7 @@
   </HelpKINode>
   <HelpKINode Title="CopyDirectoryOptions.BlobType property" Url="html/b0a691ba-7b3d-637f-ba54-63be354dfa2b.htm" />
   <HelpKINode Title="CopyDirectoryOptions.CopyDirectoryOptions constructor" Url="html/4817c057-5f0c-84ea-10e6-2e848f79cc46.htm" />
+  <HelpKINode Title="CopyDirectoryOptions.Delimiter property" Url="html/5fb340d1-3841-5357-fba5-9fe00443c365.htm" />
   <HelpKINode Title="CopyDirectoryOptions.IncludeSnapshots property" Url="html/d8dd2104-b23b-9ae5-fdb9-fb8ecb687bf3.htm" />
   <HelpKINode Title="CopyOptions class">
     <HelpKINode Title="CopyOptions Class" Url="html/5676a741-870a-f755-0af3-3692a985be7b.htm" />
@@ -42,6 +39,10 @@
   <HelpKINode Title="CopyOptions.DestinationAccessCondition property" Url="html/1a114b39-078b-534e-5001-389170946f8e.htm" />
   <HelpKINode Title="CopyOptions.SourceAccessCondition property" Url="html/f77d15b7-fec3-37eb-eee4-baa3f1f53edb.htm" />
   <HelpKINode Title="DefaultBlockSize field" Url="html/3b8251ae-a06c-72a1-7d56-0da152a2600e.htm" />
+  <HelpKINode Title="Delimiter property">
+    <HelpKINode Title="CopyDirectoryOptions.Delimiter Property " Url="html/5fb340d1-3841-5357-fba5-9fe00443c365.htm" />
+    <HelpKINode Title="DownloadDirectoryOptions.Delimiter Property " Url="html/4aa94fb7-3292-f05c-1192-1ec57ae19e80.htm" />
+  </HelpKINode>
   <HelpKINode Title="Destination property" Url="html/9bc7be39-d558-a218-e658-4fcfe8ae00d3.htm" />
   <HelpKINode Title="DestinationAccessCondition property">
     <HelpKINode Title="CopyOptions.DestinationAccessCondition Property " Url="html/1a114b39-078b-534e-5001-389170946f8e.htm" />
@@ -57,6 +58,16 @@
   <HelpKINode Title="DirectoryOptions.DirectoryOptions constructor" Url="html/9c3eaa1b-46e0-4bfd-d56b-8a35ad6ae273.htm" />
   <HelpKINode Title="DirectoryOptions.Recursive property" Url="html/1c3f6adc-2b6d-23d2-5bd3-6d85abbc10f9.htm" />
   <HelpKINode Title="DirectoryOptions.SearchPattern property" Url="html/4d8115ba-2ee4-ff85-1ee4-ada777cf6284.htm" />
+  <HelpKINode Title="DirectoryTransferContext class">
+    <HelpKINode Title="DirectoryTransferContext Class" Url="html/6377f82c-f8a7-e32a-e4e8-ccf2bad41ada.htm" />
+    <HelpKINode Title="about DirectoryTransferContext class" Url="html/6377f82c-f8a7-e32a-e4e8-ccf2bad41ada.htm" />
+    <HelpKINode Title="constructor" Url="html/9fec0212-a197-cdfd-59a5-13629198ee7d.htm" />
+    <HelpKINode Title="events" Url="html/dc35df9b-fc8d-bcd3-c111-f97443e4e83c.htm" />
+    <HelpKINode Title="methods" Url="html/18300b1b-90d5-eaf5-d08f-0712a16c2390.htm" />
+    <HelpKINode Title="properties" Url="html/3be5e81c-1b90-e77b-8eb8-7b3c2cabac10.htm" />
+  </HelpKINode>
+  <HelpKINode Title="DirectoryTransferContext.DirectoryTransferContext constructor" Url="html/9fec0212-a197-cdfd-59a5-13629198ee7d.htm" />
+  <HelpKINode Title="DirectoryTransferContext.ShouldTransferCallback property" Url="html/e026b177-1113-48a1-02f1-15b27b9c05a1.htm" />
   <HelpKINode Title="DisableContentMD5Validation property">
     <HelpKINode Title="DownloadDirectoryOptions.DisableContentMD5Validation Property " Url="html/b807d80e-1a17-70aa-d069-f5227320a158.htm" />
     <HelpKINode Title="DownloadOptions.DisableContentMD5Validation Property " Url="html/8c219636-6556-a9b4-5699-57c1ae89b147.htm" />
@@ -70,6 +81,7 @@
     <HelpKINode Title="methods" Url="html/7099c068-7d22-4946-d331-bcc05baacf91.htm" />
     <HelpKINode Title="properties" Url="html/1dad36b5-868b-48e5-655b-f8526205cbe5.htm" />
   </HelpKINode>
+  <HelpKINode Title="DownloadDirectoryOptions.Delimiter property" Url="html/4aa94fb7-3292-f05c-1192-1ec57ae19e80.htm" />
   <HelpKINode Title="DownloadDirectoryOptions.DisableContentMD5Validation property" Url="html/b807d80e-1a17-70aa-d069-f5227320a158.htm" />
   <HelpKINode Title="DownloadDirectoryOptions.DownloadDirectoryOptions constructor" Url="html/3efb8772-88a4-d347-4738-4879bd81e46b.htm" />
   <HelpKINode Title="DownloadDirectoryOptions.IncludeSnapshots property" Url="html/d0bdf891-fb33-9eb9-ae26-ac01dd62b542.htm" />
@@ -94,7 +106,11 @@
   <HelpKINode Title="FileFailed event" Url="html/b750c1cf-3c96-f528-6f88-0f8fef1d0b33.htm" />
   <HelpKINode Title="FileSkipped event" Url="html/3ce72054-fbab-7260-5c62-0029a5b120b2.htm" />
   <HelpKINode Title="FileTransferred event" Url="html/534ac52a-46ca-1372-4753-590fd50746f8.htm" />
-  <HelpKINode Title="GetObjectData method" Url="html/148d34e7-5614-6e3d-590c-962171c52c0d.htm" />
+  <HelpKINode Title="ForceOverwrite method" Url="html/6ad4792e-3549-4f82-6e55-6d83ee4e9730.htm" />
+  <HelpKINode Title="GetObjectData method">
+    <HelpKINode Title="TransferCheckpoint.GetObjectData Method " Url="html/2c2a61c9-2a21-449f-fcdc-2b6d1b75ac63.htm" />
+    <HelpKINode Title="TransferException.GetObjectData Method " Url="html/148d34e7-5614-6e3d-590c-962171c52c0d.htm" />
+  </HelpKINode>
   <HelpKINode Title="IncludeSnapshots property">
     <HelpKINode Title="CopyDirectoryOptions.IncludeSnapshots Property " Url="html/d8dd2104-b23b-9ae5-fdb9-fb8ecb687bf3.htm" />
     <HelpKINode Title="DownloadDirectoryOptions.IncludeSnapshots Property " Url="html/d0bdf891-fb33-9eb9-ae26-ac01dd62b542.htm" />
@@ -108,9 +124,13 @@
   <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.CopyDirectoryOptions class" Url="html/27ca9214-bc9e-36de-f3f0-45dafcf4602f.htm" />
   <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.CopyOptions class" Url="html/5676a741-870a-f755-0af3-3692a985be7b.htm" />
   <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.DirectoryOptions class" Url="html/0795ff1e-7bf8-1344-f530-cbe7e070c91f.htm" />
+  <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.DirectoryTransferContext class" Url="html/6377f82c-f8a7-e32a-e4e8-ccf2bad41ada.htm" />
   <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.DownloadDirectoryOptions class" Url="html/47fd30f1-88eb-5cec-a66f-74b027b489df.htm" />
   <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.DownloadOptions class" Url="html/dad632c4-7426-647a-ad0a-85d15de94dd6.htm" />
-  <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.OverwriteCallback delegate" Url="html/5d6560c9-a139-0e6d-8a93-7563c07c24ec.htm" />
+  <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.SetAttributesCallback delegate" Url="html/eb2017aa-6d65-929b-f991-426de3845edd.htm" />
+  <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.ShouldOverwriteCallback delegate" Url="html/1adcf6dc-8677-d665-3d20-a821038ef49c.htm" />
+  <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.ShouldTransferCallback delegate" Url="html/f5047516-82a6-5566-64e0-c1c7425551b6.htm" />
+  <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.SingleTransferContext class" Url="html/d430e642-8806-601a-6152-ceb0fedf2a7f.htm" />
   <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.TransferCheckpoint class" Url="html/3428efcf-8210-334c-9885-613e4b1222a4.htm" />
   <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.TransferConfigurations class" Url="html/00d502f9-54dc-f902-6571-367fd8851081.htm" />
   <HelpKINode Title="Microsoft.WindowsAzure.Storage.DataMovement.TransferContext class" Url="html/2cc2721a-4cd1-549a-af9f-462d5f413943.htm" />
@@ -130,13 +150,26 @@
   <HelpKINode Title="NumberOfFilesTransferred property" Url="html/bc2d0a6f-7918-97b2-2527-07be2a1feed9.htm" />
   <HelpKINode Title="OpenFileFailed enumeration member" Url="html/c0cc97ae-9bd8-37b2-a727-c4d714b5cc8f.htm" />
   <HelpKINode Title="OperationCanceled enumeration member" Url="html/c0cc97ae-9bd8-37b2-a727-c4d714b5cc8f.htm" />
-  <HelpKINode Title="OverwriteCallback delegate" Url="html/5d6560c9-a139-0e6d-8a93-7563c07c24ec.htm" />
-  <HelpKINode Title="OverwriteCallback property" Url="html/0cf4fc2e-4672-3ef9-7b87-bfe224e3492f.htm" />
   <HelpKINode Title="ParallelOperations property" Url="html/d53e61ef-6352-aca8-d589-ef957309c6d1.htm" />
   <HelpKINode Title="ProgressHandler property" Url="html/8ebb0022-9f0f-119f-514e-13a209cb389b.htm" />
   <HelpKINode Title="Recursive property" Url="html/1c3f6adc-2b6d-23d2-5bd3-6d85abbc10f9.htm" />
   <HelpKINode Title="SameSourceAndDestination enumeration member" Url="html/c0cc97ae-9bd8-37b2-a727-c4d714b5cc8f.htm" />
   <HelpKINode Title="SearchPattern property" Url="html/4d8115ba-2ee4-ff85-1ee4-ada777cf6284.htm" />
+  <HelpKINode Title="SetAttributesCallback delegate" Url="html/eb2017aa-6d65-929b-f991-426de3845edd.htm" />
+  <HelpKINode Title="SetAttributesCallback property" Url="html/e5517334-40fe-3f7a-98cc-ca89612c862f.htm" />
+  <HelpKINode Title="ShouldOverwriteCallback delegate" Url="html/1adcf6dc-8677-d665-3d20-a821038ef49c.htm" />
+  <HelpKINode Title="ShouldOverwriteCallback property" Url="html/779b994d-8f7b-038e-a41f-3e32cdfcc6c8.htm" />
+  <HelpKINode Title="ShouldTransferCallback delegate" Url="html/f5047516-82a6-5566-64e0-c1c7425551b6.htm" />
+  <HelpKINode Title="ShouldTransferCallback property" Url="html/e026b177-1113-48a1-02f1-15b27b9c05a1.htm" />
+  <HelpKINode Title="SingleTransferContext class">
+    <HelpKINode Title="SingleTransferContext Class" Url="html/d430e642-8806-601a-6152-ceb0fedf2a7f.htm" />
+    <HelpKINode Title="about SingleTransferContext class" Url="html/d430e642-8806-601a-6152-ceb0fedf2a7f.htm" />
+    <HelpKINode Title="constructor" Url="html/364c7b6f-5a4a-dfa9-c7ed-e976d1c59e03.htm" />
+    <HelpKINode Title="events" Url="html/2fff4dff-468b-ac2b-cc15-f142f9bf8b56.htm" />
+    <HelpKINode Title="methods" Url="html/3705eb46-3e0f-cfd7-3625-de7fa3ef19b9.htm" />
+    <HelpKINode Title="properties" Url="html/1198e1ee-6be1-44a2-605e-a6ccbbddc5d2.htm" />
+  </HelpKINode>
+  <HelpKINode Title="SingleTransferContext.SingleTransferContext constructor" Url="html/364c7b6f-5a4a-dfa9-c7ed-e976d1c59e03.htm" />
   <HelpKINode Title="Source property" Url="html/bf98b297-50e1-cddd-f595-f53453671409.htm" />
   <HelpKINode Title="SourceAccessCondition property">
     <HelpKINode Title="CopyOptions.SourceAccessCondition Property " Url="html/f77d15b7-fec3-37eb-eee4-baa3f1f53edb.htm" />
@@ -148,8 +181,11 @@
   <HelpKINode Title="TransferCheckpoint class">
     <HelpKINode Title="TransferCheckpoint Class" Url="html/3428efcf-8210-334c-9885-613e4b1222a4.htm" />
     <HelpKINode Title="about TransferCheckpoint class" Url="html/3428efcf-8210-334c-9885-613e4b1222a4.htm" />
+    <HelpKINode Title="constructor" Url="html/7e791cd1-dcb8-9a71-4497-6a2bee93155b.htm" />
     <HelpKINode Title="methods" Url="html/7a7efac8-cc3d-ebb1-9180-d1e7241745be.htm" />
   </HelpKINode>
+  <HelpKINode Title="TransferCheckpoint.GetObjectData method" Url="html/2c2a61c9-2a21-449f-fcdc-2b6d1b75ac63.htm" />
+  <HelpKINode Title="TransferCheckpoint.TransferCheckpoint constructor" Url="html/7e791cd1-dcb8-9a71-4497-6a2bee93155b.htm" />
   <HelpKINode Title="TransferConfigurations class">
     <HelpKINode Title="TransferConfigurations Class" Url="html/00d502f9-54dc-f902-6571-367fd8851081.htm" />
     <HelpKINode Title="about TransferConfigurations class" Url="html/00d502f9-54dc-f902-6571-367fd8851081.htm" />
@@ -172,16 +208,18 @@
   <HelpKINode Title="TransferContext.FileFailed event" Url="html/b750c1cf-3c96-f528-6f88-0f8fef1d0b33.htm" />
   <HelpKINode Title="TransferContext.FileSkipped event" Url="html/3ce72054-fbab-7260-5c62-0029a5b120b2.htm" />
   <HelpKINode Title="TransferContext.FileTransferred event" Url="html/534ac52a-46ca-1372-4753-590fd50746f8.htm" />
+  <HelpKINode Title="TransferContext.ForceOverwrite method" Url="html/6ad4792e-3549-4f82-6e55-6d83ee4e9730.htm" />
   <HelpKINode Title="TransferContext.LastCheckpoint property" Url="html/807db32d-5362-35d8-2e54-872f30a1e18b.htm" />
   <HelpKINode Title="TransferContext.LogLevel property" Url="html/21180ac0-29f5-49dc-de5a-f6a8a969209b.htm" />
-  <HelpKINode Title="TransferContext.OverwriteCallback property" Url="html/0cf4fc2e-4672-3ef9-7b87-bfe224e3492f.htm" />
   <HelpKINode Title="TransferContext.ProgressHandler property" Url="html/8ebb0022-9f0f-119f-514e-13a209cb389b.htm" />
+  <HelpKINode Title="TransferContext.SetAttributesCallback property" Url="html/e5517334-40fe-3f7a-98cc-ca89612c862f.htm" />
+  <HelpKINode Title="TransferContext.ShouldOverwriteCallback property" Url="html/779b994d-8f7b-038e-a41f-3e32cdfcc6c8.htm" />
   <HelpKINode Title="TransferContext.TransferContext constructor" Url="html/9dc591ed-8a0c-bd99-e6f9-7f70e947c4cd.htm" />
   <HelpKINode Title="TransferErrorCode enumeration" Url="html/c0cc97ae-9bd8-37b2-a727-c4d714b5cc8f.htm" />
   <HelpKINode Title="TransferEventArgs class">
     <HelpKINode Title="TransferEventArgs Class" Url="html/d7779040-e2b2-6544-e56a-64034a5c6ab3.htm" />
     <HelpKINode Title="about TransferEventArgs class" Url="html/d7779040-e2b2-6544-e56a-64034a5c6ab3.htm" />
-    <HelpKINode Title="constructor" Url="html/a5a42e63-3dc8-5e3a-22b7-ab42feda3977.htm" />
+    <HelpKINode Title="constructor" Url="html/28f68080-3d7a-e5c1-bdb6-c1860ce4cfc4.htm" />
     <HelpKINode Title="methods" Url="html/404030ee-762b-2c06-36a2-0c6a19eee274.htm" />
     <HelpKINode Title="properties" Url="html/d31cf15b-9d47-5f7b-4cd7-11e2abbd7e7c.htm" />
   </HelpKINode>
@@ -190,7 +228,7 @@
   <HelpKINode Title="TransferEventArgs.Exception property" Url="html/0f5a44fc-748f-18e4-9686-d44b11228d02.htm" />
   <HelpKINode Title="TransferEventArgs.Source property" Url="html/bf98b297-50e1-cddd-f595-f53453671409.htm" />
   <HelpKINode Title="TransferEventArgs.StartTime property" Url="html/044a2634-29d2-a0f9-5ff1-72dd6cba8ac3.htm" />
-  <HelpKINode Title="TransferEventArgs.TransferEventArgs constructor" Url="html/a5a42e63-3dc8-5e3a-22b7-ab42feda3977.htm" />
+  <HelpKINode Title="TransferEventArgs.TransferEventArgs constructor" Url="html/28f68080-3d7a-e5c1-bdb6-c1860ce4cfc4.htm" />
   <HelpKINode Title="TransferException class">
     <HelpKINode Title="TransferException Class" Url="html/7863b152-18df-e59d-6fc0-ee48b5d0ce0f.htm" />
     <HelpKINode Title="about TransferException class" Url="html/7863b152-18df-e59d-6fc0-ee48b5d0ce0f.htm" />
@@ -248,7 +286,6 @@
     <HelpKINode Title="properties" Url="html/9d88caa7-835f-00bc-7f0d-07615cf04342.htm" />
   </HelpKINode>
   <HelpKINode Title="UploadDirectoryOptions.BlobType property" Url="html/0213fba2-4d94-78bb-61ab-f28250b1124f.htm" />
-  <HelpKINode Title="UploadDirectoryOptions.ContentType property" Url="html/8211faca-61c1-476e-cb80-f4d2c5a41e95.htm" />
   <HelpKINode Title="UploadDirectoryOptions.UploadDirectoryOptions constructor" Url="html/3434c116-88a7-e109-865f-73ad9ba33f5b.htm" />
   <HelpKINode Title="UploadOptions class">
     <HelpKINode Title="UploadOptions Class" Url="html/ef2b9911-8cbd-bd35-7ed5-ee3abfa62d00.htm" />
@@ -257,7 +294,6 @@
     <HelpKINode Title="methods" Url="html/c7e303d5-9a7d-4968-14ca-e50590b142fd.htm" />
     <HelpKINode Title="properties" Url="html/929c9020-6297-3751-04fe-371ed6a52967.htm" />
   </HelpKINode>
-  <HelpKINode Title="UploadOptions.ContentType property" Url="html/3ba711da-c953-d4c2-89b9-5ab08b14e594.htm" />
   <HelpKINode Title="UploadOptions.DestinationAccessCondition property" Url="html/c087565a-95ab-3bbd-9664-c4812e077010.htm" />
   <HelpKINode Title="UploadOptions.UploadOptions constructor" Url="html/bf4bff6c-020a-88e7-cf22-acb5f144b93a.htm" />
   <HelpKINode Title="UploadSourceFileSizeTooLarge enumeration member" Url="html/c0cc97ae-9bd8-37b2-a727-c4d714b5cc8f.htm" />
