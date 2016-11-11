@@ -34,7 +34,7 @@ namespace DMLibTest
         private Task Upload(dynamic destObject, TransferItem item)
         {
             UploadOptions uploadOptions = item.Options as UploadOptions;
-            TransferContext transferContext = item.TransferContext;
+            SingleTransferContext transferContext = item.TransferContext as SingleTransferContext;
             CancellationToken cancellationToken = item.CancellationToken;
             string sourcePath = item.SourceObject as string;
             Stream sourceStream = item.SourceObject as Stream;
@@ -77,7 +77,7 @@ namespace DMLibTest
         private Task<TransferStatus> UploadDirectory(dynamic destObject, TransferItem item)
         {
             UploadDirectoryOptions uploadDirectoryOptions = item.Options as UploadDirectoryOptions;
-            TransferContext transferContrext = item.TransferContext;
+            DirectoryTransferContext transferContrext = item.TransferContext as DirectoryTransferContext;
             CancellationToken cancellationToken = item.CancellationToken;
             string sourcePath = item.SourceObject as string;
 

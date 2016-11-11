@@ -8,6 +8,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
     using System.Security;
     using System.Threading;
@@ -116,6 +117,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             string directoryName = AppendDirectorySeparator(Path.GetDirectoryName(fullPathWithPattern));
             string filePattern = fullPathWithPattern.Substring(directoryName.Length);
+
+            if (!Directory.Exists(directoryName))
+            {
+                throw new DirectoryNotFoundException(
+                    string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resources.PathNotFound,
+                        directoryName));
+            }
 
             Utils.CheckCancellation(cancellationToken);
             return InternalEnumerateFiles(directoryName, filePattern, fromFilePath, searchOption, cancellationToken);

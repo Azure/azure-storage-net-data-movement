@@ -5,10 +5,10 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
-    using System;
     using DMLibTestCodeGen;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using System;
     using BlobTypeConst = DMLibTest.BlobType;
-
     internal class URIBlobDataAdaptor : CloudBlobDataAdaptor
     {
         public URIBlobDataAdaptor(TestAccount testAccount, string containerName)
@@ -22,12 +22,19 @@ namespace DMLibTest
             // Do nothing, keep the container public
         }
 
-        public override object GetTransferObject(string rootPath, FileNode fileNode)
+        public override object GetTransferObject(string rootPath, FileNode fileNode, StorageCredentials credentials = null)
         {
-            return base.GetCloudBlobReference(rootPath, fileNode).Uri;
+            Uri result=  base.GetCloudBlobReference(rootPath, fileNode).SnapshotQualifiedUri;
+
+            if (credentials != null)
+            {
+                result = credentials.TransformUri(result);
+            }
+
+            return result;
         }
 
-        public override object GetTransferObject(string rootPath, DirNode dirNode)
+        public override object GetTransferObject(string rootPath, DirNode dirNode, StorageCredentials credentials = null)
         {
             throw new InvalidOperationException("Can't get directory transfer object in URI data adaptor.");
         }

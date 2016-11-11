@@ -17,9 +17,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #else
     [DataContract]
 #endif // BINARY_SERIALIZATION
-    internal class TransferProgressTracker
+    internal class TransferProgressTracker : JournalItem
 #if BINARY_SERIALIZATION
-        : ISerializable
+        , ISerializable
 #endif // BINARY_SERIALIZATION
     {
         private const string BytesTransferredName = "BytesTransferred";
@@ -283,9 +283,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private void InvokeProgressHandler()
         {
+            this.Journal?.UpdateJournalItem(this);
+
             if (this.ProgressHandler != null)
             {
-                if ( 0 == Interlocked.CompareExchange(ref this.invokingProgressHandler, 1, 0))
+                if (0 == Interlocked.CompareExchange(ref this.invokingProgressHandler, 1, 0))
                 {
                     lock (this.ProgressHandler)
                     {

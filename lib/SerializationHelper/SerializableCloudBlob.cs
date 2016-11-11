@@ -178,7 +178,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             }
             else
             {
-                this.CreateCloudBlobInstance(this.Blob.Uri, this.Blob.BlobType, credentials);
+                this.CreateCloudBlobInstance(this.Blob.SnapshotQualifiedUri, this.Blob.BlobType, credentials);
             }
         }
 

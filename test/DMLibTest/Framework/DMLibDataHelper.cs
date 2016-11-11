@@ -336,11 +336,16 @@ namespace DMLibTest
                     !PropertiesStringEquals(fileNodeA.ContentEncoding, fileNodeB.ContentEncoding) ||
                     !PropertiesStringEquals(fileNodeA.ContentLanguage, fileNodeB.ContentLanguage))
                 {
+                    Test.Info("({0}, {1})", fileNodeA.CacheControl, fileNodeB.CacheControl);
+                    Test.Info("({0}, {1})", fileNodeA.ContentDisposition, fileNodeB.ContentDisposition);
+                    Test.Info("({0}, {1})", fileNodeA.ContentEncoding, fileNodeB.ContentEncoding);
+                    Test.Info("({0}, {1})", fileNodeA.ContentLanguage, fileNodeB.ContentLanguage);
                     return false;
                 }
 
                 if (!MetadataEquals(fileNodeA.Metadata, fileNodeB.Metadata))
                 {
+                    Test.Info("meta data");
                     return false;
                 }
 
@@ -348,6 +353,7 @@ namespace DMLibTest
                 {
                     if (!fileNodeB.Metadata.Contains(keyValuePair))
                     {
+                        Test.Info("Meta data {0} {1}", keyValuePair.Key, keyValuePair.Value);
                         return false;
                     }
                 }
@@ -390,6 +396,7 @@ namespace DMLibTest
             {
                 if (!metadataB.Contains(keyValuePair))
                 {
+                    Test.Info("Meta data ({0}, {1})", keyValuePair.Key, keyValuePair.Value);
                     return false;
                 }
             }

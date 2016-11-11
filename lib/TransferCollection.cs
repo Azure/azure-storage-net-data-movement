@@ -25,9 +25,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     [KnownType(typeof(SingleObjectTransfer))]
     [KnownType(typeof(MultipleObjectsTransfer))]
 #endif // BINARY_SERIALIZATION
-    internal class TransferCollection
+    internal class TransferCollection<T>
 #if BINARY_SERIALIZATION
         : ISerializable
+        where T : Transfer
 #endif // BINARY_SERIALIZATION
     {
         /// <summary>
@@ -53,14 +54,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if BINARY_SERIALIZATION
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TransferCollection"/> class.
+        /// Initializes a new instance of the <see cref="TransferCollection{T}"/> class.
         /// </summary>
         internal TransferCollection()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="TransferCollection"/> class.
+        /// Initializes a new instance of the <see cref="TransferCollection{T}"/> class.
         /// </summary>
         /// <param name="info">Serialization information.</param>
         /// <param name="context">Streaming context.</param>
@@ -75,13 +76,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             for (int i = 0; i < transferCount; ++i)
             {
-                this.AddTransfer((SingleObjectTransfer)info.GetValue(string.Format(CultureInfo.InvariantCulture, "{0}{1}", SingleObjectTransfersName, i), typeof(SingleObjectTransfer)));
+                this.AddTransfer((T)info.GetValue(string.Format(CultureInfo.InvariantCulture, "{0}{1}", SingleObjectTransfersName, i), typeof(SingleObjectTransfer)));
             }
 
             transferCount = info.GetInt32(DirectoryTransfersName);
             for (int i = 0; i < transferCount; ++i)
             {
-                this.AddTransfer((DirectoryTransfer)info.GetValue(string.Format(CultureInfo.InvariantCulture, "{0}{1}", DirectoryTransfersName, i), typeof(DirectoryTransfer)));
+                this.AddTransfer((T)info.GetValue(string.Format(CultureInfo.InvariantCulture, "{0}{1}", DirectoryTransfersName, i), typeof(DirectoryTransfer)));
             }
 
             foreach (Transfer transfer in this.transfers.Values)
@@ -206,10 +207,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Adds a transfer.
         /// </summary>
         /// <param name="transfer">The transfer to be added.</param>
-        public void AddTransfer(Transfer transfer)
+        /// <param name="updateProgress">Whether or not to update collection's progress with the subtransfer's.</param>
+#if DOTNET5_4
+        public void AddTransfer(Transfer transfer, bool updateProgress = true)
+#else
+        public void AddTransfer(T transfer, bool updateProgress = true)
+#endif
         {
             transfer.ProgressTracker.Parent = this.OverallProgressTracker;
-            this.overallProgressTracker.AddProgress(transfer.ProgressTracker);
+
+            if (updateProgress)
+            {
+                this.overallProgressTracker.AddProgress(transfer.ProgressTracker);
+            }
 
             bool unused = this.transfers.TryAdd(new TransferKey(transfer.Source, transfer.Destination), transfer);
             Debug.Assert(unused, "Transfer with the same source and destination already exists");
@@ -266,27 +276,30 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Gets a static snapshot of this transfer checkpoint
         /// </summary>
         /// <returns>A snapshot of current transfer checkpoint</returns>
-        public TransferCollection Copy()
+#if DOTNET5_4
+        public TransferCollection<T> Copy()
         {
-            TransferCollection copyObj = new TransferCollection();
+            TransferCollection<T> copyObj = new TransferCollection<T>();
             foreach (var kv in this.transfers)
             {
-                SingleObjectTransfer transfer = kv.Value as SingleObjectTransfer;
-                if (transfer != null)
-                {
-                    copyObj.AddTransfer(transfer.Copy());
-                    continue;
-                }
-
-                DirectoryTransfer transfer2 = kv.Value as DirectoryTransfer;
-                if (transfer2 != null)
-                {
-                    copyObj.AddTransfer(transfer2.Copy());
-                    continue;
-                }
+                Transfer transfer = kv.Value as Transfer;
+                copyObj.AddTransfer((Transfer)transfer.Copy());
             }
 
             return copyObj;
         }
+#else
+        public TransferCollection<T> Copy()
+        {
+            TransferCollection<T> copyObj = new TransferCollection<T>();
+            foreach (var kv in this.transfers)
+            {
+                var transfer = kv.Value;
+                copyObj.AddTransfer((T)transfer.Copy());
+            }
+
+            return copyObj;
+        }
+#endif
     }
 }

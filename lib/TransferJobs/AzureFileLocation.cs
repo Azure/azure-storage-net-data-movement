@@ -83,6 +83,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
+        /// Get source/destination instance in transfer.
+        /// </summary>
+        public override object Instance
+        {
+            get
+            {
+                return this.AzureFile;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets access condition for this location.
         /// This property only takes effact when the location is a blob or an azure file.
         /// </summary>
@@ -164,7 +175,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         public override void Validate()
         {
-            this.AzureFile.Parent.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
+            try
+            {
+                this.AzureFile.Parent.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
+            }
+            catch (AggregateException e)
+            {
+                StorageException innnerException = e.Flatten().InnerExceptions[0] as StorageException;
+                if (!Utils.IsExpectedHttpStatusCodes(innnerException, HttpStatusCode.Forbidden))
+                {
+                    throw;
+                }
+            }
         }
 
 #if BINARY_SERIALIZATION

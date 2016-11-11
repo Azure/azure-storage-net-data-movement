@@ -61,7 +61,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.SharedTransferData.Attributes = Utils.GenerateAttributes(this.cloudFile);
             this.SharedTransferData.TotalLength = this.cloudFile.Properties.Length;
-            this.SharedTransferData.SourceLocation = this.cloudFile.Uri.ToString();
         }
 
         protected override async Task<List<Range>> DoGetRangesAsync(RangesSpan rangesSpan)

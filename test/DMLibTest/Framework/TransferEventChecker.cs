@@ -42,19 +42,19 @@
         {
             context.FileTransferred += (sender, transferEventArgs) => 
             {
-                Test.Info("Transfer succeeds: {0} -> {1}", transferEventArgs.Source, transferEventArgs.Destination);
+                Test.Info("Transfer succeeds: {0} -> {1}", DMLibTestHelper.TransferInstanceToString(transferEventArgs.Source), DMLibTestHelper.TransferInstanceToString(transferEventArgs.Destination));
                 this.Increase(TransferEventType.Transferred); 
             };
 
             context.FileSkipped += (sender, transferEventArgs) => 
             {
-                Test.Info("Transfer skips: {0} -> {1}", transferEventArgs.Source, transferEventArgs.Destination);
+                Test.Info("Transfer skips: {0} -> {1}", DMLibTestHelper.TransferInstanceToString(transferEventArgs.Source), DMLibTestHelper.TransferInstanceToString(transferEventArgs.Destination));
                 this.Increase(TransferEventType.Skippied); 
             };
 
             context.FileFailed += (sender, transferEventArgs) => 
             {
-                Test.Info("Transfer fails: {0} -> {1}", transferEventArgs.Source, transferEventArgs.Destination);
+                Test.Info("Transfer fails: {0} -> {1}", DMLibTestHelper.TransferInstanceToString(transferEventArgs.Source), DMLibTestHelper.TransferInstanceToString(transferEventArgs.Destination));
                 Test.Info("Exception: {0}", transferEventArgs.Exception.ToString());
                 this.Increase(TransferEventType.Failed); 
             };

@@ -122,6 +122,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             await Task.Run(() =>
             {
+                // We do check point consistancy validation in reader, and directly use it in writer.
+                if ((null != this.TransferJob.CheckPoint.TransferWindow)
+                    && (this.TransferJob.CheckPoint.TransferWindow.Any()))
+                {
+                    this.TransferJob.CheckPoint.TransferWindow.Sort();
+                    this.expectOffset = this.TransferJob.CheckPoint.TransferWindow[0];
+                }
+                else
+                {
+                    this.expectOffset = this.TransferJob.CheckPoint.EntryTransferOffset;
+                }
+
                 if (TransferLocationType.Stream == this.TransferJob.Destination.Type)
                 {
                     Stream streamInDestination = (this.TransferJob.Destination as StreamLocation).Stream;
@@ -146,26 +158,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 else
                 {
                     string filePath = (this.TransferJob.Destination as FileLocation).FilePath;
-                    this.Controller.CheckOverwrite(
-                        File.Exists(filePath),
-                        this.SharedTransferData.SourceLocation,
-                        filePath);
+
+                    if (!this.Controller.IsForceOverwrite)
+                    {
+                        this.Controller.CheckOverwrite(
+                            File.Exists(filePath),
+                            this.TransferJob.Source.Instance,
+                            filePath);
+                    }
 
                     this.Controller.UpdateProgressAddBytesTransferred(0);
 
                     this.Controller.CheckCancellation();
-
-                    // We do check point consistancy validation in reader, and directly use it in writer.
-                    if ((null != this.TransferJob.CheckPoint.TransferWindow)
-                        && (this.TransferJob.CheckPoint.TransferWindow.Any()))
-                    {
-                        this.TransferJob.CheckPoint.TransferWindow.Sort();
-                        this.expectOffset = this.TransferJob.CheckPoint.TransferWindow[0];
-                    }
-                    else
-                    {
-                        this.expectOffset = this.TransferJob.CheckPoint.EntryTransferOffset;
-                    }
 
                     try
                     {
@@ -296,6 +300,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         this.TransferJob.CheckPoint.TransferWindow.Remove(chunkStartOffset);
                     }
+                    this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
                 }
 
                 this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
@@ -321,7 +326,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                                 string.Format(
                                     CultureInfo.CurrentCulture,
                                     Resources.DownloadedMd5MismatchException,
-                                    this.SharedTransferData.SourceLocation,
+                                    this.TransferJob.Source.ToString(),
                                     calculatedMd5,
                                     storedMd5));
                     }

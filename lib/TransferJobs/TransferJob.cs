@@ -165,17 +165,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             set;
         }
 
-        /// <summary>
-        /// Gets or sets content type to set to destination in uploading.
-        /// </summary>
-        public string ContentType
-        {
-            get
-            {
-                return this.Transfer.ContentType;
-            }
-        }
-
 #if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.

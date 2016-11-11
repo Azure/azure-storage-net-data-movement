@@ -5,14 +5,14 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
+    using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using StorageBlob = Microsoft.WindowsAzure.Storage.Blob;
-
     internal class CloudBlobDataAdaptor : BlobDataAdaptorBase<DMLibDataInfo>
     {
         public CloudBlobDataAdaptor(TestAccount testAccount, string containerName, string blobType, SourceOrDest sourceOrDest, string delimiter = "/")
@@ -20,14 +20,14 @@ namespace DMLibTest
         {
         }
 
-        public override object GetTransferObject(string rootPath, FileNode fileNode)
+        public override object GetTransferObject(string rootPath, FileNode fileNode, StorageCredentials credentials = null)
         {
-            return this.GetCloudBlobReference(rootPath, fileNode);
+            return this.GetCloudBlobReference(rootPath, fileNode, credentials);
         }
 
-        public override object GetTransferObject(string rootPath, DirNode dirNode)
+        public override object GetTransferObject(string rootPath, DirNode dirNode, StorageCredentials credentials = null)
         {
-            return this.GetCloudBlobDirReference(rootPath, dirNode);
+            return this.GetCloudBlobDirReference(rootPath, dirNode, credentials);
         }
 
         protected override void GenerateDataImp(DMLibDataInfo dataInfo)
@@ -67,9 +67,15 @@ namespace DMLibTest
             blob.ReleaseLease(AccessCondition.GenerateLeaseCondition(leaseId), options: HelperConst.DefaultBlobOptions);
         }
 
-        public CloudBlob GetCloudBlobReference(string rootPath, FileNode fileNode)
+        public CloudBlob GetCloudBlobReference(string rootPath, FileNode fileNode, StorageCredentials credentials = null)
         {
             var container = this.BlobHelper.BlobClient.GetContainerReference(this.ContainerName);
+
+            if (credentials != null)
+            {
+                container = new CloudBlobContainer(container.StorageUri, credentials);
+            }
+
             var blobName = fileNode.GetURLRelativePath();
             if (blobName.StartsWith("/"))
             {
@@ -84,9 +90,15 @@ namespace DMLibTest
             return CloudBlobHelper.GetCloudBlobReference(container, blobName, this.BlobType);
         }
 
-        public CloudBlobDirectory GetCloudBlobDirReference(string rootPath, DirNode dirNode)
+        public CloudBlobDirectory GetCloudBlobDirReference(string rootPath, DirNode dirNode, StorageCredentials credentials = null)
         {
             var container = this.BlobHelper.BlobClient.GetContainerReference(this.ContainerName);
+
+            if (credentials != null)
+            {
+                container = new CloudBlobContainer(container.StorageUri, credentials);
+            }
+
             var dirName = dirNode.GetURLRelativePath();
             if (dirName.StartsWith("/"))
             {

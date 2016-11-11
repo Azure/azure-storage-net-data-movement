@@ -22,6 +22,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
+        /// Get source/destination instance in transfer.
+        /// </summary>
+        public abstract object Instance
+        {
+            get;
+        }
+
+        /// <summary>
         /// Validates the transfer location.
         /// </summary>
         public abstract void Validate();

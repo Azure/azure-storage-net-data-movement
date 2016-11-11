@@ -5,6 +5,8 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
+    using Microsoft.WindowsAzure.Storage.Auth;
+
     public abstract class DataAdaptor<TDataInfo> where TDataInfo : IDataInfo
     {
         public abstract string StorageKey
@@ -22,9 +24,9 @@ namespace DMLibTest
 
         public abstract string GetSecondaryAddress(params string[] list);
 
-        public abstract object GetTransferObject(string rootPath, FileNode fileNode);
+        public abstract object GetTransferObject(string rootPath, FileNode fileNode, StorageCredentials credentials = null);
 
-        public abstract object GetTransferObject(string rootPath, DirNode dirNode);
+        public abstract object GetTransferObject(string rootPath, DirNode dirNode, StorageCredentials credentials = null);
 
         public abstract void CreateIfNotExists();
 

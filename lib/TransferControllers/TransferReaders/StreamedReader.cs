@@ -167,7 +167,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     Debug.Assert(
                         null != fileLocation,
                         "Initializing StreamedReader instance, but source is neither a stream nor a file");
-                    this.SharedTransferData.SourceLocation = fileLocation.ToString();
 
                     try
                     {
@@ -225,6 +224,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.PreProcessed = true;
 
+            // This reader will come into 'Finish' state after all chunks are read and MD5 calculation completes.
+            // So initialize the CountDownEvent to count (number of chunks to read) + 1 (md5 calculation).
+            this.countdownEvent = new CountdownEvent(count + 1);
+
+            if (0 != count)
+            {
+                // Change the state to 'ReadStream' before awaiting MD5 calculation task to not block the reader.
+                this.state = State.ReadStream;
+                this.hasWork = true;
+            }
+
             if (!this.md5HashStream.FinishedSeparateMd5Calculator)
             {
                 await Task.Run(() =>
@@ -233,18 +243,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 });
             }
 
-            if (0 == count)
-            {
-                this.countdownEvent = new CountdownEvent(1);
-                this.SetChunkFinish();
-            }
-            else
-            {
-                this.countdownEvent = new CountdownEvent(count);
-
-                this.state = State.ReadStream;
-                this.hasWork = true;
-            }
+            this.SetChunkFinish();
         }
 
         private async Task ReadStreamAsync()
@@ -408,8 +407,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     ContentMD5 = md5,
                     OverWriteAll = false
                 };
-
-                this.SharedTransferData.Attributes.ContentType = this.transferJob.ContentType;
             }
         }
 

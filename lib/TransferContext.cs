@@ -6,17 +6,32 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
-
+    using System.IO;
     /// <summary>
     /// Represents the context for a transfer, and provides additional runtime information about its execution.
     /// </summary>
-    public class TransferContext
+    public abstract class TransferContext
     {
+        /// <summary>
+        /// Callback used to force overwrite the destination without existence check. 
+        /// It can be used when destination credentials only contains write permission.
+        /// </summary>
+        /// <param name="source">Instance of source used to overwrite the destination.</param>
+        /// <param name="destination">Instance of destination to be overwritten.</param>
+        /// <returns>True if the file should be overwritten; otherwise false.</returns>
+        /// <remarks>
+        /// Read permission is still required in destination credentials in serivce side copy for copy status monitoring.
+        /// </remarks>
+        public static bool ForceOverwrite(object source, object destination)
+        {
+            return true;
+        }
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferContext" /> class.
         /// </summary>
-        public TransferContext()
-            : this(null)
+        protected TransferContext()
+            :this(checkpoint: null)
         {
         }
 
@@ -24,20 +39,32 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Initializes a new instance of the <see cref="TransferContext" /> class.
         /// </summary>
         /// <param name="checkpoint">An <see cref="TransferCheckpoint"/> object representing the last checkpoint from which the transfer continues on.</param>
-        public TransferContext(TransferCheckpoint checkpoint)
+        protected TransferContext(TransferCheckpoint checkpoint)
         {
+            this.LogLevel = OperationContext.DefaultLogLevel;
+
             if (checkpoint == null)
             {
 #if BINARY_SERIALIZATION
                 this.Checkpoint = new TransferCheckpoint();
 #else
-                this.Checkpoint = new TransferCheckpoint(null);
+                this.Checkpoint = new TransferCheckpoint(other: null);
 #endif
             }
             else
             {
                 this.Checkpoint = checkpoint.Copy();
             }
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TransferContext" /> class.
+        /// </summary>
+        /// <param name="journalStream">The stream into which the transfer journal info will be written into. 
+        /// It can resume the previours paused transfer from its journal stream.</param>
+        protected TransferContext(Stream journalStream)
+        {
+            this.Checkpoint = new TransferCheckpoint(journalStream);
         }
 
         /// <summary>
@@ -77,7 +104,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets or sets the callback invoked to tell whether to overwrite an existing destination.
         /// </summary>
-        public OverwriteCallback OverwriteCallback
+        public ShouldOverwriteCallback ShouldOverwriteCallback
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets the callback invoked to set destination's attributes in memory. 
+        /// The attributes set in this callback will be sent to azure storage service. 
+        /// </summary>
+        public SetAttributesCallback SetAttributesCallback
         {
             get;
             set;

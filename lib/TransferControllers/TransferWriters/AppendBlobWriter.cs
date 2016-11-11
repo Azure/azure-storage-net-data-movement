@@ -123,47 +123,50 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         exceptionMessage);
             }
 
-            bool existingBlob = true;
+            bool existingBlob = !this.Controller.IsForceOverwrite;
 
-            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
-                this.destLocation.AccessCondition,
-                this.destLocation.CheckedAccessCondition);
-
-            try
+            if (!this.Controller.IsForceOverwrite)
             {
-                await this.appendBlob.FetchAttributesAsync(
-                    accessCondition,
-                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                    Utils.GenerateOperationContext(this.Controller.TransferContext),
-                    this.CancellationToken);
+                AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
+                    this.destLocation.AccessCondition,
+                    this.destLocation.CheckedAccessCondition);
 
-                this.destExist = true;
-            }
+                try
+                {
+                    await this.appendBlob.FetchAttributesAsync(
+                        accessCondition,
+                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        this.CancellationToken);
+
+                    this.destExist = true;
+                }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
-            {
-                var se = e as StorageException ?? e.InnerException as StorageException;
+                catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+                {
+                    var se = e as StorageException ?? e.InnerException as StorageException;
 #else
-            catch (StorageException se)
-            {
+                catch (StorageException se)
+                {
 #endif
-                // Getting a storage exception is expected if the blob doesn't
-                // exist. In this case we won't error out, but set the 
-                // existingBlob flag to false to indicate we're uploading
-                // a new blob instead of overwriting an existing blob.
-                if (null != se.RequestInformation &&
-                    se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                {
-                    existingBlob = false;
-                }
-                else if (null != se &&
-                    (0 == string.Compare(se.Message, Constants.BlobTypeMismatch, StringComparison.OrdinalIgnoreCase)))
-                {
-                    throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch);
-                }
-                else
-                {
-                    throw;
+                    // Getting a storage exception is expected if the blob doesn't
+                    // exist. In this case we won't error out, but set the 
+                    // existingBlob flag to false to indicate we're uploading
+                    // a new blob instead of overwriting an existing blob.
+                    if (null != se.RequestInformation &&
+                        se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                    {
+                        existingBlob = false;
+                    }
+                    else if (null != se &&
+                        (0 == string.Compare(se.Message, Constants.BlobTypeMismatch, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch);
+                    }
+                    else
+                    {
+                        throw;
+                    }
                 }
             }
 
@@ -174,11 +177,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.destLocation.CheckedAccessCondition = true;
 
-            // If destination file exists, query user whether to overwrite it.
-            this.Controller.CheckOverwrite(
-                existingBlob,
-                this.SharedTransferData.SourceLocation,
-                this.appendBlob.Uri.ToString());
+            if (!this.Controller.IsForceOverwrite)
+            {
+                // If destination file exists, query user whether to overwrite it.
+                this.Controller.CheckOverwrite(
+                    existingBlob,
+                    this.SharedTransferData.TransferJob.Source.Instance,
+                    this.appendBlob);
+            }
 
             this.Controller.UpdateProgressAddBytesTransferred(0);
 
@@ -215,7 +221,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                if (!existingBlob)
+                if (!this.Controller.IsForceOverwrite && !existingBlob)
                 {
                     throw new TransferException(Resources.DestinationChangedException);
                 }
@@ -247,7 +253,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             await this.appendBlob.CreateOrReplaceAsync(
                 accessCondition,
-                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions, true),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                 this.CancellationToken);
 
@@ -334,6 +340,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         {
                             this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(currentOffset);
                         }
+                        this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
 
                         // update progress
                         this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
@@ -358,7 +365,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
 
-            if (!this.destExist)
+            if (!this.Controller.IsForceOverwrite && !this.destExist)
             {
                 await this.appendBlob.FetchAttributesAsync(
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
@@ -369,6 +376,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             var originalMetadata = new Dictionary<string, string>(this.appendBlob.Metadata);
             Utils.SetAttributes(this.appendBlob, this.SharedTransferData.Attributes);
+            await this.Controller.SetCustomAttributesAsync(this.appendBlob);
 
             await this.appendBlob.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
@@ -379,10 +387,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (!originalMetadata.DictionaryEquals(this.appendBlob.Metadata))
             {
                 await this.appendBlob.SetMetadataAsync(
-                             Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                             blobRequestOptions,
-                             operationContext,
-                             this.CancellationToken);
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                    blobRequestOptions,
+                    operationContext,
+                    this.CancellationToken);
             }
 
             this.SetFinish();

@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
+    using Microsoft.WindowsAzure.Storage.Auth;
     using System;
 
     public class TestExecutionOptions<TDataInfo> where TDataInfo : IDataInfo
@@ -48,6 +49,19 @@ namespace DMLibTest
             get;
             set;
         }
+
+        public StorageCredentials SourceCredentials
+        {
+            get;
+            set;
+        }
+
+        public StorageCredentials DestCredentials
+        {
+            get;
+            set;
+        }
+
 
         public Action<FileNode, TransferItem> TransferItemModifier;
         

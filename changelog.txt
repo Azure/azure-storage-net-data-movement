@@ -1,3 +1,16 @@
+2016.11.04 Version 0.4.0
+ * All Services
+   - Upgraded azure storage client library to 7.2.1
+   - Added an interface to support to output transferring checkpoint to stream which resolves the potential OutOfMemory issue when there are too many failed transfers files.
+   - Changed TransferContext to SingleTransferContext for single file uploading/downloading/copying and DirectoryTransferContext for directory uploading/downloading/copying
+   - Added a callback ShouldTransferCallback which can be used to determine whether or not to upload/download/copy a specific file in DirectoryTransferContext
+   - Added a callback SetAttributesCallback to set destination's attributes in memory. The attributes set in this callback will be sent to azure storage service before transferring is completed
+   - Removed ContentType property that SetAttributesCallback can be used to set destination content type
+   - Renamed OverwriteCallback to ShouldOverwriteCallback
+   - Added static interface ForceOverwrite to overwrite all existing destination. With this callback assigned to ShouldOverwriteCallback, supports downloading/copying to destination without READ permission
+ * Blob
+   - Added support to indicate virtual directory delimiter when downloading/copying from blob source
+
 2016.08.26 Version 0.3.0
  * Upgrade azure storage client library to 7.2.0
  * Fixed a bug that ParallelOperations setting doesn't take effect

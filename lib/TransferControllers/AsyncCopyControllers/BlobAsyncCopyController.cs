@@ -7,6 +7,7 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 {
     using System;
+    using System.Collections.Generic;
     using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
@@ -171,6 +172,32 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.CancellationToken);
 
             return this.destBlob.CopyState;
+        }
+
+        protected override async Task SetAttributesAsync(SetAttributesCallback setCustomAttributes)
+        {
+            var originalAttributes = Utils.GenerateAttributes(this.destBlob);
+            var originalMetadata = new Dictionary<string, string>(this.destBlob.Metadata);
+
+            setCustomAttributes(this.destBlob);
+
+            if (!Utils.CompareProperties(originalAttributes, Utils.GenerateAttributes(this.destBlob)))
+            {
+                await this.destBlob.SetPropertiesAsync(
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                    Utils.GenerateOperationContext(this.TransferContext),
+                    this.CancellationToken);
+            }
+
+            if (!originalMetadata.DictionaryEquals(this.destBlob.Metadata))
+            {
+                await this.destBlob.SetMetadataAsync(
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                    Utils.GenerateOperationContext(this.TransferContext),
+                    this.CancellationToken);
+            }
         }
     }
 }

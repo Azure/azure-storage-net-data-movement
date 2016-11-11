@@ -33,6 +33,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private CancellationTokenRegistration userCancellationTokenRegistration;
 
+        /// <summary>
+        /// Exception used to be thrown during transfer.
+        /// DoWorkAsync can be invoked many times, while the controller only throws out one exception when the last work is done.
+        /// This is to save the exception during transfer, the last DoWorkAsync will throw it out to transfer caller.
+        /// </summary>
+        private Exception transferException = null;
+
         protected TransferControllerBase(TransferScheduler transferScheduler, TransferJob transferJob, CancellationToken userCancellationToken)
         {
             if (null == transferScheduler)
@@ -70,6 +77,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 return this.TransferJob.Transfer.Context;
             }
         }
+
+        /// <summary>
+        /// Gets whether to force overwrite the destination without existence check.
+        /// </summary>
+        public bool IsForceOverwrite
+        {
+            get
+            {
+                if (this.TransferJob.Transfer.Context == null)
+                {
+                    return false;
+                }
+
+                return this.TransferJob.Transfer.Context.ShouldOverwriteCallback == TransferContext.ForceOverwrite;
+            }
+        }
+
 
         /// <summary>
         /// Gets or sets a value indicating whether the controller has work available
@@ -150,6 +174,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             try
             {
+                Utils.CheckCancellation(this.CancellationToken);
                 setFinish = await this.DoWorkInternalAsync();
             }
             catch (Exception ex)
@@ -163,31 +188,31 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 exception = ex;
             }
 
+            bool transferFinished = false;
+
             if (setFinish)
             {
-                var postWork = this.SetFinishedAndPostWork();
-                if (exception != null)
-                {
-                    // There might be still some active tasks running while error occurs, and
-                    // those tasks shouldn't take long time to complete, so just spin until they are done.
-                    var spin = new SpinWait();
-                    while (this.activeTasks != 0)
-                    {
-                        spin.SpinOnce();
-                    }
-
-                    this.FinishCallbackHandler(exception);
-                    return true;
-                }
-                else
-                {
-                    return postWork;
-                }
+                transferFinished = this.SetFinishedAndPostWork();
             }
             else
             {
-                return this.PostWork();
+                transferFinished = this.PostWork();
             }
+
+            if (null != exception)
+            {
+                // There could be multiple exception thrown out during transfer for DoWorkAsync can be invoked multiple times,
+                // while the controller only throws out one of the exceptions for now, no matter which one.
+                transferException = exception;
+            }
+
+            // Only throw out exception or set Task's result when the transfer is finished and there's no active operation.
+            if (transferFinished)
+            {
+                this.FinishCallbackHandler(transferException);
+            }
+
+            return transferFinished;
         }
 
         /// <summary>
@@ -228,9 +253,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         public void UpdateProgress(Action updateAction)
         {
-            this.TransferJob.ProgressUpdateLock?.EnterReadLock();
-            updateAction();
-            this.TransferJob.ProgressUpdateLock?.ExitReadLock();
+            try
+            {
+                this.TransferJob.ProgressUpdateLock?.EnterReadLock();
+                updateAction();
+            }
+            finally
+            {
+                this.TransferJob.ProgressUpdateLock?.ExitReadLock();
+            }
+
         }
 
         public void UpdateProgressAddBytesTransferred(long bytesTransferredToAdd)
@@ -250,14 +282,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             if (Interlocked.CompareExchange(ref this.notifiedFinish, 1, 0) == 0)
             {
-                if (null != exception)
+                ThreadPool.QueueUserWorkItem((userData) =>
                 {
-                    this.TaskCompletionSource.SetException(exception);
-                }
-                else
-                {
-                    this.TaskCompletionSource.SetResult(null);
-                }
+                    if (null != exception)
+                    {
+                        this.TaskCompletionSource.SetException(exception);
+                    }
+                    else
+                    {
+                        this.TaskCompletionSource.SetResult(null);
+                    }
+                });
             }
         }
 
@@ -342,25 +377,45 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         public void CheckOverwrite(
             bool exist,
-            string sourceFileName, 
-            string destFileName)
+            object source, 
+            object dest)
         {
             if (null == this.TransferJob.Overwrite)
             {
-                this.TransferJob.Overwrite = true;
                 if (exist)
                 {
-                    if (null == this.TransferContext || null == this.TransferContext.OverwriteCallback || !this.TransferContext.OverwriteCallback(sourceFileName, destFileName))
+                    if (null == this.TransferContext || null == this.TransferContext.ShouldOverwriteCallback || !this.TransferContext.ShouldOverwriteCallback(source, dest))
                     {
                         this.TransferJob.Overwrite = false;
                     }
+                    else
+                    {
+                        this.TransferJob.Overwrite = true;
+                    }
+                }
+                else
+                {
+                    this.TransferJob.Overwrite = true;
                 }
             }
 
+            this.TransferJob.Transfer.UpdateJournal();
+
             if (exist && !this.TransferJob.Overwrite.Value)
             {
-                string exceptionMessage = string.Format(CultureInfo.InvariantCulture, Resources.OverwriteCallbackCancelTransferException, sourceFileName, destFileName);
+                string exceptionMessage = string.Format(CultureInfo.InvariantCulture, Resources.OverwriteCallbackCancelTransferException, source.ConvertToString(), dest.ConvertToString());
                 throw new TransferSkippedException(exceptionMessage);
+            }
+        }
+
+        public async Task SetCustomAttributesAsync(object dest)
+        {
+            if (null != this.TransferContext && null != this.TransferContext.SetAttributesCallback)
+            {
+                await Task.Run(() =>
+                {
+                    this.TransferContext.SetAttributesCallback(dest);
+                });
             }
         }
     }

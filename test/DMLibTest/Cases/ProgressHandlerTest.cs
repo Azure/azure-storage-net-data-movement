@@ -72,7 +72,7 @@ namespace DMLibTest.Cases
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.TransferItemModifier = (fileNode, transferItem) =>
             {
-                TransferContext transferContext = new TransferContext();
+                TransferContext transferContext = new SingleTransferContext();
                 ProgressChecker progressChecker = new ProgressChecker(1, fileNode.SizeInByte);
                 transferContext.ProgressHandler = progressChecker.GetProgressHandler();
                 transferItem.TransferContext = transferContext;

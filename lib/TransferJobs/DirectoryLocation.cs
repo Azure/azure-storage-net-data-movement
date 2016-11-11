@@ -72,6 +72,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
+        /// Get source/destination instance in transfer.
+        /// </summary>
+        public override object Instance
+        {
+            get
+            {
+                return this.DirectoryPath;
+            }
+        }
+
+        /// <summary>
         /// Gets path to the local directory location.
         /// </summary>
 #if !BINARY_SERIALIZATION

@@ -18,17 +18,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     /// </summary>
     internal class FileEnumerator : TransferEnumeratorBase, ITransferEnumerator
     {
-        /// <summary>
-        /// Maximum windows file path is 260 characters, including a terminating NULL characters.
-        /// This leaves 259 useable characters.
-        /// </summary>
-        // TODO - Windows file path has 2 limits.
-        //   1) Full file name can not be longer than 259 characters. 
-        //   2) Folder path can not be longer than 247 characters excluding the file name. 
-        // If folder path is longer than 247 characters, it will fail at creating the directory.
-        // This way, there will be no trash left.
-        private const int MaxFilePathLength = 259;
-
         private const string DefaultFilePattern = "*";
 
         private DirectoryLocation location;
@@ -159,7 +148,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         /// <returns>Maximum file name length in bytes.</returns>
         private int GetMaxFileNameLength()
         {
-            return MaxFilePathLength - this.location.DirectoryPath.Length;
+            return Constants.MaxFilePathLength - this.location.DirectoryPath.Length;
         }
     }
 }

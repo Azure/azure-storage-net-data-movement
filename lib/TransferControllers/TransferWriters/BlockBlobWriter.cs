@@ -131,36 +131,32 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         TransferErrorCode.UploadSourceFileSizeTooLarge,
                         exceptionMessage);
             }
-            
-            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
-                this.destLocation.AccessCondition,
-                this.destLocation.CheckedAccessCondition);
 
-            try
+            if (!this.Controller.IsForceOverwrite)
             {
-                await this.destLocation.Blob.FetchAttributesAsync(
-                    accessCondition,
-                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                    Utils.GenerateOperationContext(this.Controller.TransferContext),
-                    this.CancellationToken);
-            }
-            catch (Exception e)
-            {
-                if (e is StorageException)
+                AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
+                    this.destLocation.AccessCondition,
+                    this.destLocation.CheckedAccessCondition);
+
+                try
                 {
-                    this.HandleFetchAttributesResult(e);
+                    await this.destLocation.Blob.FetchAttributesAsync(
+                        accessCondition,
+                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        this.CancellationToken);
                 }
-                else if (e.InnerException is StorageException)
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+                catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
                 {
-                    // Newer versions of WindowsAzure.Storage (beginnning with v6.1) may wrap
-                    // the storage exception in a WrappedStorageException.
-                    this.HandleFetchAttributesResult(e.InnerException);
-                }
-                else
+                    var se = e as StorageException ?? e.InnerException as StorageException;
+#else
+                catch (StorageException se)
                 {
-                    throw;
+#endif
+                    this.HandleFetchAttributesResult(se);
+                    return;
                 }
-                return;
             }
 
             this.HandleFetchAttributesResult(null);
@@ -168,7 +164,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private void HandleFetchAttributesResult(Exception e)
         {
-            bool existingBlob = true;
+            bool existingBlob = !this.Controller.IsForceOverwrite;
 
             if (null != e)
             {
@@ -212,11 +208,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.destLocation.BlockIdPrefix = Guid.NewGuid().ToString("N") + "-";
             }
 
-            // If destination file exists, query user whether to overwrite it.
-            this.Controller.CheckOverwrite(
-                existingBlob,
-                this.SharedTransferData.SourceLocation,
-                this.destLocation.Blob.Uri.ToString());
+            if (!this.Controller.IsForceOverwrite)
+            {
+                // If destination file exists, query user whether to overwrite it.
+                this.Controller.CheckOverwrite(
+                    existingBlob,
+                    this.SharedTransferData.TransferJob.Source.Instance,
+                    this.destLocation.Blob);
+            }
 
             this.Controller.UpdateProgressAddBytesTransferred(0);
 
@@ -303,6 +302,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(transferData.StartOffset);
                     }
+                    this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
 
                     // update progress
                     this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
@@ -330,6 +330,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
 
             Utils.SetAttributes(this.blockBlob, this.SharedTransferData.Attributes);
+            await this.Controller.SetCustomAttributesAsync(this.blockBlob);
 
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
@@ -345,8 +346,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             // Content-Type, REST API SetBlobProperties must be called explicitly:
             // 1. The attributes are inherited from others and Content-Type is null or empty.
             // 2. User specifies Content-Type to string.Empty while uploading.
-            if (this.SharedTransferData.Attributes.OverWriteAll && string.IsNullOrEmpty(this.SharedTransferData.Attributes.ContentType)
-                || (!this.SharedTransferData.Attributes.OverWriteAll && this.SharedTransferData.Attributes.ContentType == string.Empty))
+            if ((this.SharedTransferData.Attributes.OverWriteAll && string.IsNullOrEmpty(this.blockBlob.Properties.ContentType))
+                || (!this.SharedTransferData.Attributes.OverWriteAll && this.blockBlob.Properties.ContentType == string.Empty))
             {
                 await this.blockBlob.SetPropertiesAsync(
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),

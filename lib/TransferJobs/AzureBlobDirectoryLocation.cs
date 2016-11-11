@@ -69,6 +69,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
+        /// Get source/destination instance in transfer.
+        /// </summary>
+        public override object Instance
+        {
+            get
+            {
+                return this.BlobDirectory;
+            }
+        }
+
+        /// <summary>
         /// Gets Azure blob directory location in this instance.
         /// </summary>
         public CloudBlobDirectory BlobDirectory
@@ -110,7 +121,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         public override void Validate()
         {
-            this.BlobDirectory.Container.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultBlobRequestOptions, null).Wait();
+            try
+            {
+                this.BlobDirectory.Container.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultBlobRequestOptions, null).Wait();
+            }
+            catch(AggregateException e)
+            {
+                StorageException innnerException = e.Flatten().InnerExceptions[0] as StorageException;
+                if (!Utils.IsExpectedHttpStatusCodes(innnerException, HttpStatusCode.Forbidden))
+                {
+                    throw;
+                }
+            }
         }
 
         /// <summary>

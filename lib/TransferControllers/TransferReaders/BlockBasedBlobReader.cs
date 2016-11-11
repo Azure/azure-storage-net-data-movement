@@ -171,9 +171,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
             }
-
-            this.SharedTransferData.SourceLocation = this.sourceBlob.Uri.ToString();
-
+            
             this.SharedTransferData.DisableContentMD5Validation =
                 null != this.sourceLocation.BlobRequestOptions ?
                 this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.HasValue ?

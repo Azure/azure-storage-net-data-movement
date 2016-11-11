@@ -14,7 +14,8 @@ namespace DMLibTest
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
-
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.File;
 #if DNXCORE50
     using Xunit;
 
@@ -198,13 +199,22 @@ namespace DMLibTest
         private static List<TransferItem> GetTransformItemsForAllDirections(bool resume)
         {
             List<TransferItem> allItems = new List<TransferItem>();
+            allItems.AddRange(GetTransformItemsForAllSingleTransferDirections(resume));
+            allItems.AddRange(GetTransformItemsForAllDirTransferDirections(resume));
+
+            return allItems;
+        }
+
+        private static List<TransferItem> GetTransformItemsForAllSingleTransferDirections(bool resume)
+        {
+            List<TransferItem> allItems = new List<TransferItem>();
             foreach (DMLibTransferDirection direction in GetAllValidDirections())
             {
                 if (resume && (direction.SourceType == DMLibDataType.Stream || direction.DestType == DMLibDataType.Stream))
                 {
                     continue;
                 }
-                
+
                 string fileName = GetTransferFileName(direction);
                 DataAdaptor<DMLibDataInfo> sourceAdaptor = GetSourceAdaptor(direction.SourceType);
                 DataAdaptor<DMLibDataInfo> destAdaptor = GetDestAdaptor(direction.DestType);
@@ -217,10 +227,20 @@ namespace DMLibTest
                     SourceType = direction.SourceType,
                     DestType = direction.DestType,
                     IsServiceCopy = direction.IsAsync,
+                    TransferContext = new SingleTransferContext()
+                    {
+                        SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback
+                    }
                 };
                 allItems.Add(item);
             }
 
+            return allItems;
+        }
+
+        private static List<TransferItem> GetTransformItemsForAllDirTransferDirections(bool resume)
+        {
+            List<TransferItem> allItems = new List<TransferItem>();
             foreach (DMLibTransferDirection direction in GetAllDirectoryValidDirections())
             {
                 string dirName = GetTransferDirName(direction);
@@ -241,6 +261,10 @@ namespace DMLibTest
                     IsServiceCopy = direction.IsAsync,
                     IsDirectoryTransfer = true,
                     Options = options,
+                    TransferContext = new DirectoryTransferContext()
+                    {
+                        SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback
+                    }
                 };
 
                 allItems.Add(item);
@@ -251,16 +275,91 @@ namespace DMLibTest
 
         [TestMethod]
         [TestCategory(Tag.Function)]
+#if DNXCORE50
+        [TestStartEnd()]
+#endif
         public void ResumeInAllDirections()
         {
-            List<TransferItem> allItems = AllTransferDirectionTest.GetTransformItemsForAllDirections(resume: true);
+            ResumeInAllDirectionsHelper(false);
+        }
+
+        [TestMethod]
+        [TestCategory(Tag.Function)]
+#if DNXCORE50
+        [TestStartEnd()]
+#endif
+        public void ResumeInAllDirectoryDirections()
+        {
+            ResumeInAllDirectionsHelper(true);
+        }
+
+        [TestMethod]
+        [TestCategory(Tag.BVT)]
+#if DNXCORE50
+        [TestStartEnd()]
+#endif
+        public void TransferInAllDirections()
+        {
+            List<TransferItem> allItems = AllTransferDirectionTest.GetTransformItemsForAllDirections(resume: false);
+
+            // Execution
+            var result = this.RunTransferItems(allItems, new TestExecutionOptions<DMLibDataInfo>());
+
+            // Verify all files are transfered successfully
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception occurs.");
+            foreach (DMLibDataType destDataType in DataTypes)
+            {
+                if (DMLibDataType.Stream == destDataType || DMLibDataType.URI == destDataType)
+                {
+                    continue;
+                }
+
+                DataAdaptor<DMLibDataInfo> destAdaptor = GetDestAdaptor(destDataType);
+                DMLibDataInfo destDataInfo = destAdaptor.GetTransferDataInfo(string.Empty);
+
+                foreach (FileNode destFileNode in destDataInfo.EnumerateFileNodes())
+                {
+                    FileNode sourceFileNode = expectedFileNodes[destFileNode.Name];
+
+                    if (IsCloudService(destDataType))
+                    {
+                        IDictionary<string, string> metadata = new Dictionary<string, string>();
+                        metadata.Add("aa", "bb");
+                        sourceFileNode.ContentLanguage = "EN";
+                        sourceFileNode.Metadata = metadata;
+                    }
+                    Test.Assert(DMLibDataHelper.Equals(sourceFileNode, destFileNode), "Verify transfer result.");
+                }
+            }
+        }
+
+        private void ResumeInAllDirectionsHelper(bool directoryTransfer)
+        {
+            List<TransferItem> allItems = directoryTransfer ? AllTransferDirectionTest.GetTransformItemsForAllDirTransferDirections(resume: true) 
+                : AllTransferDirectionTest.GetTransformItemsForAllSingleTransferDirections(true);
 
             int fileCount = expectedFileNodes.Keys.Count;
 
             // Execution and store checkpoints
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
-            var transferContext = new TransferContext();
+            TransferContext transferContext = null;
+
+            if (directoryTransfer)
+            {
+                transferContext = new DirectoryTransferContext()
+                {
+                    SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback,
+                };
+            }
+            else
+            {
+                transferContext = new SingleTransferContext()
+                {
+                    SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback,
+                };
+            }
+
             var progressChecker = new ProgressChecker(fileCount, 1024 * fileCount);
             transferContext.ProgressHandler = progressChecker.GetProgressHandler();
             allItems.ForEach(item =>
@@ -289,39 +388,68 @@ namespace DMLibTest
             };
 
             options.AfterAllItemAdded = () =>
-                {
-                    progressChecker.DataTransferred.WaitOne();
-                    checkpoints.Add(AllStarted, transferContext.LastCheckpoint);
-                    Thread.Sleep(1000);
-                    checkpoints.Add(AllStartedAndWait, transferContext.LastCheckpoint);
-                    Thread.Sleep(1000);
-                    checkpoints.Add(BeforeCancel, transferContext.LastCheckpoint);
-                    tokenSource.Cancel();
-                    checkpoints.Add(AfterCancel, transferContext.LastCheckpoint);
-                };
+            {
+                progressChecker.DataTransferred.WaitOne();
+                checkpoints.Add(AllStarted, transferContext.LastCheckpoint);
+                Thread.Sleep(1000);
+                checkpoints.Add(AllStartedAndWait, transferContext.LastCheckpoint);
+                Thread.Sleep(1000);
+                checkpoints.Add(BeforeCancel, transferContext.LastCheckpoint);
+                tokenSource.Cancel();
+                checkpoints.Add(AfterCancel, transferContext.LastCheckpoint);
+            };
 
             var result = this.RunTransferItems(allItems, options);
 
             // Resume with stored checkpoints in random order
-            var checkpointList = new List<KeyValuePair<string,TransferCheckpoint>>();
+            var checkpointList = new List<KeyValuePair<string, TransferCheckpoint>>();
             checkpointList.AddRange(checkpoints);
             checkpointList.Shuffle();
 
-            foreach(var pair in checkpointList)
+            foreach (var pair in checkpointList)
             {
                 Test.Info("===Resume with checkpoint '{0}'===", pair.Key);
                 options = new TestExecutionOptions<DMLibDataInfo>();
                 options.DisableDestinationFetch = true;
 
                 progressChecker.Reset();
-                transferContext = new TransferContext(DMLibTestHelper.RandomReloadCheckpoint(pair.Value))
-                {
-                    ProgressHandler = progressChecker.GetProgressHandler(),
 
-                    // The checkpoint can be stored when DMLib doesn't check overwrite callback yet.
-                    // So it will case an skip file error if the desination file already exists and 
-                    // We don't have overwrite callback here.
-                    OverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY()
+                if (directoryTransfer)
+                {
+                    transferContext = new DirectoryTransferContext(DMLibTestHelper.RandomReloadCheckpoint(pair.Value))
+                    {
+                        ProgressHandler = progressChecker.GetProgressHandler(),
+                        SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback,
+
+                        // The checkpoint can be stored when DMLib doesn't check overwrite callback yet.
+                        // So it will case an skip file error if the desination file already exists and 
+                        // We don't have overwrite callback here.
+                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY()
+                    };
+                }
+                else
+                {
+                    transferContext = new SingleTransferContext(DMLibTestHelper.RandomReloadCheckpoint(pair.Value))
+                    {
+                        ProgressHandler = progressChecker.GetProgressHandler(),
+                        SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback,
+
+                        // The checkpoint can be stored when DMLib doesn't check overwrite callback yet.
+                        // So it will case an skip file error if the desination file already exists and 
+                        // We don't have overwrite callback here.
+                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY()
+                    };
+                }
+
+                int expectedFailureCount = 0;
+
+                transferContext.FileFailed += (resource, eventArgs) =>
+                {
+                    TransferException exception = eventArgs.Exception as TransferException;
+                    if (null != exception && exception.ErrorCode == TransferErrorCode.MismatchCopyId)
+                    {
+                        Interlocked.Increment(ref expectedFailureCount);
+                    }
                 };
 
                 TransferEventChecker eventChecker = new TransferEventChecker();
@@ -338,41 +466,52 @@ namespace DMLibTest
 
                 foreach (DMLibDataType destDataType in DataTypes)
                 {
-                    DataAdaptor<DMLibDataInfo> destAdaptor = GetSourceAdaptor(destDataType);
+                    if (DMLibDataType.URI == destDataType)
+                    {
+                        continue;
+                    }
+
+                    DataAdaptor<DMLibDataInfo> destAdaptor = GetDestAdaptor(destDataType);
                     DMLibDataInfo destDataInfo = destAdaptor.GetTransferDataInfo(string.Empty);
 
                     foreach (FileNode destFileNode in destDataInfo.EnumerateFileNodes())
                     {
                         string fileName = destFileNode.Name;
                         FileNode sourceFileNode = expectedFileNodes[fileName];
+                        if (IsCloudService(destDataType))
+                        {
+                            IDictionary<string, string> metadata = new Dictionary<string, string>();
+                            metadata.Add("aa", "bb");
+                            sourceFileNode.ContentLanguage = "EN";
+                            sourceFileNode.Metadata = metadata;
+                        }
+
                         Test.Assert(DMLibDataHelper.Equals(sourceFileNode, destFileNode), "Verify transfer result.");
                     }
                 }
 
-                Test.Assert(result.Exceptions.Count == 0, "Verify no error happens. Actual: {0}", result.Exceptions.Count);
+                if (!directoryTransfer)
+                {
+                    Test.Assert(result.Exceptions.Count == expectedFailureCount, "Verify no error happens. Expect {0}, Actual: {1}", expectedFailureCount, result.Exceptions.Count);
+                }
+                else
+                {
+                    Test.Assert(result.Exceptions.Count == 0, "Verify no exception happens. Actual: {0}", result.Exceptions.Count);
+                    Test.Assert(eventChecker.FailedFilesNumber == expectedFailureCount, "Verify no unexpected error happens. Expect {0}, Actual: {1}", expectedFailureCount, eventChecker.FailedFilesNumber);
+                }
             }
         }
 
-        [TestMethod]
-        [TestCategory(Tag.BVT)]
-        public void TransferInAllDirections()
+        private static void SetAttributesCallback(object destObj)
         {
-            List<TransferItem> allItems = AllTransferDirectionTest.GetTransformItemsForAllDirections(resume: false);
-
-            // Execution
-            var result = this.RunTransferItems(allItems, new TestExecutionOptions<DMLibDataInfo>());
-
-            // Verify all files are transfered successfully
-            Test.Assert(result.Exceptions.Count == 0, "Verify no exception occurs.");
-            foreach (DMLibDataType destDataType in DataTypes)
+            if (destObj is CloudBlob || destObj is CloudFile)
             {
-                DataAdaptor<DMLibDataInfo> destAdaptor = GetSourceAdaptor(destDataType);
-                DMLibDataInfo destDataInfo = destAdaptor.GetTransferDataInfo(string.Empty);
+                dynamic destCloudObj = destObj;
+                destCloudObj.Properties.ContentLanguage = "EN";
 
-                foreach (FileNode destFileNode in destDataInfo.EnumerateFileNodes())
+                if (!destCloudObj.Metadata.ContainsKey("aa"))
                 {
-                    FileNode sourceFileNode = expectedFileNodes[destFileNode.Name];
-                    Test.Assert(DMLibDataHelper.Equals(sourceFileNode, destFileNode), "Verify transfer result.");
+                    destCloudObj.Metadata.Add("aa", "bb");
                 }
             }
         }

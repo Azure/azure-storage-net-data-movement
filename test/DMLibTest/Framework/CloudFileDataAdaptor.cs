@@ -5,14 +5,14 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
+    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using MS.Test.Common.MsTestLib;
     using System;
     using System.IO;
     using System.Text;
     using System.Text.RegularExpressions;
-    using Microsoft.WindowsAzure.Storage.File;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using MS.Test.Common.MsTestLib;
-
     internal class CloudFileDataAdaptor : DataAdaptor<DMLibDataInfo>
     {
         private TestAccount testAccount;
@@ -52,14 +52,14 @@ namespace DMLibTest
             }
         }
 
-        public override object GetTransferObject(string rootPath, FileNode fileNode)
+        public override object GetTransferObject(string rootPath, FileNode fileNode, StorageCredentials credentials = null)
         {
-            return this.GetCloudFileReference(rootPath, fileNode);
+            return this.GetCloudFileReference(rootPath, fileNode, credentials);
         }
 
-        public override object GetTransferObject(string rootPath, DirNode dirNode)
+        public override object GetTransferObject(string rootPath, DirNode dirNode, StorageCredentials credentials = null)
         {
-            return this.GetCloudFileDirReference(rootPath, dirNode);
+            return this.GetCloudFileDirReference(rootPath, dirNode, credentials);
         }
 
         public override string GetAddress(params string[] list)
@@ -138,9 +138,15 @@ namespace DMLibTest
             Test.Info("stdout={0}, stderr={1}", stdout, stderr);
         }
 
-        public CloudFile GetCloudFileReference(string rootPath, FileNode fileNode)
+        public CloudFile GetCloudFileReference(string rootPath, FileNode fileNode, StorageCredentials credentials = null)
         {
             var share = this.fileHelper.FileClient.GetShareReference(this.shareName);
+
+            if (credentials != null)
+            {
+                share = new CloudFileShare(share.StorageUri, credentials);
+            }
+
             string fileName = fileNode.GetURLRelativePath();
             if (fileName.StartsWith("/"))
             {
@@ -151,13 +157,19 @@ namespace DMLibTest
             {
                 fileName = rootPath + "/" + fileName;
             }
-
+            
             return share.GetRootDirectoryReference().GetFileReference(fileName);
         }
 
-        public CloudFileDirectory GetCloudFileDirReference(string rootPath, DirNode dirNode)
+        public CloudFileDirectory GetCloudFileDirReference(string rootPath, DirNode dirNode, StorageCredentials credentials = null)
         {
             var share = this.fileHelper.FileClient.GetShareReference(this.shareName);
+
+            if (credentials != null)
+            {
+                share = new CloudFileShare(share.StorageUri, credentials);
+            }
+
             string dirName = dirNode.GetURLRelativePath();
             if (dirName.StartsWith("/"))
             {
@@ -168,6 +180,8 @@ namespace DMLibTest
             {
                 dirName = rootPath + "/" + dirName;
             }
+
+            CloudFileDirectory result;
 
             if (string.IsNullOrEmpty(dirName))
             {

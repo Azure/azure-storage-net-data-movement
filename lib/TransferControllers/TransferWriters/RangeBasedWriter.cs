@@ -45,7 +45,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             FetchAttributes,
             Create,
-            Resize,
             Upload,
             Commit,
             Error,
@@ -94,9 +93,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 case State.Create:
                     await this.CreateAsync();
                     break;
-                case State.Resize:
-                    await this.ResizeAsync();
-                    break;
                 case State.Upload:
                     await this.UploadAsync();
                     break;
@@ -135,39 +131,47 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.CheckInputStreamLength(this.SharedTransferData.TotalLength);
 
-            bool exist = true;
+            bool exist = !this.Controller.IsForceOverwrite;
 
-            try
+            if (!this.Controller.IsForceOverwrite)
             {
-                await this.DoFetchAttributesAsync();
-            }
-#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
-            {
-                var se = e as StorageException ?? e.InnerException as StorageException;
-#else
-            catch (StorageException se)
-            {
-#endif
-                // Getting a storage exception is expected if the file doesn't
-                // exist. In this case we won't error out, but set the 
-                // exist flag to false to indicate we're uploading
-                // a new file instead of overwriting an existing one.
-                if (null != se.RequestInformation &&
-                    se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                try
                 {
-                    exist = false;
+                    await this.DoFetchAttributesAsync();
                 }
-                else
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+                catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
                 {
-                    this.HandleFetchAttributesResult(se);
+                    var se = e as StorageException ?? e.InnerException as StorageException;
+#else
+                catch (StorageException se)
+                {
+#endif
+                    // Getting a storage exception is expected if the file doesn't
+                    // exist. In this case we won't error out, but set the 
+                    // exist flag to false to indicate we're uploading
+                    // a new file instead of overwriting an existing one.
+                    if (null != se.RequestInformation &&
+                        se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                    {
+                        exist = false;
+                    }
+                    else
+                    {
+                        this.HandleFetchAttributesResult(se);
+                        throw;
+                    }
+                }
+                catch (Exception e)
+                {
+                    this.HandleFetchAttributesResult(e);
                     throw;
                 }
-            }
-            catch (Exception e)
-            {
-                this.HandleFetchAttributesResult(e);
-                throw;
+
+                this.Controller.CheckOverwrite(
+                    exist,
+                    this.TransferJob.Source.Instance,
+                    this.TransferJob.Destination.Instance);
             }
 
             if (this.TransferJob.Destination.Type == TransferLocationType.AzureBlob)
@@ -178,31 +182,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 (this.TransferJob.Destination as AzureFileLocation).CheckedAccessCondition = true;
             }
-            
-            this.Controller.CheckOverwrite(
-                exist,
-                this.SharedTransferData.SourceLocation,
-                this.DestUri.ToString());
 
             this.Controller.UpdateProgressAddBytesTransferred(0);
 
-            if (exist)
-            {
-                // If the destination has already existed,
-                // and if we haven't uploaded anything to it, try to resize it to the expected length.
-                // Or if we have uploaded something, the destination should be created by the last transferring,
-                // don't do resize again.
-                SingleObjectCheckpoint checkpoint = this.TransferJob.CheckPoint;
-                bool shouldResize = (checkpoint.EntryTransferOffset == 0) && (!checkpoint.TransferWindow.Any());
+            SingleObjectCheckpoint checkpoint = this.TransferJob.CheckPoint;
 
-                if (shouldResize)
-                {
-                    this.state = State.Resize;
-                }
-                else
-                {
-                    this.InitUpload();
-                }
+            // We should create the destination if there's no previous transfer progress in the checkpoint.
+            // Create will clear all data if the destination already exists.
+            bool shouldCreate = (checkpoint.EntryTransferOffset == 0) && (!checkpoint.TransferWindow.Any());
+
+            if (!shouldCreate)
+            {
+                this.InitUpload();
             }
             else
             {
@@ -223,25 +214,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
 
             await this.DoCreateAsync(this.SharedTransferData.TotalLength);
-
-            this.InitUpload();
-        }
-
-        private async Task ResizeAsync()
-        {
-            Debug.Assert(
-                this.state == State.Resize,
-                "ResizeAsync called, but state isn't Resize",
-                "Current state is {0}",
-                this.state);
-
-            this.hasWork = false;
-
-            // Resize destination to 0 to clear all exist page ranges,
-            // then in uploading, we don't need to clear them if source data is all zero..
-            await this.DoResizeAsync(0);
-
-            await this.DoResizeAsync(this.SharedTransferData.TotalLength);
 
             this.InitUpload();
         }
@@ -372,6 +344,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 {
                     this.TransferJob.CheckPoint.TransferWindow.Remove(transferData.StartOffset);
                 }
+                this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
 
                 this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
             });
@@ -418,8 +391,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         protected abstract void HandleFetchAttributesResult(Exception e);
 
         protected abstract Task DoCreateAsync(long size);
-
-        protected abstract Task DoResizeAsync(long size);
 
         protected abstract Task WriteRangeAsync(TransferData transferData);
         

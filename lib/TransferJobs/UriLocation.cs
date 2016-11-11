@@ -59,6 +59,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
+        /// Get source/destination instance in transfer.
+        /// </summary>
+        public override object Instance
+        {
+            get
+            {
+                return this.Uri;
+            }
+        }
+
+        /// <summary>
         /// Gets Uri to the location.
         /// </summary>
 #if !BINARY_SERIALIZATION

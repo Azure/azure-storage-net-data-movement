@@ -69,6 +69,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
+        /// Get source/destination instance in transfer.
+        /// </summary>
+        public override object Instance
+        {
+            get
+            {
+                return this.FileDirectory;
+            }
+        }
+
+        /// <summary>
         /// Gets Azure file directory location in this instance.
         /// </summary>
         public CloudFileDirectory FileDirectory
@@ -110,7 +121,22 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         public override void Validate()
         {
-            this.FileDirectory.CreateIfNotExistsAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
+            try
+            {
+                this.FileDirectory.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
+            }
+            catch(AggregateException e)
+            {
+                StorageException innnerException = e.Flatten().InnerExceptions[0] as StorageException;
+                if (!Utils.IsExpectedHttpStatusCodes(
+                        innnerException, 
+                        this.FileDirectory.Parent == null ? HttpStatusCode.MethodNotAllowed : HttpStatusCode.Conflict, // Create root directory of a share causes 405 error.
+                        HttpStatusCode.Forbidden,
+                        HttpStatusCode.NotFound))
+                {
+                    throw;
+                }
+            }
         }
 
         /// <summary>

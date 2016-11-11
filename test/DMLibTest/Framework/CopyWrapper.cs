@@ -31,7 +31,7 @@ namespace DMLibTest
         private Task Copy(dynamic sourceObject, dynamic destObject, TransferItem item)
         {
             CopyOptions copyOptions = item.Options as CopyOptions;
-            TransferContext transferContext = item.TransferContext;
+            SingleTransferContext transferContext = item.TransferContext as SingleTransferContext;
             CancellationToken cancellationToken = item.CancellationToken;
 
             if (cancellationToken != null && cancellationToken != CancellationToken.None)
@@ -51,7 +51,7 @@ namespace DMLibTest
         private Task<TransferStatus> CopyDirectory(dynamic sourceObject, dynamic destObject, TransferItem item)
         {
             CopyDirectoryOptions copyDirectoryOptions = item.Options as CopyDirectoryOptions;
-            TransferContext transferContext = item.TransferContext;
+            DirectoryTransferContext transferContext = item.TransferContext as DirectoryTransferContext;
             CancellationToken cancellationToken = item.CancellationToken;
 
             if (cancellationToken == null || cancellationToken == CancellationToken.None)

@@ -162,8 +162,8 @@ namespace DMLibTest
                 {
                     TransferItem item = new TransferItem()
                     {
-                        SourceObject = SourceAdaptor.GetTransferObject(sourceDataInfo.RootPath, fileNode),
-                        DestObject = DestAdaptor.GetTransferObject(destRootPath, fileNode),
+                        SourceObject = SourceAdaptor.GetTransferObject(sourceDataInfo.RootPath, fileNode, options.SourceCredentials),
+                        DestObject = DestAdaptor.GetTransferObject(destRootPath, fileNode, options.DestCredentials),
                         SourceType = DMLibTestContext.SourceType,
                         DestType = DMLibTestContext.DestType,
                         IsServiceCopy = DMLibTestContext.IsAsync,

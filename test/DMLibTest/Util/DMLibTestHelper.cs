@@ -16,7 +16,9 @@ namespace DMLibTest
 #endif
     using System.Threading;
     using Microsoft.WindowsAzure.Storage;
+    using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.WindowsAzure.Storage.File;
     using MS.Test.Common.MsTestLib;
     using StorageBlob = Microsoft.WindowsAzure.Storage.Blob;
 
@@ -449,6 +451,46 @@ namespace DMLibTest
             }
 
             return resultName;
+        }
+
+        public static string TransferInstanceToString(object transferInstance)
+        {
+            CloudBlob blob = transferInstance as CloudBlob;
+
+            if (null != blob)
+            {
+                return blob.SnapshotQualifiedUri.ToString();
+            }
+
+            CloudFile file = transferInstance as CloudFile;
+
+            if (null != file)
+            {
+                return file.Uri.ToString();
+            }
+
+            string filePath = transferInstance as string;
+
+            if (null != filePath)
+            {
+                return filePath;
+            }
+
+            Uri uri = transferInstance as Uri;
+
+            if (null != uri)
+            {
+                return uri.ToString();
+            }
+
+            Stream stream = transferInstance as Stream;
+
+            if (null != stream)
+            {
+                return stream.ToString();
+            }
+
+            throw new InvalidOperationException(string.Format("Invalid transfer target: {0}", transferInstance));
         }
     }
 }

@@ -6,6 +6,7 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 {
     using System;
+    using System.Collections.Generic;
     using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
@@ -121,6 +122,32 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.CancellationToken);
 
             return this.destFile.CopyState;
+        }
+
+        protected override async Task SetAttributesAsync(SetAttributesCallback setCustomAttributes)
+        {
+            var originalAttributes = Utils.GenerateAttributes(this.destFile);
+            var originalMetadata = new Dictionary<string, string>(this.destFile.Metadata);
+
+            setCustomAttributes(this.destFile);
+
+            if (!Utils.CompareProperties(originalAttributes, Utils.GenerateAttributes(this.destFile)))
+            {
+                await this.destFile.SetPropertiesAsync(
+                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
+                Utils.GenerateOperationContext(this.TransferContext),
+                this.CancellationToken);
+            }
+
+            if (!originalMetadata.DictionaryEquals(this.destFile.Metadata))
+            {
+                await this.destFile.SetMetadataAsync(
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                    Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
+                    Utils.GenerateOperationContext(this.TransferContext),
+                    this.CancellationToken);
+            }
         }
     }
 }
