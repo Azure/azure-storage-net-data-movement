@@ -208,7 +208,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.SharedTransferData.TotalLength = this.inputStream.Length;
 
-            int count = (int)Math.Ceiling((double)(this.SharedTransferData.TotalLength - this.transferJob.CheckPoint.EntryTransferOffset) / this.Scheduler.TransferOptions.BlockSize);
+            int count = (int)Math.Ceiling((double)(this.SharedTransferData.TotalLength - this.transferJob.CheckPoint.EntryTransferOffset) / this.SharedTransferData.BlockSize);
 
             if (null != this.transferJob.CheckPoint.TransferWindow)
             {
@@ -254,7 +254,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.hasWork = false;
 
-            byte[] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffer();
+            byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
 
             if (null != memoryBuffer)
             {
@@ -278,7 +278,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             {
                                 this.transferJob.CheckPoint.TransferWindow.Add(startOffset);
                                 this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
-                                    this.transferJob.CheckPoint.EntryTransferOffset + this.Scheduler.TransferOptions.BlockSize,
+                                    this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
                                     this.SharedTransferData.TotalLength);
 
                                 canRead = true;
@@ -288,7 +288,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     if (!canRead)
                     {
-                        this.Scheduler.MemoryManager.ReleaseBuffer(memoryBuffer);
+                        this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
                         this.hasWork = true;
                         return;
                     }
@@ -297,7 +297,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 if ((startOffset > this.SharedTransferData.TotalLength)
                     || (startOffset < 0))
                 {
-                    this.Scheduler.MemoryManager.ReleaseBuffer(memoryBuffer);
+                    this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
                     throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
                 }
 
@@ -306,7 +306,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     MemoryBuffer = memoryBuffer,
                     BytesRead = 0,
                     StartOffset = startOffset,
-                    Length = (int)Math.Min(this.Scheduler.TransferOptions.BlockSize, this.SharedTransferData.TotalLength - startOffset),
+                    Length = (int)Math.Min(this.SharedTransferData.BlockSize, this.SharedTransferData.TotalLength - startOffset),
                     MemoryManager = this.Scheduler.MemoryManager,
                 };
 

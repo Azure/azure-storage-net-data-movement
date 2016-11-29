@@ -17,12 +17,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Stores the max block size, 4MB.
         /// </summary>
-        public const int MaxBlockSize = 4 * 1024 * 1024;
+        public const int MaxBlockSize = 100 * 1024 * 1024;
 
         /// <summary>
         /// Default block size, 4MB.
         /// </summary>
         public const int DefaultBlockSize = 4 * 1024 * 1024;
+
+        /// <summary>
+        /// Default memory chunk size of memory pool, 4MB.
+        /// </summary>
+        public const int DefaultMemoryChunkSize = 4 * 1024 * 1024;
 
         /// <summary>
         /// Maximum windows file path is 260 characters, including a terminating NULL characters.
@@ -35,6 +40,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         // This way, there will be no trash left.
         internal const int MaxFilePathLength = 259;
 
+        //TODO: How to tune this???
         /// <summary>
         /// Define cache size for one parallel operation.
         /// </summary>
@@ -46,9 +52,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         internal const string DefaultContainerName = "$root";
 
         /// <summary>
-        /// Minimum block size, 256KB.
+        /// Minimum block size, 4MB.
         /// </summary>
-        internal const int MinBlockSize = 256 * 1024;
+        internal const int MinBlockSize = 4 * 1024 * 1024;
 
         /// <summary>
         /// Stores the max page blob file size, 1TB.
@@ -56,9 +62,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         internal const long MaxPageBlobFileSize = (long)1024 * 1024 * 1024 * 1024;
 
         /// <summary>
-        /// Stores the max block blob file size, 50000 * 4M.
+        /// Stores the max append blob file size, 50000 * 4M.
         /// </summary>
-        internal const long MaxBlockBlobFileSize = (long)50000 * 4 * 1024 * 1024;
+        internal const long MaxAppendBlobFileSize = (long)50000 * 4 * 1024 * 1024;
+
+        /// <summary>
+        /// Stores the max block blob file size, 50000 * 100M.
+        /// </summary>
+        internal const long MaxBlockBlobFileSize = (long)50000 * 100 * 1024 * 1024;
 
         /// <summary>
         /// Stores the max cloud file size, 1TB.

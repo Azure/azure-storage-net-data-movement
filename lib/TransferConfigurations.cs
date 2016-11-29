@@ -42,8 +42,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public TransferConfigurations()
         {
             // setup default values.
-            this.ParallelOperations = Environment.ProcessorCount * 8;
-            this.BlockSize = Constants.DefaultBlockSize;
+            this.blockSize = Constants.DefaultBlockSize;
+            this.parallelOperations = Environment.ProcessorCount * 8;
+            this.MemoryChunkSize = Constants.DefaultMemoryChunkSize;
+
+            this.UpdateMaximumCacheSize(this.blockSize);
         }
 
         /// <summary>
@@ -69,7 +72,41 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 }
 
                 this.parallelOperations = value;
-                this.SetMaxMemoryCacheSize();
+                this.UpdateMaximumCacheSize(this.blockSize);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the BlockSize to use for Windows Azure Storage transfers.
+        /// </summary>
+        /// <value>BlockSize to use for Windows Azure Storage transfers.</value>
+        public int BlockSize
+        {
+            get
+            {
+                return this.blockSize;
+            }
+
+            set
+            {
+                if (Constants.MinBlockSize > value || value > Constants.MaxBlockSize)
+                {
+                    string errorMessage = string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resources.BlockSizeOutOfRangeException,
+                        Utils.BytesToHumanReadableSize(Constants.MinBlockSize),
+                        Utils.BytesToHumanReadableSize(Constants.MaxBlockSize));
+
+                    throw new ArgumentOutOfRangeException("value", value, errorMessage);
+                }
+
+                if (value % Constants.DefaultBlockSize != 0)
+                {
+                    throw new ArgumentException(Resources.BlockSizeMustBeMultipleOf4MB, "value");
+                }
+
+                this.blockSize = value;
+                this.UpdateMaximumCacheSize(this.blockSize);
             }
         }
 
@@ -96,62 +133,39 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             set
             {
-                if (value < Constants.MaxBlockSize)
+                if (value < Constants.DefaultBlockSize)
                 {
                     throw new ArgumentException(string.Format(
                         CultureInfo.CurrentCulture,
                         Resources.SmallMemoryCacheSizeLimitationException,
-                        Utils.BytesToHumanReadableSize(Constants.MaxBlockSize)));
+                        Utils.BytesToHumanReadableSize(Constants.DefaultBlockSize)));
                 }
 
-                this.maximumCacheSize = value;
+                if (0 == this.memStatus.AvailablePhysicalMemory)
+                {
+                    this.maximumCacheSize = Math.Min(value, Constants.MemoryCacheMaximum);
+                }
+                else
+                {
+                    this.maximumCacheSize = Math.Min(value, (long)(this.memStatus.AvailablePhysicalMemory * Constants.MemoryCacheMultiplier));
+                }
+
                 TransferManager.SetMemoryLimitation(this.maximumCacheSize);
             }
         }
 
         /// <summary>
-        /// Gets or sets the BlockSize to use for Windows Azure Storage transfers.
+        /// The size of memory chunk of memory pool
         /// </summary>
-        /// <value>BlockSize to use for Windows Azure Storage transfers.</value>
-        internal int BlockSize
+        internal int MemoryChunkSize { get; private set; }
+
+        /// <summary>
+        /// Update the memory pool size according to the block size
+        /// </summary>
+        /// <param name="blockSize"></param>
+        internal void UpdateMaximumCacheSize(int blockSize)
         {
-            get
-            {
-                return this.blockSize;
-            }
-
-            set
-            {
-                if (Constants.MinBlockSize > value || value > Constants.MaxBlockSize)
-                {
-                    string errorMessage = string.Format(
-                        CultureInfo.CurrentCulture,
-                        Resources.BlockSizeOutOfRangeException,
-                        Utils.BytesToHumanReadableSize(Constants.MinBlockSize),
-                        Utils.BytesToHumanReadableSize(Constants.MaxBlockSize));
-
-                    throw new ArgumentOutOfRangeException("value", value, errorMessage);
-                }
-
-                this.blockSize = value;
-            }
-        }
-
-        private void SetMaxMemoryCacheSize()
-        {
-            if (0 == this.memStatus.AvailablePhysicalMemory)
-            {
-                this.MaximumCacheSize = Constants.CacheSizeMultiplierInByte * this.ParallelOperations;
-            }
-            else
-            {
-                this.MaximumCacheSize =
-                    Math.Min(
-                        Constants.CacheSizeMultiplierInByte * this.ParallelOperations,
-                        Math.Min(
-                            (long)(this.memStatus.AvailablePhysicalMemory * Constants.MemoryCacheMultiplier),
-                            Constants.MemoryCacheMaximum));
-            }
+            this.MaximumCacheSize = (long)3 * blockSize * this.ParallelOperations;
         }
     }
 }

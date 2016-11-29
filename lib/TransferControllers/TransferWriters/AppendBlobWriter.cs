@@ -109,14 +109,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.hasWork = false;
 
-            if (this.SharedTransferData.TotalLength > Constants.MaxBlockBlobFileSize)
+            if (this.SharedTransferData.TotalLength > Constants.MaxAppendBlobFileSize)
             {
                 string exceptionMessage = string.Format(
                             CultureInfo.CurrentCulture,
                             Resources.BlobFileSizeTooLargeException,
                             Utils.BytesToHumanReadableSize(this.SharedTransferData.TotalLength),
                             Resources.AppendBlob,
-                            Utils.BytesToHumanReadableSize(Constants.MaxBlockBlobFileSize));
+                            Utils.BytesToHumanReadableSize(Constants.MaxAppendBlobFileSize));
 
                 throw new TransferException(
                         TransferErrorCode.UploadSourceFileSizeTooLarge,
@@ -291,7 +291,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     long currentOffset = this.expectedOffset;
                     this.expectedOffset += transferData.Length;
 
-                    transferData.Stream = new MemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
+                    if (transferData.MemoryBuffer.Length == 1)
+                    {
+                        transferData.Stream = new MemoryStream(transferData.MemoryBuffer[0], 0, transferData.Length);
+                    }
+                    else
+                    {
+                        transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
+                    }
 
                     AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true) ?? new AccessCondition();
                     accessCondition.IfAppendPositionEqual = currentOffset;
@@ -396,7 +403,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.SetFinish();
         }
 
-        private async Task<bool> ValidateUploadedChunkAsync(byte[] currentData, long startOffset, long length)
+        private async Task<bool> ValidateUploadedChunkAsync(byte[][] currentData, long startOffset, long length)
         {
             AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
@@ -413,6 +420,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 return false;
             }
 
+            if (length <= 0)
+            {
+                // Nothing to compare
+                return true;
+            }
+
             byte[] buffer = new byte[length];
 
             // Do not expect any exception here.
@@ -426,11 +439,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 operationContext,
                 this.CancellationToken);
 
-            for (int i = 0; i < length; ++i)
+            int index = 0;
+            for (int i = 0; i < currentData.Length; i++)
             {
-                if (currentData[i] != buffer[i])
+                for (int j = 0; j < currentData[i].Length; j++)
                 {
-                    return false;
+                    if (currentData[i][j] != buffer[index++])
+                    {
+                        return false;
+                    }
+
+                    if (index == length)
+                    {
+                        // Reach to the end and nothing different
+                        return true;
+                    }
                 }
             }
 

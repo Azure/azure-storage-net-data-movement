@@ -7,12 +7,12 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Diagnostics;
     using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Net;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.WindowsAzure.Storage.Blob;
@@ -205,7 +205,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 // In block blob upload, it stores uploaded but not committed blocks on Azure Storage. 
                 // In DM, we use block id to identify the blocks uploaded so we only need to upload it once.
                 // Keep BlockIdPrefix in upload job object for restarting the transfer if anything happens.
-                this.destLocation.BlockIdPrefix = Guid.NewGuid().ToString("N") + "-";
+                this.destLocation.BlockIdPrefix = GenerateBlockIdPrefix();
             }
 
             if (!this.Controller.IsForceOverwrite)
@@ -237,7 +237,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             // Calculate number of blocks.
             int numBlocks = (int)Math.Ceiling(
-                this.SharedTransferData.TotalLength / (double)this.Scheduler.TransferOptions.BlockSize);
+                this.SharedTransferData.TotalLength / (double)this.SharedTransferData.BlockSize);
 
             // Create sequence array.
             this.blockIdSequence = new string[numBlocks];
@@ -253,7 +253,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             SingleObjectCheckpoint checkpoint = this.SharedTransferData.TransferJob.CheckPoint;
 
             int leftBlockCount = (int)Math.Ceiling(
-                (this.SharedTransferData.TotalLength - checkpoint.EntryTransferOffset) / (double)this.Scheduler.TransferOptions.BlockSize) + checkpoint.TransferWindow.Count;
+                (this.SharedTransferData.TotalLength - checkpoint.EntryTransferOffset) / (double)this.SharedTransferData.BlockSize) + checkpoint.TransferWindow.Count;
 
             if (0 == leftBlockCount)
             {
@@ -270,6 +270,30 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = true;
         }
 
+        private string GenerateBlockIdPrefix()
+        {
+            //var blockIdPrefix = Guid.NewGuid().ToString("N") + "-";
+
+            // Originally the blockId is an GUID + "-". It will cause some problem when switch machines or jnl get cleaned
+            // to upload to the same block blob - block id is not shared between the 2 DMLib instances
+            // and it may result in reaching the limitation of maximum 50000 uncommited blocks + 50000 committed blocks.
+            //
+            // Change it to hash based prefix to make it preditable and can be shared between multiple DMLib instances
+            string blobNameHash;
+            using (var md5 = new MD5Wrapper())
+            {
+                var blobNameBytes = Encoding.UTF8.GetBytes(this.destLocation.Blob.Name);
+                md5.UpdateHash(blobNameBytes, 0, blobNameBytes.Length);
+                blobNameHash = md5.ComputeHash();
+            }
+
+            // The original GUID format prefix's length is 32 + 1 ("-")
+            // As the service requires the blockid has the same size of each block,
+            // To keep the compatibility, add 9 chars to the end of the hash ( 33 - 24)
+            var blockIdPrefix = blobNameHash + "12345678-";
+            return blockIdPrefix;
+        }
+
         private async Task UploadBlobAsync()
         {
             Debug.Assert(
@@ -284,7 +308,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 using (transferData)
                 {
-                    transferData.Stream = new MemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
+                    if (transferData.MemoryBuffer.Length == 1)
+                    {
+                        transferData.Stream = new MemoryStream(transferData.MemoryBuffer[0], 0, transferData.Length);
+                    }
+                    else
+                    {
+                        transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
+                    }
 
                     await this.blockBlob.PutBlockAsync(
                         this.GetBlockId(transferData.StartOffset),
@@ -390,9 +421,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private string GetBlockId(long startOffset)
         {
-            Debug.Assert(startOffset % this.Scheduler.TransferOptions.BlockSize == 0, "Block startOffset should be multiples of block size.");
+            Debug.Assert(startOffset % this.SharedTransferData.BlockSize == 0, "Block startOffset should be multiples of block size.");
 
-            int count = (int)(startOffset / this.Scheduler.TransferOptions.BlockSize);
+            int count = (int)(startOffset / this.SharedTransferData.BlockSize);
             return this.blockIdSequence[count];
         }
     }

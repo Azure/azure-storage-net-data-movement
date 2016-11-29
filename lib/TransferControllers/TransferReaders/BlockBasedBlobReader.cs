@@ -190,7 +190,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.lastTransferWindow = new Queue<long>(this.SharedTransferData.TransferJob.CheckPoint.TransferWindow);
             
             int downloadCount = this.lastTransferWindow.Count +
-                (int)Math.Ceiling((double)(this.sourceBlob.Properties.Length - this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset) / this.Scheduler.TransferOptions.BlockSize);
+                (int)Math.Ceiling((double)(this.sourceBlob.Properties.Length - this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset) / this.SharedTransferData.BlockSize);
 
             if (0 == downloadCount)
             {
@@ -211,7 +211,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.hasWork = false;
 
-            byte[] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffer();
+            byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
 
             if (null != memoryBuffer)
             {
@@ -235,7 +235,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             {
                                 this.transferJob.CheckPoint.TransferWindow.Add(startOffset);
                                 this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
-                                    this.transferJob.CheckPoint.EntryTransferOffset + this.Scheduler.TransferOptions.BlockSize,
+                                    this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
                                     this.SharedTransferData.TotalLength);
 
                                 canUpload = true;
@@ -246,7 +246,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     if (!canUpload)
                     {
                         this.hasWork = true;
-                        this.Scheduler.MemoryManager.ReleaseBuffer(memoryBuffer);
+                        this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
                         return;
                     }
                 }
@@ -254,7 +254,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 if ((startOffset > this.SharedTransferData.TotalLength)
                     || (startOffset < 0))
                 {
-                    this.Scheduler.MemoryManager.ReleaseBuffer(memoryBuffer);
+                    this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
                     throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
                 }
 
@@ -265,7 +265,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     MemoryBuffer = memoryBuffer,
                     BytesRead = 0,
                     StartOffset = startOffset,
-                    Length = (int)Math.Min(this.Scheduler.TransferOptions.BlockSize, this.SharedTransferData.TotalLength - startOffset),
+                    Length = (int)Math.Min(this.SharedTransferData.BlockSize, this.SharedTransferData.TotalLength - startOffset),
                     MemoryManager = this.Scheduler.MemoryManager,
                 };
 
@@ -295,22 +295,59 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                  this.sourceBlob.Properties.ETag,
                  this.sourceLocation.AccessCondition);
 
-            // We're to download this block.
-            asyncState.MemoryStream =
-                new MemoryStream(
-                    asyncState.MemoryBuffer,
-                    0,
-                    asyncState.Length);
+            if (asyncState.MemoryBuffer.Length == 1)
+            {
+                // We're to download this block.
+                asyncState.MemoryStream =
+                    new MemoryStream(
+                        asyncState.MemoryBuffer[0],
+                        0,
+                        asyncState.Length);
+                await this.sourceBlob.DownloadRangeToStreamAsync(
+                            asyncState.MemoryStream,
+                            asyncState.StartOffset,
+                            asyncState.Length,
+                            accessCondition,
+                            Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                            Utils.GenerateOperationContext(this.Controller.TransferContext),
+                            this.CancellationToken);
+            }
+            else
+            {
+                var chunksDownloadTasks = new List<Task>();
+                var blockSize = Constants.DefaultBlockSize; // 4MB
 
-            await this.sourceBlob.DownloadRangeToStreamAsync(
-                        asyncState.MemoryStream,
-                        asyncState.StartOffset,
-                        asyncState.Length,
+                var startOffset = asyncState.StartOffset;
+                var remainingLength = asyncState.Length;
+                var index = 0;
+
+                do
+                {
+                    var length = Math.Min(blockSize, remainingLength);
+
+                    var memoryStream = new MemoryStream(asyncState.MemoryBuffer[index], 0, length);
+                    var task = this.sourceBlob.DownloadRangeToStreamAsync(
+                        memoryStream,
+                        startOffset,
+                        length,
                         accessCondition,
                         Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                         Utils.GenerateOperationContext(this.Controller.TransferContext),
                         this.CancellationToken);
+                    chunksDownloadTasks.Add(task);
 
+                    index++;
+                    startOffset += length;
+                    remainingLength -= length;
+
+                } while (remainingLength > 0);
+
+                //TODO: control the concurrency???
+                //TODO: Fail fast?
+                // Need to wait all task to finish to avoid any potential orphan tasks and normal tasks to have race condition
+                await Task.WhenAll(chunksDownloadTasks.ToArray());
+            }
+            
             TransferData transferData = new TransferData(this.Scheduler.MemoryManager)
             {
                 StartOffset = asyncState.StartOffset,

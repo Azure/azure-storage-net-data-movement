@@ -101,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 this.internalControllerQueue);
             this.memoryManager = new MemoryManager(
                 this.transferOptions.MaximumCacheSize,
-                this.transferOptions.BlockSize);
+                this.transferOptions.MemoryChunkSize);
 
             this.randomGenerator = new Random();
 

@@ -16,7 +16,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Gets or sets a handle to the memory buffer to ensure the
         /// memory buffer remains in memory during the entire operation.
         /// </summary>
-        public byte[] MemoryBuffer
+        public byte[][] MemoryBuffer
         {
             get;
             set;
