@@ -12,8 +12,8 @@ using System.Reflection;
 using System.Resources;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyVersion("0.4.1.0")]
-[assembly: AssemblyFileVersion("0.4.1.137")]
+[assembly: AssemblyVersion("0.6.0.0")]
+[assembly: AssemblyFileVersion("0.6.0.0")]
 
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("Microsoft Azure Storage")]

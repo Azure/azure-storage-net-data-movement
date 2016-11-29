@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>Microsoft.Azure.Storage.DataMovement</id>
-    <version>0.4.1.137</version>
+    <version>0.6.0.0</version>
     <title>Microsoft Azure Storage Data Movement Library</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -17,13 +17,13 @@
     <tags>Microsoft, Azure, Storage, Blob, File, DataMovement, Upload, Download, Copy, High-Performance, Scalable, Reliable, windowsazureofficial</tags>
     <dependencies>
       <group targetFramework="net45">
-        <dependency id="Microsoft.Data.Services.Client" version="5.6.4" />
+        <dependency id="Microsoft.Data.Services.Client" version="5.7.0" />
         <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="1.8.0.0" />
-        <dependency id="WindowsAzure.Storage" version="7.2.1" />
+        <!--<dependency id="WindowsAzure.Storage" version="8.0.0-private" />-->
       </group>
       <group targetFramework="netstandard1.3">
         <dependency id="NETStandard.Library" version="1.6.0" />
-        <dependency id="WindowsAzure.Storage" version="7.2.1" />
+        <!--<dependency id="WindowsAzure.Storage" version="8.0.0-private" />-->
       </group>
     </dependencies>
     <frameworkAssemblies>
