@@ -162,10 +162,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Update the memory pool size according to the block size
         /// </summary>
-        /// <param name="blockSize"></param>
-        internal void UpdateMaximumCacheSize(int blockSize)
+        /// <param name="newBlockSize"></param>
+        internal void UpdateMaximumCacheSize(int newBlockSize)
         {
-            this.MaximumCacheSize = (long)3 * blockSize * this.ParallelOperations;
+            this.MaximumCacheSize = (long)3 * newBlockSize * this.ParallelOperations;
         }
     }
 }
