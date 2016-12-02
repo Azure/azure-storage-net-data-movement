@@ -20,6 +20,11 @@ namespace DMLibTest
         {
         }
 
+        public CloudBlobContainer GetBaseContainer()
+        {
+            return BlobHelper.BlobClient.GetContainerReference(ContainerName);
+        }
+
         public override object GetTransferObject(string rootPath, FileNode fileNode, StorageCredentials credentials = null)
         {
             return this.GetCloudBlobReference(rootPath, fileNode, credentials);

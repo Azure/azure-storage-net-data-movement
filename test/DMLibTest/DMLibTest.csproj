@@ -117,6 +117,7 @@
     <Compile Include="Cases\OverwriteTest.cs" />
     <Compile Include="Cases\ProgressHandlerTest.cs" />
     <Compile Include="Cases\ResumeTest.cs" />
+    <Compile Include="Cases\SASTokenVersionTest.cs" />
     <Compile Include="Cases\SearchPatternTest.cs" />
     <Compile Include="Cases\SetAttributesTest.cs" />
     <Compile Include="Cases\ShouldTransferTest.cs" />
@@ -155,6 +156,7 @@
     <Compile Include="Util\DMLibTestHelper.cs" />
     <Compile Include="Util\DMLibTestConstants.cs" />
     <Compile Include="Util\Helpers.cs" />
+    <Compile Include="Util\SASGenerator.cs" />
     <Compile Include="Util\TestAccounts.cs" />
     <Compile Include="@(GeneratedSourceFile)" Condition=" '$(Mode)' == 'Full' " />
   </ItemGroup>
