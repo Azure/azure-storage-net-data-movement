@@ -13,7 +13,7 @@ using System.Resources;
 using System.Runtime.InteropServices;
 
 [assembly: AssemblyVersion("0.4.1.0")]
-[assembly: AssemblyFileVersion("0.4.1.31")]
+[assembly: AssemblyFileVersion("0.4.1.1")]
 
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("Microsoft Azure Storage")]
