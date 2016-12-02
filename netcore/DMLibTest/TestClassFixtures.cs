@@ -133,6 +133,19 @@ namespace DMLibTest
             ResumeTest.MyClassCleanup();
         }
     }
+	
+    public class SASTokenVersionTestFixture : IDisposable
+    {
+        public SASTokenVersionTestFixture()
+        {
+            SASTokenVersionTest.MyClassInitialize(null);
+        }
+
+        public void Dispose()
+        {
+            SASTokenVersionTest.MyClassCleanup();
+        }
+    }
 
     public class SearchPatternTestFixture : IDisposable
     {

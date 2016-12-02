@@ -52,6 +52,11 @@ namespace DMLibTest
             }
         }
 
+        public CloudFileShare GetBaseShare()
+        {
+            return fileHelper.FileClient.GetShareReference(ShareName);
+        }
+
         public override object GetTransferObject(string rootPath, FileNode fileNode, StorageCredentials credentials = null)
         {
             return this.GetCloudFileReference(rootPath, fileNode, credentials);
