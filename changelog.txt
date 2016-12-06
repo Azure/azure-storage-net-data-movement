@@ -1,3 +1,7 @@
+2016.12.06 Version 0.4.1
+ * Blob Service
+   - Fixed an issue that it cannot transfer data with an older version SAS token
+
 2016.11.04 Version 0.4.0
  * All Services
    - Upgraded azure storage client library to 7.2.1
