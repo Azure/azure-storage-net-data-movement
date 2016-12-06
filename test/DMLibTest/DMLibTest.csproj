@@ -123,6 +123,7 @@
     <Compile Include="Cases\SetAttributesTest.cs" />
     <Compile Include="Cases\ShouldTransferTest.cs" />
     <Compile Include="Cases\SnapshotTest.cs" />
+    <Compile Include="Cases\ChunkedMemoryStreamTests.cs" />
     <Compile Include="Cases\UnsupportedDirectionTest.cs" />
     <Compile Include="Framework\AssemblyInitCleanup.cs" />
     <Compile Include="Framework\CopyWrapper.cs" />
