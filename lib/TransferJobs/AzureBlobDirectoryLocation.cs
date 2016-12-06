@@ -128,7 +128,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             catch(AggregateException e)
             {
                 StorageException innnerException = e.Flatten().InnerExceptions[0] as StorageException;
-                if (!Utils.IsExpectedHttpStatusCodes(innnerException, HttpStatusCode.Forbidden))
+
+                // If doesn't have permission to access the container, it might still have proper permission to acess blobs in the container.   
+                // Here swallows the errors that could be possible thrown out when it cannot access the container.  
+                // With some older version of SAS token, it reports error of NotFound (404),  
+                // with other newer version of SAS token, it reports error of Forbidden (403)  
+                // swallows both here.  
+                if (this.BlobDirectory.Container.ServiceClient.Credentials.IsSharedKey
+                    || !Utils.IsExpectedHttpStatusCodes(innnerException, HttpStatusCode.Forbidden, HttpStatusCode.NotFound))
                 {
                     throw;
                 }
