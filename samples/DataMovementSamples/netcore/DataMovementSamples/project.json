@@ -20,7 +20,7 @@
   "frameworks": {
     "netcoreapp1.0": {
       "dependencies": {
-        "Microsoft.Azure.Storage.DataMovement": "0.4.0"
+        "Microsoft.Azure.Storage.DataMovement": "0.4.1"
       },
       "imports": [
         "dnxcore50",
