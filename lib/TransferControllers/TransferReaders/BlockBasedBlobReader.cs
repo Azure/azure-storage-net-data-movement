@@ -314,7 +314,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                var chunksDownloadTasks = new List<Task>();
                 var blockSize = Constants.DefaultBlockSize; // 4MB
 
                 var startOffset = asyncState.StartOffset;
@@ -326,26 +325,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     var length = Math.Min(blockSize, remainingLength);
 
                     var memoryStream = new MemoryStream(asyncState.MemoryBuffer[index], 0, length);
-                    var task = this.sourceBlob.DownloadRangeToStreamAsync(
-                        memoryStream,
-                        startOffset,
-                        length,
-                        accessCondition,
-                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                        Utils.GenerateOperationContext(this.Controller.TransferContext),
-                        this.CancellationToken);
-                    chunksDownloadTasks.Add(task);
+                    await this.sourceBlob.DownloadRangeToStreamAsync(
+                                memoryStream,
+                                startOffset,
+                                length,
+                                accessCondition,
+                                Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                                Utils.GenerateOperationContext(this.Controller.TransferContext),
+                                this.CancellationToken);
 
                     index++;
                     startOffset += length;
                     remainingLength -= length;
-
                 } while (remainingLength > 0);
-
-                //TODO: control the concurrency???
-                //TODO: Fail fast?
-                // Need to wait all task to finish to avoid any potential orphan tasks and normal tasks to have race condition
-                await Task.WhenAll(chunksDownloadTasks.ToArray());
             }
             
             TransferData transferData = new TransferData(this.Scheduler.MemoryManager)
