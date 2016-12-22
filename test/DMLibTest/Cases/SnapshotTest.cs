@@ -167,18 +167,44 @@ namespace DMLibTest.Cases
 #else
             string specialChars = "~`!@#$%()-_+={}[];?.^&";
 #endif
-
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+
+            var subDirWithDot = new DirNode(DMLibTestBase.FolderName + "." + DMLibTestBase.FolderName);
 
             for (int i = 0; i < specialChars.Length; ++i)
             {
                 string fileName = DMLibTestBase.FileName + specialChars[i] + DMLibTestBase.FileName;
 
-                // the 1st file has 1 snapshot
-                DMLibDataHelper.AddOneFileInBytes(sourceDataInfo.RootNode, fileName, 1024);
-                FileNode fileNode1 = sourceDataInfo.RootNode.GetFileNode(fileName);
-                fileNode1.SnapshotsCount = 1;
+                if (random.Next(2) == 0)
+                {
+                    if ((specialChars[i] != '.')
+                        && (random.Next(2) == 0))
+                    {
+                        string folderName = DMLibTestBase.FolderName + specialChars[i] + DMLibTestBase.FolderName;
+
+                        var subDir = new DirNode(folderName);
+                        DMLibDataHelper.AddOneFileInBytes(subDir, fileName, 1024);
+                        FileNode fileNode1 = subDir.GetFileNode(fileName);
+                        fileNode1.SnapshotsCount = 1;
+
+                        sourceDataInfo.RootNode.AddDirNode(subDir);
+                    }
+                    else
+                    {
+                        DMLibDataHelper.AddOneFileInBytes(subDirWithDot, fileName, 1024);
+                        FileNode fileNode1 = subDirWithDot.GetFileNode(fileName);
+                        fileNode1.SnapshotsCount = 1;
+                    }
+                }
+                else
+                {
+                    DMLibDataHelper.AddOneFileInBytes(sourceDataInfo.RootNode, fileName, 1024);
+                    FileNode fileNode1 = sourceDataInfo.RootNode.GetFileNode(fileName);
+                    fileNode1.SnapshotsCount = 1;
+                }
             }
+
+            sourceDataInfo.RootNode.AddDirNode(subDirWithDot);
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.IsDirectoryTransfer = true;

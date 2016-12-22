@@ -317,7 +317,14 @@ namespace DMLibTest
 
                 foreach(DirNode subDirNodeA in dirNodeA.DirNodes)
                 {
+                    Test.Info("Verifying subfolder: {0} ", subDirNodeA.Name);
                     DirNode subDirNodeB = dirNodeB.GetDirNode(subDirNodeA.Name);
+
+                    if (null == subDirNodeB)
+                    {
+                        subDirNodeB = dirNodeB.GetDirNode(DMLibTestHelper.EscapeInvalidCharacters(subDirNodeA.Name));
+                    }
+
                     if (!DMLibDataHelper.Equals(subDirNodeA, subDirNodeB))
                     {
                         return false;

@@ -517,20 +517,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private static void GetBasePathAndExtension(string filePath, out string basePath, out string extension)
         {
-            int index = filePath.LastIndexOf(".");
+            basePath = filePath;
             extension = string.Empty;
 
-            if (-1 == index)
+            if (filePath != null)
             {
-                basePath = filePath;
-            }
-            else
-            {
-                basePath = filePath.Substring(0, index);
-
-                if (index < filePath.Length - 1)
+                for (int i = filePath.Length; --i >= 0;)
                 {
-                    extension = filePath.Substring(index);
+                    char ch = filePath[i];
+                    if (ch == '.')
+                    {
+                        basePath = filePath.Substring(0, i);
+
+                        if (i != filePath.Length - 1)
+                        {
+                            extension = filePath.Substring(i, filePath.Length - i);
+                        }
+                        break;
+                    }
+                    if (ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar || ch == Path.VolumeSeparatorChar) break;
                 }
             }
         }
