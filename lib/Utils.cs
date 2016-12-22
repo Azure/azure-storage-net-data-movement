@@ -483,8 +483,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             return false;
         }
-
-#if DEBUG
+        
         /// <summary>
         /// Append snapshot time to a file name.
         /// </summary>
@@ -497,8 +496,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             if (snapshotTime.HasValue)
             {
-                string pathAndFileNameNoExt = Path.ChangeExtension(fileName, null);
-                string extension = Path.GetExtension(fileName);
+                string pathAndFileNameNoExt, extension;
+                GetBasePathAndExtension(fileName, out pathAndFileNameNoExt, out extension);
+
                 string timeStamp = string.Format(
                     CultureInfo.InvariantCulture,
                     "{0:yyyy-MM-dd HHmmss fff}",
@@ -514,7 +514,26 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             return resultName;
         }
-#endif
+
+        private static void GetBasePathAndExtension(string filePath, out string basePath, out string extension)
+        {
+            int index = filePath.LastIndexOf(".");
+            extension = string.Empty;
+
+            if (-1 == index)
+            {
+                basePath = filePath;
+            }
+            else
+            {
+                basePath = filePath.Substring(0, index);
+
+                if (index < filePath.Length - 1)
+                {
+                    extension = filePath.Substring(index);
+                }
+            }
+        }
 
         private static void AssignToRequestOptions(IRequestOptions targetRequestOptions, IRequestOptions customRequestOptions)
         {

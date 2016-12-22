@@ -156,5 +156,47 @@ namespace DMLibTest.Cases
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(expectedDataInfo, result.DataInfo), "Verify transfer result.");
         }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobSource)]
+        public void TestDirectoryWithSpecialCharNamedBlobs()
+        {
+#if DNXCORE50
+            // TODO: There's a known issue that signature for URI with '[' or ']' doesn't work.
+            string specialChars = "~`!@#$%()-_+={};?.^&";
+#else
+            string specialChars = "~`!@#$%()-_+={}[];?.^&";
+#endif
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+
+            for (int i = 0; i < specialChars.Length; ++i)
+            {
+                string fileName = DMLibTestBase.FileName + specialChars[i] + DMLibTestBase.FileName;
+
+                // the 1st file has 1 snapshot
+                DMLibDataHelper.AddOneFileInBytes(sourceDataInfo.RootNode, fileName, 1024);
+                FileNode fileNode1 = sourceDataInfo.RootNode.GetFileNode(fileName);
+                fileNode1.SnapshotsCount = 1;
+            }
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.IsDirectoryTransfer = true;
+
+            // transfer with IncludeSnapshots = true
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                dynamic dirOptions = DefaultTransferDirectoryOptions;
+                dirOptions.Recursive = true;
+                dirOptions.IncludeSnapshots = true;
+                transferItem.Options = dirOptions;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            // verify that snapshots are transferred
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+        }
     }
 }

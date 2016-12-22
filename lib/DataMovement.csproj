@@ -150,7 +150,6 @@
     <Compile Include="TransferEnumerators\AzureBlobToAzureBlobNameResolver.cs" />
     <Compile Include="TransferEnumerators\FileToAzureFileNameResolver.cs" />
     <Compile Include="TransferEnumerators\ITransferEnumerator.cs" />
-    <Compile Include="TransferEnumerators\NameResolverHelper.cs" />
     <Compile Include="TransferEnumerators\FileToAzureBlobNameResolver.cs" />
     <Compile Include="TransferEnumerators\INameResolver.cs" />
     <Compile Include="TransferEnumerators\ListContinuationToken.cs" />

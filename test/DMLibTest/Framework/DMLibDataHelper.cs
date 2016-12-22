@@ -297,7 +297,19 @@ namespace DMLibTest
                 {
                     FileNode fileNodeB = dirNodeB.GetFileNode(fileNodeA.Name);
 
-                    if (!DMLibDataHelper.Equals(fileNodeA, fileNodeB))
+                    FileNode fileNodeAA = fileNodeA;
+
+                    if (null == fileNodeB)
+                    {
+                        fileNodeB = dirNodeB.GetFileNode(DMLibTestHelper.EscapeInvalidCharacters(fileNodeA.Name));
+
+                        if (null != fileNodeB)
+                        {
+                            fileNodeAA = fileNodeA.Clone(DMLibTestHelper.EscapeInvalidCharacters(fileNodeA.Name));
+                        }
+                    }
+
+                    if (!DMLibDataHelper.Equals(fileNodeAA, fileNodeB))
                     {
                         return false;
                     }
