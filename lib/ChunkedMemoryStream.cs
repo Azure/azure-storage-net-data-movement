@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.length = index + count;
             this.origin = index;
 
-            this.Position = 0;
+            this.SetPosition(0);
         }
 
         public override void Flush()
@@ -208,36 +208,38 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public override long Position
         {
             get { return this.position - this.origin; }
-            set
+            set { SetPosition(value); }
+        }
+
+        private void SetPosition(long value)
+        {
+            var newPosition = this.origin + (int) value;
+            if (newPosition < this.origin || newPosition >= this.length)
             {
-                var newPosition = this.origin + (int)value;
-                if (newPosition < this.origin || newPosition >= this.length)
-                {
-                    throw new ArgumentOutOfRangeException(nameof(value));
-                }
-
-                this.position = newPosition;
-
-                // Find the current chunk & current chunk offset
-                var currentChunkIndex = 0;
-                var offset = newPosition;
-
-                while (offset != 0)
-                {
-                    var chunkLength = this.buffer[currentChunkIndex].Length;
-                    if (offset < chunkLength)
-                    {
-                        // Found the correct chunk and the corresponding offset
-                        break;
-                    }
-
-                    offset -= chunkLength;
-                    currentChunkIndex++;
-                }
-
-                this.currentChunk = currentChunkIndex;
-                this.currentChunkOffset = offset;
+                throw new ArgumentOutOfRangeException(nameof(value));
             }
+
+            this.position = newPosition;
+
+            // Find the current chunk & current chunk offset
+            var currentChunkIndex = 0;
+            var offset = newPosition;
+
+            while (offset != 0)
+            {
+                var chunkLength = this.buffer[currentChunkIndex].Length;
+                if (offset < chunkLength)
+                {
+                    // Found the correct chunk and the corresponding offset
+                    break;
+                }
+
+                offset -= chunkLength;
+                currentChunkIndex++;
+            }
+
+            this.currentChunk = currentChunkIndex;
+            this.currentChunkOffset = offset;
         }
     }
 }
