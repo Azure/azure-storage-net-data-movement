@@ -50,6 +50,8 @@ namespace DMLibTest
             set;
         }
 
+        public int? BlockSize { get; set; }
+
         public StorageCredentials SourceCredentials
         {
             get;

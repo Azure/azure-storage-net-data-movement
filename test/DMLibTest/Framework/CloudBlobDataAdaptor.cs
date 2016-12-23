@@ -174,6 +174,11 @@ namespace DMLibTest
                 StoreBlobContentMD5 = true,
             };
 
+            if (fileNode.BlockSize.HasValue && cloudBlob is CloudBlockBlob)
+            {
+                ((CloudBlockBlob)cloudBlob).StreamWriteSizeInBytes = fileNode.BlockSize.Value;
+            }
+
             cloudBlob.UploadFromFile(localFilePath, null, storeMD5Options);
 
             if (null != fileNode.MD5 ||

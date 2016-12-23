@@ -17,18 +17,19 @@ namespace DMLibTest
 
     internal static class DMLibDataHelper
     {
-        public static void AddOneFile(DirNode dirNode, string fileName, long fileSizeInKB, FileAttributes? fa = null, DateTime? lmt = null)
+        public static void AddOneFile(DirNode dirNode, string fileName, long fileSizeInKB, FileAttributes? fa = null, DateTime? lmt = null, int? blockSize = null)
         {
-            AddOneFileInBytes(dirNode, fileName, 1024L * fileSizeInKB, fa, lmt);
+            AddOneFileInBytes(dirNode, fileName, 1024L * fileSizeInKB, fa, lmt, blockSize);
         }
 
-        public static void AddOneFileInBytes(DirNode dirNode, string fileName, long fileSizeInB, FileAttributes? fa = null, DateTime? lmt = null)
+        public static void AddOneFileInBytes(DirNode dirNode, string fileName, long fileSizeInB, FileAttributes? fa = null, DateTime? lmt = null, int? blockSize = null)
         {
             FileNode fileNode = new FileNode(fileName)
             {
                 SizeInByte = fileSizeInB,
                 FileAttr = fa,
                 LastModifiedTime = lmt,
+                BlockSize = blockSize
             };
 
             dirNode.AddFileNode(fileNode);

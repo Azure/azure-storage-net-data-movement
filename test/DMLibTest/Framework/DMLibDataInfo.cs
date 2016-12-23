@@ -160,6 +160,11 @@ namespace DMLibTest
             set;
         }
 
+        /// <summary>
+        /// For block blob to specify the block size. Optional.
+        /// </summary>
+        public int? BlockSize { get; set; }
+
         public FileAttributes? FileAttr
         {
             get;

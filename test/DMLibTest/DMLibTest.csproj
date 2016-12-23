@@ -110,6 +110,7 @@
     </Compile>
     <Compile Include="Cases\AccessConditionTest.cs" />
     <Compile Include="Cases\AllTransferDirectionTest.cs" />
+    <Compile Include="Cases\BlockSizeTest.cs" />
     <Compile Include="Cases\BigFileTest.cs" />
     <Compile Include="Cases\BVT.cs" />
     <Compile Include="Cases\CheckContentMD5Test.cs" />

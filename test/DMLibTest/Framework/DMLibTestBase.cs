@@ -206,6 +206,11 @@ namespace DMLibTest
                             TransferManager.Configurations.ParallelOperations = DMLibTestConstants.LimitedSpeedNC;
                         }
 
+                        if (options.BlockSize.HasValue)
+                        {
+                            TransferManager.Configurations.BlockSize = options.BlockSize.Value;
+                        }
+
                         allTasks.Add(item, wrapper.DoTransfer(item));
                     }
                     catch (Exception e)
@@ -251,6 +256,7 @@ namespace DMLibTest
                 {
                     OperationContext.GlobalSendingRequest -= this.LimitSpeed;
                     TransferManager.Configurations.ParallelOperations = DMLibTestConstants.DefaultNC;
+                    TransferManager.Configurations.BlockSize = DMLibTestConstants.DefaultBlockSize;
                 }
             }
 
