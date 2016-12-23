@@ -30,7 +30,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             this.buffer = buffer;
             this.length = index + count;
-            this.origin = this.position = index;
+            this.origin = index;
+
+            this.Position = 0;
         }
 
         public override void Flush()
