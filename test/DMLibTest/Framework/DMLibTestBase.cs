@@ -290,6 +290,16 @@ namespace DMLibTest
             return testResult;
         }
 
+
+        public void ValidateDestinationMD5ByDownloading(DMLibDataInfo destDataInfo, TestExecutionOptions<DMLibDataInfo> options)
+        {
+            foreach (var fileNode in destDataInfo.EnumerateFileNodes())
+            {
+                var dest = DestAdaptor.GetTransferObject(destDataInfo.RootPath, fileNode, options.DestCredentials);
+                DestAdaptor.ValidateMD5ByDownloading(dest);
+            }
+        }
+
         public DMLibWrapper GetDMLibWrapper(DMLibDataType sourceType, DMLibDataType destType, bool isServiceCopy)
         {
             if (DMLibTestBase.IsLocal(sourceType))

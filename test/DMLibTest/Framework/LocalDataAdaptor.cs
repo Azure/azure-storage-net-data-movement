@@ -66,6 +66,11 @@ namespace DMLibTest
             this.GenerateDir(dataInfo.RootNode, Path.Combine(this.BasePath, dataInfo.RootPath));
         }
 
+        public override void ValidateMD5ByDownloading(object file)
+        {
+            throw new NotSupportedException();
+        }
+
         public override DMLibDataInfo GetTransferDataInfo(string rootDir)
         {
             DirectoryInfo rootDirInfo = new DirectoryInfo(Path.Combine(this.BasePath, rootDir));

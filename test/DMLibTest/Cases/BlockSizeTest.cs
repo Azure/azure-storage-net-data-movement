@@ -71,13 +71,15 @@ namespace DMLibTest
                 DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + i, i);
             }
 
-            var result = this.ExecuteTestCase(sourceDataInfo, new TestExecutionOptions<DMLibDataInfo>()
+            var options = new TestExecutionOptions<DMLibDataInfo>()
             {
                 BlockSize = 8 * 1024 * 1024 // 8MB
-            });
+            };
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            this.ValidateDestinationMD5ByDownloading(result.DataInfo, options);
         }
 
         [TestCategory(Tag.Function)]
@@ -92,13 +94,15 @@ namespace DMLibTest
                 DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + i, i);
             }
 
-            var result = this.ExecuteTestCase(sourceDataInfo, new TestExecutionOptions<DMLibDataInfo>()
+            var options = new TestExecutionOptions<DMLibDataInfo>()
             {
                 BlockSize = 100 * 1024 * 1024 // 100MB
-            });
+            };
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            this.ValidateDestinationMD5ByDownloading(result.DataInfo, options);
         }
 
         [TestCategory(Tag.Function)]
@@ -113,13 +117,15 @@ namespace DMLibTest
                 DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + i, i);
             }
 
-            var result = this.ExecuteTestCase(sourceDataInfo, new TestExecutionOptions<DMLibDataInfo>()
+            var options = new TestExecutionOptions<DMLibDataInfo>()
             {
                 BlockSize = 100 * 1024 * 1024 // 100MB
-            });
+            };
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            this.ValidateDestinationMD5ByDownloading(result.DataInfo, options);
         }
 
         [TestCategory(Tag.Function)]
@@ -134,13 +140,15 @@ namespace DMLibTest
                 DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + i, i);
             }
 
-            var result = this.ExecuteTestCase(sourceDataInfo, new TestExecutionOptions<DMLibDataInfo>()
+            var options = new TestExecutionOptions<DMLibDataInfo>()
             {
                 BlockSize = 8 * 1024 * 1024 // 100MB
-            });
+            };
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            this.ValidateDestinationMD5ByDownloading(result.DataInfo, options);
         }
 
         [TestCategory(Tag.Function)]
@@ -156,13 +164,16 @@ namespace DMLibTest
                 DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + i, i);
             }
 
-            var result = this.ExecuteTestCase(sourceDataInfo, new TestExecutionOptions<DMLibDataInfo>()
+            var options = new TestExecutionOptions<DMLibDataInfo>()
             {
                 BlockSize = 40 * 1024 * 1024 // 100MB
-            });
+            };
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+
+            this.ValidateDestinationMD5ByDownloading(result.DataInfo, options);
         }
 
         [TestCategory(Tag.Function)]
@@ -178,13 +189,17 @@ namespace DMLibTest
                 DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + i, i);
             }
 
-            var result = this.ExecuteTestCase(sourceDataInfo, new TestExecutionOptions<DMLibDataInfo>()
+            var options = new TestExecutionOptions<DMLibDataInfo>()
             {
-                BlockSize = 60 * 1024 * 1024 // 100MB
-            });
+                BlockSize = 60*1024*1024 // 100MB
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+
+            this.ValidateDestinationMD5ByDownloading(result.DataInfo, options);
         }
     }
 }

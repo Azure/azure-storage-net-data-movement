@@ -104,6 +104,15 @@ namespace DMLibTest
             throw new NotSupportedException("WaitForGEO is not supported in CloudFileDataAdaptor.");
         }
 
+        public override void ValidateMD5ByDownloading(object file)
+        {
+            ((CloudFile)file).DownloadToStream(Stream.Null, null, new FileRequestOptions()
+            {
+                DisableContentMD5Validation = false,
+                UseTransactionalMD5 = true
+            });
+        }
+
         public string MountFileShare()
         {
             this.fileHelper.CreateShare(this.shareName);

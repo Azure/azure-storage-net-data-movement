@@ -35,6 +35,15 @@ namespace DMLibTest
             return this.GetCloudBlobDirReference(rootPath, dirNode, credentials);
         }
 
+        public override void ValidateMD5ByDownloading(object file)
+        {
+            ((CloudBlob)file).DownloadToStream(Stream.Null, null, new BlobRequestOptions()
+            {
+                DisableContentMD5Validation = false,
+                UseTransactionalMD5 = true
+            });
+        }
+
         protected override void GenerateDataImp(DMLibDataInfo dataInfo)
         {
             this.BlobHelper.CreateContainer(this.ContainerName);

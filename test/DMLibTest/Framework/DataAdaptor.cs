@@ -34,6 +34,8 @@ namespace DMLibTest
 
         public abstract void WaitForGEO();
 
+        public abstract void ValidateMD5ByDownloading(object file);
+
         public void GenerateData(TDataInfo dataInfo)
         {
             this.GenerateDataImp(dataInfo);

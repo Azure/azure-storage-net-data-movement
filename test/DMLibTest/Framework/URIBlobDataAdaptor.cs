@@ -34,6 +34,11 @@ namespace DMLibTest
             return result;
         }
 
+        public override void ValidateMD5ByDownloading(object file)
+        {
+            throw new NotSupportedException();
+        }
+
         public override object GetTransferObject(string rootPath, DirNode dirNode, StorageCredentials credentials = null)
         {
             throw new InvalidOperationException("Can't get directory transfer object in URI data adaptor.");
