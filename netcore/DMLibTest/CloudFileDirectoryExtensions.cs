@@ -1,6 +1,8 @@
 ﻿using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.File;
 using System.Collections.Generic;
+using System;
+using System.Net;
 
 namespace DMLibTest
 {
@@ -8,7 +10,25 @@ namespace DMLibTest
     {
         public static bool CreateIfNotExists(this CloudFileDirectory dir, FileRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
-            return dir.CreateIfNotExistsAsync(requestOptions, operationContext).GetAwaiter().GetResult();
+            try
+            {
+                return dir.CreateIfNotExistsAsync(requestOptions, operationContext).GetAwaiter().GetResult();
+            }
+            catch (StorageException se)
+            {
+                // Creation against root directory throws 405 exception,
+                // here swallow the error.
+                if (null != se
+                    && null != se.RequestInformation
+                    && se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.MethodNotAllowed)
+                {
+                    return true;
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         public static void Delete(this CloudFileDirectory dir, AccessCondition accessCondition = null, FileRequestOptions options = null, OperationContext operationContext = null)

@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
+    using System;
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using MS.Test.Common.MsTestLib;
