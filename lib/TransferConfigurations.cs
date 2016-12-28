@@ -16,7 +16,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     public class TransferConfigurations
     {
         /// <summary>
-        /// Stores the BlockSize to use for Windows Azure Storage transfers.
+        /// Stores the BlockSize to use for Windows Azure Storage transfers to block blob(s).
+        /// It must be between 4MB and 100MB and be multiple of 4MB.
         /// </summary>
         private int blockSize;
 
@@ -77,7 +78,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Gets or sets the BlockSize to use for Windows Azure Storage transfers.
+        /// Gets or sets the BlockSize to use for Windows Azure Storage transfers to block blob(s). 
+        /// It must be between 4MB and 100MB and be multiple of 4MB.
+        /// 
+        /// Currently, the max block count of a block blob is limited to 50000.
+        /// When transfering a big file and the BlockSize provided is smaller than the minimum value - (size/50000),
+        /// it'll be reset to a value which is greater than the minimum value and multiple of 4MB for this file.
         /// </summary>
         /// <value>BlockSize to use for Windows Azure Storage transfers.</value>
         public int BlockSize
