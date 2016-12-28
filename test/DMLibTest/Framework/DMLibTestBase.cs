@@ -256,8 +256,8 @@ namespace DMLibTest
                 {
                     OperationContext.GlobalSendingRequest -= this.LimitSpeed;
                     TransferManager.Configurations.ParallelOperations = DMLibTestConstants.DefaultNC;
-                    TransferManager.Configurations.BlockSize = DMLibTestConstants.DefaultBlockSize;
                 }
+                TransferManager.Configurations.BlockSize = DMLibTestConstants.DefaultBlockSize;
             }
 
             Parallel.ForEach(allTasks, pair =>

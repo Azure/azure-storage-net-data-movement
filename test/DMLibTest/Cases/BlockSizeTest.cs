@@ -18,7 +18,7 @@ namespace DMLibTest
         #region Initialization and cleanup methods
 
 #if DNXCORE50
-        public BlockSizeTests()
+        public BlockSizeTest()
         {
             MyTestInitialize();
         }
