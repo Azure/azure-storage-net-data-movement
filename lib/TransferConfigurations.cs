@@ -8,6 +8,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System;
     using System.Globalization;
     using System.Reflection;
+    using System.Runtime.InteropServices;
     using ClientLibraryConstants = Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants;
 
     /// <summary>
@@ -153,7 +154,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 }
                 else
                 {
+#if DOTNET5_4
+                    if (8 == Marshal.SizeOf(new IntPtr()))
+#else
                     if (Environment.Is64BitProcess)
+#endif
                     {
                         this.maximumCacheSize = Math.Min(value, (long) (this.memStatus.AvailablePhysicalMemory * Constants.MemoryCacheMultiplier));
                     }
