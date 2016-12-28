@@ -147,7 +147,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 }
                 else
                 {
-                    this.maximumCacheSize = Math.Min(value, (long)(this.memStatus.AvailablePhysicalMemory * Constants.MemoryCacheMultiplier));
+                    if (Environment.Is64BitProcess)
+                    {
+                        this.maximumCacheSize = Math.Min(value, (long) (this.memStatus.AvailablePhysicalMemory * Constants.MemoryCacheMultiplier));
+                    }
+                    else
+                    {
+                        this.maximumCacheSize = Math.Min(value,
+                            Math.Min((long) (this.memStatus.AvailablePhysicalMemory*Constants.MemoryCacheMultiplier), Constants.MemoryCacheMaximum));
+                    }
                 }
 
                 TransferManager.SetMemoryLimitation(this.maximumCacheSize);
