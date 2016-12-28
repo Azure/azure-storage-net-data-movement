@@ -15,7 +15,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     public static class Constants
     {
         /// <summary>
-        /// Stores the max block size, 4MB.
+        /// Stores the max block size, 100MB.
         /// </summary>
         public const int MaxBlockSize = 100 * 1024 * 1024;
 
