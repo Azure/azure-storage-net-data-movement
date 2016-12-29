@@ -13,14 +13,14 @@
       "type": "platform",
       "version": "1.0.0"
     },
-    "WindowsAzure.Storage": "7.2.1",
+    "WindowsAzure.Storage": "8.0.0",
     "System.Runtime.Serialization.Xml": "4.1.1",
     "Newtonsoft.Json": "9.0.1"
   },
   "frameworks": {
     "netcoreapp1.0": {
       "dependencies": {
-        "Microsoft.Azure.Storage.DataMovement": "0.4.1"
+        "Microsoft.Azure.Storage.DataMovement": "0.5.0"
       },
       "imports": [
         "dnxcore50",
