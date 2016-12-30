@@ -18,7 +18,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// DownloadToStream and DownloadRangeToStream, as these methods
         /// requires a stream and doesn't allow for a byte array as input.
         /// </summary>
-        public MemoryStream MemoryStream
+        public Stream MemoryStream
         {
             get;
             set;
@@ -52,7 +52,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                 if (null != this.MemoryBuffer)
                 {
-                    this.MemoryManager.ReleaseBuffer(this.MemoryBuffer);
+                    this.MemoryManager.ReleaseBuffers(this.MemoryBuffer);
                     this.MemoryManager = null;
                 }
             }

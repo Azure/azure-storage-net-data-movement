@@ -226,12 +226,92 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             try
             {
                 this.stream.Position = readOffset;
-
+                
                 return await this.stream.ReadAsync(
                     buffer,
                     offset,
                     count,
                     cancellationToken);
+            }
+            finally
+            {
+                this.ReleaseSemaphore();
+            }
+        }
+
+
+        /// <summary>
+        /// Begin async read from stream.
+        /// </summary>
+        /// <param name="readOffset">Offset in stream to read from.</param>
+        /// <param name="buffers">The buffers to read the data into.</param>
+        /// <param name="offset">The byte offset in buffers at which to begin writing data read from the stream.</param>
+        /// <param name="count">The maximum number of bytes to read.</param>
+        /// <param name="cancellationToken">Token used to cancel the asynchronous reading.</param>
+        /// <returns>A task that represents the asynchronous read operation. The value of the
+        /// <c>TResult</c> parameter contains the total number of bytes read into the buffers.</returns>
+        public async Task<int> ReadAsync(long readOffset, byte[][] buffers, int offset, int count, CancellationToken cancellationToken)
+        {
+            if (buffers.Length == 1)
+            {
+                return await this.ReadAsync(readOffset, buffers[0], offset, count, cancellationToken);
+            }
+
+            await this.WaitOnSemaphoreAsync(cancellationToken);
+
+            try
+            {
+                this.stream.Position = readOffset;
+
+                var currentChunk = 0;
+                var currentChunkOffset = 0;
+
+                // Seek to the correct chunk and offset
+                while (offset != 0 && currentChunk != buffers.Length)
+                {
+                    if (buffers[currentChunk].Length > offset)
+                    {
+                        // Found the correct chunk and it's offset
+                        currentChunkOffset = offset;
+                        break;
+                    }
+
+                    // Move to next chunk
+                    offset -= buffers[currentChunk].Length;
+                    currentChunk += 1;
+                    currentChunkOffset = 0;
+                }
+
+                var totalBytesRead = 0;
+                // Read the data to the buffers from the underlying stream
+                while (count != 0 && currentChunk != buffers.Length)
+                {
+                    var remainingCountInCurrentChunk = buffers[currentChunk].Length - currentChunkOffset;
+                    var bytesToRead = Math.Min(remainingCountInCurrentChunk, count);
+
+                    var bytesRead = await this.stream.ReadAsync(
+                        buffers[currentChunk],
+                        currentChunkOffset,
+                        bytesToRead,
+                        cancellationToken);
+
+                    if (bytesRead < bytesToRead)
+                    {
+                        // No data anymore
+                        break;
+                    }
+
+                    if (remainingCountInCurrentChunk <= count)
+                    {
+                        // Move to next chunk
+                        currentChunk++;
+                        currentChunkOffset = 0;
+                    }
+
+                    totalBytesRead += bytesRead;
+                    count -= bytesRead;
+                }
+                return totalBytesRead;
             }
             finally
             {
@@ -260,6 +340,76 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     offset,
                     count,
                     cancellationToken);
+            }
+            finally
+            {
+                this.ReleaseSemaphore();
+            }
+        }
+
+        /// <summary>
+        /// Begin async write to stream.
+        /// </summary>
+        /// <param name="writeOffset">Offset in stream to write to.</param>
+        /// <param name="buffers">The buffers to write the data from.</param>
+        /// <param name="offset">The byte offset in buffers from which to begin writing.</param>
+        /// <param name="count">The maximum number of bytes to write.</param>
+        /// <param name="cancellationToken">Token used to cancel the asynchronous writing.</param>
+        /// <returns>A task that represents the asynchronous write operation.</returns>
+        public async Task WriteAsync(long writeOffset, byte[][] buffers, int offset, int count, CancellationToken cancellationToken)
+        {
+            if (buffers.Length == 1)
+            {
+                await this.WriteAsync(writeOffset, buffers[0], offset, count, cancellationToken);
+                return;
+            }
+
+            await this.WaitOnSemaphoreAsync(cancellationToken);
+
+            try
+            {
+                this.stream.Position = writeOffset;
+
+                //TODO: Duplication of code
+                var currentChunk = 0;
+                var currentChunkOffset = 1;
+
+                // Seek to the correct chunk and offset
+                while (offset != 0 && currentChunk != buffers.Length)
+                {
+                    if (buffers[currentChunk].Length > offset)
+                    {
+                        // Found the correct chunk and it's offset
+                        currentChunkOffset = offset;
+                        break;
+                    }
+
+                    // Move to next chunk
+                    offset -= buffers[currentChunk].Length;
+                    currentChunk += 1;
+                    currentChunkOffset = 0;
+                }
+                
+                // Write the data of the buffers to the underlying stream
+                while (count != 0 && currentChunk != buffers.Length)
+                {
+                    var remainingCountInCurrentChunk = buffers[currentChunk].Length - currentChunkOffset;
+                    var bytesToWrite = Math.Min(remainingCountInCurrentChunk, count);
+
+                    await this.stream.WriteAsync(
+                        buffers[currentChunk],
+                        currentChunkOffset,
+                        bytesToWrite,
+                        cancellationToken);
+
+                    if (remainingCountInCurrentChunk <= count)
+                    {
+                        // Move to next chunk
+                        currentChunk++;
+                        currentChunkOffset = 0;
+                    }
+                    count -= bytesToWrite;
+                }
             }
             finally
             {
@@ -315,6 +465,103 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     "The separate thread to calculate MD5 hash should have finished or md5hashOffset should get updated.");
 
                 this.md5hash.UpdateHash(inputBuffer, inputOffset, inputCount);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Computes the hash value for the specified region of the input byte array
+        /// and copies the specified region of the input byte array to the specified
+        /// region of the output byte array.
+        /// </summary>
+        /// <param name="streamOffset">Offset in stream of the block on which to calculate MD5 hash.</param>
+        /// <param name="inputBuffer">The input to compute the hash code for.</param>
+        /// <param name="inputOffset">The offset into the input byte array from which to begin using data.</param>
+        /// <param name="inputCount">The number of bytes in the input byte array to use as data.</param>
+        /// <returns>Whether succeeded in calculating MD5 hash 
+        /// or not finished the separate thread to calculate MD5 hash at the time. </returns>
+        public bool MD5HashTransformBlock(long streamOffset, byte[][] inputBuffer, int inputOffset, int inputCount)
+        {
+            if (null == this.md5hash)
+            {
+                return true;
+            }
+
+            if (inputBuffer.Length == 1)
+            {
+                return this.MD5HashTransformBlock(streamOffset, inputBuffer[0], inputOffset, inputCount);
+            }
+
+            if (!this.finishedSeparateMd5Calculator)
+            {
+                lock (this.md5hash)
+                {
+                    if (!this.finishedSeparateMd5Calculator)
+                    {
+                        if (streamOffset == this.md5hashOffset)
+                        {
+                            this.md5hashOffset += inputCount;
+                        }
+
+                        return true;
+                    }
+                    else
+                    {
+                        if (!this.succeededSeparateMd5Calculator)
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            if (streamOffset >= this.md5hashOffset)
+            {
+                Debug.Assert(
+                    this.finishedSeparateMd5Calculator,
+                    "The separate thread to calculate MD5 hash should have finished or md5hashOffset should get updated.");
+                
+                //TODO: Duplication of code
+                var currentChunk = 0;
+                var currentChunkOffset = 0;
+
+                // Seek to the correct chunk and offset
+                while (inputOffset != 0 && currentChunk != inputBuffer.Length)
+                {
+                    if (inputBuffer[currentChunk].Length > inputOffset)
+                    {
+                        // Found the correct chunk and it's offset
+                        currentChunkOffset = inputOffset;
+                        break;
+                    }
+
+                    // Move to next chunk
+                    inputOffset -= inputBuffer[currentChunk].Length;
+                    currentChunk += 1;
+                    currentChunkOffset = 0;
+                }
+
+
+                // Write the data of the buffers to the underlying stream
+                while (inputCount != 0 && currentChunk != inputBuffer.Length)
+                {
+                    var remainingCountInCurrentChunk = inputBuffer[currentChunk].Length - currentChunkOffset;
+                    var bytesToTransfer = Math.Min(remainingCountInCurrentChunk, inputCount);
+
+                    this.md5hash.UpdateHash(
+                        inputBuffer[currentChunk],
+                        currentChunkOffset,
+                        bytesToTransfer);
+
+                    if (remainingCountInCurrentChunk <= inputCount)
+                    {
+                        // Move to next chunk
+                        currentChunk++;
+                        currentChunkOffset = 0;
+                    }
+                    inputCount -= bytesToTransfer;
+                }
             }
 
             return true;

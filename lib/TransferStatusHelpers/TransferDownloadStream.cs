@@ -14,11 +14,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     class TransferDownloadStream : Stream
     {
         TransferDownloadBuffer firstBuffer;
-        MemoryStream firstStream;
+        Stream firstStream;
         int firstOffset;
 
         TransferDownloadBuffer secondBuffer;
-        MemoryStream secondStream;
+        Stream secondStream;
         int secondOffset;
 
         bool onSecondStream = false;
@@ -42,13 +42,29 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.memoryManager = memoryManager;
             this.firstBuffer = firstBuffer;
             this.firstOffset = firstOffset;
-            this.firstStream = new MemoryStream(this.firstBuffer.MemoryBuffer, firstOffset, firstCount);
+
+            if (firstBuffer.MemoryBuffer.Length == 1)
+            {
+                this.firstStream = new MemoryStream(this.firstBuffer.MemoryBuffer[0], firstOffset, firstCount);
+            }
+            else
+            {
+                this.firstStream = new ChunkedMemoryStream(this.firstBuffer.MemoryBuffer, firstOffset, firstCount);
+            }
 
             if (null != secondBuffer)
             {
                 this.secondBuffer = secondBuffer;
                 this.secondOffset = secondOffset;
-                this.secondStream = new MemoryStream(this.secondBuffer.MemoryBuffer, secondOffset, secondCount);
+
+                if (secondBuffer.MemoryBuffer.Length == 1)
+                {
+                    this.secondStream = new MemoryStream(this.secondBuffer.MemoryBuffer[0], secondOffset, secondCount);
+                }
+                else
+                {
+                    this.secondStream = new ChunkedMemoryStream(this.secondBuffer.MemoryBuffer, secondOffset, secondCount);
+                }
             }
         }
 
@@ -195,11 +211,65 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         public void SetAllZero()
         {
-            Array.Clear(this.firstBuffer.MemoryBuffer, this.firstOffset, (int)this.firstStream.Length);
+            if (this.firstBuffer.MemoryBuffer.Length == 1)
+            {
+                Array.Clear(this.firstBuffer.MemoryBuffer[0], this.firstOffset, (int) this.firstStream.Length);
+            }
+            else
+            {
+                SetAllZero(this.firstBuffer.MemoryBuffer, this.firstOffset, (int)this.firstStream.Length);
+            }
 
             if (null != this.secondBuffer)
             {
-                Array.Clear(this.secondBuffer.MemoryBuffer, this.secondOffset, (int)this.secondStream.Length);
+                if (this.secondBuffer.MemoryBuffer.Length == 1)
+                {
+                    Array.Clear(this.secondBuffer.MemoryBuffer[0], this.secondOffset, (int) this.secondStream.Length);
+                }
+                else
+                {
+                    SetAllZero(this.secondBuffer.MemoryBuffer, this.secondOffset, (int)this.secondStream.Length);
+                }
+            }
+        }
+
+        private static void SetAllZero(byte[][] buffers, int offset, int length)
+        {
+            //TODO: Duplicate code
+            var currentChunk = 0;
+            var currentChunkOffset = 0;
+
+            // Seek to the correct chunk and offset
+            while (offset != 0 && currentChunk != buffers.Length)
+            {
+                if (buffers[currentChunk].Length > offset)
+                {
+                    // Found the correct chunk and it's offset
+                    currentChunkOffset = offset;
+                    break;
+                }
+
+                // Move to next chunk
+                offset -= buffers[currentChunk].Length;
+                currentChunk += 1;
+                currentChunkOffset = 0;
+            }
+
+            while (length != 0 && currentChunk != buffers.Length)
+            {
+                var remainingCountInCurrentChunk = buffers[currentChunk].Length - currentChunkOffset;
+                var bytesToClear = Math.Min(remainingCountInCurrentChunk, length);
+
+                Array.Clear(buffers[currentChunk], currentChunkOffset, bytesToClear);
+
+                if (remainingCountInCurrentChunk <= length)
+                {
+                    // Move to next chunk
+                    currentChunk++;
+                    currentChunkOffset = 0;
+                }
+
+                length -= bytesToClear;
             }
         }
 
@@ -246,13 +316,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 {
                     if (null != this.firstBuffer)
                     {
-                        this.memoryManager.ReleaseBuffer(this.firstBuffer.MemoryBuffer);
+                        this.memoryManager.ReleaseBuffers(this.firstBuffer.MemoryBuffer);
                         this.firstBuffer = null;
                     }
 
                     if (null != this.secondBuffer)
                     {
-                        this.memoryManager.ReleaseBuffer(this.secondBuffer.MemoryBuffer);
+                        this.memoryManager.ReleaseBuffers(this.secondBuffer.MemoryBuffer);
                         this.secondBuffer = null;
                     }
                 }

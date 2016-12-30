@@ -281,7 +281,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 Range rangeData = this.rangeList[this.nextDownloadIndex];
 
-                int blockSize = this.Scheduler.TransferOptions.BlockSize;
+                int blockSize = this.SharedTransferData.BlockSize;
                 long blockStartOffset = (rangeData.StartOffset / blockSize) * blockSize;
                 long nextBlockStartOffset = Math.Min(blockStartOffset + blockSize, this.SharedTransferData.TotalLength);
 
@@ -296,7 +296,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 {
                     // Attempt to reserve memory. If none available we'll
                     // retry some time later.
-                    byte[] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffer();
+                    byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
 
                     if (null == memoryBuffer)
                     {
@@ -318,14 +318,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                                 if (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
                                 {
                                     this.transferJob.CheckPoint.TransferWindow.Add(this.transferJob.CheckPoint.EntryTransferOffset);
-                                    this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(this.transferJob.CheckPoint.EntryTransferOffset + this.Scheduler.TransferOptions.BlockSize, this.SharedTransferData.TotalLength);
+                                    this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(this.transferJob.CheckPoint.EntryTransferOffset + blockSize, this.SharedTransferData.TotalLength);
                                 }
                             }
                         }
 
                         if (!canRead)
                         {
-                            this.Scheduler.MemoryManager.ReleaseBuffer(memoryBuffer);
+                            this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
                             this.SetRangeDownloadHasWork();
                             return;
                         }
@@ -460,7 +460,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.nextDownloadIndex = 0;
 
             SingleObjectCheckpoint checkpoint = this.transferJob.CheckPoint;
-            int blockSize = this.Scheduler.TransferOptions.BlockSize;
+            int blockSize = this.SharedTransferData.BlockSize;
 
             RangesSpan rangesSpan = null;
 
@@ -566,6 +566,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             long currentEndOffset = -1;
 
+            // 1st RangesSpan (148MB)
             IEnumerator<RangesSpan> enumerator = this.rangesSpanList.GetEnumerator();
             bool hasValue = enumerator.MoveNext();
             bool reachLastTransferOffset = false;
@@ -576,20 +577,24 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             if (hasValue)
             {
+                // 1st 148MB
                 current = enumerator.Current;
 
                 while (hasValue)
                 {
                     hasValue = enumerator.MoveNext();
 
+                    // 1st 148MB doesn't have any data
                     if (!current.Ranges.Any())
                     {
+                        // 2nd 148MB
                         current = enumerator.Current;
                         continue;
                     }
 
                     if (hasValue)
                     {
+                        // 2nd 148MB
                         next = enumerator.Current;
                         
                         Debug.Assert(
@@ -597,8 +602,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             || ((current.EndOffset + 1) == next.StartOffset),
                             "Something wrong with ranges list.");
 
+                        // Both 1st 148MB & 2nd 148MB has data
                         if (next.Ranges.Any())
                         {
+                            // They are connected, merge the range
                             if ((current.Ranges.Last().EndOffset + 1) == next.Ranges.First().StartOffset)
                             {
                                 Range mergedRange = new Range()
@@ -608,8 +615,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                                     HasData = true
                                 };
 
+                                // Remove the last range in 1st 148MB and first range in 2nd 148MB
                                 current.Ranges.RemoveAt(current.Ranges.Count - 1);
                                 next.Ranges.RemoveAt(0);
+
+                                // Add the merged range to 1st *148MB* (not 148MB anymore)
                                 current.Ranges.Add(mergedRange);
                                 current.EndOffset = mergedRange.EndOffset;
                                 next.StartOffset = mergedRange.EndOffset + 1;
@@ -628,6 +638,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         // If so we'll generate a range with HasData = false.
                         if (currentEndOffset != range.StartOffset - 1)
                         {
+                            // Add empty ranges based on gaps
                             this.AddRangesByCheckPoint(
                                 currentEndOffset + 1,
                                 range.StartOffset - 1,
@@ -672,7 +683,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         StartOffset = startOffset,
                         EndOffset = endOffset,
                         HasData = hasData,
-                    }.SplitRanges(this.Scheduler.TransferOptions.BlockSize));
+                    }.SplitRanges(Constants.DefaultBlockSize));
             }
             else
             {
@@ -685,7 +696,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 while (lastTransferWindowIndex < checkpoint.TransferWindow.Count)
                 {
                     long lastTransferWindowStart = checkpoint.TransferWindow[lastTransferWindowIndex];
-                    long lastTransferWindowEnd = Math.Min(checkpoint.TransferWindow[lastTransferWindowIndex] + this.Scheduler.TransferOptions.BlockSize - 1, this.SharedTransferData.TotalLength);
+                    long lastTransferWindowEnd = Math.Min(checkpoint.TransferWindow[lastTransferWindowIndex] + this.SharedTransferData.BlockSize - 1, this.SharedTransferData.TotalLength);
 
                     if (lastTransferWindowStart <= endOffset)
                     {
@@ -700,7 +711,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             if (range.EndOffset != lastTransferWindowStart - 1)
                             {
                                 // Store the previous range and create a new one
-                                this.rangeList.AddRange(range.SplitRanges(this.Scheduler.TransferOptions.BlockSize));
+                                this.rangeList.AddRange(range.SplitRanges(Constants.DefaultBlockSize));
                                 range = new Range()
                                 {
                                     StartOffset = Math.Max(lastTransferWindowStart, startOffset),
@@ -724,7 +735,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 if (-1 != range.StartOffset)
                 {
-                    this.rangeList.AddRange(range.SplitRanges(this.Scheduler.TransferOptions.BlockSize));
+                    this.rangeList.AddRange(range.SplitRanges(Constants.DefaultBlockSize));
                 }
 
                 if (checkpoint.EntryTransferOffset <= endOffset + 1)
@@ -738,7 +749,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             StartOffset = checkpoint.EntryTransferOffset,
                             EndOffset = endOffset,
                             HasData = hasData,
-                        }.SplitRanges(this.Scheduler.TransferOptions.BlockSize));
+                        }.SplitRanges(Constants.DefaultBlockSize));
                     }
                 }
             }

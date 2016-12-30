@@ -17,18 +17,19 @@ namespace DMLibTest
 
     internal static class DMLibDataHelper
     {
-        public static void AddOneFile(DirNode dirNode, string fileName, long fileSizeInKB, FileAttributes? fa = null, DateTime? lmt = null)
+        public static void AddOneFile(DirNode dirNode, string fileName, long fileSizeInKB, FileAttributes? fa = null, DateTime? lmt = null, int? blockSize = null)
         {
-            AddOneFileInBytes(dirNode, fileName, 1024L * fileSizeInKB, fa, lmt);
+            AddOneFileInBytes(dirNode, fileName, 1024L * fileSizeInKB, fa, lmt, blockSize);
         }
 
-        public static void AddOneFileInBytes(DirNode dirNode, string fileName, long fileSizeInB, FileAttributes? fa = null, DateTime? lmt = null)
+        public static void AddOneFileInBytes(DirNode dirNode, string fileName, long fileSizeInB, FileAttributes? fa = null, DateTime? lmt = null, int? blockSize = null)
         {
             FileNode fileNode = new FileNode(fileName)
             {
                 SizeInByte = fileSizeInB,
                 FileAttr = fa,
                 LastModifiedTime = lmt,
+                BlockSize = blockSize
             };
 
             dirNode.AddFileNode(fileNode);
@@ -297,7 +298,19 @@ namespace DMLibTest
                 {
                     FileNode fileNodeB = dirNodeB.GetFileNode(fileNodeA.Name);
 
-                    if (!DMLibDataHelper.Equals(fileNodeA, fileNodeB))
+                    FileNode fileNodeAA = fileNodeA;
+
+                    if (null == fileNodeB)
+                    {
+                        fileNodeB = dirNodeB.GetFileNode(DMLibTestHelper.EscapeInvalidCharacters(fileNodeA.Name));
+
+                        if (null != fileNodeB)
+                        {
+                            fileNodeAA = fileNodeA.Clone(DMLibTestHelper.EscapeInvalidCharacters(fileNodeA.Name));
+                        }
+                    }
+
+                    if (!DMLibDataHelper.Equals(fileNodeAA, fileNodeB))
                     {
                         return false;
                     }
@@ -305,7 +318,14 @@ namespace DMLibTest
 
                 foreach(DirNode subDirNodeA in dirNodeA.DirNodes)
                 {
+                    Test.Info("Verifying subfolder: {0} ", subDirNodeA.Name);
                     DirNode subDirNodeB = dirNodeB.GetDirNode(subDirNodeA.Name);
+
+                    if (null == subDirNodeB)
+                    {
+                        subDirNodeB = dirNodeB.GetDirNode(DMLibTestHelper.EscapeInvalidCharacters(subDirNodeA.Name));
+                    }
+
                     if (!DMLibDataHelper.Equals(subDirNodeA, subDirNodeB))
                     {
                         return false;

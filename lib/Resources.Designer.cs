@@ -11,7 +11,7 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement {
     using System;
     using System.Reflection;
-
+    
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.
     /// </summary>
@@ -111,6 +111,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         internal static string BlockBlob {
             get {
                 return ResourceManager.GetString("BlockBlob", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to BlockSize must be multiple of 4MB..
+        /// </summary>
+        internal static string BlockSizeMustBeMultipleOf4MB {
+            get {
+                return ResourceManager.GetString("BlockSizeMustBeMultipleOf4MB", resourceCulture);
             }
         }
         

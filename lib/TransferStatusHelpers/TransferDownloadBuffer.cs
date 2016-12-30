@@ -14,7 +14,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private int processed = 0;
 
-        public TransferDownloadBuffer(long startOffset, int expectedLength, byte[] buffer)
+        public TransferDownloadBuffer(long startOffset, int expectedLength, byte[][] buffer)
         {
             this.Length = expectedLength;
             this.StartOffset = startOffset;
@@ -33,7 +33,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             private set;
         }
 
-        public byte[] MemoryBuffer
+        public byte[][] MemoryBuffer
         {
             get;
             private set;

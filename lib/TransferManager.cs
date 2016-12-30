@@ -45,7 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 // User agent string format: [UserAgentPrefix] <DMLib product token> <XSCL product token>
                 // e.g. Suppose UserAgentPrefix is "MyApp", the overall user agent string would be like
-                // 'MyApp DataMovement/0.4.1.0 WA-Storage/7.2.1 (.NET CLR 4.0.30319.34014; Win32NT 6.2.9200.0)' 
+                // 'MyApp DataMovement/0.5.0.0 WA-Storage/8.0.0 (.NET CLR 4.0.30319.34014; Win32NT 6.2.9200.0)' 
                 string userAgent = Constants.UserAgent + " " + Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent;
 
                 if (!string.IsNullOrEmpty(configurations.UserAgentPrefix))

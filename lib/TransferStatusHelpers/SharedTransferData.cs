@@ -10,11 +10,27 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
     internal class SharedTransferData
     {
+        private long totalLength;
+
         /// <summary>
         /// Gets or sets length of source.
         /// </summary>
-        public long TotalLength { get; set; }
-        
+        public long TotalLength
+        {
+            get { return this.totalLength; }
+            set
+            {
+                this.totalLength = value;
+
+                var handler = OnTotalLengthChanged;
+                handler?.Invoke(this, null);
+            }
+        }
+
+        public int BlockSize { get; set; }
+
+        public int MemoryChunksRequiredEachTime { get; set; }
+
         /// <summary>
         /// Gets or sets the job instance representing the transfer.
         /// </summary>
@@ -36,5 +52,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Gets or sets attribute for blob/azure file.
         /// </summary>
         public Attributes Attributes { get; set; }
+
+        public event EventHandler OnTotalLengthChanged;
     }
 }

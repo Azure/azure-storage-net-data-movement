@@ -1,3 +1,13 @@
+2016.12.29 Version 0.5.0
+ * All Services
+   - Upgraded azure storage client library to 8.0.0
+   - Updated DataMovement.sln to Visual Studio 2015 solution file
+
+ * Blob Service
+   - Added large block blob transfer support.
+   - Added new option `TransferManager.Configurations.BlockSize` to specify the size of blocks when transferring data to block blob
+   - Fixed the issue that copying source blob snapshot with name which includes special characters failed
+
 2016.12.06 Version 0.4.1
  * Blob Service
    - Fixed an issue that it cannot transfer data with an older version SAS token

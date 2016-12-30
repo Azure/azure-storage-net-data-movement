@@ -225,14 +225,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 "toUploadChunksCountdownEvent expected to be null");
 
             if ((this.TransferJob.CheckPoint.EntryTransferOffset != this.SharedTransferData.TotalLength)
-                && (0 != this.TransferJob.CheckPoint.EntryTransferOffset % this.Scheduler.TransferOptions.BlockSize))
+                && (0 != this.TransferJob.CheckPoint.EntryTransferOffset % this.SharedTransferData.BlockSize))
             {
                 throw new FormatException(Resources.RestartableInfoCorruptedException);
             }
 
             // Calculate number of chunks.
             int numChunks = (int)Math.Ceiling(
-                (this.SharedTransferData.TotalLength - this.TransferJob.CheckPoint.EntryTransferOffset) / (double)this.Scheduler.TransferOptions.BlockSize)
+                (this.SharedTransferData.TotalLength - this.TransferJob.CheckPoint.EntryTransferOffset) / (double)this.SharedTransferData.BlockSize)
                 + this.TransferJob.CheckPoint.TransferWindow.Count;
 
             if (0 == numChunks)
@@ -303,18 +303,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             for (int i = 0; i < transferData.MemoryBuffer.Length; ++i)
             {
-                if (0 != transferData.MemoryBuffer[i])
+                var memoryChunk = transferData.MemoryBuffer[i];
+                for (int j = 0; j < memoryChunk.Length; ++j)
                 {
-                    allZero = false;
+                    if (0 != memoryChunk[j])
+                    {
+                        allZero = false;
+                        break;
+                    }
+                }
+
+                if (!allZero)
+                {
                     break;
                 }
             }
-
             this.Controller.CheckCancellation();
 
             if (!allZero)
             {
-                transferData.Stream = new MemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
+                if (transferData.MemoryBuffer.Length == 1)
+                {
+                    transferData.Stream = new MemoryStream(transferData.MemoryBuffer[0], 0, transferData.Length);
+                }
+                else
+                {
+                    transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
+                }
                 await this.WriteRangeAsync(transferData);
             }
 

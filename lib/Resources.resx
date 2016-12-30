@@ -217,7 +217,7 @@ MD5 in property: {2}</value>
   </data>
   <data name="PathNotFound" xml:space="preserve">
     <value>Cannot find the path '{0}'.</value>
-  <comment>{0} is the path.</comment>
+    <comment>{0} is the path.</comment>
   </data>
   <data name="ProvideExactlyOneOfThreeParameters" xml:space="preserve">
     <value>Exactly one of these parameters must be provided: {0}, {1}, {2}.</value>
@@ -282,7 +282,7 @@ MD5 in property: {2}</value>
   </data>
   <data name="SourceNameInvalidInFileSystem" xml:space="preserve">
     <value>The corresponding destination path for source "{0}" is invalid in Windows system.</value>
-  <comment>{0} is the source uri.</comment>
+    <comment>{0} is the source uri.</comment>
   </data>
   <data name="StreamMustSupportReadException" xml:space="preserve">
     <value>{0} must support Read.</value>
@@ -351,5 +351,8 @@ MD5 in property: {2}</value>
   </data>
   <data name="OnlyOneTransferAllowed" xml:space="preserve">
     <value>Only one transfer is allowed with stream journal.</value>
+  </data>
+  <data name="BlockSizeMustBeMultipleOf4MB" xml:space="preserve">
+    <value>BlockSize must be multiple of 4MB.</value>
   </data>
 </root>

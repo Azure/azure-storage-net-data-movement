@@ -43,6 +43,19 @@ namespace DMLibTest
         }
     }
 
+    public class BlockSizeTestFixture : IDisposable
+    {
+        public BlockSizeTestFixture()
+        {
+            BlockSizeTest.MyClassInitialize(null);
+        }
+
+        public void Dispose()
+        {
+            BlockSizeTest.MyClassCleanup();
+        }
+    }
+
     public class BVTFixture : IDisposable
     {
         public BVTFixture()

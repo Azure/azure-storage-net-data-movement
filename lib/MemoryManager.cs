@@ -3,10 +3,13 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
+
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     /// Class for maintaining a pool of memory buffer objects.
@@ -18,6 +21,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private long currentCapacity;
 
         private readonly int BufferSize;
+
+        private readonly  object memoryCapacityLockObject = new object();
 
         public MemoryManager(
             long capacity, int bufferSize)
@@ -36,20 +41,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return this.memoryPool.GetBuffer();
         }
 
+        public byte[][] RequireBuffers(int count)
+        {
+            return this.memoryPool.GetBuffers(count);
+        }
+
         public void ReleaseBuffer(byte[] buffer)
         {
             this.memoryPool.AddBuffer(buffer);
         }
 
+        public void ReleaseBuffers(byte[][] buffer)
+        {
+            this.memoryPool.AddBuffers(buffer);
+        }
+
         internal void SetMemoryLimitation(long memoryLimitation)
         {
-            if (memoryLimitation > this.currentCapacity)
+            lock (this.memoryCapacityLockObject)
             {
-                this.currentCapacity = memoryLimitation;
+                if (memoryLimitation > this.currentCapacity)
+                {
+                    this.currentCapacity = memoryLimitation;
 
-                long availableCells = this.currentCapacity / BufferSize;
-                int cellNumber = (int)Math.Min((long)Constants.MemoryManagerCellsMaximum, availableCells);
-                this.memoryPool.SetCapacity(cellNumber);
+                    long availableCells = this.currentCapacity/BufferSize;
+                    int cellNumber = (int) Math.Min((long) Constants.MemoryManagerCellsMaximum, availableCells);
+                    this.memoryPool.SetCapacity(cellNumber);
+                }
             }
         }
 
@@ -127,6 +145,50 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 return null;
             }
 
+            public byte[][] GetBuffers(int count)
+            {
+                if (this.availableCells >= count)
+                {
+                    List<MemoryCell> retCells = null;
+
+                    lock (this.cellsListLock)
+                    {
+                        if (this.availableCells >= count)
+                        {
+                            retCells = new List<MemoryCell>();
+
+                            for (int i = 0; i < count; i++)
+                            {
+                                MemoryCell retCell;
+                                if (null != this.cellsListHeadCell)
+                                {
+                                    retCell = this.cellsListHeadCell;
+                                    this.cellsListHeadCell = retCell.NextCell;
+                                    retCell.NextCell = null;
+                                }
+                                else
+                                {
+                                    retCell = new MemoryCell(this.BufferSize);
+                                    ++this.allocatedCells;
+                                }
+
+                                --this.availableCells;
+
+                                this.cellsInUse.TryAdd(retCell.Buffer, retCell);
+                                retCells.Add(retCell);
+                            }
+                        }
+                    }
+
+                    if (null != retCells)
+                    {
+                        return retCells.Select(c => c.Buffer).ToArray();
+                    }
+                }
+
+                return null;
+            }
+
             public void AddBuffer(byte[] buffer)
             {
                 if (null == buffer)
@@ -142,6 +204,34 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         cell.NextCell = this.cellsListHeadCell;
                         this.cellsListHeadCell = cell;
                         ++this.availableCells;
+                    }
+                }
+            }
+
+            public void AddBuffers(byte[][] buffers)
+            {
+                if (null == buffers)
+                {
+                    throw new ArgumentNullException("buffers");
+                }
+
+                if (buffers.Length == 1)
+                {
+                    this.AddBuffer(buffers[0]);
+                    return;
+                }
+
+                foreach (var buffer in buffers)
+                {
+                    MemoryCell cell;
+                    if (this.cellsInUse.TryRemove(buffer, out cell))
+                    {
+                        lock (this.cellsListLock)
+                        {
+                            cell.NextCell = this.cellsListHeadCell;
+                            this.cellsListHeadCell = cell;
+                            ++this.availableCells;
+                        }
                     }
                 }
             }

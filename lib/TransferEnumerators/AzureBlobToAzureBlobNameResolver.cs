@@ -18,7 +18,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             AzureBlobEntry blobEntry = sourceEntry as AzureBlobEntry;
             Debug.Assert(blobEntry != null, "blobEntry");
 
-            return NameResolverHelper.AppendSnapShotTimeToFileName(sourceEntry.RelativePath, blobEntry.Blob.SnapshotTime);
+            return Utils.AppendSnapShotTimeToFileName(sourceEntry.RelativePath, blobEntry.Blob.SnapshotTime);
         }
     }
 }

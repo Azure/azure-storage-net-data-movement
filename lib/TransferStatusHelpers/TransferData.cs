@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                 if (null != this.MemoryBuffer)
                 {
-                    this.memoryManager.ReleaseBuffer(this.MemoryBuffer);
+                    this.memoryManager.ReleaseBuffers(this.MemoryBuffer);
                     this.MemoryBuffer = null;
                 }
             }

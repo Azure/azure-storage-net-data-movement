@@ -76,6 +76,14 @@ namespace DataMovementSamples
         /// </summary>
         private static async Task BlobUploadSample()
         {
+            // When transfer large file to block blob, set TransferManager.Configurations.BlockSize to specify the size of the blocks.
+            // It must be between 4MB and 100MB and be multiple of 4MB. Default value is 4MB. 
+            //
+            // Currently, the max block count of a block blob is limited to 50000.
+            // When transfering a big file and the BlockSize provided is smaller than the minimum value - (size/50000),
+            // it'll be reset to a value which is greater than the minimum value and multiple of 4MB for this file.
+            TransferManager.Configurations.BlockSize = 4 * 1024 * 1024; //4MB
+
             string sourceFileName = "azure.png";
             string destinationBlobName = "azure_blockblob.png";
 

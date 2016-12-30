@@ -435,8 +435,8 @@ namespace DMLibTest
 
             if (snapshotTime.HasValue)
             {
-                string pathAndFileNameNoExt = Path.ChangeExtension(fileName, null);
-                string extension = Path.GetExtension(fileName);
+                string pathAndFileNameNoExt, extension;
+                GetBasePathAndExtension(fileName, out pathAndFileNameNoExt, out extension);
                 string timeStamp = string.Format(
                     CultureInfo.InvariantCulture,
                     "{0:yyyy-MM-dd HHmmss fff}",
@@ -451,6 +451,38 @@ namespace DMLibTest
             }
 
             return resultName;
+        }
+
+        private static void GetBasePathAndExtension(string filePath, out string basePath, out string extension)
+        {
+            int index = filePath.LastIndexOf(".");
+            extension = string.Empty;
+
+            if (-1 == index)
+            {
+                basePath = filePath;
+            }
+            else
+            {
+                basePath = filePath.Substring(0, index);
+
+                if (index < filePath.Length - 1)
+                {
+                    extension = filePath.Substring(index);
+                }
+            }
+        }
+
+        public static string EscapeInvalidCharacters(string fileName)
+        {
+            // Replace invalid characters with %HH, with HH being the hexadecimal
+            // representation of the invalid character.
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                fileName = fileName.Replace(c.ToString(), string.Format(CultureInfo.InvariantCulture, "%{0:X2}", (int)c));
+            }
+
+            return fileName;
         }
 
         public static string TransferInstanceToString(object transferInstance)

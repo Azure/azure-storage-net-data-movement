@@ -286,10 +286,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
             finally
             {
-                this.Scheduler.MemoryManager.ReleaseBuffer(transferData.MemoryBuffer);
+                this.Scheduler.MemoryManager.ReleaseBuffers(transferData.MemoryBuffer);
             }
 
-            int blockSize = this.Scheduler.TransferOptions.BlockSize;
+            int blockSize = this.SharedTransferData.BlockSize;
             long chunkStartOffset = (currentWriteOffset / blockSize) * blockSize;
 
             this.Controller.UpdateProgress(() =>

@@ -103,7 +103,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             AzureBlobEntry blobEntry = sourceEntry as AzureBlobEntry;
             if (blobEntry != null)
             {
-                destinationFileName = NameResolverHelper.AppendSnapShotTimeToFileName(destinationFileName, blobEntry.Blob.SnapshotTime);
+                destinationFileName = Utils.AppendSnapShotTimeToFileName(destinationFileName, blobEntry.Blob.SnapshotTime);
             }
 
             // Combine path and filename back together again.

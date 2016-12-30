@@ -206,6 +206,11 @@ namespace DMLibTest
                             TransferManager.Configurations.ParallelOperations = DMLibTestConstants.LimitedSpeedNC;
                         }
 
+                        if (options.BlockSize.HasValue)
+                        {
+                            TransferManager.Configurations.BlockSize = options.BlockSize.Value;
+                        }
+
                         allTasks.Add(item, wrapper.DoTransfer(item));
                     }
                     catch (Exception e)
@@ -252,6 +257,7 @@ namespace DMLibTest
                     OperationContext.GlobalSendingRequest -= this.LimitSpeed;
                     TransferManager.Configurations.ParallelOperations = DMLibTestConstants.DefaultNC;
                 }
+                TransferManager.Configurations.BlockSize = DMLibTestConstants.DefaultBlockSize;
             }
 
             Parallel.ForEach(allTasks, pair =>
@@ -282,6 +288,16 @@ namespace DMLibTest
             }
 
             return testResult;
+        }
+
+
+        public void ValidateDestinationMD5ByDownloading(DMLibDataInfo destDataInfo, TestExecutionOptions<DMLibDataInfo> options)
+        {
+            foreach (var fileNode in destDataInfo.EnumerateFileNodes())
+            {
+                var dest = DestAdaptor.GetTransferObject(destDataInfo.RootPath, fileNode, options.DestCredentials);
+                DestAdaptor.ValidateMD5ByDownloading(dest);
+            }
         }
 
         public DMLibWrapper GetDMLibWrapper(DMLibDataType sourceType, DMLibDataType destType, bool isServiceCopy)
