@@ -5,6 +5,7 @@
     <HelpKINode Title="CopyDirectoryOptions.BlobType Property " Url="html/b0a691ba-7b3d-637f-ba54-63be354dfa2b.htm" />
     <HelpKINode Title="UploadDirectoryOptions.BlobType Property " Url="html/0213fba2-4d94-78bb-61ab-f28250b1124f.htm" />
   </HelpKINode>
+  <HelpKINode Title="BlockSize property" Url="html/89ca8233-02d5-2bda-44cc-0a29d47c9159.htm" />
   <HelpKINode Title="BytesTransferred property" Url="html/62cebe17-d1eb-067d-c786-33edba7464b9.htm" />
   <HelpKINode Title="ClientRequestId property" Url="html/880898ba-eba8-6262-0f9d-471d168fc9c0.htm" />
   <HelpKINode Title="Configurations property" Url="html/4065875b-9022-f93a-9fb0-bbe0ee14ac2c.htm" />
@@ -14,6 +15,7 @@
     <HelpKINode Title="fields" Url="html/1116af15-b988-ecab-434c-40b8fd372571.htm" />
   </HelpKINode>
   <HelpKINode Title="Constants.DefaultBlockSize field" Url="html/3b8251ae-a06c-72a1-7d56-0da152a2600e.htm" />
+  <HelpKINode Title="Constants.DefaultMemoryChunkSize field" Url="html/27c9d8e5-35eb-3ecd-73fc-d8431f4e6c74.htm" />
   <HelpKINode Title="Constants.MaxBlockSize field" Url="html/a2df5e34-81e5-c3c5-2f7d-573247d74f2b.htm" />
   <HelpKINode Title="CopyAsync method" Url="html/c81c7fea-ea59-72cf-676e-28b326c50935.htm" />
   <HelpKINode Title="CopyDirectoryAsync method" Url="html/b4cb93b5-13fd-3836-11e4-4a2280f05812.htm" />
@@ -39,6 +41,7 @@
   <HelpKINode Title="CopyOptions.DestinationAccessCondition property" Url="html/1a114b39-078b-534e-5001-389170946f8e.htm" />
   <HelpKINode Title="CopyOptions.SourceAccessCondition property" Url="html/f77d15b7-fec3-37eb-eee4-baa3f1f53edb.htm" />
   <HelpKINode Title="DefaultBlockSize field" Url="html/3b8251ae-a06c-72a1-7d56-0da152a2600e.htm" />
+  <HelpKINode Title="DefaultMemoryChunkSize field" Url="html/27c9d8e5-35eb-3ecd-73fc-d8431f4e6c74.htm" />
   <HelpKINode Title="Delimiter property">
     <HelpKINode Title="CopyDirectoryOptions.Delimiter Property " Url="html/5fb340d1-3841-5357-fba5-9fe00443c365.htm" />
     <HelpKINode Title="DownloadDirectoryOptions.Delimiter Property " Url="html/4aa94fb7-3292-f05c-1192-1ec57ae19e80.htm" />
@@ -193,6 +196,7 @@
     <HelpKINode Title="methods" Url="html/5c41c6f6-6bd8-4f09-d594-541412c540db.htm" />
     <HelpKINode Title="properties" Url="html/442ecc45-37cb-0200-348e-e1f57e41e2a7.htm" />
   </HelpKINode>
+  <HelpKINode Title="TransferConfigurations.BlockSize property" Url="html/89ca8233-02d5-2bda-44cc-0a29d47c9159.htm" />
   <HelpKINode Title="TransferConfigurations.ParallelOperations property" Url="html/d53e61ef-6352-aca8-d589-ef957309c6d1.htm" />
   <HelpKINode Title="TransferConfigurations.TransferConfigurations constructor" Url="html/a4b361d8-4f86-f29f-ad5d-6ac61976cf38.htm" />
   <HelpKINode Title="TransferConfigurations.UserAgentPrefix property" Url="html/d2e9c5d2-0973-ddf4-c8c1-bc3a34dd3d1c.htm" />
