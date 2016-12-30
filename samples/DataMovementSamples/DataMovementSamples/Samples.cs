@@ -259,7 +259,11 @@ namespace DataMovementSamples
         /// <summary>
         /// Upload local pictures to azure storage.
         ///   1. Upload png files starting with "azure" in the source directory as block blobs, not including the sub-directory
+        ///      and store transfer context in a streamed journal.
         ///   2. Set their content type to "image/png".
+        ///   3. Cancel the transfer before it finishes with a CancellationToken
+        ///   3. Reload the transfer context from the streamed journal.
+        ///   4. Resume the transfer with the loaded transfer context
         /// </summary>
         private static async Task BlobDirectoryUploadSample()
         {
@@ -283,29 +287,77 @@ namespace DataMovementSamples
                 BlobType = BlobType.BlockBlob
             };
 
-            // Register for transfer event.
-            DirectoryTransferContext context = new DirectoryTransferContext();
-            context.FileTransferred += FileTransferredCallback;
-            context.FileFailed +=FileFailedCallback;
-            context.FileSkipped += FileSkippedCallback;
-
-            context.SetAttributesCallback = (destination) =>
+            using (MemoryStream journalStream = new MemoryStream())
             {
-                CloudBlob destBlob = destination as CloudBlob;
-                destBlob.Properties.ContentType = "image/png";
-            };
+                // Store the transfer context in a streamed journal.
+                DirectoryTransferContext context = new DirectoryTransferContext(journalStream);
 
-            context.ShouldTransferCallback = (source, destination) =>
-            {
-                // Can add more logic here to evaluate whether really need to transfer the target.
-                return true;
-            };
+                // Register for transfer event.
+                context.FileTransferred += FileTransferredCallback;
+                context.FileFailed += FileFailedCallback;
+                context.FileSkipped += FileSkippedCallback;
 
-            // Start the upload
-            var trasferStatus = await TransferManager.UploadDirectoryAsync(sourceDirPath, destDir, options, context);
-            
-            Console.WriteLine("Final transfer state: {0}", TransferStatusToString(trasferStatus));
-            Console.WriteLine("Files in directory {0} uploading to {1} is finished.", sourceDirPath, destDir.Uri.ToString());
+                context.SetAttributesCallback = (destination) =>
+                {
+                    CloudBlob destBlob = destination as CloudBlob;
+                    destBlob.Properties.ContentType = "image/png";
+                };
+
+                context.ShouldTransferCallback = (source, destination) =>
+                {
+                    // Can add more logic here to evaluate whether really need to transfer the target.
+                    return true;
+                };
+
+                // Create CancellationTokenSource used to cancel the transfer
+                CancellationTokenSource cancellationSource = new CancellationTokenSource();
+
+                TransferStatus trasferStatus = null;
+
+                try
+                {
+                    // Start the upload
+                    Task<TransferStatus> task = TransferManager.UploadDirectoryAsync(sourceDirPath, destDir, options, context, cancellationSource.Token);
+
+                    // Sleep for 1 seconds and cancel the transfer. 
+                    // It may fail to cancel the transfer if transfer is done in 1 second. If so, no file will be copied after resume.
+                    Thread.Sleep(1000);
+                    Console.WriteLine("Cancel the transfer.");
+                    cancellationSource.Cancel();
+
+                    trasferStatus = await task;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("The transfer is cancelled: {0}", e.Message);
+                }
+
+                journalStream.Position = 0;
+
+                // Deserialize transfer context from the streamed journal.
+                DirectoryTransferContext resumeContext = new DirectoryTransferContext(journalStream);
+                resumeContext.FileTransferred += FileTransferredCallback;
+                resumeContext.FileFailed += FileFailedCallback;
+                resumeContext.FileSkipped += FileSkippedCallback;
+
+                resumeContext.SetAttributesCallback = (destination) =>
+                {
+                    CloudBlob destBlob = destination as CloudBlob;
+                    destBlob.Properties.ContentType = "image/png";
+                };
+
+                resumeContext.ShouldTransferCallback = (source, destination) =>
+                {
+                    // Can add more logic here to evaluate whether really need to transfer the target.
+                    return true;
+                };
+
+                // Resume the upload
+                trasferStatus = await TransferManager.UploadDirectoryAsync(sourceDirPath, destDir, options, resumeContext);
+
+                Console.WriteLine("Final transfer state: {0}", TransferStatusToString(trasferStatus));
+                Console.WriteLine("Files in directory {0} uploading to {1} is finished.", sourceDirPath, destDir.Uri.ToString());
+            }
         }
 
         /// <summary>
