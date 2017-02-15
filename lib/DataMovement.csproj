@@ -15,6 +15,7 @@
     <TargetFrameworkProfile />
     <DefineConstants>CODE_ACCESS_SECURITY;BINARY_SERIALIZATION;REQUEST_EVENT_ARGS_EXPOSES_REQUEST;$(DefineConstants)</DefineConstants>
     <RestorePackages>true</RestorePackages>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WINDOWSDESKTOP />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -30,6 +31,7 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
     <DocumentationFile>bin\Debug\Microsoft.WindowsAzure.Storage.DataMovement.XML</DocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -43,6 +45,7 @@
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\Microsoft.WindowsAzure.Storage.DataMovement.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
@@ -97,6 +100,8 @@
     </Compile>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ChunkedMemoryStream.cs" />
+    <Compile Include="FileNativeMethods.cs" />
+    <Compile Include="LongPathFileStream.cs" />
     <Compile Include="TestHook\FaultInjectionPoint.cs" />
     <Compile Include="DirectoryTransferContext.cs" />
     <Compile Include="Interop\Interop.cs" />

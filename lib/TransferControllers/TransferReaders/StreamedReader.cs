@@ -170,13 +170,31 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     try
                     {
-                        // Attempt to open the file first so that we throw an exception before getting into the async work
-                        this.inputStream = new FileStream(
-                            fileLocation.FilePath,
-                            FileMode.Open,
-                            FileAccess.Read,
-                            FileShare.Read);
-
+#if DOTNET5_4
+                            // Attempt to open the file first so that we throw an exception before getting into the async work
+                            this.inputStream = new FileStream(
+                                fileLocation.FilePath,
+                                FileMode.Open,
+                                FileAccess.Read,
+                                FileShare.Read);
+#else
+                        if (Interop.CrossPlatformHelpers.IsWindows)
+                        {
+                            this.inputStream = new LongPathFileStream(
+                                fileLocation.FilePath,
+                                FileMode.Open,
+                                FileAccess.Read,
+                                FileShare.Read);
+                        }
+                        else
+                        {
+                            this.inputStream = new FileStream(
+                                fileLocation.FilePath,
+                                FileMode.Open,
+                                FileAccess.Read,
+                                FileShare.Read);
+                        }
+#endif
                         this.ownsStream = true;
                     }
                     catch (Exception ex)
