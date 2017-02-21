@@ -95,6 +95,19 @@ namespace DMLibTest
         }
     }
 
+    public class LongFilePathTestFixture : IDisposable
+    {
+        public LongFilePathTestFixture()
+        {
+            LongFilePathTest.MyClassInitialize(null);
+        }
+
+        public void Dispose()
+        {
+            LongFilePathTest.MyClassCleanup();
+        }
+    }
+
     public class MetadataTestFixture : IDisposable
     {
         public MetadataTestFixture()
