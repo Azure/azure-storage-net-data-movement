@@ -560,4 +560,22 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             targetRequestOptions.LocationMode = customRequestOptions.LocationMode;
         }
     }
+
+    internal class FilePath
+    {
+        private string filePath = null;
+        private string absolutePath = null;
+        private string fileName = null;
+
+        public FilePath(string path)
+        {
+            this.filePath = path;
+        }
+
+        public string FullUNCPath()
+        {
+            return "";
+        }
+    }
+
 }

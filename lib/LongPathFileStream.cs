@@ -26,6 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 mode,
                 FileAttributes.Normal,
                 IntPtr.Zero);
+
             if (this.fileHandle.IsInvalid)
             {
                 // 183 means the file already exists, while open succeeded.
@@ -60,20 +61,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public override void Close()
         {
 #endif
-            if (CanWrite)
+            if (this.fileHandle != null && !this.fileHandle.IsClosed)
             {
-                FileNativeMethods.CloseHandle(this.fileHandle);
+                this.fileHandle.Close();
+                // FileNativeMethods.CloseHandle(this.fileHandle);
                 this.fileHandle = null;
-            }
 
-            if(this.filePath != null)
-            {
-                this.filePath = null;
-            }
+                if (this.filePath != null)
+                {
+                    this.filePath = null;
+                }
 
-            if(this.position != 0)
-            {
-                this.position = 0;
+                if (this.position != 0)
+                {
+                    this.position = 0;
+                }
             }
         }
 
@@ -81,7 +83,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             get
             {
-                return true;
+                if (this.fileHandle != null && !this.fileHandle.IsClosed)
+                {
+                    return !this.fileHandle.IsInvalid;
+                }
+                return false;
             }
         }
 
@@ -89,7 +95,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             get
             {
-                return true;
+                if (this.fileHandle != null && !this.fileHandle.IsClosed)
+                {
+                    return !this.fileHandle.IsInvalid;
+                }
+                return false;
             }
         }
 
@@ -97,7 +107,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             get
             {
-                if(this.fileHandle != null)
+                if(this.fileHandle != null && !this.fileHandle.IsClosed)
                 {
                     return !this.fileHandle.IsInvalid;
                 }
@@ -109,7 +119,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             get
             {
-                return FileNativeMethods.GetFileSize(this.fileHandle, IntPtr.Zero);
+                if (this.fileHandle != null && !this.fileHandle.IsClosed)
+                {
+                    return FileNativeMethods.GetFileSize(this.fileHandle, IntPtr.Zero);
+                }
+                else
+                {
+                    throw new NotSupportedException("null or closed");
+                }
             }
         }
 
@@ -122,8 +139,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             set
             {
-                this.position = value;
-                this.Seek(this.position, SeekOrigin.Begin);
+                if(!CanSeek)
+                {
+                    throw new NotSupportedException("Not able to seek");
+                }
+
+                if (this.position != value)
+                {
+                    this.position = value;
+                    this.Seek(this.position, SeekOrigin.Begin);
+                }
             }
         }
 
@@ -142,17 +167,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new ArgumentOutOfRangeException(nameof(count), "ArgumentOutOfRange_NeedNonNegNum");
 
 
-            if (!CanWrite)
-                throw new NotSupportedException("NotSupported_UnwritableStream");
+            if (!CanRead)
+                throw new NotSupportedException("NotSupported_UnreadableStream");
 
             uint read = 0;
-            if (offset != this.position)
+            if (offset != Position)
             {
-                Seek(offset, SeekOrigin.Begin);
-                this.position = offset;
+                Position = offset;
             }
 #if !DOTNET5_4
             NativeOverlapped template = new NativeOverlapped();
+            template.EventHandle = IntPtr.Zero;
             FileNativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, ref template);
 #else
             FileNativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, IntPtr.Zero);
@@ -193,8 +218,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new ArgumentOutOfRangeException(nameof(offset), "ArgumentOutOfRange_NeedNonNegNum");
             if (count < 0)
                 throw new ArgumentOutOfRangeException(nameof(count), "ArgumentOutOfRange_NeedNonNegNum");
-
-
             if (!CanWrite)
                 throw new NotSupportedException("NotSupported_UnwritableStream");
 
@@ -206,6 +229,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 #if !DOTNET5_4
             NativeOverlapped template = new NativeOverlapped();
+            template.EventHandle = IntPtr.Zero;
             FileNativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, ref template);
 #else
             FileNativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, IntPtr.Zero);

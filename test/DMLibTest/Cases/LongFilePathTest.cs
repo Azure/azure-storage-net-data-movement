@@ -81,10 +81,17 @@ namespace DMLibTest.Cases
             sourceAdaptor.CreateIfNotExists();
             sourceAdaptor.GenerateData(sourceDataInfo);
 
+            DataAdaptor<DMLibDataInfo> destAdaptor = GetDestAdaptor(DMLibTestContext.DestType);
             DMLibDataInfo destDataInfo = new DMLibDataInfo(string.Empty);
-            string destFileName = new string('t', 102400);
+            // string destFileName = new string('t', 124);
+            string destFileName = sourceFileName;
             DMLibDataHelper.AddOneFile(destDataInfo.RootNode, destFileName, 5 * 1024);
             FileNode destFileNode = destDataInfo.RootNode.GetFileNode(destFileName);
+
+            destAdaptor.Cleanup();
+            destAdaptor.CreateIfNotExists();
+            // destAdaptor.GenerateData(destDataInfo);
+
 
             TransferItem longFilePathItem = new TransferItem()
             {
@@ -97,15 +104,62 @@ namespace DMLibTest.Cases
                 TransferContext = new SingleTransferContext()
             };
 
-            var result = this.RunTransferItems(new List<TransferItem> { longFilePathItem }, new TestExecutionOptions<DMLibDataInfo>());
+
+            var options = new TestExecutionOptions<DMLibDataInfo>()
+            {
+            };
+
+            var result = this.RunTransferItems(new List<TransferItem> { longFilePathItem }, options);
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception occurs.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
+        public void LongFilePathUpload()
+        {
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            string sourceFileName = GetTransferString(DMLibTestContext.SourceType, DMLibTestContext.DestType, DMLibTestContext.IsAsync);
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, sourceFileName, 5 * 1024);
+            FileNode sourceFileNode = sourceDataInfo.RootNode.GetFileNode(sourceFileName);
+
+            DataAdaptor<DMLibDataInfo> sourceAdaptor = GetSourceAdaptor(DMLibTestContext.SourceType);
+            sourceAdaptor.Cleanup();
+            sourceAdaptor.CreateIfNotExists();
+            sourceAdaptor.GenerateData(sourceDataInfo);
+
+            DataAdaptor<DMLibDataInfo> destAdaptor = GetDestAdaptor(DMLibTestContext.DestType);
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(string.Empty);
+            // string destFileName = new string('t', 124);
+            string destFileName = sourceFileName;
+            FileNode destFileNode = destDataInfo.RootNode.GetFileNode(destFileName);
+
+            TransferItem longFilePathItem = new TransferItem()
+            {
+                SourceObject = SourceAdaptor.GetTransferObject(sourceDataInfo.RootPath, sourceFileNode),
+                DestObject = destAdaptor.GetTransferObject(destDataInfo.RootPath, destFileNode),
+                IsDirectoryTransfer = false,
+                SourceType = DMLibTestContext.SourceType,
+                DestType = DMLibTestContext.DestType,
+                IsServiceCopy = DMLibTestContext.IsAsync,
+                TransferContext = new SingleTransferContext()
+            };
+
+
+            var options = new TestExecutionOptions<DMLibDataInfo>()
+            {
+            };
+            var result = this.RunTransferItems(new List<TransferItem> { longFilePathItem }, options);
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception occurs.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            this.ValidateDestinationMD5ByDownloading(result.DataInfo, options);
         }
 
         [TestCategory(Tag.BVT)]
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalDest)]
         public void LongPathFileStreamWrite()
         {
-            /*
             string destFileName = this.shortFileName;
             Stream outputStream = new LongPathFileStream(
                 destFileName,
@@ -122,14 +176,12 @@ namespace DMLibTest.Cases
 #else
             outputStream.Close();
 #endif
-            */
         }
 
         [TestCategory(Tag.BVT)]
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
         public void LongPathFileStreamRead()
         {
-            /*
             this.LongPathFileStreamWrite();
 
             string sourceFileName = this.shortFileName;
@@ -147,7 +199,6 @@ namespace DMLibTest.Cases
 #else
             inputStream.Close();
 #endif
-            */
         }
 
         private static string GetTransferString(DMLibDataType sourceType, DMLibDataType destType, bool isAsync)
