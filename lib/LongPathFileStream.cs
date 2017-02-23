@@ -63,7 +63,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #endif
             if (this.fileHandle != null && !this.fileHandle.IsClosed)
             {
+#if DOTNET5_4
+                this.fileHandle.Dispose();
+#else
                 this.fileHandle.Close();
+#endif
                 // FileNativeMethods.CloseHandle(this.fileHandle);
                 this.fileHandle = null;
 
@@ -143,12 +147,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 {
                     throw new NotSupportedException("Not able to seek");
                 }
-
-                if (this.position != value)
+                if(this.position != value)
                 {
                     this.position = value;
-                    this.Seek(this.position, SeekOrigin.Begin);
                 }
+                this.position = value;
             }
         }
 
@@ -171,13 +174,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new NotSupportedException("NotSupported_UnreadableStream");
 
             uint read = 0;
-            if (offset != Position)
-            {
-                Position = offset;
-            }
 #if !DOTNET5_4
             NativeOverlapped template = new NativeOverlapped();
             template.EventHandle = IntPtr.Zero;
+            template.OffsetLow = (int)(Position & uint.MaxValue);
+            template.OffsetHigh = (int)(Position >> 32);
             FileNativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, ref template);
 #else
             FileNativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, IntPtr.Zero);
@@ -190,15 +191,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
             }
+            Position += read;
             return (int)(read);
         }
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            if(origin != SeekOrigin.Begin || offset != this.position)
+            if(CanSeek)
             {
                 this.position = FileNativeMethods.Seek(this.fileHandle, offset, SeekOrigin.Begin);
             }
+            //if(origin != SeekOrigin.Begin || offset != this.position)
+            //{
+            //}
             return this.position;
         }
 
@@ -222,14 +227,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new NotSupportedException("NotSupported_UnwritableStream");
 
             uint written = 0;
-            if(offset != this.position)
-            {
-                Seek(offset, SeekOrigin.Begin);
-                this.position = offset;
-            }
 #if !DOTNET5_4
             NativeOverlapped template = new NativeOverlapped();
             template.EventHandle = IntPtr.Zero;
+            template.OffsetLow = (int)(Position & uint.MaxValue);
+            template.OffsetHigh = (int)(Position >> 32);
             FileNativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, ref template);
 #else
             FileNativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, IntPtr.Zero);
@@ -240,6 +242,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
             }
+            Position += written;
         }
     }
 }

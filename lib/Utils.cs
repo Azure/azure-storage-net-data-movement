@@ -561,11 +561,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
     }
 
+    /*
     internal class FilePath
     {
         private string filePath = null;
-        private string absolutePath = null;
-        private string fileName = null;
+        // private string absolutePath = null;
+        // private string fileName = null;
 
         public FilePath(string path)
         {
@@ -577,5 +578,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return "";
         }
     }
+    */
 
 }

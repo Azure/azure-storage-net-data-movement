@@ -75,11 +75,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool WriteFile(SafeFileHandle hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite, out uint lpNumberOfBytesWritten, IntPtr template);
 #endif
-        [DllImport("kernel32.dll", SetLastError = true)]
+        // [DllImport("kernel32.dll", SetLastError = true)]
         // [ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
         // [SuppressUnmanagedCodeSecurity]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool CloseHandle(SafeFileHandle hObject);
+        // [return: MarshalAs(UnmanagedType.Bool)]
+        // public static extern bool CloseHandle(SafeFileHandle hObject);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

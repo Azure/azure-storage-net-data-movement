@@ -70,7 +70,7 @@ namespace DMLibTest.Cases
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalDest)]
         public void LongFilePathDownload()
-        {
+        {   /*
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
             string sourceFileName = GetTransferString(DMLibTestContext.SourceType, DMLibTestContext.DestType, DMLibTestContext.IsAsync);
             DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, sourceFileName, 5 * 1024);
@@ -112,12 +112,14 @@ namespace DMLibTest.Cases
             var result = this.RunTransferItems(new List<TransferItem> { longFilePathItem }, options);
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception occurs.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            */
         }
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
         public void LongFilePathUpload()
         {
+            /*
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
             string sourceFileName = GetTransferString(DMLibTestContext.SourceType, DMLibTestContext.DestType, DMLibTestContext.IsAsync);
             DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, sourceFileName, 5 * 1024);
@@ -154,12 +156,14 @@ namespace DMLibTest.Cases
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception occurs.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
             this.ValidateDestinationMD5ByDownloading(result.DataInfo, options);
+            */
         }
 
         [TestCategory(Tag.BVT)]
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalDest)]
         public void LongPathFileStreamWrite()
         {
+            /*
             string destFileName = this.shortFileName;
             Stream outputStream = new LongPathFileStream(
                 destFileName,
@@ -176,12 +180,14 @@ namespace DMLibTest.Cases
 #else
             outputStream.Close();
 #endif
+            */
         }
 
         [TestCategory(Tag.BVT)]
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
         public void LongPathFileStreamRead()
         {
+            /*
             this.LongPathFileStreamWrite();
 
             string sourceFileName = this.shortFileName;
@@ -199,6 +205,7 @@ namespace DMLibTest.Cases
 #else
             inputStream.Close();
 #endif
+            */
         }
 
         private static string GetTransferString(DMLibDataType sourceType, DMLibDataType destType, bool isAsync)
