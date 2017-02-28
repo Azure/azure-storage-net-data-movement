@@ -12,7 +12,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
-    class FileNativeMethods
+    internal class FileNativeMethods
     {
         private FileNativeMethods()
         {
@@ -90,6 +90,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern int SetFilePointer(SafeFileHandle handle, int lDistanceToMove, out int lpDistanceToMoveHigh, uint dwMoveMethod);
+
+        [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.U4)]
+        public static extern uint GetFullPathNameW(
+            string lpFileName,
+            uint nBufferLength,
+            [Out] StringBuilder lpBuffer,
+            [Out] StringBuilder lpFilePart);
 
         public static long Seek(SafeFileHandle handle, long offset, SeekOrigin origin)
         {

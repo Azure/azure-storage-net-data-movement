@@ -248,62 +248,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private static string ToUNCPath(string localFilePath)
         {
-            string ret = @"\\?\";
-            if (localFilePath.StartsWith(@"\\", StringComparison.Ordinal))
+            int buffSize = 260;
+            StringBuilder fullPath = new StringBuilder(buffSize);
+            StringBuilder fileName = new StringBuilder(buffSize);
+            uint actualSize = FileNativeMethods.GetFullPathNameW(localFilePath, (uint)buffSize, fullPath, fileName);
+            if (actualSize > buffSize)
             {
-                return localFilePath;
+                buffSize = (int)actualSize + 16;
+                fullPath = new StringBuilder(buffSize);
+                fileName = new StringBuilder(buffSize);
+                actualSize = FileNativeMethods.GetFullPathNameW(localFilePath, (uint)buffSize, fullPath, fileName);
             }
-            else if (localFilePath.StartsWith(@".", StringComparison.Ordinal))
+            string ret = fullPath.ToString();
+            if (ret.StartsWith(@"\\", StringComparison.Ordinal))
             {
-                return AppendPath(AppendPath(ret, Directory.GetCurrentDirectory()), localFilePath);
-            }
-            else if (localFilePath.StartsWith(@"\", StringComparison.Ordinal))
-            {
-                return AppendPath(AppendPath(ret, Directory.GetDirectoryRoot(Directory.GetCurrentDirectory())), localFilePath);
-            }
-            else
-            {
-                string[] pieces = localFilePath.Split(':');
-                if (pieces.Length == 1)
-                {
-                    // current folder
-                    return AppendPath(AppendPath(ret, Directory.GetCurrentDirectory()), localFilePath);
-                }
-                if (pieces.Length != 2)
-                    throw new ArgumentException("Invalid file path.");
-                if (pieces[1].StartsWith(@"\", StringComparison.Ordinal))
-                {
-                    ret = AppendPath(ret, localFilePath);
-                }
-                else
-                {
-                    throw new ArgumentException("Not supported related file path.");
-                }
                 return ret;
             }
-        }
-
-        private static string AppendPath(string a, string b)
-        {
-            if (a.EndsWith(@"\", StringComparison.Ordinal))
-            {
-                if (b.StartsWith(@"\", StringComparison.Ordinal))
-                {
-                    return a + b.Substring(1);
-                }
-                else
-                {
-                    return a + b;
-                }
-            }
-            else if (b.StartsWith(@"\", StringComparison.Ordinal))
-            {
-                return a + b;
-            }
-            else
-            {
-                return a + @"\" + b;
-            }
+            return @"\\?\" + ret;
         }
     }
 }
