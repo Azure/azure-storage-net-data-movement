@@ -18,7 +18,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         public LongPathFileStream(string filePath, FileMode mode, FileAccess access, FileShare share)
         {
-            this.filePath = filePath;
+            this.filePath = ToUNCPath(filePath);
             this.fileHandle = FileNativeMethods.CreateFile(this.filePath,
                 access,
                 share,
@@ -34,6 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 if ((0 != errorCode)
                     && (183 != errorCode))
                 {
+                    System.Console.WriteLine(this.filePath);
                     throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
                 }
             }
@@ -243,6 +244,66 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
             }
             Position += written;
+        }
+
+        private static string ToUNCPath(string localFilePath)
+        {
+            string ret = @"\\?\";
+            if (localFilePath.StartsWith(@"\\", StringComparison.Ordinal))
+            {
+                return localFilePath;
+            }
+            else if (localFilePath.StartsWith(@".", StringComparison.Ordinal))
+            {
+                return AppendPath(AppendPath(ret, Directory.GetCurrentDirectory()), localFilePath);
+            }
+            else if (localFilePath.StartsWith(@"\", StringComparison.Ordinal))
+            {
+                return AppendPath(AppendPath(ret, Directory.GetDirectoryRoot(Directory.GetCurrentDirectory())), localFilePath);
+            }
+            else
+            {
+                string[] pieces = localFilePath.Split(':');
+                if (pieces.Length == 1)
+                {
+                    // current folder
+                    return AppendPath(AppendPath(ret, Directory.GetCurrentDirectory()), localFilePath);
+                }
+                if (pieces.Length != 2)
+                    throw new ArgumentException("Invalid file path.");
+                if (pieces[1].StartsWith(@"\", StringComparison.Ordinal))
+                {
+                    ret = AppendPath(ret, localFilePath);
+                }
+                else
+                {
+                    throw new ArgumentException("Not supported related file path.");
+                }
+                return ret;
+            }
+        }
+
+        private static string AppendPath(string a, string b)
+        {
+            if (a.EndsWith(@"\", StringComparison.Ordinal))
+            {
+                if (b.StartsWith(@"\", StringComparison.Ordinal))
+                {
+                    return a + b.Substring(1);
+                }
+                else
+                {
+                    return a + b;
+                }
+            }
+            else if (b.StartsWith(@"\", StringComparison.Ordinal))
+            {
+                return a + b;
+            }
+            else
+            {
+                return a + @"\" + b;
+            }
         }
     }
 }
