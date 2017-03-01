@@ -81,16 +81,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             Utils.CheckCancellation(cancellationToken);
 
             // Check path permissions.
-            string fullPath = Path.GetFullPath(path);
+            string fullPath = LongPath.GetFullPath(path);
 #if CODE_ACCESS_SECURITY
             CheckPathDiscoveryPermission(fullPath);
 #endif // CODE_ACCESS_SECURITY
 
-            string patternDirectory = Path.GetDirectoryName(searchPattern);
+            string patternDirectory = LongPath.GetDirectoryName(searchPattern);
 #if CODE_ACCESS_SECURITY
             if (!string.IsNullOrEmpty(patternDirectory))
             {
-                CheckPathDiscoveryPermission(Path.Combine(fullPath, patternDirectory));
+                CheckPathDiscoveryPermission(LongPath.Combine(fullPath, patternDirectory));
             }
 #endif // CODE_ACCESS_SECURITY
 
@@ -104,7 +104,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 fromFilePath = fromFilePath.Substring(tmpPatternDir.Length);
             }
 
-            string fullPathWithPattern = Path.Combine(fullPath, searchPattern);
+            // string fullPathWithPattern = Path.Combine(fullPath, searchPattern);
+            string fullPathWithPattern = LongPath.Combine(fullPath, searchPattern);
 
             // To support patterns like "folderA\" aiming at listing files under some folder.
             char lastC = fullPathWithPattern[fullPathWithPattern.Length - 1];
@@ -115,10 +116,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 fullPathWithPattern = fullPathWithPattern + '*';
             }
 
-            string directoryName = AppendDirectorySeparator(Path.GetDirectoryName(fullPathWithPattern));
+            string directoryName = AppendDirectorySeparator(LongPath.GetDirectoryName(fullPathWithPattern));
             string filePattern = fullPathWithPattern.Substring(directoryName.Length);
 
-            if (!Directory.Exists(directoryName))
+            if (!LongPathDirectory.Exists(directoryName))
             {
                 throw new DirectoryNotFoundException(
                     string.Format(
@@ -165,7 +166,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 Utils.CheckCancellation(cancellationToken);
 
                 // Skip non-existent folders
-                if (!Directory.Exists(folder))
+                if (!LongPathDirectory.Exists(folder))
                 {
                     continue;
                 }
@@ -187,7 +188,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     // since the OS can block access to some paths. Getting files from a location
                     // will force path discovery checks which will indicate whether or not the user
                     // is authorized to access the directory.
-                    Directory.GetFiles(folder);
+                    LongPathDirectory.GetFiles(folder);
                 }
                 catch (SecurityException)
                 {
@@ -215,7 +216,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     }
 
                     // Load files directly under this folder.
-                    foreach (var filePath in Directory.EnumerateFileSystemEntries(folder, filePattern, SearchOption.TopDirectoryOnly))
+                    foreach (var filePath in LongPathDirectory.EnumerateFileSystemEntries(folder, filePattern, SearchOption.TopDirectoryOnly))
                     {
                         Utils.CheckCancellation(cancellationToken);
 
@@ -224,8 +225,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
                         try
                         {
-                            fileName = Path.GetFileName(filePath);
-                            fileAttributes = File.GetAttributes(filePath);
+                            fileName = LongPath.GetFileName(filePath);
+                            fileAttributes = LongPathFile.GetAttributes(filePath);
                         }
                         // Cross-plat file system accessibility settings may cause exceptions while
                         // retrieving attributes from inaccessible paths. These paths shold be skipped.
@@ -242,7 +243,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                         {
                             if (passedContinuationToken)
                             {
-                                yield return Path.Combine(folder, fileName);
+                                yield return LongPath.Combine(folder, fileName);
                             }
                             else
                             {
@@ -257,7 +258,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                                     }
                                     else
                                     {
-                                        yield return Path.Combine(folder, fileName);
+                                        yield return LongPath.Combine(folder, fileName);
                                     }
                                 }
                                 else
@@ -275,7 +276,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
                                     if (compareResult > 0)
                                     {
-                                        yield return Path.Combine(folder, fileName);
+                                        yield return LongPath.Combine(folder, fileName);
                                     }
                                 }
                             }
@@ -299,7 +300,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     }
 
                     // Add sub-folders.
-                    foreach (var filePath in Directory.EnumerateFileSystemEntries(folder, "*", SearchOption.TopDirectoryOnly))
+                    foreach (var filePath in LongPathDirectory.EnumerateFileSystemEntries(folder, "*", SearchOption.TopDirectoryOnly))
                     {
                         Utils.CheckCancellation(cancellationToken);
 
@@ -308,8 +309,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
                         try
                         {
-                            fileName = Path.GetFileName(filePath);
-                            fileAttributes = File.GetAttributes(filePath);
+                            fileName = LongPath.GetFileName(filePath);
+                            fileAttributes = LongPathFile.GetAttributes(filePath);
                         }
                         // Cross-plat file system accessibility settings may cause exceptions while
                         // retrieving attributes from inaccessible paths. These paths shold be skipped.
@@ -331,7 +332,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                             {
                                 if (passedSubfoler)
                                 {
-                                    currentFolderSubFolders.Push(Path.Combine(folder, fileName));
+                                    currentFolderSubFolders.Push(LongPath.Combine(folder, fileName));
                                 }
                                 else
                                 {
@@ -340,7 +341,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                                         if (string.Equals(fileName, fromSubfolder, StringComparison.Ordinal))
                                         {
                                             passedSubfoler = true;
-                                            currentFolderSubFolders.Push(Path.Combine(folder, fileName));
+                                            currentFolderSubFolders.Push(LongPath.Combine(folder, fileName));
                                         }
                                     }
                                     else
@@ -352,7 +353,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                                         if (compareResult >= 0)
                                         {
                                             passedSubfoler = true;
-                                            currentFolderSubFolders.Push(Path.Combine(folder, fileName));
+                                            currentFolderSubFolders.Push(LongPath.Combine(folder, fileName));
 
                                             if (compareResult > 0)
                                             {

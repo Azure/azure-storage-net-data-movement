@@ -61,20 +61,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             string filePattern = string.IsNullOrEmpty(this.SearchPattern) ? DefaultFilePattern : this.SearchPattern;
 
-            // Exceed-limit-length patterns surely match no files.
-            int maxFileNameLength = this.GetMaxFileNameLength();
-            if (filePattern.Length > maxFileNameLength)
-            {
-                yield break;
-            }
-
             SearchOption searchOption = this.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
             IEnumerable<string> directoryEnumerator = null;
             ErrorEntry errorEntry = null;
 
             Utils.CheckCancellation(cancellationToken);
 
-            string fullPath = Path.GetFullPath(this.location.DirectoryPath);
+            string fullPath = LongPath.GetFullPath(this.location.DirectoryPath);
             fullPath = AppendDirectorySeparator(fullPath);
 
             try
@@ -125,7 +118,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
                     yield return new FileEntry(
                         relativePath,
-                        Path.Combine(this.location.DirectoryPath, relativePath),
+                        LongPath.Combine(this.location.DirectoryPath, relativePath),
                         new FileListContinuationToken(relativePath));
                 }
             }
@@ -140,15 +133,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             }
 
             return dir;
-        }
-
-        /// <summary>
-        /// Gets the maximum file name length of any file name relative to this file system source location. 
-        /// </summary>
-        /// <returns>Maximum file name length in bytes.</returns>
-        private int GetMaxFileNameLength()
-        {
-            return Constants.MaxFilePathLength - this.location.DirectoryPath.Length;
         }
     }
 }

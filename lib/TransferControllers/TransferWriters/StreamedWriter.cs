@@ -175,12 +175,20 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         FileMode fileMode = 0 == this.expectOffset ? FileMode.OpenOrCreate : FileMode.Open;
 
+#if DOTNET5_4
                         // Attempt to open the file first so that we throw an exception before getting into the async work
                         this.outputStream = new FileStream(
                             filePath,
                             fileMode,
                             FileAccess.ReadWrite,
                             FileShare.None);
+#else
+                        this.outputStream = new LongPathFileStream(
+                            filePath,
+                            fileMode,
+                            FileAccess.ReadWrite,
+                            FileShare.None);
+#endif
 
                         this.ownsStream = true;
                     }

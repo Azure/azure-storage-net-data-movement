@@ -178,22 +178,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                                 FileAccess.Read,
                                 FileShare.Read);
 #else
-                        if (Interop.CrossPlatformHelpers.IsWindows)
-                        {
-                            this.inputStream = new LongPathFileStream(
-                                fileLocation.FilePath,
-                                FileMode.Open,
-                                FileAccess.Read,
-                                FileShare.Read);
-                        }
-                        else
-                        {
-                            this.inputStream = new FileStream(
-                                fileLocation.FilePath,
-                                FileMode.Open,
-                                FileAccess.Read,
-                                FileShare.Read);
-                        }
+                        this.inputStream = new LongPathFileStream(
+                            fileLocation.FilePath,
+                            FileMode.Open,
+                            FileAccess.Read,
+                            FileShare.Read);
 #endif
                         this.ownsStream = true;
                     }

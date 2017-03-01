@@ -1,17 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-// using System.Runtime.ConstrainedExecution;
-using System.Runtime.InteropServices;
-using System.Security;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Win32.SafeHandles;
+﻿//------------------------------------------------------------------------------
+// <copyright file="FileNativeMethods.cs" company="Microsoft">
+//    Copyright (c) Microsoft Corporation
+// </copyright>
+//------------------------------------------------------------------------------
 
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+    using System.Security;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Microsoft.Win32.SafeHandles;
+
     internal class FileNativeMethods
     {
         private FileNativeMethods()
@@ -29,22 +34,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.ByValTStr, SizeConst = 128)]
             public string szPathName;
         }
-
-        // Doesn't support Unicode file name.
-        // [DllImport("kernel32.dll", BestFitMapping = false, ThrowOnUnmappableChar = true)]
-        // static extern int OpenFile([System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPStr)]string lpFileName, out OFSTRUCT lpReOpenBuff, UInt32 uStyle);
-
-        // Open or create file
-        /*[DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern IntPtr CreateFileW(
-             [MarshalAs(UnmanagedType.LPWStr)] string filename,
-             [MarshalAs(UnmanagedType.U4)] FileAccess access,
-             [MarshalAs(UnmanagedType.U4)] FileShare share,
-             IntPtr securityAttributes,
-             [MarshalAs(UnmanagedType.U4)] FileMode creationDisposition,
-             [MarshalAs(UnmanagedType.U4)] FileAttributes flagsAndAttributes,
-             IntPtr templateFile);
-        */
 
         // Open or create file
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -75,11 +64,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool WriteFile(SafeFileHandle hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite, out uint lpNumberOfBytesWritten, IntPtr template);
 #endif
-        // [DllImport("kernel32.dll", SetLastError = true)]
-        // [ReliabilityContract(Consistency.WillNotCorruptState, Cer.Success)]
-        // [SuppressUnmanagedCodeSecurity]
-        // [return: MarshalAs(UnmanagedType.Bool)]
-        // public static extern bool CloseHandle(SafeFileHandle hObject);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
