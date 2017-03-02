@@ -427,14 +427,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private static void ValidateDestinationPath(string sourcePath, string destPath)
         {
-            if (destPath.Length > Constants.MaxFilePathLength)
-            {
-                throw new TransferException(
-                    string.Format(CultureInfo.CurrentCulture,
-                    Resources.FilePathTooLong,
-                    destPath));
-            }
-
             if (Interop.CrossPlatformHelpers.IsWindows)
             {
                 if (!IsValidWindowsFileName(destPath))
@@ -450,8 +442,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private static bool IsValidWindowsFileName(string fileName)
         {
-            string fileNameNoExt = Path.GetFileNameWithoutExtension(fileName);
-            string fileNameWithExt = Path.GetFileName(fileName);
+            string fileNameNoExt = LongPath.GetFileNameWithoutExtension(fileName);
+            string fileNameWithExt = LongPath.GetFileName(fileName);
 
             if (Array.Exists<string>(ReservedBaseFileNames, delegate (string s) { return fileNameNoExt.Equals(s, StringComparison.OrdinalIgnoreCase); }))
             {
@@ -524,11 +516,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private static void CreateParentDirectoryIfNotExists(string path)
         {
-            string dir = Path.GetDirectoryName(path);
+            string dir = LongPath.GetDirectoryName(path);
 
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            if (!string.IsNullOrEmpty(dir) && !LongPathDirectory.Exists(dir))
             {
-                Directory.CreateDirectory(dir);
+                LongPathDirectory.CreateDirectory(dir);
             }
         }
 

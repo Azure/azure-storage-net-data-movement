@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
 {
     using System;
     using System.Collections.Generic;
@@ -17,11 +17,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Threading.Tasks;
     using Microsoft.Win32.SafeHandles;
 
-    internal class FileNativeMethods
+    internal static partial class NativeMethods
     {
-        private FileNativeMethods()
-        {
-        }
+        public const int ERROR_NO_MORE_FILES = 18;
+        public const int ERROR_FILE_NOT_FOUND = 2;
 
         [System.Runtime.InteropServices.StructLayout(LayoutKind.Sequential)]
         public struct OFSTRUCT
@@ -36,7 +35,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         // Open or create file
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
         public static extern SafeFileHandle CreateFile(
              [MarshalAs(UnmanagedType.LPWStr)] string filename,
              [MarshalAs(UnmanagedType.U4)] FileAccess access,
@@ -45,6 +44,22 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
              [MarshalAs(UnmanagedType.U4)] FileMode creationDisposition,
              [MarshalAs(UnmanagedType.U4)] FileAttributes flagsAndAttributes,
              IntPtr templateFile);
+
+        // Open or create file
+        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern SafeFileHandle CreateFileW(
+             byte[] filename,
+             [MarshalAs(UnmanagedType.U4)] FileAccess access,
+             [MarshalAs(UnmanagedType.U4)] FileShare share,
+             IntPtr securityAttributes,
+             [MarshalAs(UnmanagedType.U4)] FileMode creationDisposition,
+             [MarshalAs(UnmanagedType.U4)] FileAttributes flagsAndAttributes,
+             IntPtr templateFile);
+
+        // Open or create file
+        [DllImport("kernel32.dll", EntryPoint = "CreateDirectoryW", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool CreateDirectory(byte[] lpPathName, IntPtr lpSecurityAttributes);
 
 #if !DOTNET5_4
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -82,6 +97,20 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             uint nBufferLength,
             [Out] StringBuilder lpBuffer,
             [Out] StringBuilder lpFilePart);
+
+        [DllImport("kernel32.dll", EntryPoint = "FindFirstFileW", CharSet = CharSet.Unicode)]
+        public static extern SafeFindHandle FindFirstFile(string lpFileName, out WIN32_FIND_DATA lpFindFileData);
+
+        [DllImport("kernel32.dll", EntryPoint = "FindNextFileW", CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool FindNextFile(SafeFindHandle hFindFile, out WIN32_FIND_DATA lpFindFileData);
+
+        [DllImport("shlwapi.dll", EntryPoint = "PathFileExistsW", SetLastError = true, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool PathFileExists([MarshalAs(UnmanagedType.LPWStr)]string pszPath);
+
+        [DllImport("kernel32.dll", EntryPoint = "GetFileAttributesW", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern uint GetFileAttributes(string lpFileName);
 
         public static long Seek(SafeFileHandle handle, long offset, SeekOrigin origin)
         {

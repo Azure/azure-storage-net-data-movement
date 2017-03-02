@@ -14,6 +14,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     using System.Threading;
     using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
 
+#if !DOTNET5_4
+    using System.Runtime.InteropServices;
+#endif
+
 #if CODE_ACCESS_SECURITY
     using System.Security.Permissions;
 #endif // CODE_ACCESS_SECURITY
@@ -81,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             Utils.CheckCancellation(cancellationToken);
 
             // Check path permissions.
-            string fullPath = LongPath.GetFullPath(path);
+            string fullPath =  LongPathFileStream.ToUncPath(path);
 #if CODE_ACCESS_SECURITY
             CheckPathDiscoveryPermission(fullPath);
 #endif // CODE_ACCESS_SECURITY
@@ -422,9 +426,39 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 #if CODE_ACCESS_SECURITY
         private static void CheckPathDiscoveryPermission(string dir)
         {
+
+#if DOTNET5_4
             string checkDir = AppendDirectorySeparator(dir) + '.';
 
             new FileIOPermission(FileIOPermissionAccess.PathDiscovery, checkDir).Demand();
+#else
+            // Prepending the string "\\?\" does not allow access to the root directory.
+            string checkDir = AppendDirectorySeparator(dir) + '*';
+            Interop.NativeMethods.SafeFindHandle findHandle = null;
+            try
+            {
+                Interop.NativeMethods.WIN32_FIND_DATA findData;
+
+                findHandle = Interop.NativeMethods.FindFirstFile(checkDir, out findData);
+                int errorCode = Marshal.GetLastWin32Error();
+                if (findHandle.IsInvalid)
+                {
+                    if (0 != errorCode
+                        && 18 != errorCode)
+                    {
+                        throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
+                    }
+                    throw new SecurityException();
+                }
+
+            }
+            finally
+            {
+                if (findHandle != null
+                    && !findHandle.IsInvalid)
+                    findHandle.Dispose();
+            }
+#endif
         }
 #endif // CODE_ACCESS_SECURITY
     }

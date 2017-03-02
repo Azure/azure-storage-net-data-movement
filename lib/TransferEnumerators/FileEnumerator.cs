@@ -67,7 +67,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             Utils.CheckCancellation(cancellationToken);
 
-            string fullPath = LongPath.GetFullPath(this.location.DirectoryPath);
+            string fullPath = LongPathFileStream.ToUncPath(this.location.DirectoryPath);
             fullPath = AppendDirectorySeparator(fullPath);
 
             try
