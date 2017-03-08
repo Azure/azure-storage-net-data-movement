@@ -49,7 +49,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Offset in stream for the beginning to persistant transfer instance.
         /// </summary>
-        private const int ContentOffset = 512;
+        private const int contentOffset = 512;
+
+        public int ContentOffset
+        {
+            get
+            {
+                return contentOffset + this.baseTransferSize + (TransferChunkSize - TransferItemContentSize);
+            }
+        }
 
         /// <summary>
         /// In the journal, it only allows one base transfer, which means user can only add one transfer to the checkpoint using stream journal.
@@ -57,9 +65,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// there could be multiple subtransfers, each subtransfer is a SingleObjectTransfer.
         /// </summary>
         private Transfer baseTransfer = null;
-        
+        private int baseTransferSize = 0;
+
         private Stream stream;
 
+        private string absoluteDirectoryPath = null;
+
+        public string DirectoryPath
+        {
+            get
+            {
+                return absoluteDirectoryPath;
+            }
+            set
+            {
+                this.absoluteDirectoryPath = value;
+            }
+        }
         /// <summary>
         /// Lock for reading/writing from/to the journal stream.
         /// </summary>
@@ -157,17 +179,32 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.freeChunkHead = this.ReadLong();
                     this.freeChunkTail = this.ReadLong();
 
-                    this.stream.Position = TransferChunkSize;
+                    // absolute path
+                    this.stream.Position = contentOffset;
+                    this.baseTransferSize = this.ReadInt();
+                    this.stream.Position = contentOffset + sizeof(int);
 
 #if BINARY_SERIALIZATION
                     this.baseTransfer = (Transfer)this.formatter.Deserialize(this.stream);
 #else
                     this.baseTransfer = this.ReadObject(this.transferSerializer) as Transfer;
 #endif
-                    this.baseTransfer.StreamJournalOffset = TransferChunkSize;
+                    this.baseTransfer.StreamJournalOffset = contentOffset + sizeof(int);
                     this.baseTransfer.Journal = this;
 
-                    this.stream.Position = this.baseTransfer.StreamJournalOffset + TransferItemContentSize;
+                    if (baseTransfer is DirectoryTransfer)
+                    {
+                        if (baseTransfer.Source is DirectoryLocation)
+                        {
+                            this.DirectoryPath = (baseTransfer.Source as DirectoryLocation).DirectoryPath;
+                        }
+                        else if (baseTransfer.Destination is DirectoryLocation)
+                        {
+                            this.DirectoryPath = (baseTransfer.Destination as DirectoryLocation).DirectoryPath;
+                        }
+                    }
+
+                    this.stream.Position = this.baseTransfer.StreamJournalOffset + this.baseTransferSize;
 
 #if BINARY_SERIALIZATION
                     this.baseTransfer.ProgressTracker.AddProgress((TransferProgressTracker)this.formatter.Deserialize(this.stream));
@@ -175,7 +212,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.baseTransfer.ProgressTracker.AddProgress((TransferProgressTracker)this.ReadObject(this.progressCheckerSerializer));
 #endif
                     this.baseTransfer.ProgressTracker.Journal = this;
-                    this.baseTransfer.ProgressTracker.StreamJournalOffset = this.baseTransfer.StreamJournalOffset + TransferItemContentSize;
+                    this.baseTransfer.ProgressTracker.StreamJournalOffset = this.baseTransfer.StreamJournalOffset + this.baseTransferSize;
                     return this.baseTransfer;
                 }
             }
@@ -190,18 +227,35 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             lock (this.journalLock)
             {
+                if (transfer is DirectoryTransfer)
+                {
+                    if (transfer.Source is DirectoryLocation)
+                    {
+                        this.DirectoryPath = (transfer.Source as DirectoryLocation).DirectoryPath;
+                    }
+                    else if (transfer.Destination is DirectoryLocation)
+                    {
+                        this.DirectoryPath = (transfer.Destination as DirectoryLocation).DirectoryPath;
+                    }
+                }
+
                 transfer.Journal = this;
-                transfer.StreamJournalOffset = TransferChunkSize;
+                transfer.StreamJournalOffset = contentOffset + sizeof(int);
                 this.stream.Position = transfer.StreamJournalOffset;
 #if BINARY_SERIALIZATION
                 this.formatter.Serialize(this.stream, transfer);
+                this.baseTransferSize = (int)this.stream.Position;
+
+                this.stream.Position = contentOffset;
+                this.stream.Write(BitConverter.GetBytes(this.baseTransferSize), 0, sizeof(int));
+
 #else               
                 transfer.IsStreamJournal = true;
                 this.WriteObject(this.transferSerializer, transfer);
 #endif
 
                 transfer.ProgressTracker.Journal = this;
-                transfer.ProgressTracker.StreamJournalOffset = transfer.StreamJournalOffset + TransferItemContentSize;
+                transfer.ProgressTracker.StreamJournalOffset = transfer.StreamJournalOffset + baseTransferSize;
 
                 this.stream.Position = transfer.ProgressTracker.StreamJournalOffset;
 #if BINARY_SERIALIZATION
@@ -536,7 +590,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.ReadAndCheck(sizeof(long));
             return BitConverter.ToInt64(this.memoryBuffer, 0);
         }
-        
+
+        private int ReadInt()
+        {
+            this.ReadAndCheck(sizeof(int));
+            return BitConverter.ToInt32(this.memoryBuffer, 0);
+        }
+
         /// <summary>
         /// Read from journal file and check whether the read succeeded.
         /// </summary>

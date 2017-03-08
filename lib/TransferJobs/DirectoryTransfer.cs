@@ -227,7 +227,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 case TransferLocationType.LocalDirectory:
                     FileEntry fileEntry = entry as FileEntry;
 
-                    return new FileLocation(fileEntry.FullPath);
+                    return new FileLocation(fileEntry.FullPath, fileEntry.RelativePath);
                 default:
                     throw new ArgumentException("TransferLocationType");
             }

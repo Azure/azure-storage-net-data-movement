@@ -38,6 +38,38 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             this.FilePath = filePath;
+            this.RelativePath = filePath;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileLocation"/> class.
+        /// </summary>
+        /// <param name="filePath">Path to the local file as a source/destination to be read from/written to in a transfer.</param>
+        /// <param name="relativePath">Relative path to the local file as a source/destination to be read from/written to in a transfer.</param>
+        public FileLocation(string filePath, string relativePath)
+        {
+            if (null == filePath)
+            {
+                throw new ArgumentNullException("filePath");
+            }
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                throw new ArgumentException("message, should not be an empty string", "filePath");
+            }
+
+            if (null == relativePath)
+            {
+                throw new ArgumentNullException("relativePath");
+            }
+
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                throw new ArgumentException("message, should not be an empty string", "relativePath");
+            }
+
+            this.FilePath = filePath;
+            this.RelativePath = relativePath;
         }
 
 #if BINARY_SERIALIZATION
@@ -48,7 +80,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new System.ArgumentNullException("info");
             }
 
-            this.FilePath = info.GetString(FilePathName);
+            this.RelativePath = info.GetString(FilePathName);
+            var directoryPath = ((StreamJournal)context.Context).DirectoryPath;
+            if (directoryPath != null) // abosulte directory path is not set.
+                this.FilePath = LongPath.Combine(directoryPath, this.RelativePath);
+            else
+                this.FilePath = this.RelativePath;
         }
 #endif // BINARY_SERIALIZATION
 
@@ -75,11 +112,20 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Gets path to the local file location.
+        /// Gets relative path to the local file location.
         /// </summary>
 #if !BINARY_SERIALIZATION
         [DataMember]
 #endif
+        public string RelativePath
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Gets path to the local file location.
+        /// </summary>
         public string FilePath
         {
             get;
@@ -99,7 +145,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new System.ArgumentNullException("info");
             }
 
-            info.AddValue(FilePathName, this.FilePath, typeof(string));
+            info.AddValue(FilePathName, this.RelativePath, typeof(string));
         }
 #endif // BINARY_SERIALIZATION
 
