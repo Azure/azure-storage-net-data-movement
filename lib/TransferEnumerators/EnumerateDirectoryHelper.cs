@@ -85,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             Utils.CheckCancellation(cancellationToken);
 
             // Check path permissions.
-            string fullPath =  LongPathFileStream.ToUncPath(path);
+            string fullPath = LongPathFileStream.ToUncPath(path);
 #if CODE_ACCESS_SECURITY
             CheckPathDiscoveryPermission(fullPath);
 #endif // CODE_ACCESS_SECURITY
@@ -108,7 +108,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 fromFilePath = fromFilePath.Substring(tmpPatternDir.Length);
             }
 
-            // string fullPathWithPattern = Path.Combine(fullPath, searchPattern);
             string fullPathWithPattern = LongPath.Combine(fullPath, searchPattern);
 
             // To support patterns like "folderA\" aiming at listing files under some folder.
@@ -433,6 +432,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             new FileIOPermission(FileIOPermissionAccess.PathDiscovery, checkDir).Demand();
 #else
             // Prepending the string "\\?\" does not allow access to the root directory.
+            // Use the search pattern '*' instead.
             string checkDir = AppendDirectorySeparator(dir) + '*';
             Interop.NativeMethods.SafeFindHandle findHandle = null;
             try

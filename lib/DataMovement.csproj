@@ -15,7 +15,6 @@
     <TargetFrameworkProfile />
     <DefineConstants>CODE_ACCESS_SECURITY;BINARY_SERIALIZATION;REQUEST_EVENT_ARGS_EXPOSES_REQUEST;$(DefineConstants)</DefineConstants>
     <RestorePackages>true</RestorePackages>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WINDOWSDESKTOP />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -31,7 +30,6 @@
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
     <DocumentationFile>bin\Debug\Microsoft.WindowsAzure.Storage.DataMovement.XML</DocumentationFile>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -45,7 +43,6 @@
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\Microsoft.WindowsAzure.Storage.DataMovement.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
