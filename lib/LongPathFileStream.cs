@@ -29,57 +29,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         public LongPathFileStream(string filePath, FileMode mode, FileAccess access, FileShare share)
         {
-            this.filePath = ToUncPath(filePath);
-            this.fileHandle = NativeMethods.CreateFile(this.filePath,
-                access,
-                share,
-                IntPtr.Zero,
-                mode,
-                FileAttributes.Normal,
-                IntPtr.Zero);
-
-            if (this.fileHandle.IsInvalid)
-            {
-                // 183 means the file already exists, while open succeeded.
-                int errorCode = Marshal.GetLastWin32Error();
-                if ((0 != errorCode)
-                    && (183 != errorCode))
-                {
-                    throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-                }
-            }
+            this.filePath = LongPath.ToUncPath(filePath);
+            this.fileHandle = CreateFile(this.filePath, mode, access, share);
         }
-        public LongPathFileStream(byte[] filePath, FileMode mode, FileAccess access, FileShare share)
-        {
-            this.fileHandle = NativeMethods.CreateFileW(filePath,
-                access,
-                share,
-                IntPtr.Zero,
-                mode,
-                FileAttributes.Normal,
-                IntPtr.Zero);
-
-            if (this.fileHandle.IsInvalid)
-            {
-                // 183 means the file already exists, while open succeeded.
-                int errorCode = Marshal.GetLastWin32Error();
-                if ((0 != errorCode)
-                    && (183 != errorCode))
-                {
-                    throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-                }
-            }
-        }
-        /*
-        ~LongPathFileStream()
-        {
-#if DOTNET5_4
-            this.Dispose(false);
-#else
-            this.Close();
-#endif
-        }
-        */
 
 #if DOTNET5_4
         public new void Dispose()
@@ -289,6 +241,38 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             Position += written;
         }
 
+        private SafeFileHandle CreateFile(string path, FileMode mode, FileAccess access, FileShare share)
+        {
+            path = LongPath.ToUncPath(path);
+            UnicodeEncoding unicode = new UnicodeEncoding();
+            var unicodePath = unicode.GetBytes(path);
+
+            this.fileHandle = NativeMethods.CreateFile(unicodePath,
+                access,
+                share,
+                IntPtr.Zero,
+                mode,
+                FileAttributes.Normal,
+                IntPtr.Zero);
+
+            if (this.fileHandle.IsInvalid)
+            {
+                // 183 means the file already exists, while open succeeded.
+                int errorCode = Marshal.GetLastWin32Error();
+                if ((0 != errorCode)
+                    && (183 != errorCode))
+                {
+                    throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
+                }
+            }
+            return this.fileHandle;
+        }
+    }
+
+    internal class LongPath
+    {
+        private LongPath() { }
+
         public static string ToUncPath(string localFilePath)
         {
             string ret = LongPath.GetFullPath(localFilePath);
@@ -298,11 +282,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
             return @"\\?\" + ret;
         }
-    }
-
-    internal class LongPath
-    {
-        private LongPath() { }
 
         public static string GetFullPath(string path)
         {
@@ -482,7 +461,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if DOTNET5_4
             return Directory.Exists(path);
 #else
-            path = LongPathFileStream.ToUncPath(path);
+            path = LongPath.ToUncPath(path);
             bool ret = NativeMethods.PathFileExists(path);
             int errorCode = Marshal.GetLastWin32Error();
 
@@ -514,7 +493,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if DOTNET5_4
             Directory.CreateDirectory(path);
 #else
-            path = LongPathFileStream.ToUncPath(path);
+            path = LongPath.ToUncPath(path);
             UnicodeEncoding unicode = new UnicodeEncoding();
             var unicodeDirectoryPath = unicode.GetBytes(path);
 

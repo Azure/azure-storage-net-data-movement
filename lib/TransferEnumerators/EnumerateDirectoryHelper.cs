@@ -85,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             Utils.CheckCancellation(cancellationToken);
 
             // Check path permissions.
-            string fullPath = LongPathFileStream.ToUncPath(path);
+            string fullPath = LongPath.ToUncPath(path);
 #if CODE_ACCESS_SECURITY
             CheckPathDiscoveryPermission(fullPath);
 #endif // CODE_ACCESS_SECURITY

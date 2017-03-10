@@ -37,17 +37,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         // Open or create file
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
         public static extern SafeFileHandle CreateFile(
-             [MarshalAs(UnmanagedType.LPWStr)] string filename,
-             [MarshalAs(UnmanagedType.U4)] FileAccess access,
-             [MarshalAs(UnmanagedType.U4)] FileShare share,
-             IntPtr securityAttributes,
-             [MarshalAs(UnmanagedType.U4)] FileMode creationDisposition,
-             [MarshalAs(UnmanagedType.U4)] FileAttributes flagsAndAttributes,
-             IntPtr templateFile);
-
-        // Open or create file
-        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern SafeFileHandle CreateFileW(
              byte[] filename,
              [MarshalAs(UnmanagedType.U4)] FileAccess access,
              [MarshalAs(UnmanagedType.U4)] FileShare share,
@@ -56,7 +45,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
              [MarshalAs(UnmanagedType.U4)] FileAttributes flagsAndAttributes,
              IntPtr templateFile);
 
-        // Open or create file
+        // Create directory
         [DllImport("kernel32.dll", EntryPoint = "CreateDirectoryW", CharSet = CharSet.Unicode, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CreateDirectory(byte[] lpPathName, IntPtr lpSecurityAttributes);
