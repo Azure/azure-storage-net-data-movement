@@ -157,6 +157,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new NotSupportedException("NotSupported_UnreadableStream");
 
             uint read = 0;
+            bool success = false;
 #if !DOTNET5_4
             NativeOverlapped template = new NativeOverlapped();
             template.EventHandle = IntPtr.Zero;
@@ -165,20 +166,20 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             if (offset != 0)
             {
                 var tempBuffer = new byte[count];
-                NativeMethods.ReadFile(this.fileHandle, tempBuffer, (uint)(count), out read, ref template);
+                success = NativeMethods.ReadFile(this.fileHandle, tempBuffer, (uint)(count), out read, ref template);
                 tempBuffer.CopyTo(buffer, offset);
             }
             else
             {
-                NativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, ref template);
+                success = NativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, ref template);
             }
 #else
-            NativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, IntPtr.Zero);
+            success = NativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, IntPtr.Zero);
 #endif
 
             int errorCode = Marshal.GetLastWin32Error();
-
-            if ((0 != errorCode)
+            if (!success
+                && (0 != errorCode)
                 && (183 != errorCode))
             {
                 throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
@@ -219,8 +220,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new NotSupportedException("NotSupported_UnwritableStream");
 
             uint written = 0;
+            bool success = false;
 #if !DOTNET5_4
-            if(offset != 0)
+            if (offset != 0)
             {
                 buffer = buffer.Skip(offset).ToArray();
             }
@@ -228,12 +230,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             template.EventHandle = IntPtr.Zero;
             template.OffsetLow = (int)(Position & uint.MaxValue);
             template.OffsetHigh = (int)(Position >> 32);
-            NativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, ref template);
+            success = NativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, ref template);
 #else
-            NativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, IntPtr.Zero);
+            success = NativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, IntPtr.Zero);
 #endif
             int errorCode = Marshal.GetLastWin32Error();
-            if ((0 != errorCode)
+            if (!success
+                && (0 != errorCode)
                 && (183 != errorCode))
             {
                 throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
@@ -462,18 +465,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return Directory.Exists(path);
 #else
             path = LongPath.ToUncPath(path);
-            bool ret = NativeMethods.PathFileExists(path);
+            bool success = NativeMethods.PathFileExists(path);
             int errorCode = Marshal.GetLastWin32Error();
 
-            if (ret)
-                return ret;
-
-            if (0 != errorCode
+            if (!success
+                && 0 != errorCode
                 && NativeMethods.ERROR_FILE_NOT_FOUND != errorCode)
             {
                 throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
             }
-            return ret;
+            return success;
 #endif
         }
 
