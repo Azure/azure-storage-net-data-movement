@@ -537,7 +537,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         if (findData.FileName != "."
                             && findData.FileName != "..")
                         {
-                            System.Console.WriteLine(path + findData.FileName);
                             yield return path + findData.FileName;
                         }
                     }
