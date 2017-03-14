@@ -8,12 +8,9 @@
     "licenseUrl": ""
   },
   "dependencies": {
-    "Microsoft.NETCore.App": {
-      "type": "platform",
-      "version": "1.0.0-rc2-3002702"
-    },
     "System.Runtime.Serialization.Xml": "4.1.1-rc2-24027",
-    "WindowsAzure.Storage": "8.0.0"
+    "System.Threading.ThreadPool": "4.3.0",
+    "WindowsAzure.Storage": "8.1.1"
   },
   "frameworks": {
     "netstandard1.3": {
