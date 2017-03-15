@@ -19,8 +19,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
 
     internal static partial class NativeMethods
     {
-        public const int ERROR_NO_MORE_FILES = 18;
+        public const int ERROR_SUCCESS = 0;
         public const int ERROR_FILE_NOT_FOUND = 2;
+        public const int ERROR_DIRECTORY_NOT_FOUND = 3;
+        public const int ERROR_NO_MORE_FILES = 18;
+        public const int ERROR_ALREADY_EXISTS = 183;
 
         [System.Runtime.InteropServices.StructLayout(LayoutKind.Sequential)]
         public struct OFSTRUCT
@@ -36,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
 
         // Open or create file
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern SafeFileHandle CreateFile(
+        public static extern SafeFileHandle CreateFileW(
              byte[] filename,
              [MarshalAs(UnmanagedType.U4)] FileAccess access,
              [MarshalAs(UnmanagedType.U4)] FileShare share,
@@ -48,7 +51,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         // Create directory
         [DllImport("kernel32.dll", EntryPoint = "CreateDirectoryW", CharSet = CharSet.Unicode, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool CreateDirectory(byte[] lpPathName, IntPtr lpSecurityAttributes);
+        public static extern bool CreateDirectoryW(byte[] lpPathName, IntPtr lpSecurityAttributes);
 
 #if !DOTNET5_4
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -58,15 +61,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool WriteFile(SafeFileHandle hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite, out uint lpNumberOfBytesWritten, ref NativeOverlapped template);
-#else
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool ReadFile(SafeFileHandle hFile, [Out] byte[] lpBuffer, uint nNumberOfBytesToRead, out uint lpNumberOfBytesRead, IntPtr template);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool WriteFile(SafeFileHandle hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite, out uint lpNumberOfBytesWritten, IntPtr template);
 #endif
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -74,7 +68,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         public static extern bool SetEndOfFile(SafeFileHandle hFile);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern uint GetFileSize(SafeFileHandle hFile, IntPtr lpFileSizeHigh);
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetFileSizeEx(SafeFileHandle hFile, out long lpFileSize);
 
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern int SetFilePointer(SafeFileHandle handle, int lDistanceToMove, out int lpDistanceToMoveHigh, uint dwMoveMethod);
@@ -88,18 +83,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
             [Out] StringBuilder lpFilePart);
 
         [DllImport("kernel32.dll", EntryPoint = "FindFirstFileW", CharSet = CharSet.Unicode)]
-        public static extern SafeFindHandle FindFirstFile(string lpFileName, out WIN32_FIND_DATA lpFindFileData);
+        public static extern SafeFindHandle FindFirstFileW(string lpFileName, out WIN32_FIND_DATA lpFindFileData);
 
         [DllImport("kernel32.dll", EntryPoint = "FindNextFileW", CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool FindNextFile(SafeFindHandle hFindFile, out WIN32_FIND_DATA lpFindFileData);
+        public static extern bool FindNextFileW(SafeFindHandle hFindFile, out WIN32_FIND_DATA lpFindFileData);
 
         [DllImport("shlwapi.dll", EntryPoint = "PathFileExistsW", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool PathFileExists([MarshalAs(UnmanagedType.LPWStr)]string pszPath);
+        public static extern bool PathFileExistsW([MarshalAs(UnmanagedType.LPWStr)]string pszPath);
 
         [DllImport("kernel32.dll", EntryPoint = "GetFileAttributesW", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern uint GetFileAttributes(string lpFileName);
+        public static extern uint GetFileAttributesW(string lpFileName);
 
         public static long Seek(SafeFileHandle handle, long offset, SeekOrigin origin)
         {
@@ -132,5 +127,49 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
 
             return (((long)hi << 32) | (uint)lo);
         }
+
+#if !DOTNET5_4
+
+        /// <summary>
+        /// Throw exception if last Win32 error is not zero.
+        /// </summary>
+        public static void ThrowExceptionForLastWin32ErrorIfExists()
+        {
+            ThrowExceptionForLastWin32ErrorIfExists(new int[] {
+                ERROR_SUCCESS
+            });
+        }
+
+        /// <summary>
+        /// Throw exception if last Win32 error is not expected.
+        /// </summary>
+        /// <param name="expectErrorCodes">Error codes that are expected.</param>
+        public static void ThrowExceptionForLastWin32ErrorIfExists(int[] expectErrorCodes)
+        {
+            int errorCode = Marshal.GetLastWin32Error();
+
+            if (expectErrorCodes != null
+                && expectErrorCodes.Contains(errorCode))
+            {
+                return;
+            }
+            throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
+        }
+
+        /// <summary>
+        /// Throw exception if the Win32 error given is not expected.
+        /// </summary>
+        /// <param name="errorCode">Win32 error code want to check.</param>
+        /// <param name="expectErrorCodes">Error codes that are expected.</param>
+        public static void ThrowExceptionForLastWin32ErrorIfExists(int errorCode, int[] expectErrorCodes)
+        {
+            if (expectErrorCodes != null
+                && expectErrorCodes.Contains(errorCode))
+            {
+                return;
+            }
+            throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
+        }
+#endif
     }
 }

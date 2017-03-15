@@ -81,11 +81,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             this.RelativePath = info.GetString(FilePathName);
-            var directoryPath = ((StreamJournal)context.Context).DirectoryPath;
+
+            string directoryPath = null;
+            if(context.Context != null)
+            {
+                directoryPath = ((StreamJournal)context.Context).DirectoryPath;
+            }
+
             if (directoryPath != null) // abosulte directory path is not set.
                 this.FilePath = LongPath.Combine(directoryPath, this.RelativePath);
             else
                 this.FilePath = this.RelativePath;
+        }
+#else
+        public void SetDirectoryPath(string directoryPath)
+        {
+            if(directoryPath != null)
+                this.FilePath = LongPath.Combine(directoryPath, this.RelativePath);
         }
 #endif // BINARY_SERIALIZATION
 

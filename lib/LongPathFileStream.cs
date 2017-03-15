@@ -18,8 +18,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Diagnostics;
     using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
 
+#if !DOTNET5_4
     /// <summary>
-    /// Inter calss to support long path files.
+    /// Internal calss to support long path files.
     /// </summary>
     public class LongPathFileStream : Stream
     {
@@ -33,25 +34,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.fileHandle = CreateFile(this.filePath, mode, access, share);
         }
 
-#if DOTNET5_4
-        public new void Dispose()
-        {
-            this.Dispose(true);
-        }
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-#else
         public override void Close()
         {
-#endif
             if (this.fileHandle != null && !this.fileHandle.IsClosed)
             {
-#if DOTNET5_4
-                this.fileHandle.Dispose();
-#else
                 this.fileHandle.Close();
-#endif
                 this.fileHandle = null;
 
                 if (this.filePath != null)
@@ -108,7 +95,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 if (this.fileHandle != null && !this.fileHandle.IsClosed)
                 {
-                    return NativeMethods.GetFileSize(this.fileHandle, IntPtr.Zero);
+                    long size = 0;
+                    var success = NativeMethods.GetFileSizeEx(this.fileHandle, out size);
+                    if(!success)
+                        NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
+                    return size;
                 }
                 else
                 {
@@ -158,7 +149,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             uint read = 0;
             bool success = false;
-#if !DOTNET5_4
+
             NativeOverlapped template = new NativeOverlapped();
             template.EventHandle = IntPtr.Zero;
             template.OffsetLow = (int)(Position & uint.MaxValue);
@@ -173,17 +164,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 success = NativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, ref template);
             }
-#else
-            success = NativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, IntPtr.Zero);
-#endif
 
-            int errorCode = Marshal.GetLastWin32Error();
-            if (!success
-                && (0 != errorCode)
-                && (183 != errorCode))
-            {
-                throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-            }
+            if (!success)
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
             Position += read;
             return (int)(read);
         }
@@ -195,6 +178,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new InvalidOperationException("Current long path file stream is not able to seek.");
             }
 
+            // Checked error message inside NativeMethods.Seek
             Position = NativeMethods.Seek(this.fileHandle, offset, origin);
             return Position;
         }
@@ -202,7 +186,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public override void SetLength(long value)
         {
             Seek(value, SeekOrigin.Begin);
-            NativeMethods.SetEndOfFile(this.fileHandle);
+            bool success = NativeMethods.SetEndOfFile(this.fileHandle);
+            if (!success)
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
             Seek(this.position, SeekOrigin.Begin);
         }
 
@@ -221,7 +207,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             uint written = 0;
             bool success = false;
-#if !DOTNET5_4
             if (offset != 0)
             {
                 buffer = buffer.Skip(offset).ToArray();
@@ -231,26 +216,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             template.OffsetLow = (int)(Position & uint.MaxValue);
             template.OffsetHigh = (int)(Position >> 32);
             success = NativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, ref template);
-#else
-            success = NativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, IntPtr.Zero);
-#endif
-            int errorCode = Marshal.GetLastWin32Error();
-            if (!success
-                && (0 != errorCode)
-                && (183 != errorCode))
-            {
-                throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-            }
+
+            if (!success)
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
             Position += written;
         }
 
         private SafeFileHandle CreateFile(string path, FileMode mode, FileAccess access, FileShare share)
         {
             path = LongPath.ToUncPath(path);
-            UnicodeEncoding unicode = new UnicodeEncoding();
-            var unicodePath = unicode.GetBytes(path);
+            var unicodePath = new UnicodeEncoding().GetBytes(path);
 
-            this.fileHandle = NativeMethods.CreateFile(unicodePath,
+            this.fileHandle = NativeMethods.CreateFileW(unicodePath,
                 access,
                 share,
                 IntPtr.Zero,
@@ -260,17 +237,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             if (this.fileHandle.IsInvalid)
             {
-                // 183 means the file already exists, while open succeeded.
-                int errorCode = Marshal.GetLastWin32Error();
-                if ((0 != errorCode)
-                    && (183 != errorCode))
-                {
-                    throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-                }
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] {
+                    NativeMethods.ERROR_SUCCESS,
+                    NativeMethods.ERROR_ALREADY_EXISTS
+                });
             }
             return this.fileHandle;
         }
     }
+#endif
 
     internal class LongPath
     {
@@ -352,7 +327,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #endif
         }
 
-        // TODO
         private static int GetRootLength(string path)
         {
             int pathLength = path.Length;
@@ -465,15 +439,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return Directory.Exists(path);
 #else
             path = LongPath.ToUncPath(path);
-            bool success = NativeMethods.PathFileExists(path);
-            int errorCode = Marshal.GetLastWin32Error();
+            bool success = NativeMethods.PathFileExistsW(path);
 
-            if (!success
-                && 0 != errorCode
-                && NativeMethods.ERROR_FILE_NOT_FOUND != errorCode)
+            if(!success)
             {
-                throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists( new int[]{ 0, NativeMethods.ERROR_DIRECTORY_NOT_FOUND, NativeMethods.ERROR_FILE_NOT_FOUND });
             }
+
             return success;
 #endif
         }
@@ -494,20 +466,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if DOTNET5_4
             Directory.CreateDirectory(path);
 #else
-            path = LongPath.ToUncPath(path);
-            UnicodeEncoding unicode = new UnicodeEncoding();
-            var unicodeDirectoryPath = unicode.GetBytes(path);
-
-            bool ret = NativeMethods.CreateDirectory(unicodeDirectoryPath, IntPtr.Zero);
-            int errorCode = Marshal.GetLastWin32Error();
-            if(ret == false)
+            var dir = LongPath.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir) && !LongPathDirectory.Exists(dir))
             {
-                if ((0 != errorCode)
-                    && (183 != errorCode))
-                {
-                    throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-                }
+                LongPathDirectory.CreateDirectory(dir);
             }
+
+            path = LongPath.ToUncPath(path);
+            var unicodeDirectoryPath = new UnicodeEncoding().GetBytes(path);
+
+            bool success = NativeMethods.CreateDirectoryW(unicodeDirectoryPath, IntPtr.Zero);
+            if (!success)
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] {
+                    NativeMethods.ERROR_SUCCESS,
+                    NativeMethods.ERROR_ALREADY_EXISTS
+                });
 #endif
         }
 
@@ -523,42 +496,43 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 NativeMethods.WIN32_FIND_DATA findData;
                 Interop.NativeMethods.SafeFindHandle findHandle;
 
-                findHandle = NativeMethods.FindFirstFile(LongPath.Combine(path.TrimEnd('\\'), searchPattern), out findData);
-                int errorCode = Marshal.GetLastWin32Error();
+                findHandle = NativeMethods.FindFirstFileW(LongPath.Combine(path, searchPattern), out findData);
 
                 if (!findHandle.IsInvalid)
                 {
                     if (findData.FileName != "."
                         && findData.FileName != "..")
-                        yield return path + findData.FileName;
+                        yield return LongPath.Combine(path, findData.FileName);
 
-                    while (NativeMethods.FindNextFile(findHandle, out findData))
+                    while (NativeMethods.FindNextFileW(findHandle, out findData))
                     {
                         if (findData.FileName != "."
                             && findData.FileName != "..")
                         {
-                            yield return path + findData.FileName;
+                            yield return LongPath.Combine(path, findData.FileName);
                         }
                     }
 
-                    errorCode = Marshal.GetLastWin32Error();
+                    // Get last Win32 error right native calls.
+                    // Dispose SafeFindHandle will call native methods, it is possible to set last Win32 error.
+                    var errorCode = Marshal.GetLastWin32Error();
                     if (findHandle != null)
                         findHandle.Dispose();
 
-                    if ((0 != errorCode)
-                        && (errorCode != NativeMethods.ERROR_NO_MORE_FILES)
-                        && (errorCode != NativeMethods.ERROR_FILE_NOT_FOUND))
-                    {
-                        throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-                    }
+                    NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(errorCode,
+                        new int[] {
+                        NativeMethods.ERROR_SUCCESS,
+                        NativeMethods.ERROR_NO_MORE_FILES,
+                        NativeMethods.ERROR_FILE_NOT_FOUND
+                    });
                 }
                 else
                 {
-                    if ((0 != errorCode)
-                        && (183 != errorCode))
-                    {
-                        throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-                    }
+                    NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] {
+                        NativeMethods.ERROR_SUCCESS,
+                        NativeMethods.ERROR_NO_MORE_FILES,
+                        NativeMethods.ERROR_FILE_NOT_FOUND
+                    });
                 }
             }
             else
@@ -578,8 +552,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if DOTNET5_4
             return File.GetAttributes(path);
 #else
-            uint dwAttributes = NativeMethods.GetFileAttributes(path);
-            int errorCode = Marshal.GetLastWin32Error();
+            uint dwAttributes = NativeMethods.GetFileAttributesW(path);
 
             FileAttributes ret = new FileAttributes();
             if (dwAttributes > 0)
@@ -588,10 +561,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 return ret;
             }
 
-            if ((0 != errorCode))
-            {
-                throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-            }
+            NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] {
+                NativeMethods.ERROR_SUCCESS
+            });
             return ret;
 #endif
         }

@@ -20,13 +20,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         //------------------------------------------------------------------------------------------------------
         // 0-255: Journal format version string: Assembly name + version
         // 256 - 511: Journal head, keep the list of used chunks for transfer instances and free chunks.
-        // 512- : Chunks for transfer instances
-        // Size of each chunk is 10K, 9K for transfer instance, 1K for progress tracker of the transfer instance.
-        // In the journal, it only allows one base transfer, which means user can only add one transfer to the checkpoint using stream journal.
+        // 512-515 : Size of base transfer instance.
+        // 516-ContentOffset-1 : Last 1K for progress tracker of the transfer instance, and rests are base transfer instance.
         // A base transfer can be a SingleObjectTransfer or a MultipleObjectTransfer, if it's a MultipleObjectTransfer,
         // there could be multiple subtransfers, each subtransfer is a SingleObjectTransfer.
+        // ContentOffset- : Chunks for transfer instances
+        // Size of each chunk is 10K, 9K for transfer instance, 1K for progress tracker of the transfer instance.
+        // In the journal, it only allows one base transfer, which means user can only add one transfer to the checkpoint using stream journal.
+
         //------------------------------------------------------------------------------------------------------
-        
+
         /// <summary>
         /// Size for one saved transfer instance in the journal stream.
         /// To reuse space transfer instances in journal stream to avoid occupy too much disks when transferring
@@ -51,7 +54,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         private const int contentOffset = 512;
 
-        public int ContentOffset
+        /// <summary>
+        /// Offset in stream for the beginning to sub-transfer instance.
+        /// </summary>
+        private int ContentOffset
         {
             get
             {
@@ -244,15 +250,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 this.stream.Position = transfer.StreamJournalOffset;
 #if BINARY_SERIALIZATION
                 this.formatter.Serialize(this.stream, transfer);
-                this.baseTransferSize = (int)this.stream.Position;
-
-                this.stream.Position = contentOffset;
-                this.stream.Write(BitConverter.GetBytes(this.baseTransferSize), 0, sizeof(int));
-
 #else               
                 transfer.IsStreamJournal = true;
                 this.WriteObject(this.transferSerializer, transfer);
 #endif
+                this.baseTransferSize = (int)this.stream.Position + 1024;
+                this.stream.Position = contentOffset;
+                this.stream.Write(BitConverter.GetBytes(this.baseTransferSize), 0, sizeof(int));
 
                 transfer.ProgressTracker.Journal = this;
                 transfer.ProgressTracker.StreamJournalOffset = transfer.StreamJournalOffset + baseTransferSize;
@@ -478,6 +482,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                             transfer = this.formatter.Deserialize(this.stream) as SingleObjectTransfer;
 #else                            
                             transfer = this.ReadObject(this.transferSerializer) as SingleObjectTransfer;
+
+                            if (transfer.Source is FileLocation)
+                            {
+                                (transfer.Source as FileLocation).SetDirectoryPath(this.DirectoryPath);
+                            }
+                            else if (transfer.Destination is FileLocation)
+                            {
+                                (transfer.Destination as FileLocation).SetDirectoryPath(this.DirectoryPath);
+                            }
 #endif
                         }
                         catch (Exception)

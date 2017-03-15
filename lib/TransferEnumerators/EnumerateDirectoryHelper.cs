@@ -439,7 +439,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             {
                 Interop.NativeMethods.WIN32_FIND_DATA findData;
 
-                findHandle = Interop.NativeMethods.FindFirstFile(checkDir, out findData);
+                findHandle = Interop.NativeMethods.FindFirstFileW(checkDir, out findData);
                 int errorCode = Marshal.GetLastWin32Error();
                 if (findHandle.IsInvalid)
                 {
