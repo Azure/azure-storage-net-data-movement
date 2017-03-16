@@ -83,7 +83,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.RelativePath = info.GetString(FilePathName);
 
             string directoryPath = null;
-            if(context.Context != null)
+            if(context.Context != null
+                && context.Context is StreamJournal)
             {
                 directoryPath = ((StreamJournal)context.Context).DirectoryPath;
             }
@@ -157,7 +158,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new System.ArgumentNullException("info");
             }
 
-            info.AddValue(FilePathName, this.RelativePath, typeof(string));
+            if (context.Context == null
+                || !(context.Context is StreamJournal))
+                info.AddValue(FilePathName, this.FilePath, typeof(string));
+            else
+                info.AddValue(FilePathName, this.RelativePath, typeof(string));
         }
 #endif // BINARY_SERIALIZATION
 

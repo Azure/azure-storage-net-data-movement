@@ -247,10 +247,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     }
 #endif
 
-    internal class LongPath
+    public static class LongPath
     {
-        private LongPath() { }
-
         public static string ToUncPath(string localFilePath)
         {
             string ret = LongPath.GetFullPath(localFilePath);
@@ -308,6 +306,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #endif
         }
 
+        /// <summary>
+        /// Returns the directory information for the specified path string.
+        /// </summary>
+        /// <param name="path">The path of a file or directory.</param>
+        /// <returns></returns>
         public static string GetDirectoryName(string path)
         {
 #if DOTNET5_4
@@ -315,11 +318,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #else
             if (path != null)
             {
-
+                int root = GetRootLength(path);
                 int lastSeparator = path.Length;
-                while (lastSeparator > 0 && path[--lastSeparator] != Path.DirectorySeparatorChar && path[lastSeparator] != Path.AltDirectorySeparatorChar) ;
-                if (lastSeparator > GetRootLength(path))
+                if (lastSeparator > root)
                 {
+                    while (lastSeparator > root && path[--lastSeparator] != Path.DirectorySeparatorChar && path[lastSeparator] != Path.AltDirectorySeparatorChar) ;
                     return path.Substring(0, lastSeparator);
                 }
             }
@@ -461,6 +464,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 #endif
 
+        /// <summary>
+        /// Creates all directories and subdirectories in the specified path unless they already exist.
+        /// </summary>
+        /// <param name="path">The directory to create.</param>
         public static void CreateDirectory(string path)
         {
 #if DOTNET5_4
@@ -513,7 +520,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         }
                     }
 
-                    // Get last Win32 error right native calls.
+                    // Get last Win32 error right after native calls.
                     // Dispose SafeFindHandle will call native methods, it is possible to set last Win32 error.
                     var errorCode = Marshal.GetLastWin32Error();
                     if (findHandle != null)

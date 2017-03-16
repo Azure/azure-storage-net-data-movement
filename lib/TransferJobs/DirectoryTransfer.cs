@@ -289,7 +289,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         DirectoryLocation localDirLocation = dirLocation as DirectoryLocation;
                         string path = Path.Combine(localDirLocation.DirectoryPath, destRelativePath);
                         
-                        return new FileLocation(path);
+                        return new FileLocation(path, destRelativePath);
                     }
 
                 default:
