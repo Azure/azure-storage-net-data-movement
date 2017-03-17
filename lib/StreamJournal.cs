@@ -254,7 +254,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 transfer.IsStreamJournal = true;
                 this.WriteObject(this.transferSerializer, transfer);
 #endif
-                this.baseTransferSize = (int)this.stream.Position + 1024;
+                this.baseTransferSize = ((int)this.stream.Position + 1024 + 1) / 512;
+                this.baseTransferSize *= 512;
                 this.stream.Position = contentOffset;
                 this.stream.Write(BitConverter.GetBytes(this.baseTransferSize), 0, sizeof(int));
 

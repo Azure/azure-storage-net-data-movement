@@ -27,10 +27,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private long position = 0;
         private string filePath = null;
         private SafeFileHandle fileHandle = null;
+        private FileAccess filePermission;
 
         public LongPathFileStream(string filePath, FileMode mode, FileAccess access, FileShare share)
         {
             this.filePath = LongPath.ToUncPath(filePath);
+            this.filePermission = access;
             this.fileHandle = CreateFile(this.filePath, mode, access, share);
         }
 
@@ -57,7 +59,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             get
             {
-                if (this.fileHandle != null && !this.fileHandle.IsClosed)
+                if (this.fileHandle != null && !this.fileHandle.IsClosed
+                    && (filePermission == FileAccess.Read || filePermission == FileAccess.ReadWrite))
                 {
                     return !this.fileHandle.IsInvalid;
                 }
@@ -81,7 +84,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             get
             {
-                if(this.fileHandle != null && !this.fileHandle.IsClosed)
+                if(this.fileHandle != null && !this.fileHandle.IsClosed
+                    && (filePermission == FileAccess.Write || filePermission == FileAccess.ReadWrite))
                 {
                     return !this.fileHandle.IsInvalid;
                 }
@@ -96,8 +100,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 if (this.fileHandle != null && !this.fileHandle.IsClosed)
                 {
                     long size = 0;
-                    var success = NativeMethods.GetFileSizeEx(this.fileHandle, out size);
-                    if(!success)
+                    if(!NativeMethods.GetFileSizeEx(this.fileHandle, out size))
                         NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
                     return size;
                 }
@@ -143,9 +146,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             if (count < 0)
                 throw new ArgumentOutOfRangeException(nameof(count), "ArgumentOutOfRange_NeedNonNegNum");
             if (offset + count > buffer.Length)
-                throw new ArgumentOutOfRangeException(nameof(count), "ArgumentOutOfRange_NeedNonNegNum");
+                throw new ArgumentOutOfRangeException(nameof(buffer), "ArgumentOutOfRange: offset + count out of buffer's range.");
             if (!CanRead)
-                throw new NotSupportedException("NotSupported_UnreadableStream");
+                throw new NotSupportedException("NotSupported_UnableToReadTargetStream");
 
             uint read = 0;
             bool success = false;
@@ -186,8 +189,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public override void SetLength(long value)
         {
             Seek(value, SeekOrigin.Begin);
-            bool success = NativeMethods.SetEndOfFile(this.fileHandle);
-            if (!success)
+            if (!NativeMethods.SetEndOfFile(this.fileHandle))
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
             Seek(this.position, SeekOrigin.Begin);
         }
@@ -201,12 +203,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             if (count < 0)
                 throw new ArgumentOutOfRangeException(nameof(count), "ArgumentOutOfRange_NeedNonNegNum");
             if (offset + count > buffer.Length)
-                throw new ArgumentOutOfRangeException(nameof(count), "ArgumentOutOfRange_NeedNonNegNum");
+                throw new ArgumentOutOfRangeException(nameof(buffer), "ArgumentOutOfRange: offset + count out of buffer's range.");
             if (!CanWrite)
-                throw new NotSupportedException("NotSupported_UnwritableStream");
+                throw new NotSupportedException("NotSupported_UnableToWriteTargetStream");
 
             uint written = 0;
-            bool success = false;
             if (offset != 0)
             {
                 buffer = buffer.Skip(offset).ToArray();
@@ -215,9 +216,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             template.EventHandle = IntPtr.Zero;
             template.OffsetLow = (int)(Position & uint.MaxValue);
             template.OffsetHigh = (int)(Position >> 32);
-            success = NativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, ref template);
 
-            if (!success)
+            if (!NativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, ref template))
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
             Position += written;
         }
@@ -482,8 +482,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             path = LongPath.ToUncPath(path);
             var unicodeDirectoryPath = new UnicodeEncoding().GetBytes(path);
 
-            bool success = NativeMethods.CreateDirectoryW(unicodeDirectoryPath, IntPtr.Zero);
-            if (!success)
+            if (!NativeMethods.CreateDirectoryW(unicodeDirectoryPath, IntPtr.Zero))
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] {
                     NativeMethods.ERROR_SUCCESS,
                     NativeMethods.ERROR_ALREADY_EXISTS
@@ -491,7 +490,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #endif
         }
 
-        // only SearchOption.TopDirectoryOnly is supported.
+        // Only SearchOption.TopDirectoryOnly is supported.
+        // SearchOption.AllDirectories is not supported.
         public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption)
         {
 #if DOTNET5_4

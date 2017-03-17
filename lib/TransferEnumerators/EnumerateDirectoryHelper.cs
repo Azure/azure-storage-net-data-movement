@@ -443,12 +443,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 int errorCode = Marshal.GetLastWin32Error();
                 if (findHandle.IsInvalid)
                 {
-                    if (0 != errorCode
-                        && 18 != errorCode)
-                    {
-                        throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-                    }
-                    throw new SecurityException();
+                    NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(errorCode,
+                        new int[] {
+                        NativeMethods.ERROR_SUCCESS,
+                        NativeMethods.ERROR_NO_MORE_FILES,
+                        NativeMethods.ERROR_FILE_NOT_FOUND
+                    });
+                    throw new SecurityException("Request for the permission to list files.");
                 }
 
             }
