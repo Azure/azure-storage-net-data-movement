@@ -38,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         }
 
         // Open or create file
-        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern SafeFileHandle CreateFileW(
              byte[] filename,
              [MarshalAs(UnmanagedType.U4)] FileAccess access,
@@ -49,7 +49,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
              IntPtr templateFile);
 
         // Create directory
-        [DllImport("kernel32.dll", EntryPoint = "CreateDirectoryW", CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport("kernel32.dll", EntryPoint = "CreateDirectoryW", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CreateDirectoryW(byte[] lpPathName, IntPtr lpSecurityAttributes);
 
@@ -82,10 +82,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
             [Out] StringBuilder lpBuffer,
             [Out] StringBuilder lpFilePart);
 
-        [DllImport("kernel32.dll", EntryPoint = "FindFirstFileW", CharSet = CharSet.Unicode)]
+        [DllImport("kernel32.dll", EntryPoint = "FindFirstFileW", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern SafeFindHandle FindFirstFileW(string lpFileName, out WIN32_FIND_DATA lpFindFileData);
 
-        [DllImport("kernel32.dll", EntryPoint = "FindNextFileW", CharSet = CharSet.Unicode)]
+        [DllImport("kernel32.dll", EntryPoint = "FindNextFileW", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool FindNextFileW(SafeFindHandle hFindFile, out WIN32_FIND_DATA lpFindFileData);
 
@@ -93,7 +93,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool PathFileExistsW([MarshalAs(UnmanagedType.LPWStr)]string pszPath);
 
-        [DllImport("kernel32.dll", EntryPoint = "GetFileAttributesW", CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport("kernel32.dll", EntryPoint = "GetFileAttributesW", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern uint GetFileAttributesW(string lpFileName);
 
         public static long Seek(SafeFileHandle handle, long offset, SeekOrigin origin)
