@@ -40,7 +40,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         // Open or create file
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern SafeFileHandle CreateFileW(
-             byte[] filename,
+             [MarshalAs(UnmanagedType.LPWStr)] string filename,
              [MarshalAs(UnmanagedType.U4)] FileAccess access,
              [MarshalAs(UnmanagedType.U4)] FileShare share,
              IntPtr securityAttributes,
