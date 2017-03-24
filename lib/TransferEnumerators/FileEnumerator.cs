@@ -25,6 +25,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         private FileListContinuationToken listContinuationToken;
 
         /// <summary>
+        /// A file relative path can be at most 1024 character long based on Windows Azure documentation.
+        /// </summary>
+        private const int MaxRelativePathLength = 1024;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="FileEnumerator" /> class.
         /// </summary>
         /// <param name="location">Directory location.</param>
@@ -116,10 +121,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                         relativePath = relativePath.Remove(0, fullPath.Length);
                     }
 
-                    yield return new FileEntry(
-                        relativePath,
-                        LongPath.Combine(this.location.DirectoryPath, relativePath),
-                        new FileListContinuationToken(relativePath));
+                    if (relativePath.Length > MaxRelativePathLength)
+                    {
+                        string errorMessage = string.Format(
+                            CultureInfo.CurrentCulture,
+                            Resources.RelativePathTooLong,
+                            relativePath);
+
+                        TransferException exception =
+                            new TransferException(TransferErrorCode.FailToEnumerateDirectory, errorMessage);
+                        errorEntry = new ErrorEntry(exception);
+                        yield return errorEntry;
+                    }
+                    else
+                    {
+                        yield return new FileEntry(
+                            relativePath,
+                            LongPath.Combine(this.location.DirectoryPath, relativePath),
+                            new FileListContinuationToken(relativePath));
+                    }
                 }
             }
         }

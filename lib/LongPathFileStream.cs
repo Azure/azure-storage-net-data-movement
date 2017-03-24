@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// <summary>
     /// Internal calss to support long path files.
     /// </summary>
-    public class LongPathFileStream : Stream
+    internal class LongPathFileStream : Stream
     {
         private long position = 0;
         private string filePath = null;
@@ -53,6 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.position = 0;
                 }
             }
+            base.Dispose(true);
         }
 
         public override bool CanRead
@@ -84,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             get
             {
-                if(this.fileHandle != null && !this.fileHandle.IsClosed
+                if (this.fileHandle != null && !this.fileHandle.IsClosed
                     && (filePermission == FileAccess.Write || filePermission == FileAccess.ReadWrite))
                 {
                     return !this.fileHandle.IsInvalid;
@@ -100,7 +101,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 if (this.fileHandle != null && !this.fileHandle.IsClosed)
                 {
                     long size = 0;
-                    if(!NativeMethods.GetFileSizeEx(this.fileHandle, out size))
+                    if (!NativeMethods.GetFileSizeEx(this.fileHandle, out size))
                         NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
                     return size;
                 }
@@ -120,11 +121,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             set
             {
-                if(!CanSeek)
+                if (!CanSeek)
                 {
                     throw new NotSupportedException("Not able to seek");
                 }
-                if(this.position != value)
+                if (this.position != value)
                 {
                     this.position = value;
                 }
@@ -169,7 +170,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             if (!success)
-                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(
+                    new int[] {
+                        NativeMethods.ERROR_SUCCESS,
+                        NativeMethods.ERROR_HANDLE_EOF
+                    });
             Position += read;
             return (int)(read);
         }
@@ -420,7 +425,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             Debug.Assert(path != null);
 
-            for(int i = path.Length - 1; i >= 0; --i)
+            for (int i = path.Length - 1; i >= 0; --i)
             {
                 char ch = path[i];
                 if (ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar || ch == Path.VolumeSeparatorChar)
@@ -443,9 +448,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             path = LongPath.ToUncPath(path);
             bool success = NativeMethods.PathFileExistsW(path);
 
-            if(!success)
+            if (!success)
             {
-                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists( new int[]{ 0, NativeMethods.ERROR_DIRECTORY_NOT_FOUND, NativeMethods.ERROR_FILE_NOT_FOUND });
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] { 0, NativeMethods.ERROR_DIRECTORY_NOT_FOUND, NativeMethods.ERROR_FILE_NOT_FOUND });
             }
 
             return success;
@@ -458,7 +463,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if DOTNET5_4
             return Directory.GetFiles(path);
 #else
-            return Directory.GetFiles(path);
+            return EnumerateFileSystemEntries(path, "*", SearchOption.AllDirectories, FilesOrDirectory.File).ToArray();
 #endif
         }
 #endif
@@ -479,9 +484,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             path = LongPath.ToUncPath(path);
-            var unicodeDirectoryPath = new UnicodeEncoding().GetBytes(path);
 
-            if (!NativeMethods.CreateDirectoryW(unicodeDirectoryPath, IntPtr.Zero))
+            if (!NativeMethods.CreateDirectoryW(path, IntPtr.Zero))
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] {
                     NativeMethods.ERROR_SUCCESS,
                     NativeMethods.ERROR_ALREADY_EXISTS
@@ -489,33 +493,60 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #endif
         }
 
-        // Only SearchOption.TopDirectoryOnly is supported.
-        // SearchOption.AllDirectories is not supported.
-        public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption)
+        public enum FilesOrDirectory
+        {
+            None,
+            File,
+            Directory,
+            All
+        };
+
+        public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption, FilesOrDirectory filter = FilesOrDirectory.All)
         {
 #if DOTNET5_4
             return Directory.EnumerateFileSystemEntries(path, searchPattern, searchOption);
 #else
-            // check search pattern.
-            if (searchOption == SearchOption.TopDirectoryOnly)
-            {
-                NativeMethods.WIN32_FIND_DATA findData;
-                Interop.NativeMethods.SafeFindHandle findHandle;
+            NativeMethods.WIN32_FIND_DATA findData;
+            Interop.NativeMethods.SafeFindHandle findHandle;
+            string currentPath = null;
 
-                findHandle = NativeMethods.FindFirstFileW(LongPath.Combine(path, searchPattern), out findData);
+            Queue<string> folders = new Queue<string>();
+            folders.Enqueue(path);
+            while (folders.Count > 0)
+            {
+                currentPath = folders.Dequeue();
+                findHandle = NativeMethods.FindFirstFileW(LongPath.Combine(LongPath.ToUncPath(currentPath), searchPattern), out findData);
 
                 if (!findHandle.IsInvalid)
                 {
                     if (findData.FileName != "."
                         && findData.FileName != "..")
-                        yield return LongPath.Combine(path, findData.FileName);
+                    {
+                        if (searchOption == SearchOption.AllDirectories
+                            && findData.FileAttributes == FileAttributes.Directory)
+                        {
+                            folders.Enqueue(LongPath.Combine(currentPath, findData.FileName));
+                        }
+                        if ((filter == FilesOrDirectory.All)
+                            || (filter == FilesOrDirectory.Directory && findData.FileAttributes == FileAttributes.Directory)
+                            || (filter == FilesOrDirectory.File && findData.FileAttributes != FileAttributes.Directory))
+                            yield return LongPath.Combine(currentPath, findData.FileName);
+                    }
 
                     while (NativeMethods.FindNextFileW(findHandle, out findData))
                     {
                         if (findData.FileName != "."
                             && findData.FileName != "..")
                         {
-                            yield return LongPath.Combine(path, findData.FileName);
+                            if (searchOption == SearchOption.AllDirectories
+                                && findData.FileAttributes == FileAttributes.Directory)
+                            {
+                                folders.Enqueue(LongPath.Combine(currentPath, findData.FileName));
+                            }
+                            if ((filter == FilesOrDirectory.All)
+                                || (filter == FilesOrDirectory.Directory && findData.FileAttributes == FileAttributes.Directory)
+                                || (filter == FilesOrDirectory.File && findData.FileAttributes != FileAttributes.Directory))
+                                yield return LongPath.Combine(currentPath, findData.FileName);
                         }
                     }
 
@@ -540,10 +571,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         NativeMethods.ERROR_FILE_NOT_FOUND
                     });
                 }
-            }
-            else
-            {
-                throw new NotSupportedException(nameof(searchOption) + "is not supported.");
             }
 #endif
         }

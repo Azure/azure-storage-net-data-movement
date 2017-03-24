@@ -355,4 +355,8 @@ MD5 in property: {2}</value>
   <data name="BlockSizeMustBeMultipleOf4MB" xml:space="preserve">
     <value>BlockSize must be multiple of 4MB.</value>
   </data>
+  <data name="RelativePathTooLong" xml:space="preserve">
+    <value>File {0} is too long, relative path must not exceed 1024 characters. </value>
+    <comment>{0} is the relative path of the file which exceed the 1024 characters limit.</comment>
+  </data>
 </root>

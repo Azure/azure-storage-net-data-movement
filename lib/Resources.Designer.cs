@@ -439,16 +439,27 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
                 return ResourceManager.GetString("ReadableSizeFormatPetaBytes", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to {0:0.##}TB.
         /// </summary>
         internal static string ReadableSizeFormatTeraBytes {
-            get {
+            get
+            {
                 return ResourceManager.GetString("ReadableSizeFormatTeraBytes", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to relative path limitation.
+        /// </summary>
+        internal static string RelativePathTooLong {
+            get
+            {
+                return ResourceManager.GetString("RelativePathTooLong", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to Failed to read restartable info from file..
         /// </summary>

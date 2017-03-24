@@ -24,6 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         public const int ERROR_DIRECTORY_NOT_FOUND = 3;
         public const int ERROR_NO_MORE_FILES = 18;
         public const int ERROR_ALREADY_EXISTS = 183;
+        public const int ERROR_HANDLE_EOF = 38;
 
         [System.Runtime.InteropServices.StructLayout(LayoutKind.Sequential)]
         public struct OFSTRUCT
@@ -51,7 +52,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         // Create directory
         [DllImport("kernel32.dll", EntryPoint = "CreateDirectoryW", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool CreateDirectoryW(byte[] lpPathName, IntPtr lpSecurityAttributes);
+        public static extern bool CreateDirectoryW([MarshalAs(UnmanagedType.LPWStr)] string lpPathName, IntPtr lpSecurityAttributes);
 
 #if !DOTNET5_4
         [DllImport("kernel32.dll", SetLastError = true)]
