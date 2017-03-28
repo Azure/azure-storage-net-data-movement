@@ -105,6 +105,15 @@
     <GeneratedSourceFile Include="$(SourceCodeOuputFolder)\*.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\lib\FileNativeMethods.cs">
+      <Link>Framework\FileNativeMethods.cs</Link>
+    </Compile>
+    <Compile Include="..\..\lib\Interop\Interop.Windows.cs">
+      <Link>Framework\Interop.Windows.cs</Link>
+    </Compile>
+    <Compile Include="..\..\lib\LongPathFileStream.cs">
+      <Link>Framework\LongPathFileStream.cs</Link>
+    </Compile>
     <Compile Include="..\..\tools\AssemblyInfo\SharedAssemblyInfo.cs">
       <Link>SharedAssemblyInfo.cs</Link>
     </Compile>
@@ -141,9 +150,11 @@
     <Compile Include="Framework\DataAdaptor.cs" />
     <Compile Include="Framework\DMLibWrapper.cs" />
     <Compile Include="Framework\DownloadWrapper.cs" />
+    <Compile Include="Framework\FileNativeMethodsExtention.cs" />
     <Compile Include="Framework\IDataInfo.cs" />
     <Compile Include="Framework\LocalDataAdaptor.cs" />
     <Compile Include="Framework\LocalDataAdaptorBase.cs" />
+    <Compile Include="Framework\LongPathFileStreamExtention.cs" />
     <Compile Include="Framework\MultiDirectionTestBase.cs" />
     <Compile Include="Framework\MultiDirectionTestHelper.cs" />
     <Compile Include="Framework\MultiDirectionTestInfo.cs" />

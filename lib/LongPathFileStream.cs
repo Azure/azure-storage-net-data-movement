@@ -26,7 +26,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     {
         private long position = 0;
         private string filePath = null;
-        private SafeFileHandle fileHandle = null;
+        protected SafeFileHandle fileHandle = null;
         private FileAccess filePermission;
 
         public LongPathFileStream(string filePath, FileMode mode, FileAccess access, FileShare share)
