@@ -16,6 +16,7 @@ namespace DMLibTest
         {
             this.TimeoutInMs = DefaultTimeoutInMs;
             this.DestTransferDataInfo = default(TDataInfo);
+            this.DisableSourceGenerator = false;
             this.DisableDestinationFetch = false;
             this.LimitSpeed = false;
         }
@@ -33,6 +34,12 @@ namespace DMLibTest
         }
 
         public bool IsDirectoryTransfer
+        {
+            get;
+            set;
+        }
+
+        public bool DisableSourceGenerator
         {
             get;
             set;

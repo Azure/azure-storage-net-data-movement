@@ -13,6 +13,8 @@ namespace DMLibTest.Cases
 
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.File;
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
     using DMLibTest.Framework;
@@ -43,6 +45,8 @@ namespace DMLibTest.Cases
 #endif
         #region Initialization and cleanup methods
         private int pathLengthLimit = 32 * 1000;
+        private string sourceDirectoryName = string.Empty;
+        private string destDirectoryName = string.Empty;
 
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
@@ -60,12 +64,18 @@ namespace DMLibTest.Cases
         [TestInitialize()]
         public void MyTestInitialize()
         {
+            sourceDirectoryName = LongPath.Combine(Directory.GetCurrentDirectory(), SourceRoot+ DMLibTestHelper.RandomNameSuffix());
+            destDirectoryName = LongPath.Combine(Directory.GetCurrentDirectory(), DestRoot+ DMLibTestHelper.RandomNameSuffix());
             base.BaseTestInitialize();
         }
 
         [TestCleanup()]
         public void MyTestCleanup()
         {
+            if (LongPathDirectoryExtention.Exists(sourceDirectoryName))
+                LongPathDirectoryExtention.Delete(sourceDirectoryName, true);
+            if (LongPathDirectoryExtention.Exists(destDirectoryName))
+                LongPathDirectoryExtention.Delete(destDirectoryName, true);
             base.BaseTestCleanup();
         }
         #endregion
@@ -74,10 +84,9 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
         public void LongFilePathSingleUpload()
         {
-            int fileSizeInKB = 1 * 1024;
-            string directoryName = Directory.GetCurrentDirectory();
-            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(directoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
+            int fileSizeInBytes = 1 * 1024;
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
 
@@ -91,13 +100,12 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalDest)]
         public void LongFilePathSingleDownload()
         {
-            int fileSizeInKB = 1 * 1024;
+            int fileSizeInBytes = 1 * 1024;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
-            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
-
-            string directoryName = Directory.GetCurrentDirectory();
-            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(directoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddOneFile(destDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
+            
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            DMLibDataHelper.AddOneFile(destDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.DestTransferDataInfo = destDataInfo;
@@ -116,10 +124,9 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
         public void LongFilePathResumeSingleUpload()
         {
-            int fileSizeInKB = 100 * 1024;
-            string directoryName = Directory.GetCurrentDirectory();
-            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(directoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
+            int fileSizeInBytes = 100 * 1024;
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
 
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
@@ -131,7 +138,7 @@ namespace DMLibTest.Cases
             using (Stream journalStream = new MemoryStream())
             {
                 TransferContext transferContext = IsStreamJournal ? new SingleTransferContext(journalStream) : new SingleTransferContext();
-                var progressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 0, 1, 0, fileSizeInKB * 1024);
+                var progressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 0, 1, 0, fileSizeInBytes * 1024);
                 transferContext.ProgressHandler = progressChecker.GetProgressHandler();
                 options.TransferItemModifier = (fileName, item) =>
                 {
@@ -212,34 +219,34 @@ namespace DMLibTest.Cases
                 if (DMLibTestContext.SourceType == DMLibDataType.Stream && DMLibTestContext.DestType != DMLibDataType.BlockBlob)
                 {
                     // The destination is already created, will cause a transfer skip
-                    firstProgressChecker = new ProgressChecker(2, fileSizeInKB * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInKB * 1024);
+                    firstProgressChecker = new ProgressChecker(2, fileSizeInBytes * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInBytes * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.Stream || (DMLibTestContext.SourceType == DMLibDataType.Stream && DMLibTestContext.DestType == DMLibDataType.BlockBlob))
                 {
-                    firstProgressChecker = new ProgressChecker(2, 2 * fileSizeInKB * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInKB * 1024);
+                    firstProgressChecker = new ProgressChecker(2, 2 * fileSizeInBytes * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInBytes * 1024);
                 }
                 else
                 {
-                    firstProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 1, 0, 0, fileSizeInKB * 1024);
+                    firstProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 1, 0, 0, fileSizeInBytes * 1024);
                 }
 
                 // second progress checker
                 if (DMLibTestContext.SourceType == DMLibDataType.Stream)
                 {
                     // The destination is already created, will cause a transfer skip
-                    secondProgressChecker = new ProgressChecker(2, fileSizeInKB * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInKB * 1024);
+                    secondProgressChecker = new ProgressChecker(2, fileSizeInBytes * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInBytes * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.Stream)
                 {
-                    secondProgressChecker = new ProgressChecker(2, 2 * fileSizeInKB * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInKB * 1024);
+                    secondProgressChecker = new ProgressChecker(2, 2 * fileSizeInBytes * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInBytes * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && !DMLibTestContext.IsAsync)
                 {
-                    secondProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 0, 1 /* failed */, 0, fileSizeInKB * 1024);
+                    secondProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 0, 1 /* failed */, 0, fileSizeInBytes * 1024);
                 }
                 else
                 {
-                    secondProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 1 /* transferred */, 0, 0, fileSizeInKB * 1024);
+                    secondProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 1 /* transferred */, 0, 0, fileSizeInBytes * 1024);
                 }
 
                 // resume with firstResumeCheckpoint
@@ -340,13 +347,12 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalDest)]
         public void LongFilePathResumeSingleDownload()
         {
-            int fileSizeInKB = 100 * 1024;
+            int fileSizeInBytes = 100 * 1024;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
-            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
 
-            string directoryName = Directory.GetCurrentDirectory();
-            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(directoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddOneFile(destDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            DMLibDataHelper.AddOneFile(destDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
 
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
@@ -360,7 +366,7 @@ namespace DMLibTest.Cases
             using (Stream journalStream = new MemoryStream())
             {
                 TransferContext transferContext = IsStreamJournal ? new SingleTransferContext(journalStream) : new SingleTransferContext();
-                var progressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 0, 1, 0, fileSizeInKB * 1024);
+                var progressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 0, 1, 0, fileSizeInBytes * 1024);
                 transferContext.ProgressHandler = progressChecker.GetProgressHandler();
                 options.TransferItemModifier = (fileName, item) =>
                 {
@@ -441,34 +447,34 @@ namespace DMLibTest.Cases
                 if (DMLibTestContext.SourceType == DMLibDataType.Stream && DMLibTestContext.DestType != DMLibDataType.BlockBlob)
                 {
                     // The destination is already created, will cause a transfer skip
-                    firstProgressChecker = new ProgressChecker(2, fileSizeInKB * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInKB * 1024);
+                    firstProgressChecker = new ProgressChecker(2, fileSizeInBytes * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInBytes * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.Stream || (DMLibTestContext.SourceType == DMLibDataType.Stream && DMLibTestContext.DestType == DMLibDataType.BlockBlob))
                 {
-                    firstProgressChecker = new ProgressChecker(2, 2 * fileSizeInKB * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInKB * 1024);
+                    firstProgressChecker = new ProgressChecker(2, 2 * fileSizeInBytes * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInBytes * 1024);
                 }
                 else
                 {
-                    firstProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 1, 0, 0, fileSizeInKB * 1024);
+                    firstProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 1, 0, 0, fileSizeInBytes * 1024);
                 }
 
                 // second progress checker
                 if (DMLibTestContext.SourceType == DMLibDataType.Stream)
                 {
                     // The destination is already created, will cause a transfer skip
-                    secondProgressChecker = new ProgressChecker(2, fileSizeInKB * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInKB * 1024);
+                    secondProgressChecker = new ProgressChecker(2, fileSizeInBytes * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInBytes * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.Stream)
                 {
-                    secondProgressChecker = new ProgressChecker(2, 2 * fileSizeInKB * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInKB * 1024);
+                    secondProgressChecker = new ProgressChecker(2, 2 * fileSizeInBytes * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInBytes * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && !DMLibTestContext.IsAsync)
                 {
-                    secondProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 0, 1 /* failed */, 0, fileSizeInKB * 1024);
+                    secondProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 0, 1 /* failed */, 0, fileSizeInBytes * 1024);
                 }
                 else
                 {
-                    secondProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 1 /* transferred */, 0, 0, fileSizeInKB * 1024);
+                    secondProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 1 /* transferred */, 0, 0, fileSizeInBytes * 1024);
                 }
 
                 // resume with firstResumeCheckpoint
@@ -536,6 +542,597 @@ namespace DMLibTest.Cases
             }
         }
 
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
+        public void LongFilePathDirectoryUpload()
+        {
+            int fileNum = 50;
+            int fileSizeInBytes = 1 * 1024;
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, DMLibTestHelper.RandomNameSuffix(), fileNum, fileSizeInBytes);
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.IsDirectoryTransfer = true;
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.LocalDest)]
+        public void LongFilePathDirectoryDownload()
+        {
+            int fileNum = 50;
+            int fileSizeInBytes = 1 * 1024;
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, DMLibTestHelper.RandomNameSuffix(), fileNum, fileSizeInBytes);
+
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.DestTransferDataInfo = destDataInfo;
+            options.DisableDestinationFetch = true;
+            options.IsDirectoryTransfer = true;
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                dynamic transferOptions = DefaultTransferDirectoryOptions;
+                transferOptions.Recursive = true;
+                transferItem.Options = transferOptions;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            DataAdaptor<DMLibDataInfo> destAdaptor = GetDestAdaptor(DMLibDataType.Local);
+            destDataInfo = destAdaptor.GetTransferDataInfo(destDataInfo.RootPath);
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, destDataInfo), "Verify transfer result.");
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
+        public void LongFilePathResumeDirectoryUpload()
+        {
+            int bigFileSizeInKB = 5 * 1024; // 5 MB
+            int smallFileSizeInKB = 1; // 1 KB
+            int bigFileNum = 5;
+            int smallFileNum = 50;
+            long totalSizeInBytes = (bigFileSizeInKB * bigFileNum + smallFileSizeInKB * smallFileNum) * 1024;
+            int totalFileNum = bigFileNum + smallFileNum;
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            DirNode bigFileDirNode = new DirNode("big");
+            DirNode smallFileDirNode = new DirNode("small");
+
+            sourceDataInfo.RootNode.AddDirNode(bigFileDirNode);
+            sourceDataInfo.RootNode.AddDirNode(smallFileDirNode);
+
+            DMLibDataHelper.AddMultipleFiles(bigFileDirNode, FileName, bigFileNum, bigFileSizeInKB);
+            DMLibDataHelper.AddMultipleFiles(smallFileDirNode, FileName, smallFileNum, smallFileSizeInKB);
+
+            CancellationTokenSource tokenSource = new CancellationTokenSource();
+
+            TransferItem transferItem = null;
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.LimitSpeed = true;
+            options.IsDirectoryTransfer = true;
+
+            using (Stream journalStream = new MemoryStream())
+            {
+                bool IsStreamJournal = random.Next(0, 2) == 0;
+                var transferContext = IsStreamJournal ? new DirectoryTransferContext(journalStream) : new DirectoryTransferContext();
+                var progressChecker = new ProgressChecker(totalFileNum, totalSizeInBytes, totalFileNum, null, 0, totalSizeInBytes);
+                transferContext.ProgressHandler = progressChecker.GetProgressHandler();
+                var eventChecker = new TransferEventChecker();
+                eventChecker.Apply(transferContext);
+
+                transferContext.FileFailed += (sender, e) =>
+                {
+                    Test.Assert(e.Exception.Message.Contains("cancel"), "Verify task is canceled: {0}", e.Exception.Message);
+                };
+
+                options.TransferItemModifier = (fileName, item) =>
+                {
+                    dynamic dirOptions = DefaultTransferDirectoryOptions;
+                    dirOptions.Recursive = true;
+
+                    item.Options = dirOptions;
+                    item.CancellationToken = tokenSource.Token;
+                    item.TransferContext = transferContext;
+                    transferItem = item;
+                };
+
+                TransferCheckpoint firstCheckpoint = null, secondCheckpoint = null;
+                options.AfterAllItemAdded = () =>
+                {
+                    // Wait until there are data transferred
+                    progressChecker.DataTransferred.WaitOne();
+
+                    if (!IsStreamJournal)
+                    {
+                        // Store the first checkpoint
+                        firstCheckpoint = transferContext.LastCheckpoint;
+                    }
+
+                    Thread.Sleep(1000);
+
+                    // Cancel the transfer and store the second checkpoint
+                    tokenSource.Cancel();
+                };
+
+                // Cancel and store checkpoint for resume
+                var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+                if (progressChecker.FailedFilesNumber <= 0)
+                {
+                    Test.Error("Verify file number in progress. Failed: {0}", progressChecker.FailedFilesNumber);
+                }
+
+                TransferCheckpoint firstResumeCheckpoint = null, secondResumeCheckpoint = null;
+
+                if (!IsStreamJournal)
+                {
+                    secondCheckpoint = transferContext.LastCheckpoint;
+
+                    Test.Info("Resume with the second checkpoint first.");
+                    firstResumeCheckpoint = secondCheckpoint;
+                    secondResumeCheckpoint = firstCheckpoint;
+                }
+
+                // resume with firstResumeCheckpoint
+                TransferItem resumeItem = transferItem.Clone();
+
+                progressChecker.Reset();
+                TransferContext resumeContext = null;
+
+                if (IsStreamJournal)
+                {
+                    resumeContext = new DirectoryTransferContext(journalStream)
+                    {
+                        ProgressHandler = progressChecker.GetProgressHandler()
+                    };
+                }
+                else
+                {
+                    resumeContext = new DirectoryTransferContext(DMLibTestHelper.RandomReloadCheckpoint(firstResumeCheckpoint))
+                    {
+                        ProgressHandler = progressChecker.GetProgressHandler()
+                    };
+                }
+
+                eventChecker.Reset();
+                eventChecker.Apply(resumeContext);
+
+                resumeItem.TransferContext = resumeContext;
+
+                result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
+
+                VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0);
+                VerificationHelper.VerifySingleTransferStatus(result, totalFileNum, 0, 0, totalSizeInBytes);
+                VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
+
+                if (!IsStreamJournal)
+                {
+                    // resume with secondResumeCheckpoint
+                    resumeItem = transferItem.Clone();
+
+                    progressChecker.Reset();
+                    resumeContext = new DirectoryTransferContext(DMLibTestHelper.RandomReloadCheckpoint(secondResumeCheckpoint))
+                    {
+                        ProgressHandler = progressChecker.GetProgressHandler(),
+
+                        // Need this overwrite callback since some files is already transferred to destination
+                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY(),
+                    };
+
+                    eventChecker.Reset();
+                    eventChecker.Apply(resumeContext);
+
+                    resumeItem.TransferContext = resumeContext;
+
+                    result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
+
+                    VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0);
+                    VerificationHelper.VerifySingleTransferStatus(result, totalFileNum, 0, 0, totalSizeInBytes);
+                    VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
+                }
+            }
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalDest)]
+        public void LongFilePathResumeDirectoryDownload()
+        {
+            int bigFileSizeInKB = 5 * 1024; // 5 MB
+            int smallFileSizeInKB = 1; // 1 KB
+            int bigFileNum = 5;
+            int smallFileNum = 50;
+            long totalSizeInBytes = (bigFileSizeInKB * bigFileNum + smallFileSizeInKB * smallFileNum) * 1024;
+            int totalFileNum = bigFileNum + smallFileNum;
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            DirNode bigFileDirNode = new DirNode("big");
+            DirNode smallFileDirNode = new DirNode("small");
+
+            sourceDataInfo.RootNode.AddDirNode(bigFileDirNode);
+            sourceDataInfo.RootNode.AddDirNode(smallFileDirNode);
+
+            DMLibDataHelper.AddMultipleFiles(bigFileDirNode, FileName, bigFileNum, bigFileSizeInKB);
+            DMLibDataHelper.AddMultipleFiles(smallFileDirNode, FileName, smallFileNum, smallFileSizeInKB);
+
+            CancellationTokenSource tokenSource = new CancellationTokenSource();
+
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+
+            TransferItem transferItem = null;
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.LimitSpeed = true;
+            options.IsDirectoryTransfer = true;
+            options.DestTransferDataInfo = destDataInfo;
+            options.DisableDestinationFetch = true;
+
+            using (Stream journalStream = new MemoryStream())
+            {
+                bool IsStreamJournal = random.Next(0, 2) == 0;
+                var transferContext = IsStreamJournal ? new DirectoryTransferContext(journalStream) : new DirectoryTransferContext();
+                var progressChecker = new ProgressChecker(totalFileNum, totalSizeInBytes, totalFileNum, null, 0, totalSizeInBytes);
+                transferContext.ProgressHandler = progressChecker.GetProgressHandler();
+                var eventChecker = new TransferEventChecker();
+                eventChecker.Apply(transferContext);
+
+                transferContext.FileFailed += (sender, e) =>
+                {
+                    Test.Assert(e.Exception.Message.Contains("cancel"), "Verify task is canceled: {0}", e.Exception.Message);
+                };
+
+                options.TransferItemModifier = (fileName, item) =>
+                {
+                    dynamic dirOptions = DefaultTransferDirectoryOptions;
+                    dirOptions.Recursive = true;
+
+                    item.Options = dirOptions;
+                    item.CancellationToken = tokenSource.Token;
+                    item.TransferContext = transferContext;
+                    transferItem = item;
+                };
+
+                TransferCheckpoint firstCheckpoint = null, secondCheckpoint = null;
+                options.AfterAllItemAdded = () =>
+                {
+                    // Wait until there are data transferred
+                    progressChecker.DataTransferred.WaitOne();
+
+                    if (!IsStreamJournal)
+                    {
+                        // Store the first checkpoint
+                        firstCheckpoint = transferContext.LastCheckpoint;
+                    }
+
+                    Thread.Sleep(1000);
+
+                    // Cancel the transfer and store the second checkpoint
+                    tokenSource.Cancel();
+                };
+
+                // Cancel and store checkpoint for resume
+                var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+                if (progressChecker.FailedFilesNumber <= 0)
+                {
+                    Test.Error("Verify file number in progress. Failed: {0}", progressChecker.FailedFilesNumber);
+                }
+
+                TransferCheckpoint firstResumeCheckpoint = null, secondResumeCheckpoint = null;
+
+                if (!IsStreamJournal)
+                {
+                    secondCheckpoint = transferContext.LastCheckpoint;
+
+                    Test.Info("Resume with the second checkpoint first.");
+                    firstResumeCheckpoint = secondCheckpoint;
+                    secondResumeCheckpoint = firstCheckpoint;
+                }
+
+                // resume with firstResumeCheckpoint
+                TransferItem resumeItem = transferItem.Clone();
+
+                progressChecker.Reset();
+                TransferContext resumeContext = null;
+
+                if (IsStreamJournal)
+                {
+                    resumeContext = new DirectoryTransferContext(journalStream)
+                    {
+                        ProgressHandler = progressChecker.GetProgressHandler()
+                    };
+                }
+                else
+                {
+                    resumeContext = new DirectoryTransferContext(DMLibTestHelper.RandomReloadCheckpoint(firstResumeCheckpoint))
+                    {
+                        ProgressHandler = progressChecker.GetProgressHandler()
+                    };
+                }
+
+                eventChecker.Reset();
+                eventChecker.Apply(resumeContext);
+
+                resumeItem.TransferContext = resumeContext;
+
+                result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
+
+                VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0);
+                VerificationHelper.VerifySingleTransferStatus(result, totalFileNum, 0, 0, totalSizeInBytes);
+
+                var destAdaptor = GetDestAdaptor(DMLibDataType.Local);
+                destDataInfo = destAdaptor.GetTransferDataInfo(destDataInfo.RootPath);
+
+                Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+                Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, destDataInfo), "Verify transfer result.");
+
+                if (!IsStreamJournal)
+                {
+                    // resume with secondResumeCheckpoint
+                    resumeItem = transferItem.Clone();
+
+                    progressChecker.Reset();
+                    resumeContext = new DirectoryTransferContext(DMLibTestHelper.RandomReloadCheckpoint(secondResumeCheckpoint))
+                    {
+                        ProgressHandler = progressChecker.GetProgressHandler(),
+
+                        // Need this overwrite callback since some files is already transferred to destination
+                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY(),
+                    };
+
+                    eventChecker.Reset();
+                    eventChecker.Apply(resumeContext);
+
+                    resumeItem.TransferContext = resumeContext;
+
+                    result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
+
+                    VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0);
+                    VerificationHelper.VerifySingleTransferStatus(result, totalFileNum, 0, 0, totalSizeInBytes);
+
+                    destAdaptor = GetDestAdaptor(DMLibDataType.Local);
+                    destDataInfo = destAdaptor.GetTransferDataInfo(destDataInfo.RootPath);
+
+                    Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+                    Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, destDataInfo), "Verify transfer result.");
+                }
+            }
+        }
+
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
+        public void LongFilePathDirectoryUploadWith1KPath()
+        {
+            int fileNum = 50;
+            int fileSizeInBytes = 1 * 1024;
+            int relativePathLimit = 1 * 1024;
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(sourceDirectoryName);
+            var baseFileName = LongPathExtention.Combine(sourceDataInfo.RootPath,
+                GetRelativePathName(DMLibTestHelper.RandomNameSuffix(), fileNum, relativePathLimit));
+            if(!LongPathDirectory.Exists(LongPathExtention.GetDirectoryName(baseFileName)))
+            {
+                LongPathDirectoryExtention.CreateDirectory(LongPathExtention.GetDirectoryName(baseFileName));
+            }
+
+            for (int i = 0; i < fileNum; ++i)
+            {
+                var fileName = baseFileName + "_" + i.ToString();
+                Helper.GenerateFileInBytes(fileName, fileSizeInBytes);
+            }
+            sourceDataInfo = (SourceAdaptor as LocalDataAdaptor).GetTransferDataInfo(sourceDataInfo.RootPath);
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.IsDirectoryTransfer = true;
+            options.DisableDestinationFetch = true;
+            options.DisableSourceGenerator = true;
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                dynamic transferOptions = DefaultTransferDirectoryOptions;
+                transferOptions.Recursive = true;
+                transferItem.Options = transferOptions;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(destDirectoryName);
+            var localDestAdaptor = GetDestAdaptor(DMLibDataType.Local);
+
+            if ((DMLibTestContext.DestType & DMLibDataType.CloudBlob) != DMLibDataType.Unspecified)
+            {
+                var destAdaptor = DestAdaptor as CloudBlobDataAdaptor;
+                CloudBlobDirectory blobDir = destAdaptor.BlobHelper.QueryBlobDirectory(destAdaptor.ContainerName, string.Empty);
+                var downloadOptions = new DownloadDirectoryOptions();
+                downloadOptions.Recursive = true;
+
+                TransferManager.DownloadDirectoryAsync(blobDir, destDataInfo.RootPath, downloadOptions, null).Wait();
+            }
+            else if (DMLibTestContext.DestType == DMLibDataType.CloudFile)
+            {
+                var destAdaptor = DestAdaptor as CloudFileDataAdaptor;
+                CloudFileDirectory fileDir = destAdaptor.FileHelper.QueryFileDirectory(destAdaptor.ShareName, string.Empty);
+                var downloadOptions = new DownloadDirectoryOptions();
+                downloadOptions.Recursive = true;
+
+                TransferManager.DownloadDirectoryAsync(fileDir, destDataInfo.RootPath, downloadOptions, null).Wait();
+            }
+
+            destDataInfo = localDestAdaptor.GetTransferDataInfo(destDataInfo.RootPath);
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, destDataInfo), "Verify transfer result.");
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.LocalDest)]
+        public void LongFilePathDirectoryDownloadWith1KPath()
+        {
+            int fileNum = 50;
+            int fileSizeInBytes = 1 * 1024;
+            int relativePathLimit = 1 * 1024;
+            DMLibDataInfo sourceLocalDataInfo = new DMLibDataInfo(sourceDirectoryName);
+            var baseFileName = LongPathExtention.Combine(sourceLocalDataInfo.RootPath,
+                GetRelativePathName(DMLibTestHelper.RandomNameSuffix(), fileNum, relativePathLimit));
+            if (!LongPathDirectory.Exists(LongPathExtention.GetDirectoryName(baseFileName)))
+            {
+                LongPathDirectoryExtention.CreateDirectory(LongPathExtention.GetDirectoryName(baseFileName));
+            }
+
+            for (int i = 0; i < fileNum; ++i)
+            {
+                var fileName = baseFileName + "_" + i.ToString();
+                Helper.GenerateFileInBytes(fileName, fileSizeInBytes);
+            }
+            // sourceLocalDataInfo = GetDestAdaptor(DMLibDataType.Local).GetTransferDataInfo(sourceLocalDataInfo.RootPath);
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.IsDirectoryTransfer = true;
+            options.DisableDestinationFetch = true;
+            options.DisableSourceGenerator = true;
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                dynamic transferOptions = DefaultTransferDirectoryOptions;
+                transferOptions.Recursive = true;
+                transferItem.Options = transferOptions;
+            };
+
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(destDirectoryName);
+            options.DestTransferDataInfo = destDataInfo;
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(sourceLocalDataInfo.RootPath);
+            // Prepare data
+            if ((DMLibTestContext.SourceType & DMLibDataType.CloudBlob) != DMLibDataType.Unspecified)
+            {
+                var sourceAdaptor = SourceAdaptor as CloudBlobDataAdaptor;
+                sourceAdaptor.BlobHelper.BlobClient.GetContainerReference(sourceAdaptor.ContainerName).CreateIfNotExists();
+                CloudBlobDirectory blobDir = sourceAdaptor.BlobHelper.QueryBlobDirectory(sourceAdaptor.ContainerName, string.Empty);
+                var uploadOptions = new UploadDirectoryOptions();
+                uploadOptions.Recursive = true;
+                switch(DMLibTestContext.SourceType)
+                {
+                    case DMLibDataType.BlockBlob:
+                        uploadOptions.BlobType = BlobType.BlockBlob;
+                        break;
+                    case DMLibDataType.AppendBlob:
+                        uploadOptions.BlobType = BlobType.AppendBlob;
+                        break;
+                    case DMLibDataType.PageBlob:
+                        uploadOptions.BlobType = BlobType.PageBlob;
+                        break;
+                }
+
+                TransferManager.UploadDirectoryAsync(sourceLocalDataInfo.RootPath, blobDir, uploadOptions, null).Wait();
+
+                sourceDataInfo = sourceAdaptor.GetTransferDataInfo(sourceDataInfo.RootPath);
+            }
+            else if (DMLibTestContext.SourceType == DMLibDataType.CloudFile)
+            {
+                var sourceAdaptor = SourceAdaptor as CloudFileDataAdaptor;
+                sourceAdaptor.FileHelper.FileClient.GetShareReference(sourceAdaptor.ShareName).CreateIfNotExists();
+                CloudFileDirectory fileDir = sourceAdaptor.FileHelper.QueryFileDirectory(sourceAdaptor.ShareName, string.Empty);
+                var uploadOptions = new UploadDirectoryOptions();
+                uploadOptions.Recursive = true;
+
+                TransferManager.UploadDirectoryAsync(sourceLocalDataInfo.RootPath, fileDir, uploadOptions, null).Wait();
+
+                sourceDataInfo = sourceAdaptor.GetTransferDataInfo(sourceDataInfo.RootPath);
+            }
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            var localDestAdaptor = GetDestAdaptor(DMLibDataType.Local);
+            destDataInfo = localDestAdaptor.GetTransferDataInfo(destDataInfo.RootPath);
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, destDataInfo), "Verify transfer result.");
+        }
+
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
+        public void LongFilePathDirectoryShouldTransfer()
+        {
+            // Prepare data
+            int totaFileNumber = DMLibTestConstants.FlatFileCount;
+            int expectedTransferred = totaFileNumber, transferred = 0;
+            int expectedSkipped = 0, skipped = 0;
+            int expectedFailed = 0, failed = 0;
+            int pathLengthLimit = random.Next(261, 32 * 1000);
+            DMLibDataInfo sourceDataInfo = this.GenerateSourceDataInfo(FileNumOption.FlatFolder, 1024, GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+
+            DirectoryTransferContext dirTransferContext = new DirectoryTransferContext();
+
+            List<String> notTransferredFileNames = new List<String>();
+            dirTransferContext.ShouldTransferCallback = (source, dest) =>
+            {
+                if (Helper.RandomBoolean())
+                {
+                    return true;
+                }
+                else
+                {
+                    Interlocked.Decrement(ref expectedTransferred);
+                    string fullName = DMLibTestHelper.TransferInstanceToString(source);
+                    string fileName = fullName.Substring(fullName.IndexOf(DMLibTestBase.FileName));
+                    lock (notTransferredFileNames)
+                    {
+                        notTransferredFileNames.Add(fileName);
+                    }
+                    Test.Info("{0} is filterred in ShouldTransfer.", fileName);
+                    return false;
+                }
+            };
+
+            dirTransferContext.FileTransferred += (object sender, TransferEventArgs args) =>
+            {
+                Interlocked.Increment(ref transferred);
+            };
+
+            dirTransferContext.FileSkipped += (object sender, TransferEventArgs args) =>
+            {
+                Interlocked.Increment(ref skipped);
+            };
+
+            dirTransferContext.FileFailed += (object sender, TransferEventArgs args) =>
+            {
+                Interlocked.Increment(ref failed);
+            };
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.IsDirectoryTransfer = true;
+
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                transferItem.TransferContext = dirTransferContext;
+
+                dynamic transferOptions = DefaultTransferDirectoryOptions;
+                transferOptions.Recursive = true;
+                transferItem.Options = transferOptions;
+            };
+
+            // Execute test case
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            // Verify result
+            DMLibDataInfo expectedDataInfo = sourceDataInfo.Clone();
+            DirNode expectedRootNode = expectedDataInfo.RootNode;
+            foreach (string fileNames in notTransferredFileNames)
+            {
+                expectedRootNode.DeleteFileNode(fileNames);
+            }
+
+            VerificationHelper.VerifyTransferSucceed(result, expectedDataInfo);
+            Test.Assert(expectedTransferred == transferred, string.Format("Verify transferred number. Expected: {0}, Actual: {1}", expectedTransferred, transferred));
+            Test.Assert(expectedSkipped == skipped, string.Format("Verify skipped number. Expected: {0}, Actual: {1}", expectedSkipped, skipped));
+            Test.Assert(expectedFailed == failed, string.Format("Verify failed number. Expected: {0}, Actual: {1}", expectedFailed, failed));
+        }
+
         private static string GetTransferString(DMLibDataType sourceType, DMLibDataType destType, bool isAsync)
         {
             return sourceType.ToString() + destType.ToString() + (isAsync ? "async" : "");
@@ -548,7 +1145,7 @@ namespace DMLibTest.Cases
 
         private static string GetDirectoryName(string path, string fileName, int length)
         {
-            int nameLimit = 200;
+            int nameLimit = 240;
             string tempName = "t";
             string tempPath = LongPathExtention.ToUncPath(LongPathExtention.Combine(LongPathExtention.Combine(path, tempName), fileName));
             int targetLength = length - tempPath.Length + tempName.Length;
@@ -574,6 +1171,36 @@ namespace DMLibTest.Cases
                 }
             }
             return LongPathExtention.Combine(path, middleDirectoryName);
+        }
+
+        private static string GetRelativePathName(string prefix, int fileNum,int length)
+        {
+            int nameLimit = 240;
+            string tempName = "t";
+            string tempPath = LongPathExtention.ToUncPath(LongPathExtention.Combine(LongPathExtention.Combine(tempName, prefix), "_" + (fileNum-1).ToString()));
+            int targetLength = length - tempPath.Length + tempName.Length;
+            string middleDirectoryName = "";
+            while(targetLength > 0)
+            {
+                if (targetLength == nameLimit + 1)
+                {
+                    middleDirectoryName += new string('t', nameLimit / 2) + Path.DirectorySeparatorChar;
+                    targetLength -= nameLimit / 2 + 1;
+                    continue;
+                }
+
+                if (targetLength > nameLimit)
+                {
+                    middleDirectoryName += new string('t', nameLimit) + Path.DirectorySeparatorChar;
+                    targetLength -= nameLimit + 1;
+                }
+                else
+                {
+                    middleDirectoryName += new string('t', targetLength);
+                    targetLength = 0;
+                }
+            }
+            return LongPathExtention.Combine(middleDirectoryName, prefix);
         }
     }
 }

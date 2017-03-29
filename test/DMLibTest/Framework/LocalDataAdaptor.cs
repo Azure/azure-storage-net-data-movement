@@ -80,7 +80,6 @@ namespace DMLibTest
             {
                 return null;
             }
-
 #else
             string rootDirInfo = rootDir;
             if(rootDir.Length == 0)

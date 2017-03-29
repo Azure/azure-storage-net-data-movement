@@ -161,6 +161,12 @@ namespace DMLibTest
         {
             Random r = new Random();
             byte[] data;
+
+            // Create file folder if file name contains folders.
+            var folder = LongPathExtention.GetDirectoryName(filename);
+            if (!LongPathDirectoryExtention.Exists(folder))
+                LongPathDirectoryExtention.CreateDirectory(folder);
+
             using (LongPathFileStreamExtention stream = new LongPathFileStreamExtention(filename, FileMode.Create))
             {
                 var oneMBInBytes = 1024 * 1024;
@@ -2096,8 +2102,8 @@ namespace DMLibTest
             }
         }
 
-        // enumerate files under the specified cloud LongPathDirectoryExtention.
-        // Returns an enumerable collection of the full names(including dirName), for the files in the LongPathDirectoryExtention.
+        // enumerate files under the specified cloud directory.
+        // Returns an enumerable collection of the full names(including dirName), for the files in the directory.
         public IEnumerable<string> EnumerateFiles(string shareName, string dirName, bool recursive)
         {
             CloudFileDirectory dir = QueryFileDirectory(shareName, dirName);
@@ -2109,8 +2115,8 @@ namespace DMLibTest
             return EnumerateFiles(dir, recursive);
         }
 
-        // enumerate files under the specified cloud LongPathDirectoryExtention.
-        // Returns an enumerable collection of the full names(including dir name), for the files in the LongPathDirectoryExtention.
+        // enumerate files under the specified cloud directory.
+        // Returns an enumerable collection of the full names(including dir name), for the files in the directory.
         public static IEnumerable<string> EnumerateFiles(CloudFileDirectory dir, bool recursive)
         {
             var folders = new List<CloudFileDirectory>();
@@ -2142,7 +2148,7 @@ namespace DMLibTest
             }
         }
 
-        // enumerate directory under the specified cloud LongPathDirectoryExtention.
+        // enumerate directory under the specified cloud directory.
         // Returns an enumerable collection of the full names(including dirName), for the directories in the directory
         public IEnumerable<string> EnumerateDirectories(string shareName, string dirName, bool recursive)
         {
@@ -2155,7 +2161,7 @@ namespace DMLibTest
             return EnumerateDirectories(dir, recursive);
         }
 
-        // enumerate directory under the specified cloud LongPathDirectoryExtention.
+        // enumerate directory under the specified cloud directory.
         // Returns an enumerable collection of the full names(including dir name), for the directories in the directory
         public static IEnumerable<string> EnumerateDirectories(CloudFileDirectory dir, bool recursive)
         {

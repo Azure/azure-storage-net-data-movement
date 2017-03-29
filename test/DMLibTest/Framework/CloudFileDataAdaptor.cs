@@ -52,6 +52,19 @@ namespace DMLibTest
             }
         }
 
+        public CloudFileHelper FileHelper
+        {
+            get
+            {
+                return this.fileHelper;
+            }
+
+            private set
+            {
+                this.fileHelper = value;
+            }
+        }
+
         public CloudFileShare GetBaseShare()
         {
             return fileHelper.FileClient.GetShareReference(ShareName);
