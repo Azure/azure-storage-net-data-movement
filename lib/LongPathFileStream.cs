@@ -253,12 +253,20 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     {
         public static string ToUncPath(string localFilePath)
         {
-            string ret = LongPath.GetFullPath(localFilePath);
-            if (ret.StartsWith(@"\\", StringComparison.Ordinal))
+            if (localFilePath == null)
+                return null;
+
+            string ret = localFilePath;
+            if (!ret.StartsWith(@"\\", StringComparison.Ordinal))
             {
-                return ret;
+                ret = @"\\?\" + ret;
             }
-            return @"\\?\" + ret;
+            ret = LongPath.GetFullPath(localFilePath);
+            if (!ret.StartsWith(@"\\", StringComparison.Ordinal))
+            {
+                return @"\\?\" + ret;
+            }
+            return ret;
         }
 
         public static string GetFullPath(string path)
@@ -461,7 +469,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if DOTNET5_4
             return Directory.GetFiles(path);
 #else
-            return EnumerateFileSystemEntries(path, "*", SearchOption.AllDirectories, FilesOrDirectory.File).ToArray();
+            return EnumerateFileSystemEntries(path, "*", SearchOption.TopDirectoryOnly, FilesOrDirectory.File).ToArray();
 #endif
         }
 #endif
