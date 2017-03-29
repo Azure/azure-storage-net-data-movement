@@ -229,8 +229,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private SafeFileHandle CreateFile(string path, FileMode mode, FileAccess access, FileShare share)
         {
-            path = LongPath.ToUncPath(path);
-
             this.fileHandle = NativeMethods.CreateFileW(path,
                 access,
                 share,

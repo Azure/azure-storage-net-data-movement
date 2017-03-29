@@ -116,8 +116,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         public override void Validate()
         {
+#if DOTNET5_4
             DirectoryInfo di = new DirectoryInfo(this.DirectoryPath);
             di.Create();
+#else
+            if(!LongPathDirectory.Exists(this.DirectoryPath))
+            {
+                LongPathDirectory.CreateDirectory(this.DirectoryPath);
+            }
+#endif
         }
 
         //
