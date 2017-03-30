@@ -162,11 +162,6 @@ namespace DMLibTest
             Random r = new Random();
             byte[] data;
 
-            // Create file folder if file name contains folders.
-            var folder = LongPathExtention.GetDirectoryName(filename);
-            if (!LongPathDirectoryExtention.Exists(folder))
-                LongPathDirectoryExtention.CreateDirectory(folder);
-
             using (LongPathFileStreamExtention stream = new LongPathFileStreamExtention(filename, FileMode.Create))
             {
                 var oneMBInBytes = 1024 * 1024;
