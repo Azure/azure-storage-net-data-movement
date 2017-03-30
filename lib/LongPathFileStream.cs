@@ -442,10 +442,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
     }
 
-    internal class LongPathDirectory
+    public static class LongPathDirectory
     {
-        private LongPathDirectory() { }
-
         public static bool Exists(string path)
         {
 #if DOTNET5_4
@@ -506,8 +504,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             Directory,
             All
         };
+        public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption)
+        {
+            return EnumerateFileSystemEntries(path, searchPattern, searchOption, FilesOrDirectory.All);
+        }
 
-        public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption, FilesOrDirectory filter = FilesOrDirectory.All)
+        public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption, FilesOrDirectory filter)
         {
 #if DOTNET5_4
             return Directory.EnumerateFileSystemEntries(path, searchPattern, searchOption);
@@ -582,10 +584,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
     }
 
-    internal class LongPathFile
+    public static class LongPathFile
     {
-        private LongPathFile() { }
-
         public static FileAttributes GetAttributes(string path)
         {
 #if DOTNET5_4
