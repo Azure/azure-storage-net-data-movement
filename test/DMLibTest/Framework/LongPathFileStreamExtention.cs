@@ -19,10 +19,17 @@ namespace DMLibTest.Framework
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
 
-#if DOTNET5_4
+#if DNXCORE50
 
     internal class LongPathFileStreamExtention : FileStream
     {
+        public LongPathFileStreamExtention(string filePath, FileMode mode, FileAccess access, FileShare share) : base(filePath, mode, access, share)
+        {
+        }
+
+        public LongPathFileStreamExtention(string filePath, FileMode mode) : base(filePath, mode, FileAccess.ReadWrite, FileShare.ReadWrite)
+        {
+        }
     }
 
 #else

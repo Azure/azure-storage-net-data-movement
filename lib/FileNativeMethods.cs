@@ -19,6 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
 
     internal static partial class NativeMethods
     {
+#if !DOTNET5_4
         public const int ERROR_SUCCESS = 0;
         public const int ERROR_FILE_NOT_FOUND = 2;
         public const int ERROR_DIRECTORY_NOT_FOUND = 3;
@@ -54,7 +55,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CreateDirectoryW([MarshalAs(UnmanagedType.LPWStr)] string lpPathName, IntPtr lpSecurityAttributes);
 
-#if !DOTNET5_4
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool ReadFile(SafeFileHandle hFile, [Out] byte[] lpBuffer, uint nNumberOfBytesToRead, out uint lpNumberOfBytesRead, ref NativeOverlapped template);
@@ -62,7 +62,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool WriteFile(SafeFileHandle hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite, out uint lpNumberOfBytesWritten, ref NativeOverlapped template);
-#endif
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -128,8 +127,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
 
             return (((long)hi << 32) | (uint)lo);
         }
-
-#if !DOTNET5_4
 
         /// <summary>
         /// Throw exception if last Win32 error is not zero.
