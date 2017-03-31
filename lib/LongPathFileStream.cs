@@ -53,7 +53,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.position = 0;
                 }
             }
-            base.Dispose(true);
+            base.Close();
         }
 
         public override bool CanRead
@@ -181,13 +181,26 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            if (!CanSeek)
+            long newPos = 0;
+            switch (origin)
             {
-                throw new InvalidOperationException("Current long path file stream is not able to seek.");
-            }
+                case SeekOrigin.Begin:
+                    newPos = offset;
+                    break;
 
-            // Checked error message inside NativeMethods.Seek
-            Position = NativeMethods.Seek(this.fileHandle, offset, origin);
+                case SeekOrigin.Current:
+                    newPos = this.Position + offset;
+                    break;
+
+                case SeekOrigin.End:
+                    newPos = this.Length + offset;
+                    this.SetLength(newPos);
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(offset));
+            }
+            this.Position = newPos;
             return Position;
         }
 
@@ -249,7 +262,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     }
 #endif
 
-    public static class LongPath
+    internal static class LongPath
     {
         public static string ToUncPath(string localFilePath)
         {
@@ -442,7 +455,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
     }
 
-    public static class LongPathDirectory
+    internal static class LongPathDirectory
     {
         public static bool Exists(string path)
         {
@@ -584,7 +597,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
     }
 
-    public static class LongPathFile
+    internal static class LongPathFile
     {
         public static FileAttributes GetAttributes(string path)
         {

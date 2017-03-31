@@ -72,9 +72,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         public static extern bool GetFileSizeEx(SafeFileHandle hFile, out long lpFileSize);
 
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern int SetFilePointer(SafeFileHandle handle, int lDistanceToMove, out int lpDistanceToMoveHigh, uint dwMoveMethod);
-
-        [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.U4)]
         public static extern uint GetFullPathNameW(
             string lpFileName,
@@ -95,38 +92,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
 
         [DllImport("kernel32.dll", EntryPoint = "GetFileAttributesW", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern uint GetFileAttributesW(string lpFileName);
-
-        public static long Seek(SafeFileHandle handle, long offset, SeekOrigin origin)
-        {
-            uint moveMethod = 0;
-
-            switch (origin)
-            {
-                case SeekOrigin.Begin:
-                    moveMethod = 0;
-                    break;
-
-                case SeekOrigin.Current:
-                    moveMethod = 1;
-                    break;
-
-                case SeekOrigin.End:
-                    moveMethod = 2;
-                    break;
-            }
-
-            int lo = (int)(offset & 0xffffffff);
-            int hi = (int)(offset >> 32);
-
-            lo = SetFilePointer(handle, lo, out hi, moveMethod);
-
-            if (lo == -1)
-            {
-                Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
-            }
-
-            return (((long)hi << 32) | (uint)lo);
-        }
 
         /// <summary>
         /// Throw exception if last Win32 error is not zero.

@@ -150,11 +150,11 @@
     <Compile Include="Framework\DataAdaptor.cs" />
     <Compile Include="Framework\DMLibWrapper.cs" />
     <Compile Include="Framework\DownloadWrapper.cs" />
-    <Compile Include="Framework\FileNativeMethodsExtention.cs" />
+    <Compile Include="Framework\FileNativeMethodsExtension.cs" />
     <Compile Include="Framework\IDataInfo.cs" />
     <Compile Include="Framework\LocalDataAdaptor.cs" />
     <Compile Include="Framework\LocalDataAdaptorBase.cs" />
-    <Compile Include="Framework\LongPathFileStreamExtention.cs" />
+    <Compile Include="Framework\LongPathFileStreamExtension.cs" />
     <Compile Include="Framework\MultiDirectionTestBase.cs" />
     <Compile Include="Framework\MultiDirectionTestHelper.cs" />
     <Compile Include="Framework\MultiDirectionTestInfo.cs" />

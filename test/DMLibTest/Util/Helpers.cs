@@ -39,14 +39,14 @@ namespace DMLibTest
 
         public static void CopyLocalDirectory(string sourceDir, string destDir, bool recursive)
         {
-            if (!LongPathDirectoryExtention.Exists(destDir))
+            if (!LongPathDirectoryExtension.Exists(destDir))
             {
-                LongPathDirectoryExtention.CreateDirectory(destDir);
+                LongPathDirectoryExtension.CreateDirectory(destDir);
             }
 
             foreach (var subDir in Directory.GetDirectories(sourceDir, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
             {
-                LongPathDirectoryExtention.CreateDirectory(ConvertSourceToDestPath(sourceDir, destDir, subDir));
+                LongPathDirectoryExtension.CreateDirectory(ConvertSourceToDestPath(sourceDir, destDir, subDir));
             }
 
             foreach (var file in Directory.GetFiles(sourceDir, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
@@ -162,7 +162,7 @@ namespace DMLibTest
             Random r = new Random();
             byte[] data;
 
-            using (LongPathFileStreamExtention stream = new LongPathFileStreamExtention(filename, FileMode.Create))
+            using (LongPathFileStreamExtension stream = new LongPathFileStreamExtension(filename, FileMode.Create))
             {
                 var oneMBInBytes = 1024 * 1024;
                 var sizeInMB = sizeB / oneMBInBytes;
@@ -194,7 +194,7 @@ namespace DMLibTest
         {
             byte[] data = new byte[1024 * 1024];
             Random r = new Random();
-            using (LongPathFileStreamExtention stream = new LongPathFileStreamExtention(filename, FileMode.Create))
+            using (LongPathFileStreamExtension stream = new LongPathFileStreamExtension(filename, FileMode.Create))
             {
                 for (int i = 0; i < sizeMB; i++)
                 {
@@ -212,7 +212,7 @@ namespace DMLibTest
             byte[] data = new byte[4 * 1024 * 1024];
             long chunkCount = 256 * sizeGB;
             Random r = new Random();
-            using (LongPathFileStreamExtention stream = new LongPathFileStreamExtention(filename, FileMode.Create))
+            using (LongPathFileStreamExtension stream = new LongPathFileStreamExtension(filename, FileMode.Create))
             {
                 for (int i = 0; i < chunkCount; i++)
                 {
@@ -232,16 +232,16 @@ namespace DMLibTest
                 LongPathFileExtention.Delete(filename);
             }
 
-            using (LongPathFileStreamExtention file = LongPathFileExtention.Create(filename))
+            using (LongPathFileStreamExtension file = LongPathFileExtention.Create(filename))
             {
             }
         }
 
         public static void AggregateFile(string filename, int times)
         {
-            using (LongPathFileStreamExtention outputStream = new LongPathFileStreamExtention(filename, FileMode.Create))
+            using (LongPathFileStreamExtension outputStream = new LongPathFileStreamExtension(filename, FileMode.Create))
             {
-                using (LongPathFileStreamExtention inputStream = new LongPathFileStreamExtention("abc.txt", FileMode.Open))
+                using (LongPathFileStreamExtension inputStream = new LongPathFileStreamExtension("abc.txt", FileMode.Open))
                 {
                     for (int i = 0; i < times; i++)
                     {
@@ -254,12 +254,12 @@ namespace DMLibTest
 
         public static void CompressFile(string filename, int times)
         {
-            using (LongPathFileStreamExtention outputStream = new LongPathFileStreamExtention(filename, FileMode.Create))
+            using (LongPathFileStreamExtension outputStream = new LongPathFileStreamExtension(filename, FileMode.Create))
             {
                 using (GZipStream compress = new GZipStream(outputStream, CompressionMode.Compress))
                 {
 
-                    using (LongPathFileStreamExtention inputStream = new LongPathFileStreamExtention("abc.txt", FileMode.Open))
+                    using (LongPathFileStreamExtension inputStream = new LongPathFileStreamExtension("abc.txt", FileMode.Open))
                     {
                         for (int i = 0; i < times; i++)
                         {
@@ -276,7 +276,7 @@ namespace DMLibTest
             byte[] data4MB = new byte[4 * 1024 * 1024];
             byte[] dataMB = new byte[1024 * 1024];
             Random r = new Random();
-            using (LongPathFileStreamExtention stream = new LongPathFileStreamExtention(filename, FileMode.Create))
+            using (LongPathFileStreamExtension stream = new LongPathFileStreamExtension(filename, FileMode.Create))
             {
                 long sizeGB = sizeinKB / (1024 * 1024);
                 long sizeMB = sizeinKB % (1024 * 1024) / 1024;
@@ -316,7 +316,7 @@ namespace DMLibTest
                 string dir = Path.GetDirectoryName(filename);
                 if (!string.IsNullOrEmpty(dir))
                 {
-                    LongPathDirectoryExtention.CreateDirectory(dir);
+                    LongPathDirectoryExtension.CreateDirectory(dir);
                 }
             }
 
@@ -356,7 +356,7 @@ namespace DMLibTest
 
         public static void DeleteFolder(string foldername)
         {
-            if (LongPathDirectoryExtention.Exists(foldername))
+            if (LongPathDirectoryExtension.Exists(foldername))
             {
                 ForceDeleteFiles(foldername);
             }
@@ -379,23 +379,23 @@ namespace DMLibTest
         {
             try
             {
-                LongPathDirectoryExtention.Delete(foldername, true);
+                LongPathDirectoryExtension.Delete(foldername, true);
             }
             catch (Exception)
             {
                 RecursiveRemoveReadOnlyAttribute(foldername);
-                LongPathDirectoryExtention.Delete(foldername, true);
+                LongPathDirectoryExtension.Delete(foldername, true);
             }
         }
 
         private static void RecursiveRemoveReadOnlyAttribute(string foldername)
         {
-            foreach (string filename in LongPathDirectoryExtention.GetFiles(foldername))
+            foreach (string filename in LongPathDirectoryExtension.GetFiles(foldername))
             {
                 FileOp.SetFileAttribute(filename, FileAttributes.Normal);
             }
 
-            foreach (string folder in LongPathDirectoryExtention.GetDirectories(foldername))
+            foreach (string folder in LongPathDirectoryExtension.GetDirectories(foldername))
             {
                 RecursiveRemoveReadOnlyAttribute(folder);
             }
@@ -416,22 +416,22 @@ namespace DMLibTest
 
         public static void CreateNewFolder(string foldername)
         {
-            if (LongPathDirectoryExtention.Exists(foldername))
+            if (LongPathDirectoryExtension.Exists(foldername))
             {
-                LongPathDirectoryExtention.Delete(foldername, true);
+                LongPathDirectoryExtension.Delete(foldername, true);
             }
             if (LongPathFileExtention.Exists(foldername))
             {
                 LongPathFileExtention.Delete(foldername);
             }
 
-            LongPathDirectoryExtention.CreateDirectory(foldername);
+            LongPathDirectoryExtension.CreateDirectory(foldername);
         }
 
         // for a 5G file, this can be done in 20 seconds
         public static string GetFileMD5Hash(string filename)
         {
-            using (LongPathFileStreamExtention fs = LongPathFileExtention.Open(filename, FileMode.Open))
+            using (LongPathFileStreamExtension fs = LongPathFileExtention.Open(filename, FileMode.Open))
             {
                 MD5 md5 = MD5.Create();
                 byte[] md5Hash = md5.ComputeHash(fs);
@@ -449,7 +449,7 @@ namespace DMLibTest
 
         public static string GetFileContentMD5(string filename)
         {
-            using (LongPathFileStreamExtention fs = LongPathFileExtention.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (LongPathFileStreamExtension fs = LongPathFileExtention.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 MD5 md5 = MD5.Create();
                 byte[] md5Hash = md5.ComputeHash(fs);
@@ -489,7 +489,7 @@ namespace DMLibTest
 
                     if (!doNotGenerateFile)
                     {
-                        LongPathDirectoryExtention.CreateDirectory(dirName);
+                        LongPathDirectoryExtension.CreateDirectory(dirName);
                     }
 
                     fileList.AddRange(GenerateFixedTestTree(fileNamePrefix, dirNamePrefix, dirName, width, depth - 1, fileSizeInKB, doNotGenerateFile));
@@ -540,17 +540,17 @@ namespace DMLibTest
                     Test.Error("The file {0} should exist", filename);
                 if (blob == null)
                     Test.Error("The blob {0} should exist", blob.Name);
-                using (LongPathFileStreamExtention LongPathFileStreamExtention = new LongPathFileStreamExtention(tempblob, FileMode.Create))
+                using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(tempblob, FileMode.Create))
                 {
                     BlobRequestOptions bro = new BlobRequestOptions();
                     bro.RetryPolicy = new LinearRetry(new TimeSpan(0, 0, 30), 3);
                     bro.ServerTimeout = new TimeSpan(1, 30, 0);
                     bro.MaximumExecutionTime = new TimeSpan(1, 30, 0);
-                    blob.DownloadToStream(LongPathFileStreamExtention, null, bro);
+                    blob.DownloadToStream(fs, null, bro);
 #if DNXCORE50
-                    LongPathFileStreamExtention.Dispose();
+                    fs.Dispose();
 #else
-                    LongPathFileStreamExtention.Close();
+                    fs.Close();
 #endif
                 }
                 string MD51 = Helper.GetFileContentMD5(tempblob);
@@ -589,9 +589,9 @@ namespace DMLibTest
             long fileLength = fi.Length;
             // 4M a chunk
             const int ChunkSizeByte = 4 * 1024 * 1024;
-            using (LongPathFileStreamExtention fs = new LongPathFileStreamExtention(fi.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(fi.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                using (LongPathFileStreamExtention fs2 = new LongPathFileStreamExtention(fi2.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (LongPathFileStreamExtension fs2 = new LongPathFileStreamExtension(fi2.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     BinaryReader reader = new BinaryReader(fs);
                     BinaryReader reader2 = new BinaryReader(fs2);
@@ -692,13 +692,13 @@ namespace DMLibTest
             try
             {
                 //Checks if the path is valid or not
-                if (!LongPathDirectoryExtention.Exists(folder))
+                if (!LongPathDirectoryExtension.Exists(folder))
                     return folderSize;
                 else
                 {
                     try
                     {
-                        foreach (string file in LongPathDirectoryExtention.GetFiles(folder))
+                        foreach (string file in LongPathDirectoryExtension.GetFiles(folder))
                         {
                             if (File.Exists(file))
                             {
@@ -707,7 +707,7 @@ namespace DMLibTest
                             }
                         }
 
-                        foreach (string dir in LongPathDirectoryExtention.GetDirectories(folder))
+                        foreach (string dir in LongPathDirectoryExtension.GetDirectories(folder))
                             folderSize += CalculateFolderSizeInByte(dir);
                     }
                     catch (NotSupportedException e)
@@ -738,13 +738,13 @@ namespace DMLibTest
             try
             {
                 //Checks if the path is valid or not
-                if (LongPathDirectoryExtention.Exists(folder))
+                if (LongPathDirectoryExtension.Exists(folder))
                 {
-                    count += LongPathDirectoryExtention.GetFiles(folder).Length;
+                    count += LongPathDirectoryExtension.GetFiles(folder).Length;
 
                     if (recursive)
                     {
-                        foreach (string dir in LongPathDirectoryExtention.GetDirectories(folder))
+                        foreach (string dir in LongPathDirectoryExtension.GetDirectories(folder))
                             count += GetFileCount(dir, true);
                     }
                 }
@@ -1498,7 +1498,7 @@ namespace DMLibTest
                 File.Decrypt(GetFullPath(filename));
             }
             int lpBytesReturned = 0;
-            LongPathFileStreamExtention f = LongPathFileExtention.Open(filename, System.IO.FileMode.Open,
+            LongPathFileStreamExtension f = LongPathFileExtention.Open(filename, System.IO.FileMode.Open,
             System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
             int result = DeviceIoControl(f.Handle, FSCTL_SET_COMPRESSION,
             ref COMPRESSION_FORMAT_DEFAULT, 2 /*sizeof(short)*/, IntPtr.Zero, 0,
@@ -1511,7 +1511,7 @@ namespace DMLibTest
         {
 #if !DNXCORE50
             int lpBytesReturned = 0;
-            LongPathFileStreamExtention f = LongPathFileExtention.Open(filename, System.IO.FileMode.Open,
+            LongPathFileStreamExtension f = LongPathFileExtention.Open(filename, System.IO.FileMode.Open,
             System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
             int result = DeviceIoControl(f.Handle, FSCTL_SET_COMPRESSION,
             ref COMPRESSION_FORMAT_NONE, 2 /*sizeof(short)*/, IntPtr.Zero, 0,
@@ -1637,7 +1637,7 @@ namespace DMLibTest
                 CloudFileDirectory root = share.GetRootDirectoryReference();
                 CloudFile cloudFile = root.GetFileReference(fileName);
 
-                using (LongPathFileStreamExtention fs = new LongPathFileStreamExtention(filePath, FileMode.Create))
+                using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(filePath, FileMode.Create))
                 {
                     cloudFile.DownloadToStream(fs, null, fro);
 #if DNXCORE50
@@ -1711,7 +1711,7 @@ namespace DMLibTest
 
                 destFile.Create(fi.Length, null, fro);
 
-                using (LongPathFileStreamExtention fs = new LongPathFileStreamExtention(sourceFile, FileMode.Open))
+                using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(sourceFile, FileMode.Open))
                 {
                     destFile.UploadFromStream(fs, null, fro);
 #if DNXCORE50
@@ -1951,7 +1951,7 @@ namespace DMLibTest
 
         public static bool CompareCloudFileDirAndLocalDir(CloudFileDirectory dir, string localDirName)
         {
-            if (!dir.Exists() || !LongPathDirectoryExtention.Exists(localDirName))
+            if (!dir.Exists() || !LongPathDirectoryExtension.Exists(localDirName))
             {
                 // return false if cloud dir or local dir not exist.
                 Test.Info("dir not exist. local dir={0}", localDirName);
@@ -2899,7 +2899,7 @@ namespace DMLibTest
 
         public static bool CompareCloudBlobDirAndLocalDir(CloudBlobDirectory dir, string localDirName)
         {
-            if (!LongPathDirectoryExtention.Exists(localDirName))
+            if (!LongPathDirectoryExtension.Exists(localDirName))
             {
                 // return false if local dir not exist.
                 Test.Info("dir not exist. local dir={0}", localDirName);
@@ -3335,7 +3335,7 @@ namespace DMLibTest
                 CloudBlob blob = container.GetBlobReference(blobName);
                 //content = blob.DownloadText();
                 string tempfile = "temp.txt";
-                using (LongPathFileStreamExtention fs = new LongPathFileStreamExtention(tempfile, FileMode.Create))
+                using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(tempfile, FileMode.Create))
                 {
                     blob.DownloadToStream(fs);
 #if DNXCORE50
@@ -3489,7 +3489,7 @@ namespace DMLibTest
                 bro.MaximumExecutionTime = new TimeSpan(1, 30, 0);
                 CloudBlob blob = container.GetBlobReference(blobName);
 
-                using (LongPathFileStreamExtention fs = new LongPathFileStreamExtention(filePath, FileMode.Create))
+                using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(filePath, FileMode.Create))
                 {
                     blob.DownloadToStream(fs, null, bro);
 #if DNXCORE50
@@ -3649,7 +3649,7 @@ namespace DMLibTest
         {
             Path = path;
 
-            if (LongPathDirectoryExtention.Exists(path))
+            if (LongPathDirectoryExtension.Exists(path))
             {
                 Test.Assert(false, "folder {0} already exist", path);
             }

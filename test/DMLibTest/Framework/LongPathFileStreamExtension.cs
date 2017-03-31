@@ -21,13 +21,13 @@ namespace DMLibTest.Framework
 
 #if DNXCORE50
 
-    internal class LongPathFileStreamExtention : FileStream
+    internal class LongPathFileStreamExtension : FileStream
     {
-        public LongPathFileStreamExtention(string filePath, FileMode mode, FileAccess access, FileShare share) : base(filePath, mode, access, share)
+        public LongPathFileStreamExtension(string filePath, FileMode mode, FileAccess access, FileShare share) : base(filePath, mode, access, share)
         {
         }
 
-        public LongPathFileStreamExtention(string filePath, FileMode mode) : base(filePath, mode, FileAccess.ReadWrite, FileShare.ReadWrite)
+        public LongPathFileStreamExtension(string filePath, FileMode mode) : base(filePath, mode, FileAccess.ReadWrite, FileShare.ReadWrite)
         {
         }
     }
@@ -36,14 +36,14 @@ namespace DMLibTest.Framework
     /// <summary>
     /// Internal calss to support long path files.
     /// </summary
-    internal class LongPathFileStreamExtention : LongPathFileStream
+    internal class LongPathFileStreamExtension : LongPathFileStream
     {
 
-        public LongPathFileStreamExtention(string filePath, FileMode mode, FileAccess access, FileShare share):base(filePath, mode, access, share)
+        public LongPathFileStreamExtension(string filePath, FileMode mode, FileAccess access, FileShare share):base(filePath, mode, access, share)
         {
         }
 
-        public LongPathFileStreamExtention(string filePath, FileMode mode):base(filePath, mode, FileAccess.ReadWrite, FileShare.ReadWrite)
+        public LongPathFileStreamExtension(string filePath, FileMode mode):base(filePath, mode, FileAccess.ReadWrite, FileShare.ReadWrite)
         {
         }
 
@@ -63,21 +63,42 @@ namespace DMLibTest.Framework
     }
 #endif
 
-    public static class LongPathExtention
+    public static class LongPathExtension
     {
         public static string ToUncPath(string localFilePath)
         {
-            return LongPath.ToUncPath(localFilePath);
+            if (localFilePath == null)
+                return null;
+
+            string ret = localFilePath;
+            if (!ret.StartsWith(@"\\", StringComparison.Ordinal))
+            {
+                ret = @"\\?\" + ret;
+            }
+            ret = LongPathExtension.GetFullPath(localFilePath);
+            if (!ret.StartsWith(@"\\", StringComparison.Ordinal))
+            {
+                return @"\\?\" + ret;
+            }
+            return ret;
         }
 
         public static string GetFullPath(string path)
         {
+#if DOTNET5_4
+            return Path.GetFullPath(path);
+#else
             return LongPath.GetFullPath(path);
+#endif
         }
 
         public static string Combine(string path1, string path2)
         {
+#if DOTNET5_4
+            return Path.Combine(path1, path2);
+#else
             return LongPath.Combine(path1, path2);
+#endif
         }
 
         /// <summary>
@@ -87,27 +108,43 @@ namespace DMLibTest.Framework
         /// <returns></returns>
         public static string GetDirectoryName(string path)
         {
+#if DOTNET5_4
+            return Path.GetDirectoryName(path);
+#else
             return LongPath.GetDirectoryName(path);
+#endif
         }
 
         public static string GetFileNameWithoutExtension(string path)
         {
+#if DOTNET5_4
+            return Path.GetFileNameWithoutExtension(path);
+#else
             return LongPath.GetFileNameWithoutExtension(path);
+#endif
         }
 
         public static string GetFileName(string path)
         {
+#if DOTNET5_4
+            return Path.GetFileName(path);
+#else
             return LongPath.GetFileName(path);
+#endif
         }
     }
 
-    internal class LongPathDirectoryExtention
+    internal class LongPathDirectoryExtension
     {
-        private LongPathDirectoryExtention() { }
+        private LongPathDirectoryExtension() { }
 
         public static bool Exists(string path)
         {
+#if DOTNET5_4
+            return Directory.Exists(path);
+#else
             return LongPathDirectory.Exists(path);
+#endif
         }
 
         public static string[] GetFiles(string path, SearchOption searchOption = SearchOption.TopDirectoryOnly)
@@ -134,7 +171,11 @@ namespace DMLibTest.Framework
         /// <param name="path">The directory to create.</param>
         public static void CreateDirectory(string path)
         {
+#if DOTNET5_4
+            Directory.CreateDirectory(path);
+#else
             LongPathDirectory.CreateDirectory(path);
+#endif
         }
 
         public static void Delete(string path)
@@ -142,7 +183,7 @@ namespace DMLibTest.Framework
 #if DOTNET5_4
             Directory.Delete(path);
 #else
-            path = LongPathExtention.ToUncPath(path);
+            path = LongPathExtension.ToUncPath(path);
             if (!NativeMethods.RemoveDirectoryW(path))
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
 #endif
@@ -153,7 +194,7 @@ namespace DMLibTest.Framework
 #if DOTNET5_4
             Directory.Delete(path, false);
 #else
-            path = LongPathExtention.ToUncPath(path);
+            path = LongPathExtension.ToUncPath(path);
             if (recursive == true)
             {
                 string[] dirs = GetDirectories(path, SearchOption.AllDirectories);
@@ -182,18 +223,22 @@ namespace DMLibTest.Framework
 
                 foreach (var subDir in dirs)
                 {
-                    LongPathDirectoryExtention.Delete(subDir);
+                    LongPathDirectoryExtension.Delete(subDir);
                 }
             }
-            LongPathDirectoryExtention.Delete(path);
+            LongPathDirectoryExtension.Delete(path);
 #endif
         }
 
-        // Only SearchOption.TopDirectoryOnly is supported.
-        // SearchOption.AllDirectories is not supported.
+#if DOTNET5_4
+        public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption)
+        {
+            return Directory.EnumerateFileSystemEntries(path, searchPattern, searchOption);
+#else
         public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption, LongPathDirectory.FilesOrDirectory filter = LongPathDirectory.FilesOrDirectory.All)
         {
             return LongPathDirectory.EnumerateFileSystemEntries(path, searchPattern, searchOption, filter);
+#endif
         }
     }
 
@@ -203,7 +248,11 @@ namespace DMLibTest.Framework
 
         public static FileAttributes GetAttributes(string path)
         {
+#if DOTNET5_4
+            return File.GetAttributes(path);
+#else
             return LongPathFile.GetAttributes(path);
+#endif
         }
 
         public static bool Exists(string path)
@@ -211,7 +260,7 @@ namespace DMLibTest.Framework
 #if DOTNET5_4
             return File.Exists(path);
 #else
-            return LongPathDirectoryExtention.Exists(path);
+            return LongPathDirectoryExtension.Exists(path);
 #endif
         }
 
@@ -220,25 +269,25 @@ namespace DMLibTest.Framework
 #if DOTNET5_4
             File.Delete(path);
 #else
-            path = LongPathExtention.ToUncPath(path);
+            path = LongPathExtension.ToUncPath(path);
             if (!NativeMethods.DeleteFileW(path))
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
 #endif
         }
 
-        public static LongPathFileStreamExtention Create(string path)
+        public static LongPathFileStreamExtension Create(string path)
         {
-            return new LongPathFileStreamExtention(path, FileMode.Create);
+            return new LongPathFileStreamExtension(path, FileMode.Create);
         }
 
-        public static LongPathFileStreamExtention Open(string path, FileMode mode)
+        public static LongPathFileStreamExtension Open(string path, FileMode mode)
         {
-            return new LongPathFileStreamExtention(path, mode);
+            return new LongPathFileStreamExtension(path, mode);
         }
 
-        public static LongPathFileStreamExtention Open(string path, FileMode mode, FileAccess access, FileShare share)
+        public static LongPathFileStreamExtension Open(string path, FileMode mode, FileAccess access, FileShare share)
         {
-            return new LongPathFileStreamExtention(path, mode, access, share);
+            return new LongPathFileStreamExtension(path, mode, access, share);
         }
     }
 }

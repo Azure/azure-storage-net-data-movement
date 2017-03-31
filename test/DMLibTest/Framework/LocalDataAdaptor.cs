@@ -84,9 +84,9 @@ namespace DMLibTest
             string rootDirInfo = rootDir;
             if(rootDir.Length == 0)
             {
-                rootDirInfo = LongPathExtention.Combine(this.BasePath, rootDir);
+                rootDirInfo = LongPathExtension.Combine(this.BasePath, rootDir);
             }
-            if(!LongPathDirectoryExtention.Exists(rootDirInfo))
+            if(!LongPathDirectoryExtension.Exists(rootDirInfo))
             {
                 return null;
             }
@@ -186,14 +186,14 @@ namespace DMLibTest
         private void BuildDirNode(string dirPath, DirNode parent)
         {
             dirPath = AppendDirectorySeparator(dirPath);
-            foreach (var fileInfo in LongPathDirectoryExtention.GetFiles(dirPath))
+            foreach (var fileInfo in LongPathDirectoryExtension.GetFiles(dirPath))
             {
                 FileNode fileNode = new FileNode(fileInfo.Remove(0,dirPath.Length));
                 this.BuildFileNode(fileInfo, fileNode);
                 parent.AddFileNode(fileNode);
             }
 
-            foreach (var subDirInfo in LongPathDirectoryExtention.GetDirectories(dirPath))
+            foreach (var subDirInfo in LongPathDirectoryExtension.GetDirectories(dirPath))
             {
                 DirNode subDirNode = new DirNode(subDirInfo.Remove(0, dirPath.Length));
                 this.BuildDirNode(subDirInfo, subDirNode);
@@ -211,9 +211,9 @@ namespace DMLibTest
 
         private void BuildFileNode(string path, FileNode fileNode)
         {
-            fileNode.MD5 = Helper.GetFileContentMD5(LongPathExtention.GetFullPath(path));
+            fileNode.MD5 = Helper.GetFileContentMD5(LongPathExtension.GetFullPath(path));
             // fileNode.LastModifiedTime =
-            using (LongPathFileStreamExtention fs = LongPathFileExtention.Open(path, FileMode.Open))
+            using (LongPathFileStreamExtension fs = LongPathFileExtention.Open(path, FileMode.Open))
             {
                 fileNode.SizeInByte = fs.Length;
             }

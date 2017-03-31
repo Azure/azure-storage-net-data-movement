@@ -64,18 +64,18 @@ namespace DMLibTest.Cases
         [TestInitialize()]
         public void MyTestInitialize()
         {
-            sourceDirectoryName = LongPath.Combine(Directory.GetCurrentDirectory(), SourceRoot+ DMLibTestHelper.RandomNameSuffix());
-            destDirectoryName = LongPath.Combine(Directory.GetCurrentDirectory(), DestRoot+ DMLibTestHelper.RandomNameSuffix());
+            sourceDirectoryName = LongPathExtension.Combine(Directory.GetCurrentDirectory(), SourceRoot+ DMLibTestHelper.RandomNameSuffix());
+            destDirectoryName = LongPathExtension.Combine(Directory.GetCurrentDirectory(), DestRoot+ DMLibTestHelper.RandomNameSuffix());
             base.BaseTestInitialize();
         }
 
         [TestCleanup()]
         public void MyTestCleanup()
         {
-            if (LongPathDirectoryExtention.Exists(sourceDirectoryName))
-                LongPathDirectoryExtention.Delete(sourceDirectoryName, true);
-            if (LongPathDirectoryExtention.Exists(destDirectoryName))
-                LongPathDirectoryExtention.Delete(destDirectoryName, true);
+            if (LongPathDirectoryExtension.Exists(sourceDirectoryName))
+                LongPathDirectoryExtension.Delete(sourceDirectoryName, true);
+            if (LongPathDirectoryExtension.Exists(destDirectoryName))
+                LongPathDirectoryExtension.Delete(destDirectoryName, true);
             base.BaseTestCleanup();
         }
         #endregion
@@ -920,11 +920,11 @@ namespace DMLibTest.Cases
             int fileSizeInBytes = 1 * 1024;
             int relativePathLimit = 1 * 1024;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(sourceDirectoryName);
-            var baseFileName = LongPathExtention.Combine(sourceDataInfo.RootPath,
+            var baseFileName = LongPathExtension.Combine(sourceDataInfo.RootPath,
                 GetRelativePathName(DMLibTestHelper.RandomNameSuffix(), fileNum, relativePathLimit));
-            if(!LongPathDirectory.Exists(LongPathExtention.GetDirectoryName(baseFileName)))
+            if(!LongPathDirectoryExtension.Exists(LongPathExtension.GetDirectoryName(baseFileName)))
             {
-                LongPathDirectoryExtention.CreateDirectory(LongPathExtention.GetDirectoryName(baseFileName));
+                LongPathDirectoryExtension.CreateDirectory(LongPathExtension.GetDirectoryName(baseFileName));
             }
 
             for (int i = 0; i < fileNum; ++i)
@@ -983,11 +983,11 @@ namespace DMLibTest.Cases
             int fileSizeInBytes = 1 * 1024;
             int relativePathLimit = 1 * 1024;
             DMLibDataInfo sourceLocalDataInfo = new DMLibDataInfo(sourceDirectoryName);
-            var baseFileName = LongPathExtention.Combine(sourceLocalDataInfo.RootPath,
+            var baseFileName = LongPathExtension.Combine(sourceLocalDataInfo.RootPath,
                 GetRelativePathName(DMLibTestHelper.RandomNameSuffix(), fileNum, relativePathLimit));
-            if (!LongPathDirectory.Exists(LongPathExtention.GetDirectoryName(baseFileName)))
+            if (!LongPathDirectoryExtension.Exists(LongPathExtension.GetDirectoryName(baseFileName)))
             {
-                LongPathDirectoryExtention.CreateDirectory(LongPathExtention.GetDirectoryName(baseFileName));
+                LongPathDirectoryExtension.CreateDirectory(LongPathExtension.GetDirectoryName(baseFileName));
             }
 
             for (int i = 0; i < fileNum; ++i)
@@ -1155,7 +1155,7 @@ namespace DMLibTest.Cases
         {
             int nameLimit = 240;
             string tempName = "t";
-            string tempPath = LongPathExtention.ToUncPath(LongPathExtention.Combine(LongPathExtention.Combine(path, tempName), fileName));
+            string tempPath = LongPathExtension.ToUncPath(LongPathExtension.Combine(LongPathExtension.Combine(path, tempName), fileName));
             int targetLength = length - tempPath.Length + tempName.Length;
             string middleDirectoryName = "";
             while(targetLength > 0)
@@ -1178,14 +1178,14 @@ namespace DMLibTest.Cases
                     targetLength = 0;
                 }
             }
-            return LongPathExtention.Combine(path, middleDirectoryName);
+            return LongPathExtension.Combine(path, middleDirectoryName);
         }
 
         private static string GetRelativePathName(string prefix, int fileNum,int length)
         {
             int nameLimit = 240;
             string tempName = "t";
-            string tempPath = LongPathExtention.ToUncPath(LongPathExtention.Combine(LongPathExtention.Combine(tempName, prefix), "_" + (fileNum-1).ToString()));
+            string tempPath = LongPathExtension.ToUncPath(LongPathExtension.Combine(LongPathExtension.Combine(tempName, prefix), "_" + (fileNum-1).ToString()));
             int targetLength = length - tempPath.Length + tempName.Length;
             string middleDirectoryName = "";
             while(targetLength > 0)
@@ -1208,7 +1208,7 @@ namespace DMLibTest.Cases
                     targetLength = 0;
                 }
             }
-            return LongPathExtention.Combine(middleDirectoryName, prefix);
+            return LongPathExtension.Combine(middleDirectoryName, prefix);
         }
     }
 }
