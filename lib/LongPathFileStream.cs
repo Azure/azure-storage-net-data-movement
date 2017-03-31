@@ -291,12 +291,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             StringBuilder fullPath = new StringBuilder(buffSize);
             StringBuilder fileName = new StringBuilder(buffSize);
             uint actualSize = NativeMethods.GetFullPathNameW(path, (uint)buffSize, fullPath, fileName);
+            if (actualSize == 0)
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
             if (actualSize > buffSize)
             {
                 buffSize = (int)actualSize + 16;
                 fullPath = new StringBuilder(buffSize);
                 fileName = new StringBuilder(buffSize);
                 actualSize = NativeMethods.GetFullPathNameW(path, (uint)buffSize, fullPath, fileName);
+                if (actualSize == 0)
+                    NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
             }
 
             return fullPath.ToString();
