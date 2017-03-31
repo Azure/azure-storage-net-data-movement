@@ -553,6 +553,12 @@ namespace DMLibTest.Cases
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.IsDirectoryTransfer = true;
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                dynamic transferOptions = DefaultTransferDirectoryOptions;
+                transferOptions.Recursive = true;
+                transferItem.Options = transferOptions;
+            };
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
