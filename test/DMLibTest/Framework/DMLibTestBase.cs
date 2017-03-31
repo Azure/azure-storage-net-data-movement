@@ -110,7 +110,10 @@ namespace DMLibTest
 
         public TestResult<DMLibDataInfo> ExecuteTestCase(DMLibDataInfo sourceDataInfo, TestExecutionOptions<DMLibDataInfo> options)
         {
-            this.CleanupData();
+            if (options.DisableSourceCleaner)
+                this.CleanupData(false, true);
+            else
+                this.CleanupData();
             SourceAdaptor.CreateIfNotExists();
             DestAdaptor.CreateIfNotExists();
 

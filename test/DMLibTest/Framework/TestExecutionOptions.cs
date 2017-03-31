@@ -18,6 +18,7 @@ namespace DMLibTest
             this.DestTransferDataInfo = default(TDataInfo);
             this.DisableSourceGenerator = false;
             this.DisableDestinationFetch = false;
+            this.DisableSourceCleaner = false;
             this.LimitSpeed = false;
         }
 
@@ -40,6 +41,12 @@ namespace DMLibTest
         }
 
         public bool DisableSourceGenerator
+        {
+            get;
+            set;
+        }
+
+        public bool DisableSourceCleaner
         {
             get;
             set;

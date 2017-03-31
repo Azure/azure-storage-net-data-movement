@@ -995,7 +995,6 @@ namespace DMLibTest.Cases
                 var fileName = baseFileName + "_" + i.ToString();
                 Helper.GenerateFileInBytes(fileName, fileSizeInBytes);
             }
-            // sourceLocalDataInfo = GetDestAdaptor(DMLibDataType.Local).GetTransferDataInfo(sourceLocalDataInfo.RootPath);
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.IsDirectoryTransfer = true;
@@ -1013,6 +1012,8 @@ namespace DMLibTest.Cases
 
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(sourceLocalDataInfo.RootPath);
             // Prepare data
+            this.CleanupData(true, true);
+            options.DisableSourceCleaner = true;
             if ((DMLibTestContext.SourceType & DMLibDataType.CloudBlob) != DMLibDataType.Unspecified)
             {
                 var sourceAdaptor = SourceAdaptor as CloudBlobDataAdaptor;
@@ -1035,10 +1036,11 @@ namespace DMLibTest.Cases
 
                 TransferManager.UploadDirectoryAsync(sourceLocalDataInfo.RootPath, blobDir, uploadOptions, null).Wait();
 
-                sourceDataInfo = sourceAdaptor.GetTransferDataInfo(sourceDataInfo.RootPath);
+                sourceDataInfo = sourceAdaptor.GetTransferDataInfo(string.Empty);
             }
             else if (DMLibTestContext.SourceType == DMLibDataType.CloudFile)
             {
+
                 var sourceAdaptor = SourceAdaptor as CloudFileDataAdaptor;
                 sourceAdaptor.FileHelper.FileClient.GetShareReference(sourceAdaptor.ShareName).CreateIfNotExists();
                 CloudFileDirectory fileDir = sourceAdaptor.FileHelper.QueryFileDirectory(sourceAdaptor.ShareName, string.Empty);
@@ -1047,7 +1049,7 @@ namespace DMLibTest.Cases
 
                 TransferManager.UploadDirectoryAsync(sourceLocalDataInfo.RootPath, fileDir, uploadOptions, null).Wait();
 
-                sourceDataInfo = sourceAdaptor.GetTransferDataInfo(sourceDataInfo.RootPath);
+                sourceDataInfo = sourceAdaptor.GetTransferDataInfo(string.Empty);
             }
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
