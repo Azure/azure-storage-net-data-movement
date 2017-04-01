@@ -192,7 +192,7 @@ namespace DMLibTest.Framework
         public static void Delete(string path, bool recursive = false)
         {
 #if DOTNET5_4
-            Directory.Delete(path, false);
+            Directory.Delete(path, recursive);
 #else
             path = LongPathExtension.ToUncPath(path);
             if (recursive == true)
