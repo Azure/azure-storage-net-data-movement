@@ -21,4 +21,6 @@ cd %~dp0\DMTestLib
 dotnet build -c %BuildMode%
 cd %~dp0\DMLibTest
 dotnet build -c %BuildMode%
+dotnet publish -c %BuildMode%
 cd %OriginalPath%
+

@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>DMTestLib Class Library</Description>
+    <Authors>emmazhu</Authors>
+    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <AssemblyName>DMTestLib</AssemblyName>
+    <PackageId>DMTestLib</PackageId>
+    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
+    <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\test\DMTestLib\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
+    <DefineConstants>$(DefineConstants);DOTNET5_4</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
+    <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="..\..\test\DMTestLib\DirectionFilter.cs" Link="DirectionFilter.cs" />
+    <Compile Update="..\..\test\DMTestLib\DMLibDataType.cs" Link="DMLibDataType.cs" />
+    <Compile Update="..\..\test\DMTestLib\DMLibDirectionFilter.cs" Link="DMLibDirectionFilter.cs" />
+    <Compile Update="..\..\test\DMTestLib\DMLibTestContext.cs" Link="DMLibTestContext.cs" />
+    <Compile Update="..\..\test\DMTestLib\DMLibTestMethodSet.cs" Link="DMLibTestMethodSet.cs" />
+    <Compile Update="..\..\test\DMTestLib\DMLibTestMetholdAttribute.cs" Link="DMLibTestMetholdAttribute.cs" />
+    <Compile Update="..\..\test\DMTestLib\DMLibTransferDirection.cs" Link="DMLibTransferDirection.cs" />
+    <Compile Update="..\..\test\DMTestLib\ITestDirection.cs" Link="ITestDirection.cs" />
+    <Compile Update="..\..\test\DMTestLib\MultiDirectionTag.cs" Link="MultiDirectionTag.cs" />
+    <Compile Update="..\..\test\DMTestLib\MultiDirectionTestClassAttribute.cs" Link="MultiDirectionTestClassAttribute.cs" />
+    <Compile Update="..\..\test\DMTestLib\MultiDirectionTestContext.cs" Link="MultiDirectionTestContext.cs" />
+    <Compile Update="..\..\test\DMTestLib\MultiDirectionTestMethod.cs" Link="MultiDirectionTestMethod.cs" />
+    <Compile Update="..\..\test\DMTestLib\MultiDirectionTestMethodAttribute.cs" Link="MultiDirectionTestMethodAttribute.cs" />
+    <Compile Update="..\..\test\DMTestLib\MultiDirectionTestMethodSetAttribute.cs" Link="MultiDirectionTestMethodSetAttribute.cs" />
+    <Compile Update="..\..\test\DMTestLib\TestMethodDirection.cs" Link="TestMethodDirection.cs" />
+  </ItemGroup>
+
+</Project>
