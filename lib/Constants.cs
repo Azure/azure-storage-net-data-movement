@@ -57,11 +57,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         internal const int MinBlockSize = 4 * 1024 * 1024;
 
         /// <summary>
-        /// Stores the max page blob file size, 1TB.
-        /// </summary>
-        internal const long MaxPageBlobFileSize = (long)1024 * 1024 * 1024 * 1024;
-
-        /// <summary>
         /// Stores the max append blob file size, 50000 * 4M.
         /// </summary>
         internal const long MaxAppendBlobFileSize = (long)50000 * 4 * 1024 * 1024;
