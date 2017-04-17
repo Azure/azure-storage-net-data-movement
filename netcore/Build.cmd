@@ -1,4 +1,3 @@
-echo off
 
 set BuildMode=Debug
 if not {%1} == {} (
@@ -11,8 +10,7 @@ set TestPath=%~dp0..\test
 "%ProgramFiles(x86)%\MSBuild\14.0\Bin\msbuild" %TestPath%\DMLibTestCodeGen\DMLibTestCodeGen.csproj /t:Rebuild /p:Configuration=%BuildMode% >NUL
 %TestPath%\DMLibTestCodeGen\bin\Debug\DMLibTestCodeGen.exe %TestPath%\DMLibTest\bin\Debug\DMLibTest.dll %TestPath%\DMLibTest\Generated DNetCore
 
-cd %~dp0
-dotnet restore -s https://www.nuget.org/api/v2/
+dotnet restore -s https://www.nuget.org/api/v2/ %~dp0\DMLibTest
 cd %~dp0\Microsoft.WindowsAzure.Storage.DataMovement
 dotnet build -c %BuildMode%
 cd %~dp0\MsTestLib
