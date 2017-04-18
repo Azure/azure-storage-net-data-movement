@@ -347,17 +347,11 @@ namespace DMLibTest
 
             if (directoryTransfer)
             {
-                transferContext = new DirectoryTransferContext()
-                {
-                    SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback,
-                };
+                transferContext = new DirectoryTransferContext();
             }
             else
             {
-                transferContext = new SingleTransferContext()
-                {
-                    SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback,
-                };
+                transferContext = new SingleTransferContext();
             }
 
             var progressChecker = new ProgressChecker(fileCount, 1024 * fileCount);
@@ -419,7 +413,6 @@ namespace DMLibTest
                     transferContext = new DirectoryTransferContext(DMLibTestHelper.RandomReloadCheckpoint(pair.Value))
                     {
                         ProgressHandler = progressChecker.GetProgressHandler(),
-                        SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback,
 
                         // The checkpoint can be stored when DMLib doesn't check overwrite callback yet.
                         // So it will case an skip file error if the desination file already exists and 
@@ -432,7 +425,6 @@ namespace DMLibTest
                     transferContext = new SingleTransferContext(DMLibTestHelper.RandomReloadCheckpoint(pair.Value))
                     {
                         ProgressHandler = progressChecker.GetProgressHandler(),
-                        SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback,
 
                         // The checkpoint can be stored when DMLib doesn't check overwrite callback yet.
                         // So it will case an skip file error if the desination file already exists and 
@@ -478,13 +470,6 @@ namespace DMLibTest
                     {
                         string fileName = destFileNode.Name;
                         FileNode sourceFileNode = expectedFileNodes[fileName];
-                        if (IsCloudService(destDataType))
-                        {
-                            IDictionary<string, string> metadata = new Dictionary<string, string>();
-                            metadata.Add("aa", "bb");
-                            sourceFileNode.ContentLanguage = "EN";
-                            sourceFileNode.Metadata = metadata;
-                        }
 
                         Test.Assert(DMLibDataHelper.Equals(sourceFileNode, destFileNode), "Verify transfer result.");
                     }
