@@ -1,3 +1,10 @@
+2017.04.19 Version 0.5.1
+ * All Services
+   - Upgraded azure storage client library to 8.1.1
+   
+ * Blob Service
+   - Removed page blob size checking in uploading to leverage validation in Azure Storage Server
+
 2016.12.29 Version 0.5.0
  * All Services
    - Upgraded azure storage client library to 8.0.0
