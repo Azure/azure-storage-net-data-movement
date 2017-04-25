@@ -20,6 +20,7 @@
     <Compile Include="..\..\test\DMLibTest\Cases\CheckContentMD5Test.cs" Link="Cases\CheckContentMD5Test.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ChunkedMemoryStreamTests.cs" Link="Cases\ChunkedMemoryStreamTests.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\DelimiterTest.cs" Link="Cases\DelimiterTest.cs" />
+    <Compile Include="..\..\test\DMLibTest\Cases\LongFilePathTest.cs" Link="Cases\LongFilePathTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\MetadataTest.cs" Link="Cases\MetadataTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\OverwriteTest.cs" Link="Cases\OverwriteTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ProgressHandlerTest.cs" Link="Cases\ProgressHandlerTest.cs" />
@@ -44,9 +45,11 @@
     <Compile Include="..\..\test\DMLibTest\Framework\DMLibTestBase.cs" Link="Framework\DMLibTestBase.cs" />
     <Compile Include="..\..\test\DMLibTest\Framework\DMLibWrapper.cs" Link="Framework\DMLibWrapper.cs" />
     <Compile Include="..\..\test\DMLibTest\Framework\DownloadWrapper.cs" Link="Framework\DownloadWrapper.cs" />
+    <Compile Include="..\..\test\DMLibTest\Framework\FileNativeMethodsExtension.cs" Link="Framework\FileNativeMethodsExtension.cs" />
     <Compile Include="..\..\test\DMLibTest\Framework\IDataInfo.cs" Link="Framework\IDataInfo.cs" />
     <Compile Include="..\..\test\DMLibTest\Framework\LocalDataAdaptor.cs" Link="Framework\LocalDataAdaptor.cs" />
     <Compile Include="..\..\test\DMLibTest\Framework\LocalDataAdaptorBase.cs" Link="Framework\LocalDataAdaptorBase.cs" />
+    <Compile Include="..\..\test\DMLibTest\Framework\LongPathFileStreamExtension.cs" Link="Framework\LongPathFileStreamExtension.cs" />
     <Compile Include="..\..\test\DMLibTest\Framework\MultiDirectionTestBase.cs" Link="Framework\MultiDirectionTestBase.cs" />
     <Compile Include="..\..\test\DMLibTest\Framework\MultiDirectionTestHelper.cs" Link="Framework\MultiDirectionTestHelper.cs" />
     <Compile Include="..\..\test\DMLibTest\Framework\MultiDirectionTestInfo.cs" Link="Framework\MultiDirectionTestInfo.cs" />
