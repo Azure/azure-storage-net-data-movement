@@ -170,6 +170,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     try
                     {
+                        if(fileLocation.RelativePath.Length > Constants.MaxRelativePathLength)
+                        {
+                            string errorMessage = string.Format(
+                                CultureInfo.CurrentCulture,
+                                Resources.RelativePathTooLong,
+                                fileLocation.RelativePath);
+                            throw  new TransferException(TransferErrorCode.OpenFileFailed, errorMessage);
+                        }
 #if DOTNET5_4
                             // Attempt to open the file first so that we throw an exception before getting into the async work
                             this.inputStream = new FileStream(

@@ -259,5 +259,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 this.Context.OnTransferFailed(eventArgs);
             }
         }
+
+        public bool IsValid()
+        {
+            if(Source is FileLocation
+                && (Source as FileLocation).RelativePath.Length > Constants.MaxRelativePathLength)
+            {
+                return false;
+            }
+            return true;
+        }
     }
 }

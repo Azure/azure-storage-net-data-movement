@@ -40,6 +40,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         // This way, there will be no trash left.
         internal const int MaxFilePathLength = 259;
 
+        /// <summary>
+        /// A file relative path can be at most 1024 character long based on Windows Azure documentation.
+        /// </summary>
+        internal const int MaxRelativePathLength = 1024;
+
         //TODO: How to tune this???
         /// <summary>
         /// Define cache size for one parallel operation.
