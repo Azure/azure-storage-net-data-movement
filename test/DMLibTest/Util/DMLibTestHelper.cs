@@ -79,6 +79,11 @@ namespace DMLibTest
 
     public static class DMLibTestHelper
     {
+        private static char[] InvalidFileNameChars = new char[] {
+        '"', '<', '>', '|', '\0', '\u0001', '\u0002', '\u0003', '\u0004', '\u0005', '\u0006',
+        '\a', '\b', '\t', '\n', '\v', '\f', '\r', '\u000e', '\u000f', '\u0010', '\u0011', '\u0012', '\u0013', '\u0014', '\u0015',
+        '\u0016', '\u0017', '\u0018', '\u0019', '\u001a', '\u001b', '\u001c', '\u001d', '\u001e', '\u001f', ':', '*', '?', '\\', '/'};
+
         private static Random random = new Random();
 
         private static readonly char[] validSuffixChars = "abcdefghijkjlmnopqrstuvwxyz".ToCharArray();
@@ -477,7 +482,7 @@ namespace DMLibTest
         {
             // Replace invalid characters with %HH, with HH being the hexadecimal
             // representation of the invalid character.
-            foreach (char c in Path.GetInvalidFileNameChars())
+            foreach (char c in InvalidFileNameChars)
             {
                 fileName = fileName.Replace(c.ToString(), string.Format(CultureInfo.InvariantCulture, "%{0:X2}", (int)c));
             }

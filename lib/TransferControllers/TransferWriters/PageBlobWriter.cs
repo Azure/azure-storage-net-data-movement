@@ -52,20 +52,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         protected override void CheckInputStreamLength(long inputStreamLength)
         {
-            if (inputStreamLength > Constants.MaxPageBlobFileSize)
-            {
-                string exceptionMessage = string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.BlobFileSizeTooLargeException,
-                    Utils.BytesToHumanReadableSize(inputStreamLength),
-                    Resources.PageBlob,
-                    Utils.BytesToHumanReadableSize(Constants.MaxPageBlobFileSize));
-
-                throw new TransferException(
-                    TransferErrorCode.UploadSourceFileSizeTooLarge,
-                    exceptionMessage);
-            }
-
             if (0 != inputStreamLength % PageBlobPageSize)
             {
                 string exceptionMessage = string.Format(

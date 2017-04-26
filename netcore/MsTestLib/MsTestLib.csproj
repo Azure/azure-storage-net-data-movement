@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>MsTestLib Class Library</Description>
+    <VersionPrefix>0.0.0</VersionPrefix>
+    <Authors>emmazhu</Authors>
+    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <AssemblyName>MsTestLib</AssemblyName>
+    <PackageId>MsTestLib</PackageId>
+    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
+    <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\test\MsTestLib\**\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+  </ItemGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
+    <DefineConstants>$(DefineConstants);DOTNET5_4</DefineConstants>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
+    <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="..\..\test\MsTestLib\ClassConfig.cs" Link="ClassConfig.cs" />
+    <Compile Update="..\..\test\MsTestLib\ConsoleLogger.cs" Link="ConsoleLogger.cs" />
+    <Compile Update="..\..\test\MsTestLib\Exceptions.cs" Link="Exceptions.cs" />
+    <Compile Update="..\..\test\MsTestLib\FileLogger.cs" Link="FileLogger.cs" />
+    <Compile Update="..\..\test\MsTestLib\ILogger.cs" Link="ILogger.cs" />
+    <Compile Update="..\..\test\MsTestLib\MessageBuilder.cs" Link="MessageBuilder.cs" />
+    <Compile Update="..\..\test\MsTestLib\MethodConfig.cs" Link="MethodConfig.cs" />
+    <Compile Update="..\..\test\MsTestLib\Test.cs" Link="Test.cs" />
+    <Compile Update="..\..\test\MsTestLib\TestConfig.cs" Link="TestConfig.cs" />
+    <Compile Update="..\..\test\MsTestLib\TestHelper.cs" Link="TestHelper.cs" />
+    <Compile Update="..\..\test\MsTestLib\TestLogger.cs" Link="TestLogger.cs" />
+  </ItemGroup>
+
+</Project>
