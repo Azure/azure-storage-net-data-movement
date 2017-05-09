@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
-    <PackageReference Include="Microsoft.Azure.Storage.DataMovement" Version="0.5.1" />
+    <PackageReference Include="Microsoft.Azure.Storage.DataMovement" Version="0.5.2" />
   </ItemGroup>
 
 </Project>
