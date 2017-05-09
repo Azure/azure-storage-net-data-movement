@@ -46,11 +46,29 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
 #if !BINARY_SERIALIZATION
+        [DataMember]
+        private long entryTransferOffset = 0;
+
+        [DataMember]
+        private List<long> transferWindow = new List<long>();
+
+        [OnSerializing]
+        private void OnSerializingCallback(StreamingContext context)
+        {
+            lock (this.TransferWindowLock)
+            {
+                entryTransferOffset = this.EntryTransferOffset;
+                transferWindow = new List<long>(this.TransferWindow);
+            }
+        }
+
         [OnDeserialized]
         private void OnDeserializedCallback(StreamingContext context)
         {
             // Constructors aren't called by DCS, so initialize non-serialized members here
             this.TransferWindowLock = new object();
+            this.EntryTransferOffset = this.entryTransferOffset;
+            this.TransferWindow = new List<long>(this.transferWindow);
         }
 #endif
 
@@ -58,9 +76,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Gets or sets transferred offset of this transfer entry.
         /// </summary>
         /// <value>Transferred offset of this transfer entry.</value>
-#if !BINARY_SERIALIZATION
-        [DataMember]
-#endif
         public long EntryTransferOffset
         {
             get;
@@ -71,9 +86,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Gets or sets transfer window of this transfer entry.
         /// </summary>
         /// <value>Transfer window of this transfer entry.</value>
-#if !BINARY_SERIALIZATION
-        [DataMember]
-#endif
         public List<long> TransferWindow
         {
             get;
