@@ -21,6 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #endif // BINARY_SERIALIZATION
     {
         private const string FilePathName = "FilePath";
+        private const string FilePathType = "FilePathType";
         /// <summary>
         /// Initializes a new instance of the <see cref="FileLocation"/> class.
         /// </summary>
@@ -38,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             this.FilePath = filePath;
-            this.RelativePath = filePath;
+            this.RelativePath = null;
         }
 
         /// <summary>
@@ -80,19 +81,24 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new System.ArgumentNullException("info");
             }
 
-            this.RelativePath = info.GetString(FilePathName);
-
             string directoryPath = null;
-            if(context.Context != null
+            if (context.Context != null
                 && context.Context is StreamJournal)
             {
                 directoryPath = ((StreamJournal)context.Context).DirectoryPath;
             }
 
-            if (directoryPath != null) // abosulte directory path is not set.
-                this.FilePath = LongPath.Combine(directoryPath, this.RelativePath);
+            if ("RelativePath".Equals(info.GetString(FilePathType)))
+            {
+                this.RelativePath = info.GetString(FilePathName);
+                if (directoryPath != null) // abosulte directory path is not set.
+                    this.FilePath = LongPath.Combine(directoryPath, this.RelativePath);
+            }
             else
-                this.FilePath = this.RelativePath;
+            {
+                this.RelativePath = null;
+                this.FilePath = info.GetString(FilePathName);
+            }
         }
 #else
         public void SetDirectoryPath(string directoryPath)
@@ -158,11 +164,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new System.ArgumentNullException("info");
             }
 
-            if (context.Context == null
-                || !(context.Context is StreamJournal))
+            if(RelativePath != null)
+            {
+                info.AddValue(FilePathType, "RelativePath", typeof(string));
                 info.AddValue(FilePathName, this.FilePath, typeof(string));
+            }
             else
+            {
+                info.AddValue(FilePathType, "FilePath", typeof(string));
                 info.AddValue(FilePathName, this.RelativePath, typeof(string));
+            }
         }
 #endif // BINARY_SERIALIZATION
 

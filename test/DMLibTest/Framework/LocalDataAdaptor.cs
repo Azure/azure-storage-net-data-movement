@@ -213,12 +213,13 @@ namespace DMLibTest
         {
             fileNode.MD5 = Helper.GetFileContentMD5(LongPathExtension.GetFullPath(path));
             // fileNode.LastModifiedTime =
-            using (LongPathFileStreamExtension fs = LongPathFileExtention.Open(path, FileMode.Open))
+            using (LongPathFileStreamExtension fs = LongPathFileExtension.Open(path, FileMode.Open))
             {
                 fileNode.SizeInByte = fs.Length;
             }
             fileNode.Metadata = new Dictionary<string, string>();
         }
+
         private static string AppendDirectorySeparator(string dir)
         {
             char lastC = dir[dir.Length - 1];

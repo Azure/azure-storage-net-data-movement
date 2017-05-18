@@ -218,7 +218,7 @@ namespace DMLibTest.Framework
 
                 foreach (var subPath in files)
                 {
-                    LongPathFileExtention.Delete(subPath);
+                    LongPathFileExtension.Delete(subPath);
                 }
 
                 foreach (var subDir in dirs)
@@ -242,9 +242,9 @@ namespace DMLibTest.Framework
         }
     }
 
-    internal class LongPathFileExtention
+    internal class LongPathFileExtension
     {
-        private LongPathFileExtention() { }
+        private LongPathFileExtension() { }
 
         public static FileAttributes GetAttributes(string path)
         {

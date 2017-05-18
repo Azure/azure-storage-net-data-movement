@@ -170,7 +170,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     try
                     {
-                        if(fileLocation.RelativePath.Length > Constants.MaxRelativePathLength)
+                        if(fileLocation.RelativePath !=null
+                            && fileLocation.RelativePath.Length > Constants.MaxRelativePathLength)
                         {
                             string errorMessage = string.Format(
                                 CultureInfo.CurrentCulture,

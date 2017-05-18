@@ -226,13 +226,13 @@ namespace DMLibTest
 
         public static void GenerateEmptyFile(string filename)
         {
-            if (LongPathFileExtention.Exists(filename))
+            if (LongPathFileExtension.Exists(filename))
             {
                 Test.Info("GenerateEmptyFile: delte existing file");
-                LongPathFileExtention.Delete(filename);
+                LongPathFileExtension.Delete(filename);
             }
 
-            using (LongPathFileStreamExtension file = LongPathFileExtention.Create(filename))
+            using (LongPathFileStreamExtension file = LongPathFileExtension.Create(filename))
             {
             }
         }
@@ -330,7 +330,7 @@ namespace DMLibTest
         {
             if (File.Exists(filename))
             {
-                LongPathFileExtention.Delete(filename);
+                LongPathFileExtension.Delete(filename);
             }
         }
 
@@ -366,12 +366,12 @@ namespace DMLibTest
         {
             try
             {
-                LongPathFileExtention.Delete(filename);
+                LongPathFileExtension.Delete(filename);
             }
             catch
             {
                 FileOp.SetFileAttribute(filename, FileAttributes.Normal);
-                LongPathFileExtention.Delete(filename);
+                LongPathFileExtension.Delete(filename);
             }
         }
 
@@ -420,9 +420,9 @@ namespace DMLibTest
             {
                 LongPathDirectoryExtension.Delete(foldername, true);
             }
-            if (LongPathFileExtention.Exists(foldername))
+            if (LongPathFileExtension.Exists(foldername))
             {
-                LongPathFileExtention.Delete(foldername);
+                LongPathFileExtension.Delete(foldername);
             }
 
             LongPathDirectoryExtension.CreateDirectory(foldername);
@@ -431,7 +431,7 @@ namespace DMLibTest
         // for a 5G file, this can be done in 20 seconds
         public static string GetFileMD5Hash(string filename)
         {
-            using (LongPathFileStreamExtension fs = LongPathFileExtention.Open(filename, FileMode.Open))
+            using (LongPathFileStreamExtension fs = LongPathFileExtension.Open(filename, FileMode.Open))
             {
                 MD5 md5 = MD5.Create();
                 byte[] md5Hash = md5.ComputeHash(fs);
@@ -449,7 +449,7 @@ namespace DMLibTest
 
         public static string GetFileContentMD5(string filename)
         {
-            using (LongPathFileStreamExtension fs = LongPathFileExtention.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (LongPathFileStreamExtension fs = LongPathFileExtension.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 MD5 md5 = MD5.Create();
                 byte[] md5Hash = md5.ComputeHash(fs);
@@ -1498,7 +1498,7 @@ namespace DMLibTest
                 File.Decrypt(GetFullPath(filename));
             }
             int lpBytesReturned = 0;
-            LongPathFileStreamExtension f = LongPathFileExtention.Open(filename, System.IO.FileMode.Open,
+            LongPathFileStreamExtension f = LongPathFileExtension.Open(filename, System.IO.FileMode.Open,
             System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
             int result = DeviceIoControl(f.Handle, FSCTL_SET_COMPRESSION,
             ref COMPRESSION_FORMAT_DEFAULT, 2 /*sizeof(short)*/, IntPtr.Zero, 0,
@@ -1511,7 +1511,7 @@ namespace DMLibTest
         {
 #if !DNXCORE50
             int lpBytesReturned = 0;
-            LongPathFileStreamExtension f = LongPathFileExtention.Open(filename, System.IO.FileMode.Open,
+            LongPathFileStreamExtension f = LongPathFileExtension.Open(filename, System.IO.FileMode.Open,
             System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
             int result = DeviceIoControl(f.Handle, FSCTL_SET_COMPRESSION,
             ref COMPRESSION_FORMAT_NONE, 2 /*sizeof(short)*/, IntPtr.Zero, 0,

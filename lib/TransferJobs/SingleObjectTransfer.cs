@@ -263,6 +263,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public bool IsValid()
         {
             if(Source is FileLocation
+                && (Source as FileLocation).RelativePath != null
                 && (Source as FileLocation).RelativePath.Length > Constants.MaxRelativePathLength)
             {
                 return false;
