@@ -180,12 +180,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             throw  new TransferException(TransferErrorCode.OpenFileFailed, errorMessage);
                         }
 #if DOTNET5_4
-                            // Attempt to open the file first so that we throw an exception before getting into the async work
-                            this.inputStream = new FileStream(
-                                fileLocation.FilePath,
-                                FileMode.Open,
-                                FileAccess.Read,
-                                FileShare.Read);
+                        string filePath = fileLocation.FilePath;
+                        if(Interop.CrossPlatformHelpers.IsWindows)
+                        {
+                            filePath = LongPath.ToUncPath(fileLocation.FilePath);
+                        }
+                        // Attempt to open the file first so that we throw an exception before getting into the async work
+                        this.inputStream = new FileStream(
+                            filePath,
+                            FileMode.Open,
+                            FileAccess.Read,
+                            FileShare.Read);
 #else
                         this.inputStream = new LongPathFileStream(
                             fileLocation.FilePath,
