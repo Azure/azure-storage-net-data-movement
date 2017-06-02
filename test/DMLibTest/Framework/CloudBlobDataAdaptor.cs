@@ -39,8 +39,10 @@ namespace DMLibTest
         {
             ((CloudBlob)file).DownloadToStream(Stream.Null, null, new BlobRequestOptions()
             {
+                RetryPolicy = DMLibTestConstants.DefaultRetryPolicy,
                 DisableContentMD5Validation = false,
-                UseTransactionalMD5 = true
+                UseTransactionalMD5 = true,
+                MaximumExecutionTime = DMLibTestConstants.DefaultExecutionTimeOut
             });
         }
 
@@ -179,8 +181,9 @@ namespace DMLibTest
 
             BlobRequestOptions storeMD5Options = new BlobRequestOptions()
             {
-                RetryPolicy = new LinearRetry(TimeSpan.FromSeconds(90), 3),
+                RetryPolicy = DMLibTestConstants.DefaultRetryPolicy,
                 StoreBlobContentMD5 = true,
+                MaximumExecutionTime = DMLibTestConstants.DefaultExecutionTimeOut
             };
 
             if (fileNode.BlockSize.HasValue && cloudBlob is CloudBlockBlob)

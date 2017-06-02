@@ -8,6 +8,7 @@ namespace DMLibTest
     using System;
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
+    using Microsoft.WindowsAzure.Storage.RetryPolicies;
 
     public static class Tag
     {
@@ -49,8 +50,17 @@ namespace DMLibTest
         public static readonly int DefaultNC = TransferManager.Configurations.ParallelOperations;
         public static readonly int DefaultBlockSize = 4 * 1024 * 1024; //4MB
         public static readonly int LimitedSpeedNC = 4;
+        public static readonly TimeSpan DefaultExecutionTimeOut = TimeSpan.FromMinutes(15);
 
         private static Random random = new Random();
+        
+        public static IRetryPolicy DefaultRetryPolicy
+        {
+            get
+            {
+                return new LinearRetry(TimeSpan.FromSeconds(90), 3);
+            }
+        }
 
         public static int FlatFileCount
         {

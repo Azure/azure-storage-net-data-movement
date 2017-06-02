@@ -108,8 +108,10 @@ namespace DMLibTest
         {
             ((CloudFile)file).DownloadToStream(Stream.Null, null, new FileRequestOptions()
             {
+                RetryPolicy = DMLibTestConstants.DefaultRetryPolicy,
                 DisableContentMD5Validation = false,
-                UseTransactionalMD5 = true
+                UseTransactionalMD5 = true,
+                MaximumExecutionTime = DMLibTestConstants.DefaultExecutionTimeOut,
             });
         }
 
@@ -195,8 +197,6 @@ namespace DMLibTest
                 dirName = rootPath + "/" + dirName;
             }
 
-            CloudFileDirectory result;
-
             if (string.IsNullOrEmpty(dirName))
             {
                 return share.GetRootDirectoryReference();
@@ -260,8 +260,9 @@ namespace DMLibTest
 
             FileRequestOptions storeMD5Options = new FileRequestOptions()
             {
-                RetryPolicy = new LinearRetry(TimeSpan.FromSeconds(90), 3),
+                RetryPolicy = DMLibTestConstants.DefaultRetryPolicy,
                 StoreFileContentMD5 = true,
+                MaximumExecutionTime = DMLibTestConstants.DefaultExecutionTimeOut
             };
 
             cloudFile.UploadFromFile(localFilePath, options: storeMD5Options);

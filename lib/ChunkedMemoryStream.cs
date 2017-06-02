@@ -9,10 +9,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System;
     using System.IO;
 
+#if DEBUG
     /// <summary>
     /// MemoryStream with chunked underlying toBuffer. Only support user-provided toBuffer and does NOT allow user to adjust the stream length.
     /// </summary>
-#if DEBUG
     public class ChunkedMemoryStream : Stream
 #else
     internal class ChunkedMemoryStream : Stream
