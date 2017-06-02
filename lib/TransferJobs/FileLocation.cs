@@ -145,6 +145,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets path to the local file location.
         /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         public string FilePath
         {
             get;
