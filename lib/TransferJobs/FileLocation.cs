@@ -170,12 +170,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             if(RelativePath != null)
             {
                 info.AddValue(FilePathType, "RelativePath", typeof(string));
-                info.AddValue(FilePathName, this.FilePath, typeof(string));
+                info.AddValue(FilePathName, this.RelativePath, typeof(string));
             }
             else
             {
                 info.AddValue(FilePathType, "FilePath", typeof(string));
-                info.AddValue(FilePathName, this.RelativePath, typeof(string));
+                info.AddValue(FilePathName, this.FilePath, typeof(string));
             }
         }
 #endif // BINARY_SERIALIZATION

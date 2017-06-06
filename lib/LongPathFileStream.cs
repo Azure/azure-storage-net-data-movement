@@ -206,10 +206,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         public override void SetLength(long value)
         {
-            Seek(value, SeekOrigin.Begin);
+            int lo = (int)(value & 0xFFFFFFFF);
+            int hi = (int)(value >> 32);
+            if(NativeMethods.INVALID_SET_FILE_POINTER == NativeMethods.SetFilePointer(this.fileHandle, lo, out hi, NativeMethods.FILE_BEGIN))
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
             if (!NativeMethods.SetEndOfFile(this.fileHandle))
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
-            Seek(this.position, SeekOrigin.Begin);
         }
 
         public override void Write(byte[] buffer, int offset, int count)

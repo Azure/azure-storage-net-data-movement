@@ -26,6 +26,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         public const int ERROR_NO_MORE_FILES = 18;
         public const int ERROR_ALREADY_EXISTS = 183;
         public const int ERROR_HANDLE_EOF = 38;
+        public const uint FILE_BEGIN = 0;
+        public const uint INVALID_SET_FILE_POINTER = 0xFFFFFFFF;
 
         [System.Runtime.InteropServices.StructLayout(LayoutKind.Sequential)]
         public struct OFSTRUCT
@@ -62,6 +64,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool WriteFile(SafeFileHandle hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite, out uint lpNumberOfBytesWritten, ref NativeOverlapped template);
+
+        [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern uint SetFilePointer(SafeFileHandle handle, int lDistanceToMove, out int lpDistanceToMoveHigh, uint dwMoveMethod);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
