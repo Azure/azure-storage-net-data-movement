@@ -213,7 +213,7 @@ namespace DMLibTest
         {
             fileNode.MD5 = Helper.GetFileContentMD5(LongPathExtension.GetFullPath(path));
             // fileNode.LastModifiedTime =
-            using (LongPathFileStreamExtension fs = LongPathFileExtension.Open(path, FileMode.Open))
+            using (LongPathFileStreamExtension fs = LongPathFileExtension.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 fileNode.SizeInByte = fs.Length;
             }
