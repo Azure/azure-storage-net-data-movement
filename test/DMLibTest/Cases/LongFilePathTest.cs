@@ -100,12 +100,12 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalDest)]
         public void LongFilePathSingleDownload()
         {
-            int fileSizeInBytes = 1 * 1024;
+            int fileSizeInKB = 1;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
-            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
             
             DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddOneFile(destDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
+            DMLibDataHelper.AddOneFile(destDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.DestTransferDataInfo = destDataInfo;
@@ -124,9 +124,9 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
         public void LongFilePathResumeSingleUpload()
         {
-            int fileSizeInBytes = 100 * 1024;
+            int fileSizeInKB = 40 * 1024;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
 
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
@@ -138,7 +138,7 @@ namespace DMLibTest.Cases
             using (Stream journalStream = new MemoryStream())
             {
                 TransferContext transferContext = IsStreamJournal ? new SingleTransferContext(journalStream) : new SingleTransferContext();
-                var progressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 0, 1, 0, fileSizeInBytes * 1024);
+                var progressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 0, 1, 0, fileSizeInKB * 1024);
                 transferContext.ProgressHandler = progressChecker.GetProgressHandler();
                 options.TransferItemModifier = (fileName, item) =>
                 {
@@ -219,34 +219,34 @@ namespace DMLibTest.Cases
                 if (DMLibTestContext.SourceType == DMLibDataType.Stream && DMLibTestContext.DestType != DMLibDataType.BlockBlob)
                 {
                     // The destination is already created, will cause a transfer skip
-                    firstProgressChecker = new ProgressChecker(2, fileSizeInBytes * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInBytes * 1024);
+                    firstProgressChecker = new ProgressChecker(2, fileSizeInKB * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInKB * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.Stream || (DMLibTestContext.SourceType == DMLibDataType.Stream && DMLibTestContext.DestType == DMLibDataType.BlockBlob))
                 {
-                    firstProgressChecker = new ProgressChecker(2, 2 * fileSizeInBytes * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInBytes * 1024);
+                    firstProgressChecker = new ProgressChecker(2, 2 * fileSizeInKB * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInKB * 1024);
                 }
                 else
                 {
-                    firstProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 1, 0, 0, fileSizeInBytes * 1024);
+                    firstProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 1, 0, 0, fileSizeInKB * 1024);
                 }
 
                 // second progress checker
                 if (DMLibTestContext.SourceType == DMLibDataType.Stream)
                 {
                     // The destination is already created, will cause a transfer skip
-                    secondProgressChecker = new ProgressChecker(2, fileSizeInBytes * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInBytes * 1024);
+                    secondProgressChecker = new ProgressChecker(2, fileSizeInKB * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInKB * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.Stream)
                 {
-                    secondProgressChecker = new ProgressChecker(2, 2 * fileSizeInBytes * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInBytes * 1024);
+                    secondProgressChecker = new ProgressChecker(2, 2 * fileSizeInKB * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInKB * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && !DMLibTestContext.IsAsync)
                 {
-                    secondProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 0, 1 /* failed */, 0, fileSizeInBytes * 1024);
+                    secondProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 0, 1 /* failed */, 0, fileSizeInKB * 1024);
                 }
                 else
                 {
-                    secondProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 1 /* transferred */, 0, 0, fileSizeInBytes * 1024);
+                    secondProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 1 /* transferred */, 0, 0, fileSizeInKB * 1024);
                 }
 
                 // resume with firstResumeCheckpoint
@@ -347,12 +347,12 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalDest)]
         public void LongFilePathResumeSingleDownload()
         {
-            int fileSizeInBytes = 100 * 1024;
+            int fileSizeInKB = 40 * 1024;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
-            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
 
             DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddOneFile(destDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
+            DMLibDataHelper.AddOneFile(destDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
 
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
@@ -366,7 +366,7 @@ namespace DMLibTest.Cases
             using (Stream journalStream = new MemoryStream())
             {
                 TransferContext transferContext = IsStreamJournal ? new SingleTransferContext(journalStream) : new SingleTransferContext();
-                var progressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 0, 1, 0, fileSizeInBytes * 1024);
+                var progressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 0, 1, 0, fileSizeInKB * 1024);
                 transferContext.ProgressHandler = progressChecker.GetProgressHandler();
                 options.TransferItemModifier = (fileName, item) =>
                 {
@@ -447,34 +447,34 @@ namespace DMLibTest.Cases
                 if (DMLibTestContext.SourceType == DMLibDataType.Stream && DMLibTestContext.DestType != DMLibDataType.BlockBlob)
                 {
                     // The destination is already created, will cause a transfer skip
-                    firstProgressChecker = new ProgressChecker(2, fileSizeInBytes * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInBytes * 1024);
+                    firstProgressChecker = new ProgressChecker(2, fileSizeInKB * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInKB * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.Stream || (DMLibTestContext.SourceType == DMLibDataType.Stream && DMLibTestContext.DestType == DMLibDataType.BlockBlob))
                 {
-                    firstProgressChecker = new ProgressChecker(2, 2 * fileSizeInBytes * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInBytes * 1024);
+                    firstProgressChecker = new ProgressChecker(2, 2 * fileSizeInKB * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInKB * 1024);
                 }
                 else
                 {
-                    firstProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 1, 0, 0, fileSizeInBytes * 1024);
+                    firstProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 1, 0, 0, fileSizeInKB * 1024);
                 }
 
                 // second progress checker
                 if (DMLibTestContext.SourceType == DMLibDataType.Stream)
                 {
                     // The destination is already created, will cause a transfer skip
-                    secondProgressChecker = new ProgressChecker(2, fileSizeInBytes * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInBytes * 1024);
+                    secondProgressChecker = new ProgressChecker(2, fileSizeInKB * 1024, 0, 1 /* failed */, 1 /* skipped */, fileSizeInKB * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.Stream)
                 {
-                    secondProgressChecker = new ProgressChecker(2, 2 * fileSizeInBytes * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInBytes * 1024);
+                    secondProgressChecker = new ProgressChecker(2, 2 * fileSizeInKB * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInKB * 1024);
                 }
                 else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && !DMLibTestContext.IsAsync)
                 {
-                    secondProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 0, 1 /* failed */, 0, fileSizeInBytes * 1024);
+                    secondProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 0, 1 /* failed */, 0, fileSizeInKB * 1024);
                 }
                 else
                 {
-                    secondProgressChecker = new ProgressChecker(1, fileSizeInBytes * 1024, 1 /* transferred */, 0, 0, fileSizeInBytes * 1024);
+                    secondProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 1 /* transferred */, 0, 0, fileSizeInKB * 1024);
                 }
 
                 // resume with firstResumeCheckpoint
@@ -547,9 +547,9 @@ namespace DMLibTest.Cases
         public void LongFilePathDirectoryUpload()
         {
             int fileNum = 50;
-            int fileSizeInBytes = 1 * 1024;
+            int fileSizeInKB = 1;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, DMLibTestHelper.RandomNameSuffix(), fileNum, fileSizeInBytes);
+            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, DMLibTestHelper.RandomNameSuffix(), fileNum, fileSizeInKB);
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.IsDirectoryTransfer = true;
@@ -571,9 +571,9 @@ namespace DMLibTest.Cases
         public void LongFilePathDirectoryDownload()
         {
             int fileNum = 50;
-            int fileSizeInBytes = 1 * 1024;
+            int fileSizeInKB = 1;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
-            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, DMLibTestHelper.RandomNameSuffix(), fileNum, fileSizeInBytes);
+            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, DMLibTestHelper.RandomNameSuffix(), fileNum, fileSizeInKB);
 
             DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
 
