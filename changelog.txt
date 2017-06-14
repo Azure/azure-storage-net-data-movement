@@ -1,3 +1,8 @@
+2017.06.X Version 0.6.0
+ * All Services
+   - Supported long path files in .Net and .Net Core.
+   - Merged PR #76 to add a constructor for TransferStatus.
+
 2017.06.01 Version 0.5.3
  * All Services
    - Upgraded azure storage client library to 8.1.3
