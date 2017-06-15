@@ -159,7 +159,7 @@ namespace DMLibTest.Framework
         public static string[] GetDirectories(string path, SearchOption searchOption = SearchOption.TopDirectoryOnly)
         {
 #if DOTNET5_4
-            return Directory.GetFiles(path);
+            return Directory.GetDirectories(path);
 #else
             return EnumerateFileSystemEntries(path, "*", searchOption, LongPathDirectory.FilesOrDirectory.Directory).ToArray();
 #endif
