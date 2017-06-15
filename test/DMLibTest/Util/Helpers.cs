@@ -336,21 +336,19 @@ namespace DMLibTest
 
         public static void CleanupFolder(string foldername)
         {
-            DirectoryInfo rootFolderInfo = new DirectoryInfo(foldername);
-
-            if (!rootFolderInfo.Exists)
+            if (!LongPathDirectoryExtension.Exists(foldername))
             {
                 return;
             }
 
-            foreach (FileInfo fileInfo in rootFolderInfo.GetFiles())
+            foreach (string fileName in LongPathDirectoryExtension.GetFiles(foldername))
             {
-                ForceDeleteFile(fileInfo.FullName);
+                ForceDeleteFile(fileName);
             }
 
-            foreach (DirectoryInfo subFolderInfo in rootFolderInfo.GetDirectories())
+            foreach (string subFolderName in LongPathDirectoryExtension.GetDirectories(foldername))
             {
-                ForceDeleteFiles(subFolderInfo.FullName);
+                ForceDeleteFiles(subFolderName);
             }
         }
 

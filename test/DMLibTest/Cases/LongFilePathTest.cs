@@ -73,9 +73,9 @@ namespace DMLibTest.Cases
         public void MyTestCleanup()
         {
             if (LongPathDirectoryExtension.Exists(sourceDirectoryName))
-                LongPathDirectoryExtension.Delete(sourceDirectoryName, true);
+                Helper.CleanupFolder(sourceDirectoryName);
             if (LongPathDirectoryExtension.Exists(destDirectoryName))
-                LongPathDirectoryExtension.Delete(destDirectoryName, true);
+                Helper.CleanupFolder(destDirectoryName);
             base.BaseTestCleanup();
         }
         #endregion
