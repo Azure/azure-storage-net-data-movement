@@ -168,7 +168,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
             else
             {
-                info.AddValue(FilePathType, "FilePath", typeof(string));
+                info.AddValue(FilePathType, "FullPath", typeof(string));
                 info.AddValue(FilePathName, this.FilePath, typeof(string));
             }
         }
