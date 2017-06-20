@@ -266,22 +266,105 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
     internal static class LongPath
     {
-        public static string ToUncPath(string localFilePath)
-        {
-            if (localFilePath == null)
-                return null;
+        private const string ExtendedPathPrefix = @"\\?\";
+        private const string UncPathPrefix = @"\\";
+        private const string UncExtendedPrefixToInsert = @"?\UNC\";
+        // \\?\, \\.\, \??\
+        internal const int DevicePrefixLength = 4;
 
-            string ret = localFilePath;
-            if (!ret.StartsWith(@"\\", StringComparison.Ordinal))
+        /// <summary>
+        /// Returns true if the path specified is relative to the current drive or working directory.
+        /// Returns false if the path is fixed to a specific drive or UNC path.  This method does no
+        /// validation of the path (URIs will be returned as relative as a result).
+        /// </summary>
+        internal static bool IsPartiallyQualified(string path)
+        {
+            if (path.Length < 2)
             {
-                ret = @"\\?\" + ret;
+                // It isn't fixed, it must be relative.  There is no way to specify a fixed
+                // path with one character (or less).
+                return true;
             }
-            ret = LongPath.GetFullPath(localFilePath);
-            if (!ret.StartsWith(@"\\", StringComparison.Ordinal))
+
+            if (IsDirectorySeparator(path[0]))
             {
-                return @"\\?\" + ret;
+                // There is no valid way to specify a relative path with two initial slashes or
+                // \? as ? isn't valid for drive relative paths and \??\ is equivalent to \\?\
+                return !(path[1] == '?' || IsDirectorySeparator(path[1]));
             }
-            return ret;
+
+            // The only way to specify a fixed path that doesn't begin with two slashes
+            // is the drive, colon, slash format- i.e. C:\
+            return !((path.Length >= 3)
+                && (path[1] == Path.VolumeSeparatorChar)
+                && IsDirectorySeparator(path[2])
+                // To match old behavior we'll check the drive character for validity as the path is technically
+                // not qualified if you don't have a valid drive. "=:\" is the "=" file's default data stream.
+                && IsValidDriveChar(path[0]));
+        }
+
+        /// <summary>
+        /// Returns true if the given character is a valid drive letter
+        /// </summary>
+        internal static bool IsValidDriveChar(char value)
+        {
+            return ((value >= 'A' && value <= 'Z') || (value >= 'a' && value <= 'z'));
+        }
+
+        /// <summary>
+        /// Returns true if the path uses any of the DOS device path syntaxes. ("\\.\", "\\?\", or "\??\")
+        /// </summary>
+        internal static bool IsDevice(string path)
+        {
+            // If the path begins with any two separators is will be recognized and normalized and prepped with
+            // "\??\" for internal usage correctly. "\??\" is recognized and handled, "/??/" is not.
+            return IsExtended(path)
+                ||
+                (
+                    path.Length >= DevicePrefixLength
+                    && IsDirectorySeparator(path[0])
+                    && IsDirectorySeparator(path[1])
+                    && (path[2] == '.' || path[2] == '?')
+                    && IsDirectorySeparator(path[3])
+                );
+        }
+
+        /// <summary>
+        /// Returns true if the path uses the canonical form of extended syntax ("\\?\" or "\??\"). If the
+        /// path matches exactly (cannot use alternate directory separators) Windows will skip normalization
+        /// and path length checks.
+        /// </summary>
+        internal static bool IsExtended(string path)
+        {
+            // While paths like "//?/C:/" will work, they're treated the same as "\\.\" paths.
+            // Skipping of normalization will *only* occur if back slashes ('\') are used.
+            return path.Length >= DevicePrefixLength
+                && path[0] == '\\'
+                && (path[1] == '\\' || path[1] == '?')
+                && path[2] == '?'
+                && path[3] == '\\';
+        }
+
+        private static bool IsDirectorySeparator(char ch)
+        {
+            return ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar;
+        }
+
+        public static string ToUncPath(string path)
+        {
+            if (IsDevice(path))
+                return path;
+
+            if (IsPartiallyQualified(path))
+            {
+                path = LongPath.GetFullPath(path);
+            }
+
+            //// Given \\server\share in longpath becomes \\?\UNC\server\share
+            if (path.StartsWith(UncPathPrefix, StringComparison.OrdinalIgnoreCase))
+                return path.Insert(2, UncExtendedPrefixToInsert);
+
+            return ExtendedPathPrefix + path;
         }
 
         public static string GetFullPath(string path)
@@ -407,11 +490,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 if (pathLength >= volumeSeparatorLength + 1 && IsDirectorySeparator(path[volumeSeparatorLength])) i++;
             }
             return i;
-        }
-
-        private static bool IsDirectorySeparator(char ch)
-        {
-            return ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar;
         }
 
         public static string GetFileNameWithoutExtension(string path)
