@@ -44,6 +44,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private const int TransferItemContentSize = 9 * 1024;
 
         /// <summary>
+        /// For each transfer instance, it saves the transfer object itself and the transfer's ProgressTracker in the journal.
+        /// This is size to allocated for the transfer's ProgressTracker.
+        /// </summary>
+        private const int ProcessTrackerSize = 1024;
+
+        /// <summary>
         /// It keeps a list of used transfer chunks and a list free transfers in the journal stream,
         /// journal head keeps the heads and tails for these two lists.
         /// </summary>
@@ -52,18 +58,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Offset in stream for the beginning to persistant transfer instance.
         /// </summary>
-        private const int contentOffset = 512;
+        private const int ContentOffset = 512;
 
         /// <summary>
         /// Offset in stream for the beginning to sub-transfer instance.
         /// </summary>
-        private int ContentOffset
-        {
-            get
-            {
-                return contentOffset + this.baseTransferSize + (TransferChunkSize - TransferItemContentSize);
-            }
-        }
+        private const int SubTransferContentOffset = 40 * 1024;
 
         /// <summary>
         /// In the journal, it only allows one base transfer, which means user can only add one transfer to the checkpoint using stream journal.
@@ -71,7 +71,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// there could be multiple subtransfers, each subtransfer is a SingleObjectTransfer.
         /// </summary>
         private Transfer baseTransfer = null;
-        private int baseTransferSize = 0;
 
         private Stream stream;
 
@@ -186,16 +185,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.freeChunkTail = this.ReadLong();
 
                     // absolute path
-                    this.stream.Position = contentOffset;
-                    this.baseTransferSize = this.ReadInt();
-                    this.stream.Position = contentOffset + sizeof(int);
+                    this.stream.Position = ContentOffset;
 
 #if BINARY_SERIALIZATION
                     this.baseTransfer = (Transfer)this.formatter.Deserialize(this.stream);
 #else
                     this.baseTransfer = this.ReadObject(this.transferSerializer) as Transfer;
 #endif
-                    this.baseTransfer.StreamJournalOffset = contentOffset + sizeof(int);
+                    this.baseTransfer.StreamJournalOffset = ContentOffset + sizeof(int);
                     this.baseTransfer.Journal = this;
 
                     if (baseTransfer is DirectoryTransfer)
@@ -210,7 +207,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         }
                     }
 
-                    this.stream.Position = this.baseTransfer.StreamJournalOffset + this.baseTransferSize;
+                    this.stream.Position = SubTransferContentOffset - ProcessTrackerSize;
 
 #if BINARY_SERIALIZATION
                     this.baseTransfer.ProgressTracker.AddProgress((TransferProgressTracker)this.formatter.Deserialize(this.stream));
@@ -218,7 +215,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.baseTransfer.ProgressTracker.AddProgress((TransferProgressTracker)this.ReadObject(this.progressCheckerSerializer));
 #endif
                     this.baseTransfer.ProgressTracker.Journal = this;
-                    this.baseTransfer.ProgressTracker.StreamJournalOffset = this.baseTransfer.StreamJournalOffset + this.baseTransferSize;
+                    this.baseTransfer.ProgressTracker.StreamJournalOffset = SubTransferContentOffset - ProcessTrackerSize;
                     return this.baseTransfer;
                 }
             }
@@ -246,7 +243,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 }
 
                 transfer.Journal = this;
-                transfer.StreamJournalOffset = contentOffset + sizeof(int);
+                transfer.StreamJournalOffset = ContentOffset;
                 this.stream.Position = transfer.StreamJournalOffset;
 #if BINARY_SERIALIZATION
                 this.formatter.Serialize(this.stream, transfer);
@@ -254,13 +251,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 transfer.IsStreamJournal = true;
                 this.WriteObject(this.transferSerializer, transfer);
 #endif
-                this.baseTransferSize = ((int)this.stream.Position + 2048 + 1) / 512;
-                this.baseTransferSize *= 512;
-                this.stream.Position = contentOffset;
-                this.stream.Write(BitConverter.GetBytes(this.baseTransferSize), 0, sizeof(int));
-
                 transfer.ProgressTracker.Journal = this;
-                transfer.ProgressTracker.StreamJournalOffset = transfer.StreamJournalOffset + baseTransferSize;
+                transfer.ProgressTracker.StreamJournalOffset = SubTransferContentOffset - ProcessTrackerSize;
 
                 this.stream.Position = transfer.ProgressTracker.StreamJournalOffset;
 #if BINARY_SERIALIZATION
@@ -605,12 +597,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return BitConverter.ToInt64(this.memoryBuffer, 0);
         }
 
-        private int ReadInt()
-        {
-            this.ReadAndCheck(sizeof(int));
-            return BitConverter.ToInt32(this.memoryBuffer, 0);
-        }
-
         /// <summary>
         /// Read from journal file and check whether the read succeeded.
         /// </summary>
@@ -675,7 +661,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
             else
             {
-                return this.stream.Length <= ContentOffset ? ContentOffset : ((this.stream.Length - ContentOffset) / TransferChunkSize + 1) * TransferChunkSize + ContentOffset;
+                return this.stream.Length <= SubTransferContentOffset ? SubTransferContentOffset : ((this.stream.Length - SubTransferContentOffset) / TransferChunkSize + 1) * TransferChunkSize + SubTransferContentOffset;
             }
         }
 

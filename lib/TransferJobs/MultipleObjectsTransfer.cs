@@ -421,11 +421,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     Utils.CheckCancellation(cancellationToken);
                     transfer.Context = this.Context;
 
-                    if (!transfer.IsValid())
-                    {
-                        continue;
-                    }
-
                     this.UpdateTransfer(transfer);
 
                     this.subTransfers.AddTransfer(transfer, false);

@@ -353,18 +353,24 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public static string ToUncPath(string path)
         {
             if (IsDevice(path))
-                return path;
+            {
+                return LongPath.GetFullPath(path);
+            }
 
             if (IsPartiallyQualified(path))
             {
                 path = LongPath.GetFullPath(path);
+                if (IsDevice(path))
+                    return path;
+                else
+                    return ExtendedPathPrefix + path;
             }
 
             //// Given \\server\share in longpath becomes \\?\UNC\server\share
             if (path.StartsWith(UncPathPrefix, StringComparison.OrdinalIgnoreCase))
-                return path.Insert(2, UncExtendedPrefixToInsert);
+                return LongPath.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert));
 
-            return ExtendedPathPrefix + path;
+            return LongPath.GetFullPath(ExtendedPathPrefix + path);
         }
 
         public static string GetFullPath(string path)
@@ -546,15 +552,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if DOTNET5_4
             return Directory.Exists(path);
 #else
+            if (String.IsNullOrEmpty(path))
+                return false;
             path = LongPath.ToUncPath(path);
             bool success = NativeMethods.PathFileExistsW(path);
-
             if (!success)
             {
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] { 0, NativeMethods.ERROR_DIRECTORY_NOT_FOUND, NativeMethods.ERROR_FILE_NOT_FOUND });
             }
-
-            return success;
+            var fileAttributes = LongPathFile.GetAttributes(path);
+            return success && (FileAttributes.Directory == (fileAttributes & FileAttributes.Directory));
 #endif
         }
 

@@ -116,6 +116,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                         relativePath = relativePath.Remove(0, fullPath.Length);
                     }
 
+                    var continuationToken = new FileListContinuationToken(relativePath);
                     if (relativePath.Length > Constants.MaxRelativePathLength)
                     {
                         relativePath = relativePath.Substring(0, Constants.MaxRelativePathLength / 2) + "..." + relativePath.Substring(relativePath.Length - Constants.MaxRelativePathLength / 2);
@@ -124,7 +125,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     yield return new FileEntry(
                         relativePath,
                         LongPath.Combine(this.location.DirectoryPath, relativePath),
-                        new FileListContinuationToken(relativePath));
+                        continuationToken);
                 }
             }
         }
