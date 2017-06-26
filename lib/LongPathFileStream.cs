@@ -623,6 +623,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             string currentPath = null;
 
             Queue<string> folders = new Queue<string>();
+            String searchPatternDirectory = LongPath.GetDirectoryName(searchPattern);
             folders.Enqueue(path);
             while (folders.Count > 0)
             {
@@ -642,7 +643,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         if ((filter == FilesOrDirectory.All)
                             || (filter == FilesOrDirectory.Directory && findData.FileAttributes == FileAttributes.Directory)
                             || (filter == FilesOrDirectory.File && findData.FileAttributes != FileAttributes.Directory))
-                            yield return LongPath.Combine(currentPath, findData.FileName);
+                        {
+                            if (String.IsNullOrEmpty(searchPatternDirectory))
+                            {
+                                yield return LongPath.Combine(currentPath, findData.FileName);
+                            }
+                            else
+                            {
+                                yield return LongPath.Combine(LongPath.Combine(currentPath, searchPatternDirectory), findData.FileName);
+                            }
+                        }
                     }
 
                     while (NativeMethods.FindNextFileW(findHandle, out findData))
@@ -658,7 +668,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                             if ((filter == FilesOrDirectory.All)
                                 || (filter == FilesOrDirectory.Directory && findData.FileAttributes == FileAttributes.Directory)
                                 || (filter == FilesOrDirectory.File && findData.FileAttributes != FileAttributes.Directory))
-                                yield return LongPath.Combine(currentPath, findData.FileName);
+                            {
+                                if (String.IsNullOrEmpty(searchPatternDirectory))
+                                {
+                                    yield return LongPath.Combine(currentPath, findData.FileName);
+                                }
+                                else
+                                {
+                                    yield return LongPath.Combine(LongPath.Combine(currentPath, searchPatternDirectory), findData.FileName);
+                                }
+                            }
                         }
                     }
 
