@@ -552,16 +552,27 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if DOTNET5_4
             return Directory.Exists(path);
 #else
-            if (String.IsNullOrEmpty(path))
-                return false;
-            path = LongPath.ToUncPath(path);
-            bool success = NativeMethods.PathFileExistsW(path);
-            if (!success)
+            try
             {
-                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] { 0, NativeMethods.ERROR_DIRECTORY_NOT_FOUND, NativeMethods.ERROR_FILE_NOT_FOUND });
+
+                if (String.IsNullOrEmpty(path))
+                    return false;
+                path = LongPath.ToUncPath(path);
+                bool success = NativeMethods.PathFileExistsW(path);
+                if (!success)
+                {
+                    NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] { 0, NativeMethods.ERROR_DIRECTORY_NOT_FOUND, NativeMethods.ERROR_FILE_NOT_FOUND });
+                }
+                var fileAttributes = LongPathFile.GetAttributes(path);
+                return success && (FileAttributes.Directory == (fileAttributes & FileAttributes.Directory));
             }
-            var fileAttributes = LongPathFile.GetAttributes(path);
-            return success && (FileAttributes.Directory == (fileAttributes & FileAttributes.Directory));
+            catch (ArgumentException) { }
+            catch (NotSupportedException) { }  // Security can throw this on ":"
+            catch (System.Security.SecurityException) { }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+
+            return false;
 #endif
         }
 
