@@ -630,74 +630,83 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return Directory.EnumerateFileSystemEntries(path, searchPattern, searchOption);
 #else
             NativeMethods.WIN32_FIND_DATA findData;
-            Interop.NativeMethods.SafeFindHandle findHandle;
+            NativeMethods.SafeFindHandle findHandle;
             string currentPath = null;
+            int errorCode = 0;
 
             Queue<string> folders = new Queue<string>();
-            String searchPatternDirectory = LongPath.GetDirectoryName(searchPattern);
+            String searchPath = LongPath.Combine(path, searchPattern);
+            path = LongPath.GetDirectoryName(searchPath);
+            searchPattern = LongPath.GetFileName(searchPath);
             folders.Enqueue(path);
             while (folders.Count > 0)
             {
                 currentPath = folders.Dequeue();
-                findHandle = NativeMethods.FindFirstFileW(LongPath.Combine(LongPath.ToUncPath(currentPath), searchPattern), out findData);
+                if (searchOption == SearchOption.AllDirectories)
+                {
+                    findHandle = NativeMethods.FindFirstFileW(LongPath.Combine(LongPath.ToUncPath(currentPath), "*"), out findData);
+                    if (!findHandle.IsInvalid)
+                    {
+                        do
+                        {
+                            if (findData.FileName != "."
+                                && findData.FileName != "..")
+                            {
+                                if (findData.FileAttributes == FileAttributes.Directory)
+                                {
+                                    folders.Enqueue(LongPath.Combine(currentPath, findData.FileName));
+                                }
+                            }
+                        }
+                        while (NativeMethods.FindNextFileW(findHandle, out findData));
 
+                        // Get last Win32 error right after native calls.
+                        // Dispose SafeFindHandle will call native methods, it is possible to set last Win32 error.
+                        errorCode = Marshal.GetLastWin32Error();
+                        if (findHandle != null
+                            && !findHandle.IsInvalid)
+                            findHandle.Dispose();
+                        NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(errorCode,
+                            new int[] {
+                                NativeMethods.ERROR_SUCCESS,
+                                NativeMethods.ERROR_NO_MORE_FILES,
+                                NativeMethods.ERROR_FILE_NOT_FOUND
+                        });
+                    }
+                    else
+                    {
+                        NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] {
+                            NativeMethods.ERROR_SUCCESS,
+                            NativeMethods.ERROR_NO_MORE_FILES,
+                            NativeMethods.ERROR_FILE_NOT_FOUND
+                        });
+                    }
+                }
+
+                findHandle = NativeMethods.FindFirstFileW(LongPath.Combine(LongPath.ToUncPath(currentPath), searchPattern), out findData);
                 if (!findHandle.IsInvalid)
                 {
-                    if (findData.FileName != "."
-                        && findData.FileName != "..")
-                    {
-                        if (searchOption == SearchOption.AllDirectories
-                            && findData.FileAttributes == FileAttributes.Directory)
-                        {
-                            folders.Enqueue(LongPath.Combine(currentPath, findData.FileName));
-                        }
-                        if ((filter == FilesOrDirectory.All)
-                            || (filter == FilesOrDirectory.Directory && findData.FileAttributes == FileAttributes.Directory)
-                            || (filter == FilesOrDirectory.File && findData.FileAttributes != FileAttributes.Directory))
-                        {
-                            if (String.IsNullOrEmpty(searchPatternDirectory))
-                            {
-                                yield return LongPath.Combine(currentPath, findData.FileName);
-                            }
-                            else
-                            {
-                                yield return LongPath.Combine(LongPath.Combine(currentPath, searchPatternDirectory), findData.FileName);
-                            }
-                        }
-                    }
-
-                    while (NativeMethods.FindNextFileW(findHandle, out findData))
+                    do
                     {
                         if (findData.FileName != "."
                             && findData.FileName != "..")
                         {
-                            if (searchOption == SearchOption.AllDirectories
-                                && findData.FileAttributes == FileAttributes.Directory)
-                            {
-                                folders.Enqueue(LongPath.Combine(currentPath, findData.FileName));
-                            }
                             if ((filter == FilesOrDirectory.All)
                                 || (filter == FilesOrDirectory.Directory && findData.FileAttributes == FileAttributes.Directory)
                                 || (filter == FilesOrDirectory.File && findData.FileAttributes != FileAttributes.Directory))
                             {
-                                if (String.IsNullOrEmpty(searchPatternDirectory))
-                                {
-                                    yield return LongPath.Combine(currentPath, findData.FileName);
-                                }
-                                else
-                                {
-                                    yield return LongPath.Combine(LongPath.Combine(currentPath, searchPatternDirectory), findData.FileName);
-                                }
+                                yield return LongPath.Combine(currentPath, findData.FileName);
                             }
                         }
                     }
+                    while (NativeMethods.FindNextFileW(findHandle, out findData));
 
                     // Get last Win32 error right after native calls.
                     // Dispose SafeFindHandle will call native methods, it is possible to set last Win32 error.
-                    var errorCode = Marshal.GetLastWin32Error();
-                    if (findHandle != null)
+                    errorCode = Marshal.GetLastWin32Error();
+                    if (findHandle != null
+                        && !findHandle.IsInvalid)
                         findHandle.Dispose();
-
                     NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(errorCode,
                         new int[] {
                         NativeMethods.ERROR_SUCCESS,
