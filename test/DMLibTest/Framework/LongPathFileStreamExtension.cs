@@ -153,12 +153,12 @@ namespace DMLibTest.Framework
         {
             if (IsDevice(path))
             {
-                return LongPath.GetFullPath(path);
+                return LongPathExtension.GetFullPath(path);
             }
 
             if (IsPartiallyQualified(path))
             {
-                path = LongPath.GetFullPath(path);
+                path = LongPathExtension.GetFullPath(path);
                 if (IsDevice(path))
                     return path;
                 else
@@ -167,9 +167,9 @@ namespace DMLibTest.Framework
 
             //// Given \\server\share in longpath becomes \\?\UNC\server\share
             if (path.StartsWith(UncPathPrefix, StringComparison.OrdinalIgnoreCase))
-                return LongPath.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert));
+                return LongPathExtension.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert));
 
-            return LongPath.GetFullPath(ExtendedPathPrefix + path);
+            return LongPathExtension.GetFullPath(ExtendedPathPrefix + path);
         }
 
         public static string GetFullPath(string path)
