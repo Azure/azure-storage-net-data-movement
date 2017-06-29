@@ -375,9 +375,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             Directory,
             All
         };
+
         public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption)
         {
+#if DOTNET5_4
+            return Directory.EnumerateFileSystemEntries(path, searchPattern, searchOption);
+#else
             return EnumerateFileSystemEntries(path, searchPattern, searchOption, FilesOrDirectory.All);
+#endif
         }
 
         public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption, FilesOrDirectory filter)

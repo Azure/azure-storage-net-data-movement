@@ -21,7 +21,7 @@ namespace DMLibTest.Cases
 #if DNXCORE50
     using Xunit;
 
-    [Collection(Collections.Global)]
+    [MultiDirectionTestClass]
     public class LongFilePathTest : DMLibTestBase, IClassFixture<AllTransferDirectionFixture>, IDisposable
     {
         public LongFilePathTest()
@@ -84,9 +84,9 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
         public void LongFilePathSingleUpload()
         {
-            int fileSizeInBytes = 1 * 1024;
+            int fileSizeInKB = 1;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInBytes);
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
 

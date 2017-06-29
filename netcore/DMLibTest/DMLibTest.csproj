@@ -69,6 +69,7 @@
     <Compile Include="..\..\test\DMLibTest\Generated\BVT_Generated.cs" Link="Generated\BVT_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\CheckContentMD5Test_Generated.cs" Link="Generated\CheckContentMD5Test_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\DelimiterTest_Generated.cs" Link="Generated\DelimiterTest_Generated.cs" />
+    <Compile Include="..\..\test\DMLibTest\Generated\LongFilePathTest_Generated.cs" Link="Generated\LongFilePathTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\MetadataTest_Generated.cs" Link="Generated\MetadataTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\OverwriteTest_Generated.cs" Link="Generated\OverwriteTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\ProgressHandlerTest_Generated.cs" Link="Generated\ProgressHandlerTest_Generated.cs" />
