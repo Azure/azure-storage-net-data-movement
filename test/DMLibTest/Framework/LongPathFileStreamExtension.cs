@@ -19,50 +19,6 @@ namespace DMLibTest.Framework
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
 
-#if DNXCORE50
-
-    internal class LongPathFileStreamExtension : FileStream
-    {
-        public LongPathFileStreamExtension(string filePath, FileMode mode, FileAccess access, FileShare share) : base(filePath, mode, access, share)
-        {
-        }
-
-        public LongPathFileStreamExtension(string filePath, FileMode mode) : base(filePath, mode, FileAccess.ReadWrite, FileShare.ReadWrite)
-        {
-        }
-    }
-
-#else
-    /// <summary>
-    /// Internal calss to support long path files.
-    /// </summary
-    internal class LongPathFileStreamExtension : LongPathFileStream
-    {
-
-        public LongPathFileStreamExtension(string filePath, FileMode mode, FileAccess access, FileShare share):base(filePath, mode, access, share)
-        {
-        }
-
-        public LongPathFileStreamExtension(string filePath, FileMode mode):base(filePath, mode, FileAccess.ReadWrite, FileShare.ReadWrite)
-        {
-        }
-
-        public SafeHandle Handle
-        {
-            get
-            {
-                return base.fileHandle;
-            }
-        }
-
-        public new void Dispose()
-        {
-            this.Close();
-            base.Close();
-        }
-    }
-#endif
-
     public static class LongPathExtension
     {
         private const string ExtendedPathPrefix = @"\\?\";
@@ -340,7 +296,7 @@ namespace DMLibTest.Framework
 #if DOTNET5_4
             return File.GetAttributes(path);
 #else
-            return LongPathFile.GetAttributes(path);
+            return Microsoft.WindowsAzure.Storage.DataMovement.LongPathFile.GetAttributes(path);
 #endif
         }
 
@@ -359,7 +315,7 @@ namespace DMLibTest.Framework
                 {
                     NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] { 0, NativeMethods.ERROR_DIRECTORY_NOT_FOUND, NativeMethods.ERROR_FILE_NOT_FOUND });
                 }
-                var fileAttributes = LongPathFile.GetAttributes(path);
+                var fileAttributes = Microsoft.WindowsAzure.Storage.DataMovement.LongPathFile.GetAttributes(path);
                 return success && (FileAttributes.Directory != (fileAttributes & FileAttributes.Directory));
             }
             catch (ArgumentException) { }
@@ -383,19 +339,19 @@ namespace DMLibTest.Framework
 #endif
         }
 
-        public static LongPathFileStreamExtension Create(string path)
+        public static FileStream Create(string path)
         {
-            return new LongPathFileStreamExtension(path, FileMode.Create);
+            return Open(path, FileMode.Create);
         }
 
-        public static LongPathFileStreamExtension Open(string path, FileMode mode)
+        public static FileStream Open(string path, FileMode mode, FileAccess access, FileShare share)
         {
-            return new LongPathFileStreamExtension(path, mode);
+            return LongPathFile.Open(path, mode, access, share);
         }
 
-        public static LongPathFileStreamExtension Open(string path, FileMode mode, FileAccess access, FileShare share)
+        public static FileStream Open(string path, FileMode mode)
         {
-            return new LongPathFileStreamExtension(path, mode, access, share);
+            return LongPathFile.Open(path, mode, FileAccess.ReadWrite, FileShare.ReadWrite);
         }
     }
 }

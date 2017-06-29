@@ -14,255 +14,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+#if !DOTNET5_4
     using Microsoft.Win32.SafeHandles;
+#endif
     using System.Diagnostics;
     using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
-
-#if !DOTNET5_4
-    /// <summary>
-    /// Internal calss to support long path files.
-    /// </summary>
-    internal class LongPathFileStream : Stream
-    {
-        private long position = 0;
-        private string filePath = null;
-        protected SafeFileHandle fileHandle = null;
-        private FileAccess filePermission;
-
-        public LongPathFileStream(string filePath, FileMode mode, FileAccess access, FileShare share)
-        {
-            this.filePath = LongPath.ToUncPath(filePath);
-            this.filePermission = access;
-            this.fileHandle = CreateFile(this.filePath, mode, access, share);
-        }
-
-        public override void Close()
-        {
-            if (this.fileHandle != null && !this.fileHandle.IsClosed)
-            {
-                this.fileHandle.Close();
-                this.fileHandle = null;
-
-                if (this.filePath != null)
-                {
-                    this.filePath = null;
-                }
-
-                if (this.position != 0)
-                {
-                    this.position = 0;
-                }
-            }
-            base.Close();
-        }
-
-        public override bool CanRead
-        {
-            get
-            {
-                if (this.fileHandle != null && !this.fileHandle.IsClosed
-                    && (filePermission == FileAccess.Read || filePermission == FileAccess.ReadWrite))
-                {
-                    return !this.fileHandle.IsInvalid;
-                }
-                return false;
-            }
-        }
-
-        public override bool CanSeek
-        {
-            get
-            {
-                if (this.fileHandle != null && !this.fileHandle.IsClosed)
-                {
-                    return !this.fileHandle.IsInvalid;
-                }
-                return false;
-            }
-        }
-
-        public override bool CanWrite
-        {
-            get
-            {
-                if (this.fileHandle != null && !this.fileHandle.IsClosed
-                    && (filePermission == FileAccess.Write || filePermission == FileAccess.ReadWrite))
-                {
-                    return !this.fileHandle.IsInvalid;
-                }
-                return false;
-            }
-        }
-
-        public override long Length
-        {
-            get
-            {
-                if (this.fileHandle != null && !this.fileHandle.IsClosed)
-                {
-                    long size = 0;
-                    if (!NativeMethods.GetFileSizeEx(this.fileHandle, out size))
-                        NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
-                    return size;
-                }
-                else
-                {
-                    throw new NotSupportedException("null or closed");
-                }
-            }
-        }
-
-        public override long Position
-        {
-            get
-            {
-                return this.position;
-            }
-
-            set
-            {
-                if (!CanSeek)
-                {
-                    throw new NotSupportedException("Not able to seek");
-                }
-                if (this.position != value)
-                {
-                    this.position = value;
-                }
-                this.position = value;
-            }
-        }
-
-        public override void Flush()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            if (buffer == null)
-                throw new ArgumentNullException(nameof(buffer));
-            if (offset < 0)
-                throw new ArgumentOutOfRangeException(nameof(offset), "ArgumentOutOfRange_NeedNonNegNum");
-            if (count < 0)
-                throw new ArgumentOutOfRangeException(nameof(count), "ArgumentOutOfRange_NeedNonNegNum");
-            if (offset + count > buffer.Length)
-                throw new ArgumentOutOfRangeException(nameof(buffer), "ArgumentOutOfRange: offset + count out of buffer's range.");
-            if (!CanRead)
-                throw new NotSupportedException("NotSupported_UnableToReadTargetStream");
-
-            uint read = 0;
-            bool success = false;
-
-            NativeOverlapped template = new NativeOverlapped();
-            template.EventHandle = IntPtr.Zero;
-            template.OffsetLow = (int)(Position & uint.MaxValue);
-            template.OffsetHigh = (int)(Position >> 32);
-            if (offset != 0)
-            {
-                var tempBuffer = new byte[count];
-                success = NativeMethods.ReadFile(this.fileHandle, tempBuffer, (uint)(count), out read, ref template);
-                tempBuffer.CopyTo(buffer, offset);
-            }
-            else
-            {
-                success = NativeMethods.ReadFile(this.fileHandle, buffer, (uint)(count), out read, ref template);
-            }
-
-            if (!success)
-                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(
-                    new int[] {
-                        NativeMethods.ERROR_SUCCESS,
-                        NativeMethods.ERROR_HANDLE_EOF
-                    });
-            Position += read;
-            return (int)(read);
-        }
-
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            long newPos = 0;
-            switch (origin)
-            {
-                case SeekOrigin.Begin:
-                    newPos = offset;
-                    break;
-
-                case SeekOrigin.Current:
-                    newPos = this.Position + offset;
-                    break;
-
-                case SeekOrigin.End:
-                    newPos = this.Length + offset;
-                    this.SetLength(newPos);
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(offset));
-            }
-            this.Position = newPos;
-            return Position;
-        }
-
-        public override void SetLength(long value)
-        {
-            int lo = (int)(value & 0xFFFFFFFF);
-            int hi = (int)(value >> 32);
-            if(NativeMethods.INVALID_SET_FILE_POINTER == NativeMethods.SetFilePointer(this.fileHandle, lo, out hi, NativeMethods.FILE_BEGIN))
-                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
-            if (!NativeMethods.SetEndOfFile(this.fileHandle))
-                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            if (buffer == null)
-                throw new ArgumentNullException(nameof(buffer));
-            if (offset < 0)
-                throw new ArgumentOutOfRangeException(nameof(offset), "ArgumentOutOfRange_NeedNonNegNum");
-            if (count < 0)
-                throw new ArgumentOutOfRangeException(nameof(count), "ArgumentOutOfRange_NeedNonNegNum");
-            if (offset + count > buffer.Length)
-                throw new ArgumentOutOfRangeException(nameof(buffer), "ArgumentOutOfRange: offset + count out of buffer's range.");
-            if (!CanWrite)
-                throw new NotSupportedException("NotSupported_UnableToWriteTargetStream");
-
-            uint written = 0;
-            if (offset != 0)
-            {
-                buffer = buffer.Skip(offset).ToArray();
-            }
-            NativeOverlapped template = new NativeOverlapped();
-            template.EventHandle = IntPtr.Zero;
-            template.OffsetLow = (int)(Position & uint.MaxValue);
-            template.OffsetHigh = (int)(Position >> 32);
-
-            if (!NativeMethods.WriteFile(this.fileHandle, buffer, (uint)(count), out written, ref template))
-                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
-            Position += written;
-        }
-
-        private SafeFileHandle CreateFile(string path, FileMode mode, FileAccess access, FileShare share)
-        {
-            this.fileHandle = NativeMethods.CreateFileW(path,
-                access,
-                share,
-                IntPtr.Zero,
-                mode,
-                FileAttributes.Normal,
-                IntPtr.Zero);
-
-            if (this.fileHandle.IsInvalid)
-            {
-                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] {
-                    NativeMethods.ERROR_SUCCESS,
-                    NativeMethods.ERROR_ALREADY_EXISTS
-                });
-            }
-            return this.fileHandle;
-        }
-    }
-#endif
 
     internal static class LongPath
     {
@@ -729,6 +485,53 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
     internal static class LongPathFile
     {
+        public static FileStream Open(string filePath, FileMode mode, FileAccess access, FileShare share)
+        {
+#if DOTNET5_4
+            return new FileStream(filePath, mode, access, share);
+#else
+            filePath = LongPath.ToUncPath(filePath);
+            SafeFileHandle fileHandle = GetFileHandle(filePath, mode, access, share);
+            return new FileStream(fileHandle, access);
+#endif
+        }
+
+#if !DOTNET5_4
+        private static SafeFileHandle GetFileHandle(string path, FileMode mode, FileAccess access, FileShare share)
+        {
+            uint genericAccess = 0;
+            switch (access)
+            {
+                case FileAccess.Read:
+                    genericAccess = NativeMethods.GENERIC_READ;
+                    break;
+                case FileAccess.Write:
+                    genericAccess = NativeMethods.GENERIC_WRITE;
+                    break;
+                case FileAccess.ReadWrite:
+                    genericAccess = NativeMethods.GENERIC_READ_WRITE;
+                    break;
+            }
+
+            SafeFileHandle fileHandle = NativeMethods.GetFileHandleW(path,
+                genericAccess,
+                share,
+                IntPtr.Zero,
+                mode,
+                FileAttributes.Normal,
+                IntPtr.Zero);
+
+            if (fileHandle.IsInvalid)
+            {
+                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] {
+                    NativeMethods.ERROR_SUCCESS,
+                    NativeMethods.ERROR_ALREADY_EXISTS
+                });
+            }
+            return fileHandle;
+        }
+#endif
+
         public static FileAttributes GetAttributes(string path)
         {
 #if DOTNET5_4

@@ -162,7 +162,7 @@ namespace DMLibTest
             Random r = new Random();
             byte[] data;
 
-            using (LongPathFileStreamExtension stream = new LongPathFileStreamExtension(filename, FileMode.Create))
+            using (FileStream stream = LongPathFileExtension.Open(filename, FileMode.Create))
             {
                 var oneMBInBytes = 1024 * 1024;
                 var sizeInMB = sizeB / oneMBInBytes;
@@ -194,7 +194,7 @@ namespace DMLibTest
         {
             byte[] data = new byte[1024 * 1024];
             Random r = new Random();
-            using (LongPathFileStreamExtension stream = new LongPathFileStreamExtension(filename, FileMode.Create))
+            using (FileStream stream = LongPathFileExtension.Open(filename, FileMode.Create))
             {
                 for (int i = 0; i < sizeMB; i++)
                 {
@@ -212,7 +212,7 @@ namespace DMLibTest
             byte[] data = new byte[4 * 1024 * 1024];
             long chunkCount = 256 * sizeGB;
             Random r = new Random();
-            using (LongPathFileStreamExtension stream = new LongPathFileStreamExtension(filename, FileMode.Create))
+            using (FileStream stream = LongPathFileExtension.Open(filename, FileMode.Create))
             {
                 for (int i = 0; i < chunkCount; i++)
                 {
@@ -232,16 +232,16 @@ namespace DMLibTest
                 LongPathFileExtension.Delete(filename);
             }
 
-            using (LongPathFileStreamExtension file = LongPathFileExtension.Create(filename))
+            using (FileStream file = LongPathFileExtension.Create(filename))
             {
             }
         }
 
         public static void AggregateFile(string filename, int times)
         {
-            using (LongPathFileStreamExtension outputStream = new LongPathFileStreamExtension(filename, FileMode.Create))
+            using (FileStream outputStream = LongPathFileExtension.Open(filename, FileMode.Create))
             {
-                using (LongPathFileStreamExtension inputStream = new LongPathFileStreamExtension("abc.txt", FileMode.Open))
+                using (FileStream inputStream = LongPathFileExtension.Open("abc.txt", FileMode.Open))
                 {
                     for (int i = 0; i < times; i++)
                     {
@@ -254,12 +254,12 @@ namespace DMLibTest
 
         public static void CompressFile(string filename, int times)
         {
-            using (LongPathFileStreamExtension outputStream = new LongPathFileStreamExtension(filename, FileMode.Create))
+            using (FileStream outputStream = LongPathFileExtension.Open(filename, FileMode.Create))
             {
                 using (GZipStream compress = new GZipStream(outputStream, CompressionMode.Compress))
                 {
 
-                    using (LongPathFileStreamExtension inputStream = new LongPathFileStreamExtension("abc.txt", FileMode.Open))
+                    using (FileStream inputStream = LongPathFileExtension.Open("abc.txt", FileMode.Open))
                     {
                         for (int i = 0; i < times; i++)
                         {
@@ -276,7 +276,7 @@ namespace DMLibTest
             byte[] data4MB = new byte[4 * 1024 * 1024];
             byte[] dataMB = new byte[1024 * 1024];
             Random r = new Random();
-            using (LongPathFileStreamExtension stream = new LongPathFileStreamExtension(filename, FileMode.Create))
+            using (FileStream stream = LongPathFileExtension.Open(filename, FileMode.Create))
             {
                 long sizeGB = sizeinKB / (1024 * 1024);
                 long sizeMB = sizeinKB % (1024 * 1024) / 1024;
@@ -429,7 +429,7 @@ namespace DMLibTest
         // for a 5G file, this can be done in 20 seconds
         public static string GetFileMD5Hash(string filename)
         {
-            using (LongPathFileStreamExtension fs = LongPathFileExtension.Open(filename, FileMode.Open))
+            using (FileStream fs = LongPathFileExtension.Open(filename, FileMode.Open))
             {
                 MD5 md5 = MD5.Create();
                 byte[] md5Hash = md5.ComputeHash(fs);
@@ -447,7 +447,7 @@ namespace DMLibTest
 
         public static string GetFileContentMD5(string filename)
         {
-            using (LongPathFileStreamExtension fs = LongPathFileExtension.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (FileStream fs = LongPathFileExtension.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 MD5 md5 = MD5.Create();
                 byte[] md5Hash = md5.ComputeHash(fs);
@@ -538,7 +538,7 @@ namespace DMLibTest
                     Test.Error("The file {0} should exist", filename);
                 if (blob == null)
                     Test.Error("The blob {0} should exist", blob.Name);
-                using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(tempblob, FileMode.Create))
+                using (FileStream fs = LongPathFileExtension.Open(tempblob, FileMode.Create))
                 {
                     BlobRequestOptions bro = new BlobRequestOptions();
                     bro.RetryPolicy = new LinearRetry(new TimeSpan(0, 0, 30), 3);
@@ -587,9 +587,9 @@ namespace DMLibTest
             long fileLength = fi.Length;
             // 4M a chunk
             const int ChunkSizeByte = 4 * 1024 * 1024;
-            using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(fi.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (FileStream fs = LongPathFileExtension.Open(fi.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                using (LongPathFileStreamExtension fs2 = new LongPathFileStreamExtension(fi2.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (FileStream fs2 = LongPathFileExtension.Open(fi2.FullName, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
                     BinaryReader reader = new BinaryReader(fs);
                     BinaryReader reader2 = new BinaryReader(fs2);
@@ -1496,9 +1496,9 @@ namespace DMLibTest
                 File.Decrypt(GetFullPath(filename));
             }
             int lpBytesReturned = 0;
-            LongPathFileStreamExtension f = LongPathFileExtension.Open(filename, System.IO.FileMode.Open,
+            FileStream f = LongPathFileExtension.Open(filename, System.IO.FileMode.Open,
             System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
-            int result = DeviceIoControl(f.Handle, FSCTL_SET_COMPRESSION,
+            int result = DeviceIoControl(f.SafeFileHandle, FSCTL_SET_COMPRESSION,
             ref COMPRESSION_FORMAT_DEFAULT, 2 /*sizeof(short)*/, IntPtr.Zero, 0,
             ref lpBytesReturned, IntPtr.Zero);
             f.Close();
@@ -1509,9 +1509,9 @@ namespace DMLibTest
         {
 #if !DNXCORE50
             int lpBytesReturned = 0;
-            LongPathFileStreamExtension f = LongPathFileExtension.Open(filename, System.IO.FileMode.Open,
+            FileStream f = LongPathFileExtension.Open(filename, System.IO.FileMode.Open,
             System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
-            int result = DeviceIoControl(f.Handle, FSCTL_SET_COMPRESSION,
+            int result = DeviceIoControl(f.SafeFileHandle, FSCTL_SET_COMPRESSION,
             ref COMPRESSION_FORMAT_NONE, 2 /*sizeof(short)*/, IntPtr.Zero, 0,
             ref lpBytesReturned, IntPtr.Zero);
             f.Close();
@@ -1635,7 +1635,7 @@ namespace DMLibTest
                 CloudFileDirectory root = share.GetRootDirectoryReference();
                 CloudFile cloudFile = root.GetFileReference(fileName);
 
-                using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(filePath, FileMode.Create))
+                using (FileStream fs = LongPathFileExtension.Open(filePath, FileMode.Create))
                 {
                     cloudFile.DownloadToStream(fs, null, fro);
 #if DNXCORE50
@@ -1709,7 +1709,7 @@ namespace DMLibTest
 
                 destFile.Create(fi.Length, null, fro);
 
-                using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(sourceFile, FileMode.Open))
+                using (FileStream fs = LongPathFileExtension.Open(sourceFile, FileMode.Open))
                 {
                     destFile.UploadFromStream(fs, null, fro);
 #if DNXCORE50
@@ -3333,7 +3333,7 @@ namespace DMLibTest
                 CloudBlob blob = container.GetBlobReference(blobName);
                 //content = blob.DownloadText();
                 string tempfile = "temp.txt";
-                using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(tempfile, FileMode.Create))
+                using (FileStream fs = LongPathFileExtension.Open(tempfile, FileMode.Create))
                 {
                     blob.DownloadToStream(fs);
 #if DNXCORE50
@@ -3487,7 +3487,7 @@ namespace DMLibTest
                 bro.MaximumExecutionTime = new TimeSpan(1, 30, 0);
                 CloudBlob blob = container.GetBlobReference(blobName);
 
-                using (LongPathFileStreamExtension fs = new LongPathFileStreamExtension(filePath, FileMode.Create))
+                using (FileStream fs = LongPathFileExtension.Open(filePath, FileMode.Create))
                 {
                     blob.DownloadToStream(fs, null, bro);
 #if DNXCORE50

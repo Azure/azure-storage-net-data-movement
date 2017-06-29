@@ -192,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             FileAccess.Read,
                             FileShare.Read);
 #else
-                        this.inputStream = new LongPathFileStream(
+                        this.inputStream = LongPathFile.Open(
                             fileLocation.FilePath,
                             FileMode.Open,
                             FileAccess.Read,

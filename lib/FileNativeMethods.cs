@@ -29,23 +29,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         public const uint FILE_BEGIN = 0;
         public const uint INVALID_SET_FILE_POINTER = 0xFFFFFFFF;
 
-        [System.Runtime.InteropServices.StructLayout(LayoutKind.Sequential)]
-        public struct OFSTRUCT
-        {
-            public byte cBytes;
-            public byte fFixedDisc;
-            public UInt16 nErrCode;
-            public UInt16 Reserved1;
-            public UInt16 Reserved2;
-            [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.ByValTStr, SizeConst = 128)]
-            public string szPathName;
-        }
+        public const uint GENERIC_READ = 0x80000000;
+        public const uint GENERIC_WRITE = 0x40000000;
+        public const uint GENERIC_READ_WRITE = GENERIC_READ | GENERIC_WRITE;
 
         // Open or create file
         [DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern SafeFileHandle CreateFileW(
+        public static extern SafeFileHandle GetFileHandleW(
              [MarshalAs(UnmanagedType.LPWStr)] string filename,
-             [MarshalAs(UnmanagedType.U4)] FileAccess access,
+             [MarshalAs(UnmanagedType.U4)] uint access,
              [MarshalAs(UnmanagedType.U4)] FileShare share,
              IntPtr securityAttributes,
              [MarshalAs(UnmanagedType.U4)] FileMode creationDisposition,
@@ -56,25 +48,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
         [DllImport("kernel32.dll", EntryPoint = "CreateDirectoryW", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CreateDirectoryW([MarshalAs(UnmanagedType.LPWStr)] string lpPathName, IntPtr lpSecurityAttributes);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool ReadFile(SafeFileHandle hFile, [Out] byte[] lpBuffer, uint nNumberOfBytesToRead, out uint lpNumberOfBytesRead, ref NativeOverlapped template);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool WriteFile(SafeFileHandle hFile, byte[] lpBuffer, uint nNumberOfBytesToWrite, out uint lpNumberOfBytesWritten, ref NativeOverlapped template);
-
-        [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern uint SetFilePointer(SafeFileHandle handle, int lDistanceToMove, out int lpDistanceToMoveHigh, uint dwMoveMethod);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool SetEndOfFile(SafeFileHandle hFile);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool GetFileSizeEx(SafeFileHandle hFile, out long lpFileSize);
 
         [DllImport("Kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.U4)]

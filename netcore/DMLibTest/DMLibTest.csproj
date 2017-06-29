@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\lib\LongPathFileStream.cs" Link="Framework\LongPathFileStream.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\AccessConditionTest.cs" Link="Cases\AccessConditionTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\AllTransferDirectionTest.cs" Link="Cases\AllTransferDirectionTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\BigFileTest.cs" Link="Cases\BigFileTest.cs" />
@@ -101,7 +102,7 @@
     <ProjectReference Include="..\MsTestLib\MsTestLib.csproj" />
     <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.1.1" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.1.1" />
-    <PackageReference Include="WindowsAzure.Storage" Version="8.1.3" />
+    <PackageReference Include="WindowsAzure.Storage" Version="8.1.4" />
   </ItemGroup>
 
   <ItemGroup>
