@@ -64,6 +64,13 @@ namespace DMLibTest.Cases
         [TestInitialize()]
         public void MyTestInitialize()
         {
+#if DOTNET5_4
+            if (!CrossPlatformHelpers.IsWindows)
+            {
+                // Ubuntu has a maximum path of 4096 characters.
+                pathLengthLimit = 4095;
+            }
+#endif
             sourceDirectoryName = LongPathExtension.Combine(Directory.GetCurrentDirectory(), SourceRoot+ DMLibTestHelper.RandomNameSuffix());
             destDirectoryName = LongPathExtension.Combine(Directory.GetCurrentDirectory(), DestRoot+ DMLibTestHelper.RandomNameSuffix());
             base.BaseTestInitialize();
@@ -1155,7 +1162,15 @@ namespace DMLibTest.Cases
         {
             int nameLimit = 240;
             string tempName = "t";
+#if DOTNET5_4
+            string tempPath = LongPathExtension.Combine(LongPathExtension.Combine(path, tempName), fileName);
+            if(CrossPlatformHelpers.IsWindows)
+            {
+                tempPath = LongPathExtension.ToUncPath(tempPath);
+            }
+#else
             string tempPath = LongPathExtension.ToUncPath(LongPathExtension.Combine(LongPathExtension.Combine(path, tempName), fileName));
+#endif
             int targetLength = length - tempPath.Length + tempName.Length;
             string middleDirectoryName = "";
             while(targetLength > 0)
@@ -1185,7 +1200,15 @@ namespace DMLibTest.Cases
         {
             int nameLimit = 240;
             string tempName = "t";
+#if DOTNET5_4
+            string tempPath = LongPathExtension.Combine(LongPathExtension.Combine(tempName, prefix), "_" + (fileNum-1).ToString());
+            if(CrossPlatformHelpers.IsWindows)
+            {
+                tempPath = LongPathExtension.ToUncPath(tempPath);
+            }
+#else
             string tempPath = LongPathExtension.ToUncPath(LongPathExtension.Combine(LongPathExtension.Combine(tempName, prefix), "_" + (fileNum-1).ToString()));
+#endif
             int targetLength = length - tempPath.Length + tempName.Length;
             string middleDirectoryName = "";
             while(targetLength > 0)
