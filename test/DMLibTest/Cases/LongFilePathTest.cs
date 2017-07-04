@@ -22,7 +22,7 @@ namespace DMLibTest.Cases
     using Xunit;
 
     [MultiDirectionTestClass]
-    public class LongFilePathTest : DMLibTestBase, IClassFixture<AllTransferDirectionFixture>, IDisposable
+    public class LongFilePathTest : DMLibTestBase, IClassFixture<LongFilePathTestFixture>, IDisposable
     {
         public LongFilePathTest()
         {
@@ -131,7 +131,7 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
         public void LongFilePathResumeSingleUpload()
         {
-            int fileSizeInKB = 40 * 1024;
+            int fileSizeInKB = 100 * 1024;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
             DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
 
@@ -165,7 +165,7 @@ namespace DMLibTest.Cases
                     }
 
                     // Wait until there are data transferred
-                    progressChecker.DataTransferred.WaitOne();
+                    progressChecker.DataTransferred.WaitOne(30000);
 
                     // Store the first checkpoint
                     if (!IsStreamJournal)
@@ -354,7 +354,7 @@ namespace DMLibTest.Cases
         [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalDest)]
         public void LongFilePathResumeSingleDownload()
         {
-            int fileSizeInKB = 40 * 1024;
+            int fileSizeInKB = 100 * 1024;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
             DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
 
@@ -393,7 +393,7 @@ namespace DMLibTest.Cases
                     }
 
                     // Wait until there are data transferred
-                    progressChecker.DataTransferred.WaitOne();
+                    progressChecker.DataTransferred.WaitOne(30000);
 
                     // Store the first checkpoint
                     if (!IsStreamJournal)
@@ -615,7 +615,7 @@ namespace DMLibTest.Cases
             long totalSizeInBytes = (bigFileSizeInKB * bigFileNum + smallFileSizeInKB * smallFileNum) * 1024;
             int totalFileNum = bigFileNum + smallFileNum;
 
-            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, LongPath.Combine("small", DMLibTestBase.FileName+"_10"), pathLengthLimit));
             DirNode bigFileDirNode = new DirNode("big");
             DirNode smallFileDirNode = new DirNode("small");
 
@@ -661,7 +661,7 @@ namespace DMLibTest.Cases
                 options.AfterAllItemAdded = () =>
                 {
                     // Wait until there are data transferred
-                    progressChecker.DataTransferred.WaitOne();
+                    progressChecker.DataTransferred.WaitOne(30000);
 
                     if (!IsStreamJournal)
                     {
@@ -777,7 +777,7 @@ namespace DMLibTest.Cases
 
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
-            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, LongPath.Combine("small", DMLibTestBase.FileName+"_10"), pathLengthLimit));
 
             TransferItem transferItem = null;
             var options = new TestExecutionOptions<DMLibDataInfo>();
@@ -815,7 +815,7 @@ namespace DMLibTest.Cases
                 options.AfterAllItemAdded = () =>
                 {
                     // Wait until there are data transferred
-                    progressChecker.DataTransferred.WaitOne();
+                    progressChecker.DataTransferred.WaitOne(30000);
 
                     if (!IsStreamJournal)
                     {
