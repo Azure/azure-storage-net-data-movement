@@ -192,7 +192,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #else
                     this.baseTransfer = this.ReadObject(this.transferSerializer) as Transfer;
 #endif
-                    this.baseTransfer.StreamJournalOffset = ContentOffset + sizeof(int);
+                    this.baseTransfer.StreamJournalOffset = ContentOffset;
                     this.baseTransfer.Journal = this;
 
                     if (baseTransfer is DirectoryTransfer)
