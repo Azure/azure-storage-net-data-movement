@@ -138,14 +138,50 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets path to the local file location.
         /// </summary>
-#if !BINARY_SERIALIZATION
-        [DataMember]
-#endif
         public string FilePath
         {
             get;
             private set;
         }
+
+        #region Serialization helpers
+#if !BINARY_SERIALIZATION
+        [DataMember] private string fullPath;
+
+        /// <summary>
+        /// Gets or sets a variable to indicate whether the file location will be saved to a streamed journal.
+        /// </summary>
+        [DataMember]
+        public bool IsStreamJournal { get; set; }
+
+        /// <summary>
+        /// Serializes the object by extracting FilePath for single object transfer.
+        /// </summary>
+        /// <param name="context"></param>
+        [OnSerializing]
+        private void OnSerializingCallback(StreamingContext context)
+        {
+            if(IsStreamJournal == false)
+            {
+                fullPath = FilePath;
+            }
+            else
+            {
+                fullPath = String.IsNullOrEmpty(RelativePath) ? FilePath : null;
+            }
+        }
+
+        /// <summary>
+        /// Initializes a deserialized FilePath
+        /// </summary>
+        /// <param name="context"></param>
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            FilePath = fullPath;
+        }
+#endif // !BINARY_SERIALIZATION
+        #endregion // Serialization helpers
 
 #if BINARY_SERIALIZATION
         /// <summary>

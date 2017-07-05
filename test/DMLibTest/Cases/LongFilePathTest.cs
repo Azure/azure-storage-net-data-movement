@@ -112,7 +112,6 @@ namespace DMLibTest.Cases
             DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
             
             DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddOneFile(destDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.DestTransferDataInfo = destDataInfo;
@@ -359,7 +358,6 @@ namespace DMLibTest.Cases
             DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
 
             DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddOneFile(destDataInfo.RootNode, DMLibTestBase.FileName, fileSizeInKB);
 
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
@@ -555,8 +553,8 @@ namespace DMLibTest.Cases
         {
             int fileNum = 50;
             int fileSizeInKB = 1;
-            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
-            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, DMLibTestHelper.RandomNameSuffix(), fileNum, fileSizeInKB);
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName + "_" + (fileNum - 1).ToString(), pathLengthLimit));
+            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileNum, fileSizeInKB);
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.IsDirectoryTransfer = true;
@@ -580,9 +578,9 @@ namespace DMLibTest.Cases
             int fileNum = 50;
             int fileSizeInKB = 1;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
-            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, DMLibTestHelper.RandomNameSuffix(), fileNum, fileSizeInKB);
+            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, DMLibTestBase.FileName, fileNum, fileSizeInKB);
 
-            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName + "_" + (fileNum - 1).ToString(), pathLengthLimit));
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.DestTransferDataInfo = destDataInfo;
@@ -615,7 +613,7 @@ namespace DMLibTest.Cases
             long totalSizeInBytes = (bigFileSizeInKB * bigFileNum + smallFileSizeInKB * smallFileNum) * 1024;
             int totalFileNum = bigFileNum + smallFileNum;
 
-            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, LongPath.Combine("small", DMLibTestBase.FileName+"_10"), pathLengthLimit));
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, LongPath.Combine("small", DMLibTestBase.FileName + "_" + (totalFileNum - 1).ToString()), pathLengthLimit));
             DirNode bigFileDirNode = new DirNode("big");
             DirNode smallFileDirNode = new DirNode("small");
 
@@ -777,7 +775,7 @@ namespace DMLibTest.Cases
 
             CancellationTokenSource tokenSource = new CancellationTokenSource();
 
-            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, LongPath.Combine("small", DMLibTestBase.FileName+"_10"), pathLengthLimit));
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, LongPath.Combine("small", DMLibTestBase.FileName + "_" + (totalFileNum - 1).ToString()), pathLengthLimit));
 
             TransferItem transferItem = null;
             var options = new TestExecutionOptions<DMLibDataInfo>();
@@ -1074,12 +1072,12 @@ namespace DMLibTest.Cases
         public void LongFilePathDirectoryShouldTransfer()
         {
             // Prepare data
-            int totaFileNumber = DMLibTestConstants.FlatFileCount;
-            int expectedTransferred = totaFileNumber, transferred = 0;
+            int totalFileNumber = DMLibTestConstants.FlatFileCount;
+            int expectedTransferred = totalFileNumber, transferred = 0;
             int expectedSkipped = 0, skipped = 0;
             int expectedFailed = 0, failed = 0;
-            int pathLengthLimit = random.Next(261, 32 * 1000);
-            DMLibDataInfo sourceDataInfo = this.GenerateSourceDataInfo(FileNumOption.FlatFolder, 1024, GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            int pathLengthLimit = random.Next(261, this.pathLengthLimit);
+            DMLibDataInfo sourceDataInfo = this.GenerateSourceDataInfo(FileNumOption.FlatFolder, 1024, GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName + "_" + (totalFileNumber - 1).ToString(), pathLengthLimit));
 
             DirectoryTransferContext dirTransferContext = new DirectoryTransferContext();
 
@@ -1121,6 +1119,7 @@ namespace DMLibTest.Cases
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.IsDirectoryTransfer = true;
+            options.DisableSourceCleaner = true;
 
             options.TransferItemModifier = (fileNode, transferItem) =>
             {

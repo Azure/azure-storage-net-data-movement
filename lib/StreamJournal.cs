@@ -66,6 +66,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private const int SubTransferContentOffset = 40 * 1024;
 
         /// <summary>
+        /// Size for directory transfer instance in the journal stream.
+        /// </summary>
+        private const int MaxTransferChunkSize = 40 * 1024;
+
+        /// <summary>
         /// In the journal, it only allows one base transfer, which means user can only add one transfer to the checkpoint using stream journal.
         /// A base transfer can be a SingleObjectTransfer or a MultipleObjectTransfer, if it's a MultipleObjectTransfer,
         /// there could be multiple subtransfers, each subtransfer is a SingleObjectTransfer.
@@ -134,7 +139,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #if BINARY_SERIALIZATION
             formatter.Context = new StreamingContext(formatter.Context.State, this);
 #else
-            serializerBuffer = new byte[TransferChunkSize];
+            serializerBuffer = new byte[MaxTransferChunkSize];
             serializerStream = new MemoryStream(serializerBuffer);
 #endif
         }
@@ -281,6 +286,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 this.formatter.Serialize(this.stream, transfer);
 #else
                 transfer.IsStreamJournal = true;
+                if (transfer.Source is FileLocation)
+                {
+                    (transfer.Source as FileLocation).IsStreamJournal = true;
+                }
+                else if (transfer.Destination is FileLocation)
+                {
+                    (transfer.Destination as FileLocation).IsStreamJournal = true;
+                }
                 this.WriteObject(this.transferSerializer, transfer);
 #endif
 
