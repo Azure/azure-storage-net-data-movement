@@ -98,6 +98,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ChunkedMemoryStream.cs" />
     <Compile Include="FileNativeMethods.cs" />
+    <Compile Include="LongPathFile.cs" />
     <Compile Include="LongPathFileStream.cs" />
     <Compile Include="TestHook\FaultInjectionPoint.cs" />
     <Compile Include="DirectoryTransferContext.cs" />

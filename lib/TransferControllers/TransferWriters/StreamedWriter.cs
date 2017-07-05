@@ -162,7 +162,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     if (!this.Controller.IsForceOverwrite)
                     {
                         this.Controller.CheckOverwrite(
-                            File.Exists(filePath),
+                            LongPathFile.Exists(filePath),
                             this.TransferJob.Source.Instance,
                             filePath);
                     }

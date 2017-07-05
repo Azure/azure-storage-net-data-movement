@@ -488,7 +488,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
     }
 
-    internal static class LongPathFile
+    internal static partial class LongPathFile
     {
         public static FileStream Open(string filePath, FileMode mode, FileAccess access, FileShare share)
         {
