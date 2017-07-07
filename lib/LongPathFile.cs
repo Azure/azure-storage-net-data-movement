@@ -25,14 +25,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             try
             {
                 if (String.IsNullOrEmpty(path))
+                {
                     return false;
+                }
                 path = LongPath.ToUncPath(path);
                 bool success = NativeMethods.PathFileExistsW(path);
                 if (!success)
                 {
                     NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] { 0, NativeMethods.ERROR_DIRECTORY_NOT_FOUND, NativeMethods.ERROR_FILE_NOT_FOUND });
                 }
-                var fileAttributes = Microsoft.WindowsAzure.Storage.DataMovement.LongPathFile.GetAttributes(path);
+                var fileAttributes = GetAttributes(path);
                 return success && (FileAttributes.Directory != (fileAttributes & FileAttributes.Directory));
             }
             catch (ArgumentException) { }
