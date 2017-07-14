@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Description>Microsoft.WindowsAzure.Storage.DataMovement Class Library</Description>
-    <Version>0.5.3.0</Version>
+    <Version>0.6.0.0</Version>
     <Authors>Microsoft</Authors>
     <TargetFramework>netstandard1.6</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
