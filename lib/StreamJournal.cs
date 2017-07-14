@@ -20,11 +20,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         //------------------------------------------------------------------------------------------------------
         // 0-255: Journal format version string: Assembly name + version
         // 256 - 511: Journal head, keep the list of used chunks for transfer instances and free chunks.
-        // 512-515 : Size of base transfer instance.
-        // 516-ContentOffset-1 : Last 1K for progress tracker of the transfer instance, and rests are base transfer instance.
+        // 512 - (SubTransferContentOffset-1) : Last 1K for progress tracker of the transfer instance, and rests are base transfer instance.
         // A base transfer can be a SingleObjectTransfer or a MultipleObjectTransfer, if it's a MultipleObjectTransfer,
         // there could be multiple subtransfers, each subtransfer is a SingleObjectTransfer.
-        // ContentOffset- : Chunks for transfer instances
+        // SubTransferContentOffset- : Chunks for transfer instances
         // Size of each chunk is 10K, 9K for transfer instance, 1K for progress tracker of the transfer instance.
         // In the journal, it only allows one base transfer, which means user can only add one transfer to the checkpoint using stream journal.
 
