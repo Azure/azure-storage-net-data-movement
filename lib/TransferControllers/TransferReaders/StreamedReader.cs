@@ -170,13 +170,34 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     try
                     {
+                        if(fileLocation.RelativePath !=null
+                            && fileLocation.RelativePath.Length > Constants.MaxRelativePathLength)
+                        {
+                            string errorMessage = string.Format(
+                                CultureInfo.CurrentCulture,
+                                Resources.RelativePathTooLong,
+                                fileLocation.RelativePath);
+                            throw  new TransferException(TransferErrorCode.OpenFileFailed, errorMessage);
+                        }
+#if DOTNET5_4
+                        string filePath = fileLocation.FilePath;
+                        if(Interop.CrossPlatformHelpers.IsWindows)
+                        {
+                            filePath = LongPath.ToUncPath(fileLocation.FilePath);
+                        }
                         // Attempt to open the file first so that we throw an exception before getting into the async work
                         this.inputStream = new FileStream(
+                            filePath,
+                            FileMode.Open,
+                            FileAccess.Read,
+                            FileShare.Read);
+#else
+                        this.inputStream = LongPathFile.Open(
                             fileLocation.FilePath,
                             FileMode.Open,
                             FileAccess.Read,
                             FileShare.Read);
-
+#endif
                         this.ownsStream = true;
                     }
                     catch (Exception ex)

@@ -162,7 +162,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     if (!this.Controller.IsForceOverwrite)
                     {
                         this.Controller.CheckOverwrite(
-                            File.Exists(filePath),
+                            LongPathFile.Exists(filePath),
                             this.TransferJob.Source.Instance,
                             filePath);
                     }
@@ -175,12 +175,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         FileMode fileMode = 0 == this.expectOffset ? FileMode.OpenOrCreate : FileMode.Open;
 
+#if DOTNET5_4
+                        string longFilePath = filePath;
+                        if(Interop.CrossPlatformHelpers.IsWindows)
+                        {
+                            longFilePath = LongPath.ToUncPath(longFilePath);
+                        }
                         // Attempt to open the file first so that we throw an exception before getting into the async work
                         this.outputStream = new FileStream(
+                            longFilePath,
+                            fileMode,
+                            FileAccess.ReadWrite,
+                            FileShare.None);
+#else
+                        this.outputStream = LongPathFile.Open(
                             filePath,
                             fileMode,
                             FileAccess.ReadWrite,
                             FileShare.None);
+#endif
 
                         this.ownsStream = true;
                     }

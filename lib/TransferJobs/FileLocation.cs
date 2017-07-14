@@ -21,6 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #endif // BINARY_SERIALIZATION
     {
         private const string FilePathName = "FilePath";
+        private const string FilePathType = "FilePathType";
         /// <summary>
         /// Initializes a new instance of the <see cref="FileLocation"/> class.
         /// </summary>
@@ -38,6 +39,38 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             this.FilePath = filePath;
+            this.RelativePath = null;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FileLocation"/> class.
+        /// </summary>
+        /// <param name="filePath">Path to the local file as a source/destination to be read from/written to in a transfer.</param>
+        /// <param name="relativePath">Relative path to the local file as a source/destination to be read from/written to in a transfer.</param>
+        public FileLocation(string filePath, string relativePath)
+        {
+            if (null == filePath)
+            {
+                throw new ArgumentNullException("filePath");
+            }
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                throw new ArgumentException("message, should not be an empty string", "filePath");
+            }
+
+            if (null == relativePath)
+            {
+                throw new ArgumentNullException("relativePath");
+            }
+
+            if (string.IsNullOrWhiteSpace(relativePath))
+            {
+                throw new ArgumentException("message, should not be an empty string", "relativePath");
+            }
+
+            this.FilePath = filePath;
+            this.RelativePath = relativePath;
         }
 
 #if BINARY_SERIALIZATION
@@ -48,7 +81,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new System.ArgumentNullException("info");
             }
 
-            this.FilePath = info.GetString(FilePathName);
+            if (context.Context is StreamJournal
+                && "RelativePath".Equals(info.GetString(FilePathType)))
+            {
+                this.RelativePath = info.GetString(FilePathName);
+                this.FilePath = LongPath.Combine(((StreamJournal)context.Context).DirectoryPath, this.RelativePath);
+            }
+            else
+            {
+                this.RelativePath = null;
+                this.FilePath = info.GetString(FilePathName);
+            }
+        }
+#else
+        public void SetDirectoryPath(string directoryPath)
+        {
+            if(directoryPath != null)
+                this.FilePath = LongPath.Combine(directoryPath, this.RelativePath);
         }
 #endif // BINARY_SERIALIZATION
 
@@ -75,16 +124,64 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Gets path to the local file location.
+        /// Gets relative path to the local file location.
         /// </summary>
 #if !BINARY_SERIALIZATION
         [DataMember]
 #endif
+        public string RelativePath
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Gets path to the local file location.
+        /// </summary>
         public string FilePath
         {
             get;
             private set;
         }
+
+        #region Serialization helpers
+#if !BINARY_SERIALIZATION
+        [DataMember] private string fullPath;
+
+        /// <summary>
+        /// Gets or sets a variable to indicate whether the file location will be saved to a streamed journal.
+        /// </summary>
+        [DataMember]
+        public bool IsStreamJournal { get; set; }
+
+        /// <summary>
+        /// Serializes the object by extracting FilePath for single object transfer.
+        /// </summary>
+        /// <param name="context"></param>
+        [OnSerializing]
+        private void OnSerializingCallback(StreamingContext context)
+        {
+            if(IsStreamJournal == false)
+            {
+                fullPath = FilePath;
+            }
+            else
+            {
+                fullPath = String.IsNullOrEmpty(RelativePath) ? FilePath : null;
+            }
+        }
+
+        /// <summary>
+        /// Initializes a deserialized FilePath
+        /// </summary>
+        /// <param name="context"></param>
+        [OnDeserialized]
+        private void OnDeserializedCallback(StreamingContext context)
+        {
+            FilePath = fullPath;
+        }
+#endif // !BINARY_SERIALIZATION
+        #endregion // Serialization helpers
 
 #if BINARY_SERIALIZATION
         /// <summary>
@@ -99,7 +196,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new System.ArgumentNullException("info");
             }
 
-            info.AddValue(FilePathName, this.FilePath, typeof(string));
+            if (RelativePath != null
+                && context.Context is StreamJournal)
+            {
+                info.AddValue(FilePathType, "RelativePath", typeof(string));
+                info.AddValue(FilePathName, this.RelativePath, typeof(string));
+            }
+            else
+            {
+                info.AddValue(FilePathType, "FullPath", typeof(string));
+                info.AddValue(FilePathName, this.FilePath, typeof(string));
+            }
         }
 #endif // BINARY_SERIALIZATION
 

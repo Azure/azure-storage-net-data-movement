@@ -110,7 +110,10 @@ namespace DMLibTest
 
         public TestResult<DMLibDataInfo> ExecuteTestCase(DMLibDataInfo sourceDataInfo, TestExecutionOptions<DMLibDataInfo> options)
         {
-            this.CleanupData();
+            if (options.DisableSourceCleaner)
+                this.CleanupData(false, true);
+            else
+                this.CleanupData();
             SourceAdaptor.CreateIfNotExists();
             DestAdaptor.CreateIfNotExists();
 
@@ -120,7 +123,8 @@ namespace DMLibTest
             {
                 sourceRootPath = sourceDataInfo.RootPath;
                 sourceRootNode = sourceDataInfo.RootNode;
-                SourceAdaptor.GenerateData(sourceDataInfo);
+                if (!options.DisableSourceGenerator)
+                    SourceAdaptor.GenerateData(sourceDataInfo);
             }
 
             string destRootPath = string.Empty;

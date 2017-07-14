@@ -73,8 +73,8 @@
       <HintPath>..\..\packages\Microsoft.WindowsAzure.ConfigurationManager.1.8.0.0\lib\net35-full\Microsoft.WindowsAzure.Configuration.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Storage, Version=8.1.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\WindowsAzure.Storage.8.1.3\lib\net45\Microsoft.WindowsAzure.Storage.dll</HintPath>
+    <Reference Include="Microsoft.WindowsAzure.Storage, Version=8.1.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\WindowsAzure.Storage.8.1.4\lib\net45\Microsoft.WindowsAzure.Storage.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -105,6 +105,15 @@
     <GeneratedSourceFile Include="$(SourceCodeOuputFolder)\*.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\lib\FileNativeMethods.cs">
+      <Link>Framework\FileNativeMethods.cs</Link>
+    </Compile>
+    <Compile Include="..\..\lib\Interop\Interop.Windows.cs">
+      <Link>Framework\Interop.Windows.cs</Link>
+    </Compile>
+    <Compile Include="..\..\lib\LongPathFileStream.cs">
+      <Link>Framework\LongPathFileStream.cs</Link>
+    </Compile>
     <Compile Include="..\..\tools\AssemblyInfo\SharedAssemblyInfo.cs">
       <Link>SharedAssemblyInfo.cs</Link>
     </Compile>
@@ -115,6 +124,7 @@
     <Compile Include="Cases\BVT.cs" />
     <Compile Include="Cases\CheckContentMD5Test.cs" />
     <Compile Include="Cases\DelimiterTest.cs" />
+    <Compile Include="Cases\LongFilePathTest.cs" />
     <Compile Include="Cases\MetadataTest.cs" />
     <Compile Include="Cases\OverwriteTest.cs" />
     <Compile Include="Cases\ProgressHandlerTest.cs" />
@@ -140,9 +150,11 @@
     <Compile Include="Framework\DataAdaptor.cs" />
     <Compile Include="Framework\DMLibWrapper.cs" />
     <Compile Include="Framework\DownloadWrapper.cs" />
+    <Compile Include="Framework\FileNativeMethodsExtension.cs" />
     <Compile Include="Framework\IDataInfo.cs" />
     <Compile Include="Framework\LocalDataAdaptor.cs" />
     <Compile Include="Framework\LocalDataAdaptorBase.cs" />
+    <Compile Include="Framework\LongPathFileStreamExtension.cs" />
     <Compile Include="Framework\MultiDirectionTestBase.cs" />
     <Compile Include="Framework\MultiDirectionTestHelper.cs" />
     <Compile Include="Framework\MultiDirectionTestInfo.cs" />

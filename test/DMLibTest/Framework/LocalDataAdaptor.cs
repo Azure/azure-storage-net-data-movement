@@ -9,6 +9,7 @@ namespace DMLibTest
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using DMLibTest.Framework;
 
     internal class LocalDataAdaptor : LocalDataAdaptorBase<DMLibDataInfo>
     {
@@ -73,12 +74,23 @@ namespace DMLibTest
 
         public override DMLibDataInfo GetTransferDataInfo(string rootDir)
         {
+#if DOTNET5_4
             DirectoryInfo rootDirInfo = new DirectoryInfo(Path.Combine(this.BasePath, rootDir));
             if (!rootDirInfo.Exists)
             {
                 return null;
             }
-
+#else
+            string rootDirInfo = rootDir;
+            if(rootDir.Length == 0)
+            {
+                rootDirInfo = LongPathExtension.Combine(this.BasePath, rootDir);
+            }
+            if(!LongPathDirectoryExtension.Exists(rootDirInfo))
+            {
+                return null;
+            }
+#endif
             DMLibDataInfo dataInfo = new DMLibDataInfo(rootDir);
             this.BuildDirNode(rootDirInfo, dataInfo.RootNode);
 
@@ -145,10 +157,13 @@ namespace DMLibTest
 
             string localFilePath = Path.Combine(parentPath, fileNode.Name);
             DMLibDataHelper.CreateLocalFile(fileNode, localFilePath);
-
+#if DOTNET5_4
             FileInfo fileInfo = new FileInfo(localFilePath);
 
             this.BuildFileNode(fileInfo, fileNode);
+#else
+            this.BuildFileNode(localFilePath, fileNode);
+#endif
         }
 
         private void BuildDirNode(DirectoryInfo dirInfo, DirNode parent)
@@ -168,12 +183,52 @@ namespace DMLibTest
             }
         }
 
+        private void BuildDirNode(string dirPath, DirNode parent)
+        {
+            dirPath = AppendDirectorySeparator(dirPath);
+            foreach (var fileInfo in LongPathDirectoryExtension.GetFiles(dirPath))
+            {
+                FileNode fileNode = new FileNode(fileInfo.Remove(0,dirPath.Length));
+                this.BuildFileNode(fileInfo, fileNode);
+                parent.AddFileNode(fileNode);
+            }
+
+            foreach (var subDirInfo in LongPathDirectoryExtension.GetDirectories(dirPath))
+            {
+                DirNode subDirNode = new DirNode(subDirInfo.Remove(0, dirPath.Length));
+                this.BuildDirNode(subDirInfo, subDirNode);
+                parent.AddDirNode(subDirNode);
+            }
+        }
+
         private void BuildFileNode(FileInfo fileInfo, FileNode fileNode)
         {
             fileNode.MD5 = Helper.GetFileContentMD5(fileInfo.FullName);
             fileNode.LastModifiedTime = fileInfo.LastWriteTimeUtc;
             fileNode.SizeInByte = fileInfo.Length;
             fileNode.Metadata = new Dictionary<string, string>();
+        }
+
+        private void BuildFileNode(string path, FileNode fileNode)
+        {
+            fileNode.MD5 = Helper.GetFileContentMD5(LongPathExtension.GetFullPath(path));
+            // fileNode.LastModifiedTime =
+            using (FileStream fs = LongPathFileExtension.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                fileNode.SizeInByte = fs.Length;
+            }
+            fileNode.Metadata = new Dictionary<string, string>();
+        }
+
+        private static string AppendDirectorySeparator(string dir)
+        {
+            char lastC = dir[dir.Length - 1];
+            if (Path.DirectorySeparatorChar != lastC && Path.AltDirectorySeparatorChar != lastC)
+            {
+                dir = dir + Path.DirectorySeparatorChar;
+            }
+
+            return dir;
         }
     }
 }

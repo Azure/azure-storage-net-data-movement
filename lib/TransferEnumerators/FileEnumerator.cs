@@ -61,20 +61,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
             string filePattern = string.IsNullOrEmpty(this.SearchPattern) ? DefaultFilePattern : this.SearchPattern;
 
-            // Exceed-limit-length patterns surely match no files.
-            int maxFileNameLength = this.GetMaxFileNameLength();
-            if (filePattern.Length > maxFileNameLength)
-            {
-                yield break;
-            }
-
             SearchOption searchOption = this.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
             IEnumerable<string> directoryEnumerator = null;
             ErrorEntry errorEntry = null;
 
             Utils.CheckCancellation(cancellationToken);
 
-            string fullPath = Path.GetFullPath(this.location.DirectoryPath);
+#if DOTNET5_4
+            string fullPath = null;
+            if (Interop.CrossPlatformHelpers.IsWindows)
+            {
+                fullPath = LongPath.ToUncPath(this.location.DirectoryPath);
+            }
+            else
+            {
+                fullPath = Path.GetFullPath(this.location.DirectoryPath);
+            }
+#else
+            string fullPath = LongPath.ToUncPath(this.location.DirectoryPath);
+#endif
             fullPath = AppendDirectorySeparator(fullPath);
 
             try
@@ -123,10 +128,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                         relativePath = relativePath.Remove(0, fullPath.Length);
                     }
 
+                    var continuationToken = new FileListContinuationToken(relativePath);
+                    if (relativePath.Length > Constants.MaxRelativePathLength)
+                    {
+                        relativePath = relativePath.Substring(0, Constants.MaxRelativePathLength / 2) + "..." + relativePath.Substring(relativePath.Length - Constants.MaxRelativePathLength / 2);
+                    }
+
                     yield return new FileEntry(
                         relativePath,
-                        Path.Combine(this.location.DirectoryPath, relativePath),
-                        new FileListContinuationToken(relativePath));
+                        LongPath.Combine(this.location.DirectoryPath, relativePath),
+                        continuationToken);
                 }
             }
         }
@@ -140,15 +151,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             }
 
             return dir;
-        }
-
-        /// <summary>
-        /// Gets the maximum file name length of any file name relative to this file system source location. 
-        /// </summary>
-        /// <returns>Maximum file name length in bytes.</returns>
-        private int GetMaxFileNameLength()
-        {
-            return Constants.MaxFilePathLength - this.location.DirectoryPath.Length;
         }
     }
 }

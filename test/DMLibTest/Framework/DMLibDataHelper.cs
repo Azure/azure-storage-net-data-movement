@@ -13,7 +13,9 @@ namespace DMLibTest
     using DMLibTestCodeGen;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
+    using Framework;
 
     internal static class DMLibDataHelper
     {
@@ -140,9 +142,9 @@ namespace DMLibTest
 
         public static void CreateLocalDirIfNotExists(string dirPath)
         {
-            if (!String.Equals(string.Empty, dirPath) && !Directory.Exists(dirPath))
+            if (!String.Equals(string.Empty, dirPath) && !LongPathDirectoryExtension.Exists(dirPath))
             {
-                Directory.CreateDirectory(dirPath);
+                LongPathDirectoryExtension.CreateDirectory(dirPath);
             }
         }
 
