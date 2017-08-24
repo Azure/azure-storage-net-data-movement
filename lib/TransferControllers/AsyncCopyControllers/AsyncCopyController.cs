@@ -362,7 +362,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             // we will set a specific error state.
             if (e?.RequestInformation?.HttpStatusCode == (int)HttpStatusCode.NotFound)
             {
-                throw new InvalidOperationException(Resources.SourceDoesNotExistException);
+                throw new InvalidOperationException(Resources.SourceDoesNotExistException, e);
             }
         }
 

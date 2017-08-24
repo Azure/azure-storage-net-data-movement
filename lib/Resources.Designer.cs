@@ -270,7 +270,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to validate destination: {0}.
+        ///   Looks up a localized string similar to Failed to validate destination..
         /// </summary>
         internal static string FailedToValidateDestinationException {
             get {
@@ -439,27 +439,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
                 return ResourceManager.GetString("ReadableSizeFormatPetaBytes", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to {0:0.##}TB.
         /// </summary>
         internal static string ReadableSizeFormatTeraBytes {
-            get
-            {
+            get {
                 return ResourceManager.GetString("ReadableSizeFormatTeraBytes", resourceCulture);
             }
         }
-
+        
         /// <summary>
-        ///   Looks up a localized string similar to relative path limitation.
+        ///   Looks up a localized string similar to File {0} is too long, relative path must not exceed 1024 characters. .
         /// </summary>
         internal static string RelativePathTooLong {
-            get
-            {
+            get {
                 return ResourceManager.GetString("RelativePathTooLong", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to Failed to read restartable info from file..
         /// </summary>
@@ -641,7 +639,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The transfer failed: {0}..
+        ///   Looks up a localized string similar to The transfer failed..
         /// </summary>
         internal static string UncategorizedException {
             get {

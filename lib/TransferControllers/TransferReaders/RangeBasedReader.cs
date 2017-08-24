@@ -150,7 +150,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 if (null != e.RequestInformation &&
                     e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                 {
-                    throw new InvalidOperationException(Resources.SourceBlobDoesNotExistException);
+                    throw new InvalidOperationException(Resources.SourceBlobDoesNotExistException, e);
                 }
                 else
                 {

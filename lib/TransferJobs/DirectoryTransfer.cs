@@ -186,17 +186,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             catch (StorageException se)
             {
                 throw new TransferException(TransferErrorCode.FailToVadlidateDestination,
-                    string.Format(Resources.FailedToValidateDestinationException,
-                        se.ToErrorDetail(),
-                        CultureInfo.CurrentCulture),
+                    Resources.FailedToValidateDestinationException,
                     se);
             }
             catch (Exception ex)
             {
                 throw new TransferException(TransferErrorCode.FailToVadlidateDestination,
-                    string.Format(Resources.FailedToValidateDestinationException,
-                        ex.Message,
-                        CultureInfo.CurrentCulture),
+                    Resources.FailedToValidateDestinationException,
                     ex);
             }
 

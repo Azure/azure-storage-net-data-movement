@@ -151,7 +151,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     // Current use error message to decide whether it caused by blob type mismatch,
                     // We should ask xscl to expose an error code for this..
                     // Opened workitem 1487579 to track this.
-                    throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch);
+                    throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch, se);
                 }
             }
             else

@@ -220,7 +220,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 throw new TransferException(
                     TransferErrorCode.Unknown, 
-                    string.Format(CultureInfo.CurrentCulture, Resources.UncategorizedException, se.ToErrorDetail()), 
+                    Resources.UncategorizedException, 
                     se);
             }
 #endif
