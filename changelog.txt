@@ -1,4 +1,4 @@
-2017.09.01 Version 0.6.1
+2017.08.31 Version 0.6.1
  * All Services
    - Upgraded azure storage client library to 8.4.0
 
