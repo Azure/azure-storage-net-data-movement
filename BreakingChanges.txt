@@ -1,3 +1,8 @@
+Tracking Breaking Changes since 0.6.1
+  - Change the TransferException format, the TransferException with following 2 error code won't expose inner exception details (e.g. RequestId) in TransferException message any more
+	- UncategorizedException
+	- FailToVadlidateDestination
+  
 Tracking Breaking Changes since 0.3.0
 
   - Changed TransferContext to SingleTransferContext for single file uploading/downloading/copying and DirectoryTransferContext for directory uploading/downloading/copying

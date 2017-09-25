@@ -1,4 +1,4 @@
-# Microsoft Azure Storage Data Movement Library (0.6.1)
+# Microsoft Azure Storage Data Movement Library (0.6.2)
 
 The Microsoft Azure Storage Data Movement Library designed for high-performance uploading, downloading and copying Azure Storage Blob and File. This library is based on the core data movement framework that powers [AzCopy](https://azure.microsoft.com/documentation/articles/storage-use-azcopy/).
 
@@ -31,7 +31,7 @@ For the best development experience, we recommend that developers use the offici
 ## Target Frameworks
 
 - .NET Framework 4.5 or above
-- Netstandard1.6 (CoreCLR RTM)
+- Netstandard2.0
 
 ## Requirements
 
