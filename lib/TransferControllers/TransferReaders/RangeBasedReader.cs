@@ -137,7 +137,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 await this.DoFetchAttributesAsync();
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception ex) when (ex is StorageException || ex.InnerException is StorageException)
+            catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
             {
                 var e = ex as StorageException ?? ex.InnerException as StorageException;
 #else
