@@ -1,15 +1,14 @@
 2017.09.25 Version 0.6.2
  * All Services
-   - Upgrade to Netstandard 2.0
-   - Consistent the TransferException format, now all TransferException with StorageException will have StorageException as inner exception.
-		- The TransferException with following 2 error code won't expose inner exception details in TransferException Message any more
-			- UncategorizedException
-			- FailToVadlidateDestination
-		- The TransferException with following 3 error code will have StorageException as inner exception if any
-			- SourceDoesNotExistException
-			- DestinationBlobTypeNotMatch
-			- SourceBlobDoesNotExistException
-
+   - Upgraded to Netstandard 2.0
+   - Make the TransferException format consistent, now all TransferException with StorageException will have StorageException as inner exception.
+      - The TransferException with following 2 error codes won't expose inner exception details in TransferException Message any more
+         - UncategorizedException
+         - FailToVadlidateDestination
+      - The TransferException with following 3 error codes will have StorageException as inner exception if any
+         - SourceDoesNotExistException
+         - DestinationBlobTypeNotMatch
+         - SourceBlobDoesNotExistException
    
 2017.08.31 Version 0.6.1
  * All Services
