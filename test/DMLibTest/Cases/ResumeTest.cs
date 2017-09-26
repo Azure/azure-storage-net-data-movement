@@ -138,7 +138,7 @@ namespace DMLibTest
 
                 Test.Assert(result.Exceptions.Count == 1, "Verify job is cancelled");
                 Exception exception = result.Exceptions[0];
-                VerificationHelper.VerifyExceptionErrorMessage(exception, "A task was canceled.");
+                Helper.VerifyCancelException(exception);
 
                 TransferCheckpoint firstResumeCheckpoint = null, secondResumeCheckpoint = null;
                 ProgressChecker firstProgressChecker = null, secondProgressChecker = null;
@@ -328,7 +328,7 @@ namespace DMLibTest
 
                 transferContext.FileFailed += (sender, e) =>
                 {
-                    Test.Assert(e.Exception.Message.Contains("cancel"), "Verify task is canceled: {0}", e.Exception.Message);
+                    Helper.VerifyCancelException(e.Exception);
                 };
 
                 options.TransferItemModifier = (fileName, item) =>

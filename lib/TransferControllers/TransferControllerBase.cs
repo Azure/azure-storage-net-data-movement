@@ -180,7 +180,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             catch (Exception ex)
             {
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-                while (ex.InnerException != null && !(ex is StorageException)) // unwrap WrappedStorageExceptions
+                while (ex is AggregateException && !(ex is StorageException))
                     ex = ex.InnerException;
 #endif
                 this.SetErrorState(ex);

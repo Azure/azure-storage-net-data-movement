@@ -3,24 +3,17 @@
   <PropertyGroup>
     <Description>DMTestLib Class Library</Description>
     <Authors>emmazhu</Authors>
-    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
     <AssemblyName>DMTestLib</AssemblyName>
     <PackageId>DMTestLib</PackageId>
-    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
-    <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Include="..\..\test\DMTestLib\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
-  </ItemGroup>
-
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
+    <AssetTargetFallback>$(AssetTargetFallback);dnxcore50;portable-net45+win8</AssetTargetFallback>
+    <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
     <DefineConstants>$(DefineConstants);DOTNET5_4</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">
-    <PackageReference Include="System.Xml.XPath.XmlDocument" Version="4.0.1" />
+  <ItemGroup>
+    <Compile Include="..\..\test\DMTestLib\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
   </ItemGroup>
 
   <ItemGroup>

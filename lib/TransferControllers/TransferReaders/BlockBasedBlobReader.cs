@@ -132,7 +132,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     this.CancellationToken);
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception ex) when (ex is StorageException || ex.InnerException is StorageException)
+            catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
             {
                 var e = ex as StorageException ?? ex.InnerException as StorageException;
 #else
@@ -142,7 +142,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 if (null != e.RequestInformation &&
                     e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
                 {
-                    throw new InvalidOperationException(Resources.SourceBlobDoesNotExistException);
+                    throw new InvalidOperationException(Resources.SourceBlobDoesNotExistException, e);
                 }
                 else
                 {

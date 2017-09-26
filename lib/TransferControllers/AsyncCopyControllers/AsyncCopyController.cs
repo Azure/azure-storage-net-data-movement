@@ -331,7 +331,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 await this.DoFetchSourceAttributesAsync();
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception ex) when (ex is StorageException || ex.InnerException is StorageException)
+            catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
             {
                 var e = ex as StorageException ?? ex.InnerException as StorageException;
 #else
@@ -362,7 +362,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             // we will set a specific error state.
             if (e?.RequestInformation?.HttpStatusCode == (int)HttpStatusCode.NotFound)
             {
-                throw new InvalidOperationException(Resources.SourceDoesNotExistException);
+                throw new InvalidOperationException(Resources.SourceDoesNotExistException, e);
             }
         }
 
@@ -382,7 +382,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     await this.DoFetchDestAttributesAsync();
                 }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-                catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+                catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
                 {
                     var se = e as StorageException ?? e.InnerException as StorageException;
 #else
@@ -472,7 +472,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.TransferJob.CopyId = await this.DoStartCopyAsync();
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+            catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
             {
                 var se = e as StorageException ?? e.InnerException as StorageException;
 #else
@@ -572,7 +572,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 copyState = await this.FetchCopyStateAsync();
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+            catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
             {
                 var se = e as StorageException ?? e.InnerException as StorageException;
 #else

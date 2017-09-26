@@ -147,7 +147,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         this.CancellationToken);
                 }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-                catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+                catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
                 {
                     var se = e as StorageException ?? e.InnerException as StorageException;
 #else
@@ -184,7 +184,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     else if (null != se &&
                         (0 == string.Compare(se.Message, Constants.BlobTypeMismatch, StringComparison.OrdinalIgnoreCase)))
                     {
-                        throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch);
+                        throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch, se);
                     }
                     else
                     {

@@ -208,11 +208,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 await controller.TaskCompletionSource.Task;
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception ex) when (ex is StorageException || ex.InnerException is StorageException)
+            catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
             {
                 var storageException = ex as StorageException ?? ex.InnerException as StorageException;
                 throw new TransferException(TransferErrorCode.Unknown,
-                    string.Format(CultureInfo.CurrentCulture, Resources.UncategorizedException, storageException.Message),
+                    Resources.UncategorizedException,
                     storageException);
             }
 #else
@@ -220,7 +220,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 throw new TransferException(
                     TransferErrorCode.Unknown, 
-                    string.Format(CultureInfo.CurrentCulture, Resources.UncategorizedException, se.ToErrorDetail()), 
+                    Resources.UncategorizedException, 
                     se);
             }
 #endif

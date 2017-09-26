@@ -1103,6 +1103,12 @@ namespace DMLibTest
                 return defaultValue.ToString();
             }
         }
+
+        public static void VerifyCancelException(Exception e)
+        {
+            Test.Assert(e.Message.Contains("cancel") || (e.InnerException != null && e.InnerException.Message.Contains("cancel")), 
+                "Verify task is canceled: {0}", e.Message + (e.InnerException != null? " --> " + e.InnerException.Message : string.Empty));
+        }
     }
 
     public class FileCompare : IEqualityComparer<FileInfo>
@@ -1592,7 +1598,7 @@ namespace DMLibTest
                         Test.Info("Share recreated.");
                     }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-                    catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+                    catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
 #else
                     catch (StorageException e)
 #endif
@@ -1671,7 +1677,7 @@ namespace DMLibTest
                 }
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception ex) when (ex is StorageException || ex.InnerException is StorageException)
+            catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
             {
                 var e = ex as StorageException ?? ex.InnerException as StorageException;
 #else
@@ -2277,7 +2283,7 @@ namespace DMLibTest
                         Test.Info("share recreated.");
                     }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-                    catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+                    catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
 #else
                     catch (StorageException e)
 #endif

@@ -142,7 +142,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     this.destExist = true;
                 }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-                catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+                catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
                 {
                     var se = e as StorageException ?? e.InnerException as StorageException;
 #else
@@ -161,7 +161,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     else if (null != se &&
                         (0 == string.Compare(se.Message, Constants.BlobTypeMismatch, StringComparison.OrdinalIgnoreCase)))
                     {
-                        throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch);
+                        throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch, se);
                     }
                     else
                     {
@@ -304,6 +304,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     accessCondition.IfAppendPositionEqual = currentOffset;
 
                     bool needToCheckContent = false;
+                    StorageException catchedStorageException = null;
 
                     try
                     {
@@ -315,7 +316,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             this.CancellationToken);
                     }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-                    catch (Exception e) when (e is StorageException || e.InnerException is StorageException)
+                    catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
                     {
                         var se = e as StorageException ?? e.InnerException as StorageException;
 #else
@@ -328,6 +329,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             (se.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition))
                         {
                             needToCheckContent = true;
+                            catchedStorageException = se;
                         }
                         else
                         {
@@ -338,7 +340,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     if (needToCheckContent &&
                         (!await this.ValidateUploadedChunkAsync(transferData.MemoryBuffer, currentOffset, (long)transferData.Length)))
                     {
-                        throw new InvalidOperationException(Resources.DestinationChangedException);
+                        throw new InvalidOperationException(Resources.DestinationChangedException, catchedStorageException);
                     }
 
                     this.Controller.UpdateProgress(() =>

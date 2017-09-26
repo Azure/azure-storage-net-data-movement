@@ -2,17 +2,16 @@
 
   <PropertyGroup>
     <Description>Microsoft.WindowsAzure.Storage.DataMovement Class Library</Description>
-    <Version>0.6.1.0</Version>
+    <Version>0.6.2.0</Version>
     <Authors>Microsoft</Authors>
-    <TargetFramework>netstandard1.6</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DelaySign>true</DelaySign>
     <AssemblyName>Microsoft.WindowsAzure.Storage.DataMovement</AssemblyName>
     <AssemblyOriginatorKeyFile>../../tools/strongnamekeys/fake/windows.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PackageId>Microsoft.WindowsAzure.Storage.DataMovement</PackageId>
-    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50;portable-net451+win8</PackageTargetFallback>
-    <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
+    <AssetTargetFallback>$(AssetTargetFallback);dnxcore50;portable-net451+win8</AssetTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
@@ -21,6 +20,7 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
+    <DefineConstants>$(DefineConstants);DOTNET5_4;GENERIC_MARSHAL_SIZEOF;RUNTIME_INFORMATION;TRANSPARENCY_V2;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;NO_FILEFORMAT_EX</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,12 +34,8 @@
     <PackageReference Include="WindowsAzure.Storage" Version="8.4.0" />
   </ItemGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">
-    <DefineConstants>$(DefineConstants);DOTNET5_4;GENERIC_MARSHAL_SIZEOF;RUNTIME_INFORMATION;TRANSPARENCY_V2;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;NO_FILEFORMAT_EX</DefineConstants>
-  </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netstandard1.6\Microsoft.WindowsAzure.Storage.DataMovement.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\netstandard2.0\Microsoft.WindowsAzure.Storage.DataMovement.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.6' ">

@@ -3,12 +3,13 @@
   <PropertyGroup>
     <Description>DMLibTest Class Library</Description>
     <Authors>emmazhu</Authors>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
     <AssemblyName>DMLibTest</AssemblyName>
     <PackageId>DMLibTest</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <PackageTargetFallback>$(PackageTargetFallback);dnxcore50;portable-net45+win8</PackageTargetFallback>
-    <RuntimeFrameworkVersion>1.1.1</RuntimeFrameworkVersion>
+    <AssetTargetFallback>$(AssetTargetFallback);dnxcore50;portable-net45+win8</AssetTargetFallback>
+    <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
+    <DefineConstants>$(DefineConstants);DOTNET5_4;DNXCORE50;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;RUNTIME_INFORMATION</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -93,16 +94,12 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
   </ItemGroup>
   
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
-    <DefineConstants>$(DefineConstants);DOTNET5_4;DNXCORE50;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;RUNTIME_INFORMATION</DefineConstants>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\DMTestLib\DMTestLib.csproj" />
     <ProjectReference Include="..\Microsoft.WindowsAzure.Storage.DataMovement\Microsoft.WindowsAzure.Storage.DataMovement.csproj" />
     <ProjectReference Include="..\MsTestLib\MsTestLib.csproj" />
-    <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.1.1" />
-    <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.1.1" />
+    <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
+    <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
     <PackageReference Include="WindowsAzure.Storage" Version="8.4.0" />
   </ItemGroup>
 

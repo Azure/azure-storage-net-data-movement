@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata minClientVersion="2.12">
     <id>Microsoft.Azure.Storage.DataMovement</id>
-    <version>0.6.1</version>
+    <version>0.6.2</version>
     <title>Microsoft Azure Storage Data Movement Library</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -21,7 +21,7 @@
         <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="1.8.0.0" />
         <dependency id="WindowsAzure.Storage" version="8.4.0" />
       </group>
-      <group targetFramework="netstandard1.6">
+      <group targetFramework="netstandard2.0">
         <dependency id="NETStandard.Library" version="1.6.0" />
         <dependency id="WindowsAzure.Storage" version="8.4.0" />
         <dependency id="System.Dynamic.Runtime" version="4.3.0" />

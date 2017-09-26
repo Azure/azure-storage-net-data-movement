@@ -85,7 +85,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (null != se &&
                 (0 == string.Compare(se.Message, Constants.BlobTypeMismatch, StringComparison.OrdinalIgnoreCase)))
             {
-                throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch);
+                throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch, se);
             }
         }
 
