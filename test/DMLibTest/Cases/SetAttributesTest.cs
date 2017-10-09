@@ -65,6 +65,7 @@
         private const string TestContentType = "newtype";
 #endif
 
+        [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.Local)]
         public void TestDirectorySetAttributesToLocal()
         {

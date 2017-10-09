@@ -98,9 +98,15 @@
     <ProjectReference Include="..\DMTestLib\DMTestLib.csproj" />
     <ProjectReference Include="..\Microsoft.WindowsAzure.Storage.DataMovement\Microsoft.WindowsAzure.Storage.DataMovement.csproj" />
     <ProjectReference Include="..\MsTestLib\MsTestLib.csproj" />
+<<<<<<< HEAD
     <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
-    <PackageReference Include="WindowsAzure.Storage" Version="8.5.0" />
+    <PackageReference Include="WindowsAzure.Storage" Version="8.4.0" />
+=======
+    <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.1.1" />
+    <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.1.1" />
+    <PackageReference Include="WindowsAzure.Storage" Version="8.2.0-sharesnapshot-may" />
+>>>>>>> Add File Share Snapshot Support
   </ItemGroup>
 
   <ItemGroup>

@@ -156,7 +156,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         //     A string that represents the transfer location.
         public override string ToString()
         {
-            return this.FileDirectory.Uri.ToString();
+            return this.FileDirectory.SnapshotQualifiedUri.ToString();
         }
     }
 }

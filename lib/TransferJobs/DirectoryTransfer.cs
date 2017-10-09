@@ -498,8 +498,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
             else if (null != this.lastAzureFileDirectory)
             {
-                string absoluteUri1 = AppendSlash(this.lastAzureFileDirectory.Uri.AbsoluteUri);
-                string absoluteUri2 = AppendSlash(dir.Uri.AbsoluteUri);
+                string absoluteUri1 = AppendSlash(this.lastAzureFileDirectory.SnapshotQualifiedUri.AbsoluteUri);
+                string absoluteUri2 = AppendSlash(dir.SnapshotQualifiedUri.AbsoluteUri);
 
                 if (absoluteUri1.StartsWith(absoluteUri2, StringComparison.Ordinal))
                 {

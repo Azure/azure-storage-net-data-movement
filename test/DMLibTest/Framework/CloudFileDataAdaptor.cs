@@ -16,10 +16,11 @@ namespace DMLibTest
     internal class CloudFileDataAdaptor : DataAdaptor<DMLibDataInfo>
     {
         private TestAccount testAccount;
-        private CloudFileHelper fileHelper;
+        public CloudFileHelper fileHelper;
         private string tempFolder;
         private readonly string defaultShareName;
         private string shareName;
+        private DateTimeOffset? snapshotTime;
 
         public override string StorageKey
         {
@@ -37,6 +38,7 @@ namespace DMLibTest
             this.defaultShareName = shareName;
             this.tempFolder = Guid.NewGuid().ToString();
             this.SourceOrDest = sourceOrDest;
+            this.snapshotTime = null;
         }
 
         public string ShareName
@@ -105,6 +107,7 @@ namespace DMLibTest
         public override void CreateIfNotExists()
         {
             this.fileHelper.CreateShare(this.shareName);
+            snapshotTime = null;
         }
 
         public override bool Exists()
@@ -169,11 +172,11 @@ namespace DMLibTest
 
         public CloudFile GetCloudFileReference(string rootPath, FileNode fileNode, StorageCredentials credentials = null)
         {
-            var share = this.fileHelper.FileClient.GetShareReference(this.shareName);
+            var share = this.fileHelper.FileClient.GetShareReference(this.shareName, snapshotTime);
 
             if (credentials != null)
             {
-                share = new CloudFileShare(share.StorageUri, credentials);
+                share = new CloudFileShare(share.SnapshotQualifiedStorageUri, credentials);
             }
 
             string fileName = fileNode.GetURLRelativePath();
@@ -189,16 +192,15 @@ namespace DMLibTest
             
             return share.GetRootDirectoryReference().GetFileReference(fileName);
         }
-
+        
         public CloudFileDirectory GetCloudFileDirReference(string rootPath, DirNode dirNode, StorageCredentials credentials = null)
         {
-            var share = this.fileHelper.FileClient.GetShareReference(this.shareName);
+            var share = this.fileHelper.FileClient.GetShareReference(this.shareName, snapshotTime);
 
             if (credentials != null)
             {
-                share = new CloudFileShare(share.StorageUri, credentials);
+                share = new CloudFileShare(share.SnapshotQualifiedStorageUri, credentials);
             }
-
             string dirName = dirNode.GetURLRelativePath();
             if (dirName.StartsWith("/"))
             {
@@ -228,6 +230,13 @@ namespace DMLibTest
             {
                 CloudFileDirectory rootCloudFileDir = this.fileHelper.GetDirReference(this.shareName, dataInfo.RootPath);
                 this.GenerateDir(dataInfo.RootNode, rootCloudFileDir, this.tempFolder);
+
+                if (dataInfo.IsFileShareSnapshot)
+                {
+                    CloudFileShare baseShare = this.fileHelper.FileClient.GetShareReference(this.shareName);
+                    this.snapshotTime = baseShare.SnapshotAsync().Result.SnapshotTime;
+                    CloudFileHelper.CleanupFileDirectory(baseShare.GetRootDirectoryReference());
+                }
             }
         }
 
@@ -328,11 +337,13 @@ namespace DMLibTest
         public override void Cleanup()
         {
             this.fileHelper.CleanupShare(this.shareName);
+            snapshotTime = null;
         }
 
         public override void DeleteLocation()
         {
             this.fileHelper.DeleteShare(this.shareName);
+            snapshotTime = null;
         }
 
         public override void MakePublic()
@@ -406,6 +417,6 @@ namespace DMLibTest
 
             DateTimeOffset dateTimeOffset = (DateTimeOffset)cloudFile.Properties.LastModified;
             fileNode.LastModifiedTime = dateTimeOffset.UtcDateTime;
-        }
+        }        
     }
 }

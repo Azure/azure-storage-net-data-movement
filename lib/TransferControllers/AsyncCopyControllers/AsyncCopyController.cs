@@ -746,7 +746,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 return this.SourceBlob.SnapshotQualifiedUri;
             }
 
-            return this.SourceFile.Uri;
+            return this.SourceFile.SnapshotQualifiedUri;
         }
 
         protected async Task DoFetchSourceAttributesAsync()

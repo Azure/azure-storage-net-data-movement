@@ -55,13 +55,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 return file;
             }
 
-            return new CloudFile(file.Uri, new StorageCredentials(sasToken));
+            return new CloudFile(file.SnapshotQualifiedUri, new StorageCredentials(sasToken));
         }
 
         internal static Uri GenerateCopySourceUri(this CloudFile file)
         {
             CloudFile fileForCopy = file.GenerateCopySourceFile();
-            return fileForCopy.ServiceClient.Credentials.TransformUri(fileForCopy.Uri);
+            return fileForCopy.ServiceClient.Credentials.TransformUri(fileForCopy.SnapshotQualifiedUri);
         }
 
         private static string GetFileSASToken(CloudFile file)
@@ -141,7 +141,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             if (null != file)
             {
-                return file.Uri.AbsoluteUri;
+                return file.SnapshotQualifiedUri.AbsoluteUri;
             }
 
             return instance.ToString();

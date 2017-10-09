@@ -7,9 +7,14 @@ namespace DMLibTest.Cases
 {
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.WindowsAzure.Storage.File;
     using MS.Test.Common.MsTestLib;
+    using System;
+    using System.Collections.Generic;
     using System.Threading;
+    using System.Threading.Tasks;
 
     [MultiDirectionTestClass]
     public class SnapshotTest : DMLibTestBase
@@ -224,5 +229,150 @@ namespace DMLibTest.Cases
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
         }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudFileSource)]
+        public void TestDirectoryFileShareSnapshots()
+        {
+            string snapshotFile = "snapshotFile";
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            sourceDataInfo.IsFileShareSnapshot = true;
+            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, snapshotFile, 10, 1024);
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.IsDirectoryTransfer = true;
+
+            // transfer with default options
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                dynamic dirOptions = DefaultTransferDirectoryOptions;
+                dirOptions.Recursive = true;
+
+                transferItem.Options = dirOptions;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            // verify that Files in Share Snapshot is transferred
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.CloudFileSource)]
+        public void TestSingleFileShareSnapshots()
+        {
+            string snapshotFile = "snapshotFile";
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            sourceDataInfo.IsFileShareSnapshot = true;
+            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, snapshotFile, 3, 1024);
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.IsDirectoryTransfer = false;
+
+            // transfer with default options
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                dynamic transferOptions = DefaultTransferOptions;
+
+                transferItem.Options = transferOptions;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            // verify that Files in Share Snapshot is transferred
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile, isAsync: true)]
+        public void TestFileShareSnapshotsCopyToBase()
+        {
+            int fileCount = 3;
+
+            string snapshotFile = "snapshotFile";
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            sourceDataInfo.IsFileShareSnapshot = true;
+            DMLibDataHelper.AddMultipleFiles(sourceDataInfo.RootNode, snapshotFile, fileCount, 1024);
+
+            SourceAdaptor.Cleanup();
+            SourceAdaptor.CreateIfNotExists();
+            SourceAdaptor.GenerateData(sourceDataInfo);
+
+            CloudFileDataAdaptor fileAdaptor = (SourceAdaptor as CloudFileDataAdaptor);
+
+            CloudFileDirectory SourceObject = SourceAdaptor.GetTransferObject(sourceDataInfo.RootPath, sourceDataInfo.RootNode) as CloudFileDirectory;
+            CloudFileDirectory DestObject = fileAdaptor.fileHelper.FileClient.GetShareReference(fileAdaptor.ShareName).GetRootDirectoryReference();
+
+
+            // transfer File and finished succssfully
+            Task<TransferStatus> task = TransferManager.CopyDirectoryAsync(
+                SourceObject,
+                DestObject,
+                DMLibTestContext.IsAsync,
+                new CopyDirectoryOptions() { Recursive = true },
+                new DirectoryTransferContext() { ShouldOverwriteCallback = TransferContext.ForceOverwrite });
+            Test.Assert(task.Wait(15 * 60 * 100), "Tansfer finished in time.");
+            Test.Assert(task.Result.NumberOfFilesFailed == 0, "No Failed File.");
+            Test.Assert(task.Result.NumberOfFilesSkipped == 0, "No Skipped File.");
+            Test.Assert(task.Result.NumberOfFilesTransferred == fileCount, string.Format("Transferred file :{0} == {1}", task.Result.NumberOfFilesTransferred, fileCount));
+
+            // verify that Files in Share Snapshot is transferred
+            IEnumerable<IListFileItem> sourceFiles = SourceObject.ListFilesAndDirectories();
+            foreach (IListFileItem item in sourceFiles)
+            {
+                if (item is CloudFile)
+                {
+                    CloudFile srcFile = item as CloudFile;
+                    CloudFile destFile = DestObject.GetFileReference(srcFile.Name);
+                    srcFile.FetchAttributes();
+                    destFile.FetchAttributes();
+                    Test.Assert(srcFile.Properties.ContentMD5 == destFile.Properties.ContentMD5, string.Format("File {0} MD5 :{1} == {2}", srcFile.Name, srcFile.Properties.ContentMD5, destFile.Properties.ContentMD5));
+                }
+            }            
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.CloudFile)]
+        public void TestFileShareSnapshotsDest()
+        {
+            string failError1 = "Failed to validate destination";
+            string failError2 = "Cannot perform this operation on a share representing a snapshot.";
+
+            //Prepare Data
+            string snapshotFile = "snapshotFile";
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, snapshotFile, 1024);
+            SourceAdaptor.GenerateData(sourceDataInfo);
+
+            DMLibDataInfo DestDataInfo = new DMLibDataInfo(string.Empty);
+            DestDataInfo.IsFileShareSnapshot = true;
+            DestAdaptor.GenerateData(DestDataInfo);
+
+            CloudBlobDirectory SourceObject = SourceAdaptor.GetTransferObject(sourceDataInfo.RootPath, sourceDataInfo.RootNode) as CloudBlobDirectory;
+            CloudFileDirectory DestObject = DestAdaptor.GetTransferObject(DestDataInfo.RootPath, DestDataInfo.RootNode) as CloudFileDirectory;
+
+            // transfer File and failed with expected Error
+            Task<TransferStatus> task = TransferManager.CopyDirectoryAsync(
+                SourceObject,
+                DestObject,
+                DMLibTestContext.IsAsync,
+                new CopyDirectoryOptions() { Recursive = true },
+                new DirectoryTransferContext() { ShouldOverwriteCallback = TransferContext.ForceOverwrite  });
+            try
+            {
+                task.Wait(15 * 60 * 100);
+            }
+            catch (Exception e)
+            {
+                Test.Assert(e.InnerException.Message.Contains(failError1), "Tansfer Exception should contain:" + failError1);
+                Test.Assert(e.InnerException.InnerException.Message.Contains(failError2), "Tansfer Exception should contain:" + failError2);
+            }
+        }
+
     }
 }
