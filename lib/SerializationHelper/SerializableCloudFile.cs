@@ -48,7 +48,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
         [OnSerializing]
         private void OnSerializingCallback(StreamingContext context)
         {
-            cloudFileUri = null == this.File ? null : this.File.Uri;
+            cloudFileUri = null == this.File ? null : this.File.SnapshotQualifiedUri;
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             Uri fileUri = null;
             if (this.File != null)
             {
-                fileUri = this.File.Uri;
+                fileUri = this.File.SnapshotQualifiedUri;
             }
 
             info.AddValue(FileUriName, fileUri, typeof(Uri));
@@ -160,7 +160,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
         /// <param name="credentials">A <see cref="StorageCredentials"/> object.</param>
         internal void UpdateStorageCredentials(StorageCredentials credentials)
         {
-            this.CreateCloudFileInstance((this.File == null) ? null : this.File.Uri, credentials);
+            this.CreateCloudFileInstance((this.File == null) ? null : this.File.SnapshotQualifiedUri, credentials);
         }
 
         /// <summary>

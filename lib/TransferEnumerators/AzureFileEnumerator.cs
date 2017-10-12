@@ -134,7 +134,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 string errorMessage = string.Format(
                     CultureInfo.CurrentCulture,
                     Resources.FailedToEnumerateDirectory,
-                    this.location.FileDirectory.Uri.AbsoluteUri,
+                    this.location.FileDirectory.SnapshotQualifiedUri.AbsoluteUri,
                     fileName);
 
                 // Use TransferException to be more specific about the cloud file URI.
@@ -156,7 +156,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
         private IEnumerable<TransferEntry> EnumerateLocationRecursive(CancellationToken cancellationToken)
         {
-            string fullPrefix = Uri.UnescapeDataString(this.location.FileDirectory.Uri.AbsolutePath);
+            string fullPrefix = Uri.UnescapeDataString(this.location.FileDirectory.SnapshotQualifiedUri.AbsolutePath);
 
             // Normalize full prefix to end with slash.
             if (!string.IsNullOrEmpty(fullPrefix) && !fullPrefix.EndsWith("/", StringComparison.OrdinalIgnoreCase))
@@ -183,7 +183,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             while (0 != directoriesToList.Count)
             {
                 CloudFileDirectory directory = directoriesToList.Pop();
-                string dirAbsolutePath = Uri.UnescapeDataString(directory.Uri.AbsolutePath);
+                string dirAbsolutePath = Uri.UnescapeDataString(directory.SnapshotQualifiedUri.AbsolutePath);
                 if (dirAbsolutePath[dirAbsolutePath.Length - 1] != UriDelimiter)
                 {
                     dirAbsolutePath = dirAbsolutePath + UriDelimiter;
@@ -230,7 +230,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                         string errorMessage = string.Format(
                             CultureInfo.CurrentCulture,
                             Resources.FailedToEnumerateDirectory,
-                            this.location.FileDirectory.Uri.AbsoluteUri,
+                            this.location.FileDirectory.SnapshotQualifiedUri.AbsoluteUri,
                             string.Empty);
 
                         TransferException exception =
@@ -259,7 +259,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                             else
                             {
                                 CloudFileDirectory cloudDir = fileItem as CloudFileDirectory;
-                                string fullPath = Uri.UnescapeDataString(cloudDir.Uri.AbsolutePath);
+                                string fullPath = Uri.UnescapeDataString(cloudDir.SnapshotQualifiedUri.AbsolutePath);
                                 string segName = fullPath.Remove(0, dirAbsolutePath.Length);
 
                                 int compareResult = string.Compare(segName, continuationTokenSeg, StringComparison.OrdinalIgnoreCase);
@@ -285,7 +285,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
                             CloudFile cloudFile = fileItem as CloudFile;
 
-                            string fullPath = Uri.UnescapeDataString(cloudFile.Uri.AbsolutePath);
+                            string fullPath = Uri.UnescapeDataString(cloudFile.SnapshotQualifiedUri.AbsolutePath);
                             string relativePath = fullPath.Remove(0, fullPrefix.Length);
 
                             if (passedContinuationToken)

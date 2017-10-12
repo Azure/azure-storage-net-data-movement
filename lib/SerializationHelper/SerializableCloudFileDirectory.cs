@@ -50,7 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
         [OnSerializing]
         private void OnSerializingCallback(StreamingContext context)
         {
-            cloudFileDirectoryUri = null == this.FileDirectory ? null : this.FileDirectory.Uri;
+            cloudFileDirectoryUri = null == this.FileDirectory ? null : this.FileDirectory.SnapshotQualifiedUri;
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
             Uri serFileDirectoryUri = null;
             if (this.FileDirectory != null)
             {
-                serFileDirectoryUri = this.FileDirectory.Uri;
+                serFileDirectoryUri = this.FileDirectory.SnapshotQualifiedUri;
             }
 
             info.AddValue(FileDirectoryUriName, serFileDirectoryUri, typeof(Uri));
@@ -126,7 +126,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
                 return;
             }
 
-            this.CreateCloudFileDirectoryInstance(this.FileDirectory == null ? null : this.FileDirectory.Uri, credentials);
+            this.CreateCloudFileDirectoryInstance(this.FileDirectory == null ? null : this.FileDirectory.SnapshotQualifiedUri, credentials);
         }
 
         /// <summary>

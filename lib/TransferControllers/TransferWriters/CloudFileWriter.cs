@@ -38,7 +38,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             get 
             {
-                return this.cloudFile.Uri;
+                return this.cloudFile.SnapshotQualifiedUri;
             }
         }
 

@@ -16,6 +16,7 @@ namespace DMLibTest
         {
             this.RootPath = rootPath;
             this.RootNode = new DirNode(string.Empty);
+            IsFileShareSnapshot = false;
         }
 
         public int FileCount
@@ -59,6 +60,12 @@ namespace DMLibTest
         public override string ToString()
         {
             return this.DetailedInfo();
+        }
+
+        public bool IsFileShareSnapshot
+        {
+            get;
+            set;
         }
     }
 

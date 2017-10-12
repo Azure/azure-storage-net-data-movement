@@ -1624,8 +1624,9 @@ namespace DMLibTest
 
         public bool DeleteShare(string shareName)
         {
+            CancellationTokenSource tokenSource = new CancellationTokenSource();
             CloudFileShare share = this.FileClient.GetShareReference(shareName);
-            return share.DeleteIfExists();
+            return share.DeleteIfExistsAsync(DeleteShareSnapshotsOption.IncludeSnapshots, null, null, null, tokenSource.Token).Result;
         }
 
         public bool DownloadFile(string shareName, string fileName, string filePath)

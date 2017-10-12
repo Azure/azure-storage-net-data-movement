@@ -87,8 +87,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 CloudFile sourceFile = (source as AzureFileLocation).AzureFile;
                 CloudFile destFile = (dest as AzureFileLocation).AzureFile;
-                if (string.Equals(sourceFile.Uri.Host, destFile.Uri.Host, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(sourceFile.Uri.AbsolutePath, destFile.Uri.AbsolutePath, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(sourceFile.SnapshotQualifiedUri.Host, destFile.SnapshotQualifiedUri.Host, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(sourceFile.SnapshotQualifiedUri.PathAndQuery, destFile.SnapshotQualifiedUri.PathAndQuery, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new InvalidOperationException(Resources.SourceAndDestinationLocationCannotBeEqualException);
                 }

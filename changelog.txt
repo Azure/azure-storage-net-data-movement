@@ -1,3 +1,9 @@
+2017.10.11 Version 0.6.3
+ * All Services
+   - Upgraded azure storage client library to 8.5.0   
+ * File Service
+   - Support File Share Snapshot
+   
 2017.09.25 Version 0.6.2
  * All Services
    - Upgraded to Netstandard 2.0
