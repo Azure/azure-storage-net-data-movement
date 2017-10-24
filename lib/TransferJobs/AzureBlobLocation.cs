@@ -182,7 +182,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             try
             {
-                this.Blob.Container.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultBlobRequestOptions, null).Wait();
+                this.Blob.Container.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultBlobRequestOptions, Utils.GenerateOperationContext(null)).Wait();
             }
             catch (AggregateException e)
             {
