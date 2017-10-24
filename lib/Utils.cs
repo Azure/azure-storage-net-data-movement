@@ -15,9 +15,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Net;
     using System.Text;
     using System.Threading;
-/// <summary>
-                        /// Class for various utils.
-                        /// </summary>
+
+    /// <summary>
+    /// Class for various utils.
+    /// </summary>
     internal static class Utils
     {
         private const int RequireBufferMaxRetryCount = 10;
@@ -328,15 +329,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public static OperationContext GenerateOperationContext(
             TransferContext transferContext)
         {
-            if (transferContext == null)
-            {
-                return null;
-            }
-
             OperationContext operationContext = new OperationContext()
             {
-                LogLevel = transferContext.LogLevel
+                CustomUserAgent = string.Format(CultureInfo.InvariantCulture, "{0} {1}", TransferManager.Configurations.UserAgentPrefix, Constants.UserAgent)
             };
+
+            if (transferContext == null)
+            {
+                return operationContext;
+            }
+
+            operationContext.LogLevel = transferContext.LogLevel;
 
             if (transferContext.ClientRequestId != null)
             {

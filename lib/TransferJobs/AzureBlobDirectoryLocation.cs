@@ -123,7 +123,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             try
             {
-                this.BlobDirectory.Container.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultBlobRequestOptions, null).Wait();
+                this.BlobDirectory.Container.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultBlobRequestOptions, Utils.GenerateOperationContext(null)).Wait();
             }
             catch(AggregateException e)
             {

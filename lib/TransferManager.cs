@@ -55,7 +55,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 
                 args.Request.UserAgent = userAgent;
             };
-    }
+        }
 #endif // REQUEST_EVENT_ARGS_EXPOSES_REQUEST
 
         /// <summary>
