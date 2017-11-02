@@ -345,6 +345,10 @@ MD5 in property: {2}</value>
     <value>Failed to enumerate directory {0} with file pattern {1}.</value>
     <comment>{0} is the directory path, {1} is file pattern.</comment>
   </data>
+  <data name="EnumerateDirectoryException" xml:space="preserve">
+    <value>Failed to enumerate directory {0}.</value>
+    <comment>{0} is the directory path.</comment>
+  </data>
   <data name="FailedToValidateDestinationException" xml:space="preserve">
     <value>Failed to validate destination.</value>
   </data>

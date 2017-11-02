@@ -225,6 +225,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to enumerate directory {0}..
+        /// </summary>
+        internal static string EnumerateDirectoryException {
+            get {
+                return ResourceManager.GetString("EnumerateDirectoryException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to allocate required memory..
         /// </summary>
         internal static string FailedToAllocateMemoryException {
