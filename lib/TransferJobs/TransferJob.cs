@@ -77,6 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferJob"/> class.
         /// </summary>
+        /// <param name="other">The other transfer job to copy properties.</param>
         private TransferJob(TransferJob other)
         {
             this.Overwrite = other.Overwrite;
@@ -126,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Gets ID for the asynchronous copy operation.
+        /// Gets or sets ID for the asynchronous copy operation.
         /// </summary>
         /// <value>ID for the asynchronous copy operation.</value>
 #if !BINARY_SERIALIZATION

@@ -60,7 +60,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             get
             {
-                return this.Controller.SharedTransferData;
+                return this.Controller?.SharedTransferData;
             }
         }
 

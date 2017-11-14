@@ -47,9 +47,37 @@ namespace DMLibTest
             return parentNode.DeleteDirNode(dirNodeToDelete);
         }
 
-        public static void AddMultipleFiles(DirNode dirNode, string filePrefix, int fileNumber, int fileSizeInKB, FileAttributes? fa = null, DateTime? lmt = null)
+        public static void AddMultipleFiles(
+            DirNode dirNode, 
+            string filePrefix, 
+            int fileNumber, 
+            int fileSizeInKB, 
+            FileAttributes? fa = null, 
+            DateTime? lmt = null,
+            string cacheControl = null,
+            string contentDisposition = null,
+            string contentEncoding = null,
+            string contentLanguage = null,
+            string contentType = null,
+            string md5 = null,
+            IDictionary<string, string> metadata = null)
         {
-            DMLibDataHelper.AddTree(dirNode, string.Empty, filePrefix, fileNumber, 0, fileSizeInKB, fa, lmt);
+            DMLibDataHelper.AddTree(
+                dirNode, 
+                string.Empty, 
+                filePrefix, 
+                fileNumber, 
+                0, 
+                fileSizeInKB, 
+                fa, 
+                lmt,
+                cacheControl,
+                contentDisposition,
+                contentEncoding,
+                contentLanguage,
+                contentType,
+                md5,
+                metadata);
         }
 
         public static void AddMultipleFilesNormalSize(DirNode dirNode, string filePrefix)
@@ -84,7 +112,22 @@ namespace DMLibTest
             DMLibDataHelper.AddMultipleFiles(dirNode, filePrefix, fileNumber, fileSizeInKB, lmt: lmt);
         }
 
-        public static void AddTree(DirNode dirNode, string dirPrefix, string filePrefix, int width, int depth, int fileSizeInKB, FileAttributes? fa = null, DateTime? lmt = null)
+        public static void AddTree(
+            DirNode dirNode, 
+            string dirPrefix, 
+            string filePrefix, 
+            int width, 
+            int depth, 
+            int fileSizeInKB, 
+            FileAttributes? fa = null, 
+            DateTime? lmt = null,
+            string cacheControl = null,
+            string contentDisposition = null,
+            string contentEncoding = null,
+            string contentLanguage = null,
+            string contentType = null,
+            string md5 = null,
+            IDictionary<string, string> metadata = null)
         {
             for (int i = 0; i < width; ++i)
             {
@@ -94,6 +137,13 @@ namespace DMLibTest
                     SizeInByte = 1024L * fileSizeInKB,
                     FileAttr = fa,
                     LastModifiedTime = lmt,
+                    CacheControl = cacheControl,
+                    ContentDisposition = contentDisposition,
+                    ContentEncoding = contentEncoding,
+                    ContentLanguage = contentLanguage,
+                    ContentType = contentType,
+                    MD5 = md5,
+                    Metadata = metadata
                 };
 
                 dirNode.AddFileNode(fileNode);

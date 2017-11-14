@@ -22,7 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private readonly int BufferSize;
 
-        private readonly  object memoryCapacityLockObject = new object();
+        private readonly object memoryCapacityLockObject = new object();
 
         public MemoryManager(
             long capacity, int bufferSize)
