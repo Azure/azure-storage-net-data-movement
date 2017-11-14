@@ -77,6 +77,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         protected override async Task DoCreateAsync(long size)
         {
+            if (this.destExist)
+            {
+                this.CleanupPropertyForCanonicalization();
+            }
+
             await this.cloudFile.CreateAsync(
                 size,
                 null,
@@ -129,6 +134,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     operationContext,
                     this.CancellationToken);
             }
+        }
+
+        /// <summary>
+        /// Cleanup properties that might cause request canonicalization check failure.
+        /// </summary>
+        private void CleanupPropertyForCanonicalization()
+        {
+            this.cloudFile.Properties.ContentLanguage = null;
+            this.cloudFile.Properties.ContentEncoding = null;
         }
     }
 }

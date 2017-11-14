@@ -251,6 +251,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                  this.destLocation.AccessCondition,
                  true);
 
+            if (this.destExist)
+            { 
+                this.CleanupPropertyForCanonicalization();
+            }
+
             await this.appendBlob.CreateOrReplaceAsync(
                 accessCondition,
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions, true),
@@ -363,6 +368,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     this.hasWork = true;
                 }
             }
+        }
+
+        /// <summary>
+        /// Cleanup properties that might cause request canonicalization check failure.
+        /// </summary>
+        private void CleanupPropertyForCanonicalization()
+        {
+            this.appendBlob.Properties.ContentLanguage = null;
+            this.appendBlob.Properties.ContentEncoding = null;
         }
 
         private async Task CommitAsync()

@@ -9,8 +9,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     using System;
     using System.Diagnostics;
     using System.Globalization;
-    using System.Linq;
     using System.IO;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -43,8 +43,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private volatile State state;
 
         public StreamedWriter(
-            TransferScheduler scheduler,
-            SyncTransferController controller,
+            TransferScheduler scheduler, 
+            SyncTransferController controller, 
             CancellationToken cancellationToken)
             : base(scheduler, controller, cancellationToken)
         {
@@ -54,10 +54,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private enum State
         {
-            OpenOutputStream,
-            CalculateMD5,
-            Write,
-            Error,
+            OpenOutputStream, 
+            CalculateMD5, 
+            Write, 
+            Error, 
             Finished
         };
 
@@ -94,10 +94,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             switch (this.state)
             {
                 case State.OpenOutputStream:
-                    await HandleOutputStreamAsync();
+                    await this.HandleOutputStreamAsync();
                     break;
                 case State.CalculateMD5:
-                    await CalculateMD5Async();
+                    await this.CalculateMD5Async();
                     break;
                 case State.Write:
                     await this.WriteChunkDataAsync();
@@ -124,7 +124,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 // We do check point consistancy validation in reader, and directly use it in writer.
                 if ((null != this.TransferJob.CheckPoint.TransferWindow)
-                    && (this.TransferJob.CheckPoint.TransferWindow.Any()))
+                    && this.TransferJob.CheckPoint.TransferWindow.Any())
                 {
                     this.TransferJob.CheckPoint.TransferWindow.Sort();
                     this.expectOffset = this.TransferJob.CheckPoint.TransferWindow[0];
@@ -140,16 +140,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     if (!streamInDestination.CanWrite)
                     {
                         throw new NotSupportedException(string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.StreamMustSupportWriteException,
+                            CultureInfo.CurrentCulture, 
+                            Resources.StreamMustSupportWriteException, 
                             "outputStream"));
                     }
 
                     if (!streamInDestination.CanSeek)
                     {
                         throw new NotSupportedException(string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.StreamMustSupportSeekException,
+                            CultureInfo.CurrentCulture, 
+                            Resources.StreamMustSupportSeekException, 
                             "outputStream"));
                     }
 
@@ -162,8 +162,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     if (!this.Controller.IsForceOverwrite)
                     {
                         this.Controller.CheckOverwrite(
-                            LongPathFile.Exists(filePath),
-                            this.TransferJob.Source.Instance,
+                            LongPathFile.Exists(filePath), 
+                            this.TransferJob.Source.Instance, 
                             filePath);
                     }
 
@@ -181,17 +181,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         {
                             longFilePath = LongPath.ToUncPath(longFilePath);
                         }
+                        
                         // Attempt to open the file first so that we throw an exception before getting into the async work
                         this.outputStream = new FileStream(
-                            longFilePath,
-                            fileMode,
-                            FileAccess.ReadWrite,
+                            longFilePath, 
+                            fileMode, 
+                            FileAccess.ReadWrite, 
                             FileShare.None);
 #else
                         this.outputStream = LongPathFile.Open(
-                            filePath,
-                            fileMode,
-                            FileAccess.ReadWrite,
+                            filePath, 
+                            fileMode, 
+                            FileAccess.ReadWrite, 
                             FileShare.None);
 #endif
 
@@ -200,14 +201,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     catch (Exception ex)
                     {
                         string exceptionMessage = string.Format(
-                                    CultureInfo.CurrentCulture,
-                                    Resources.FailedToOpenFileException,
-                                    filePath,
+                                    CultureInfo.CurrentCulture, 
+                                    Resources.FailedToOpenFileException, 
+                                    filePath, 
                                     ex.Message);
 
                         throw new TransferException(
-                                TransferErrorCode.OpenFileFailed,
-                                exceptionMessage,
+                                TransferErrorCode.OpenFileFailed, 
+                                exceptionMessage, 
                                 ex);
                     }
                 }
@@ -217,8 +218,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.Controller.UpdateProgressAddBytesTransferred(0);
 
                 this.md5HashStream = new MD5HashStream(
-                    this.outputStream,
-                    this.expectOffset,
+                    this.outputStream, 
+                    this.expectOffset, 
                     !this.SharedTransferData.DisableContentMD5Validation);
 
                 if (this.md5HashStream.FinishedSeparateMd5Calculator)
@@ -238,9 +239,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private Task CalculateMD5Async()
         {
             Debug.Assert(
-                this.state == State.CalculateMD5,
-                "GetCalculateMD5Action called, but state isn't CalculateMD5",
-                "Current state is {0}",
+                this.state == State.CalculateMD5, 
+                "GetCalculateMD5Action called, but state isn't CalculateMD5", 
+                "Current state is {0}", 
                 this.state);
 
             this.state = State.Write;
@@ -256,9 +257,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private async Task WriteChunkDataAsync()
         {
             Debug.Assert(
-                this.state == State.Write || this.state == State.Error,
-                "WriteChunkDataAsync called, but state isn't Write or Error",
-                "Current state is {0}",
+                this.state == State.Write || this.state == State.Error, 
+                "WriteChunkDataAsync called, but state isn't Write or Error", 
+                "Current state is {0}", 
                 this.state);
 
             this.hasWork = false;
@@ -280,18 +281,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             try
             {
                 await this.md5HashStream.WriteAsync(
-                    currentWriteOffset,
-                    transferData.MemoryBuffer,
-                    0,
-                    transferData.Length,
+                    currentWriteOffset, 
+                    transferData.MemoryBuffer, 
+                    0, 
+                    transferData.Length, 
                     this.CancellationToken);
 
                 // If MD5HashTransformBlock returns false, it means some error happened in md5HashStream to calculate MD5.
                 // then exception was already thrown out there, don't do anything more here.
                 if (!this.md5HashStream.MD5HashTransformBlock(
-                    transferData.StartOffset,
-                    transferData.MemoryBuffer,
-                    0,
+                    transferData.StartOffset, 
+                    transferData.MemoryBuffer, 
+                    0, 
                     transferData.Length))
                 {
                     return;
@@ -313,6 +314,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         this.TransferJob.CheckPoint.TransferWindow.Remove(chunkStartOffset);
                     }
+
                     this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
                 }
 
@@ -337,10 +339,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         ex = new InvalidOperationException(
                                 string.Format(
-                                    CultureInfo.CurrentCulture,
-                                    Resources.DownloadedMd5MismatchException,
-                                    this.TransferJob.Source.ToString(),
-                                    calculatedMd5,
+                                    CultureInfo.CurrentCulture, 
+                                    Resources.DownloadedMd5MismatchException, 
+                                    this.TransferJob.Source.ToString(), 
+                                    calculatedMd5, 
                                     storedMd5));
                     }
                 }

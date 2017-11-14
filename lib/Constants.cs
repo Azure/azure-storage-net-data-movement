@@ -146,6 +146,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         internal const string BlobTypeMismatch = "Blob type of the blob reference doesn't match blob type of the blob.";
 
         /// <summary>
+        /// The blob size threshold used to decide when to put a blob with a single request.
+        /// </summary>
+        internal const int SingleRequestBlobSizeThreshold = DefaultBlockSize;
+
+        /// <summary>
         /// The product name used in UserAgent header.
         /// </summary>
         internal const string UserAgentProductName = "DataMovement";

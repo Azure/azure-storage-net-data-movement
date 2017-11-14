@@ -134,6 +134,7 @@
     <Compile Include="TransferControllers\TransferWriters\BlockBlobWriter.cs" />
     <Compile Include="TransferControllers\TransferWriters\CloudFileWriter.cs" />
     <Compile Include="TransferControllers\TransferWriters\PageBlobWriter.cs" />
+    <Compile Include="TransferControllers\TransferWriters\PutBlobWriter.cs" />
     <Compile Include="TransferControllers\TransferWriters\RangeBasedWriter.cs" />
     <Compile Include="TransferControllers\TransferWriters\StreamedWriter.cs" />
     <Compile Include="TransferEnumerators\AzureBlobEntry.cs" />

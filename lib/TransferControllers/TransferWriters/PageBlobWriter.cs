@@ -91,6 +91,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         protected override async Task DoCreateAsync(long size)
         {
+            if (this.destExist)
+            {
+                this.CleanupPropertyForCanonicalization();
+            }
+
             await this.pageBlob.CreateAsync(
                 size,
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
@@ -143,6 +148,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                              operationContext,
                              this.CancellationToken);
             }
+        }
+
+        /// <summary>
+        /// Cleanup properties that might cause request canonicalization check failure.
+        /// </summary>
+        private void CleanupPropertyForCanonicalization()
+        {
+            this.pageBlob.Properties.ContentLanguage = null;
+            this.pageBlob.Properties.ContentEncoding = null;
         }
     }
 }

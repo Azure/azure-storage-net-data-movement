@@ -145,13 +145,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             private set;
         }
 
-        protected CancellationToken CancellationToken
-        {
-            get
-            {
-                return cancellationTokenSource.Token;
-            }
-        }
+        /// <summary>
+        /// Gets the cancellation token to control the controller's work.
+        /// </summary>
+        protected CancellationToken CancellationToken => this.cancellationTokenSource?.Token ?? CancellationToken.None;
 
         /// <summary>
         /// Do work in the controller.

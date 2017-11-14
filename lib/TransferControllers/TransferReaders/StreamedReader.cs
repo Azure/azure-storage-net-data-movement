@@ -170,14 +170,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     try
                     {
-                        if(fileLocation.RelativePath !=null
+                        if (fileLocation.RelativePath != null
                             && fileLocation.RelativePath.Length > Constants.MaxRelativePathLength)
                         {
                             string errorMessage = string.Format(
                                 CultureInfo.CurrentCulture,
                                 Resources.RelativePathTooLong,
                                 fileLocation.RelativePath);
-                            throw  new TransferException(TransferErrorCode.OpenFileFailed, errorMessage);
+                            throw new TransferException(TransferErrorCode.OpenFileFailed, errorMessage);
                         }
 #if DOTNET5_4
                         string filePath = fileLocation.FilePath;

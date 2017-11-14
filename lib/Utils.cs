@@ -256,7 +256,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Generate a BlobRequestOptions with custom BlobRequestOptions.
         /// We have default MaximumExecutionTime, ServerTimeout and RetryPolicy. 
         /// If user doesn't set these properties, we should use the default ones.
-        /// Others, we should the custom ones.
+        /// Others, we should use the custom ones.
         /// </summary>
         /// <param name="customRequestOptions">BlobRequestOptions customer input in TransferLocation.</param>
         /// <param name="isCreationRequest">Indicate whether to generate request options for a CREATE requestion which requires shorter server timeout. </param>
