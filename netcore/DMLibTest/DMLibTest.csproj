@@ -100,7 +100,7 @@
     <ProjectReference Include="..\MsTestLib\MsTestLib.csproj" />
     <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
-    <PackageReference Include="WindowsAzure.Storage" Version="8.5.0" />
+    <PackageReference Include="WindowsAzure.Storage" Version="8.6.0" />
   </ItemGroup>
 
   <ItemGroup>
