@@ -10,6 +10,7 @@ namespace DMLibTest
     using MS.Test.Common.MsTestLib;
 
 #if DNXCORE50
+    [TestClass]
     public class AssemblyInitCleanup : IDisposable
     {
         public AssemblyInitCleanup()

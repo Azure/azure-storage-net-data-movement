@@ -22,6 +22,7 @@
     <Compile Include="..\..\test\DMLibTest\Cases\CheckContentMD5Test.cs" Link="Cases\CheckContentMD5Test.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ChunkedMemoryStreamTests.cs" Link="Cases\ChunkedMemoryStreamTests.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\DelimiterTest.cs" Link="Cases\DelimiterTest.cs" />
+    <Compile Include="..\..\test\DMLibTest\Cases\FollowSymlinkTest.cs" Link="Cases\FollowSymlinkTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\LongFilePathTest.cs" Link="Cases\LongFilePathTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\MetadataTest.cs" Link="Cases\MetadataTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\NonseekableStreamTest.cs" Link="Cases\NonseekableStreamTest.cs" />
@@ -71,6 +72,7 @@
     <Compile Include="..\..\test\DMLibTest\Generated\BVT_Generated.cs" Link="Generated\BVT_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\CheckContentMD5Test_Generated.cs" Link="Generated\CheckContentMD5Test_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\DelimiterTest_Generated.cs" Link="Generated\DelimiterTest_Generated.cs" />
+    <Compile Include="..\..\test\DMLibTest\Generated\FollowSymlinkTest_Generated.cs" Link="Generated\FollowSymlinkTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\LongFilePathTest_Generated.cs" Link="Generated\LongFilePathTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\MetadataTest_Generated.cs" Link="Generated\MetadataTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\OverwriteTest_Generated.cs" Link="Generated\OverwriteTest_Generated.cs" />

@@ -95,6 +95,19 @@ namespace DMLibTest
         }
     }
 
+    public class FollowSymlinkTestFixture : IDisposable
+    {
+        public FollowSymlinkTestFixture()
+        {
+            FollowSymlinkTest.MyClassInitialize(null);
+        }
+
+        public void Dispose()
+        {
+            FollowSymlinkTest.MyClassCleanup();
+        }
+    }
+
     public class LongFilePathTestFixture : IDisposable
     {
         public LongFilePathTestFixture()

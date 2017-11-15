@@ -162,6 +162,10 @@ MD5 calculated: {1}
 MD5 in property: {2}</value>
     <comment>{0} is the uri of source, {1} is the calculated MD5, {2} is the MD5 stored in the source property</comment>
   </data>
+  <data name="DeadLoop" xml:space="preserve">
+    <value>Potential dead loop in directory structure due to symbolic link {0} with target to {1}</value>
+    <comment>{0} is path of symbolic link, {1} is target of the symbolic link.</comment>
+  </data>
   <data name="DestinationBlobTypeNotMatch" xml:space="preserve">
     <value>User specified blob type does not match the blob type of the existing destination blob.</value>
   </data>

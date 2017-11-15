@@ -123,6 +123,7 @@
     <Compile Include="Cases\BVT.cs" />
     <Compile Include="Cases\CheckContentMD5Test.cs" />
     <Compile Include="Cases\DelimiterTest.cs" />
+    <Compile Include="Cases\FollowSymlinkTest.cs" />
     <Compile Include="Cases\LongFilePathTest.cs" />
     <Compile Include="Cases\MetadataTest.cs" />
     <Compile Include="Cases\NonseekableStreamTest.cs" />
