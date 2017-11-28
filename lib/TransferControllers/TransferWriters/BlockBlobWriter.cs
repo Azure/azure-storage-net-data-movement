@@ -17,15 +17,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.WindowsAzure.Storage.Blob;
+    using System.Collections.Generic;
 
     internal sealed class BlockBlobWriter : TransferReaderWriterBase
     {
         private volatile bool hasWork;
         private volatile State state;
-        private CountdownEvent countdownEvent;
-        private string[] blockIdSequence;
+        private SortedDictionary<int, string> blockIds;
+        private object blockIdsLock = new object();
         private readonly AzureBlobLocation destLocation;
         private readonly CloudBlockBlob blockBlob;
+        private long uploadedLength = 0;
 
         public BlockBlobWriter(
             TransferScheduler scheduler, 
@@ -88,20 +90,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 case State.Finished:
                 default:
                     break;
-            }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-
-            if (disposing)
-            {
-                if (null != this.countdownEvent)
-                {
-                    this.countdownEvent.Dispose();
-                    this.countdownEvent = null;
-                }
             }
         }
 
@@ -224,10 +212,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     "BlobType should be BlockBlob if we reach here.");
             }
 
-            SingleObjectCheckpoint checkpoint = this.SharedTransferData.TransferJob.CheckPoint;
-
-            int leftBlockCount = (int)Math.Ceiling(
-                (this.SharedTransferData.TotalLength - checkpoint.EntryTransferOffset) / (double)this.SharedTransferData.BlockSize) + checkpoint.TransferWindow.Count;
 
             if (this.SharedTransferData.TotalLength > 0
                 && this.SharedTransferData.TotalLength <= Constants.SingleRequestBlobSizeThreshold)
@@ -257,29 +241,26 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             // Calculate number of blocks.
             int numBlocks = (int)Math.Ceiling(
                 this.SharedTransferData.TotalLength / (double)this.SharedTransferData.BlockSize);
+            var checkpoint = this.SharedTransferData.TransferJob.CheckPoint;
+
+            checkpoint.TransferWindow.Sort();
+
+            this.uploadedLength = checkpoint.EntryTransferOffset;
+
+            if (checkpoint.TransferWindow.Any())
+            {
+                // The size of last block can be smaller than BlockSize.
+                this.uploadedLength -= checkpoint.EntryTransferOffset - checkpoint.TransferWindow.Last();
+                this.uploadedLength -= (checkpoint.TransferWindow.Count - 1) * this.SharedTransferData.BlockSize;
+            }
 
             // Create sequence array.
-            this.blockIdSequence = new string[numBlocks];
+            this.blockIds = new SortedDictionary<int, string>();
 
-            for (int i = 0; i < numBlocks; ++i)
-            {
-                string blockIdSuffix = i.ToString("D6", CultureInfo.InvariantCulture);
-                byte[] blockIdInBytes = Encoding.UTF8.GetBytes(this.destLocation.BlockIdPrefix + blockIdSuffix);
-                string blockId = Convert.ToBase64String(blockIdInBytes);
-                this.blockIdSequence[i] = blockId;
-            }
+            this.state = State.UploadBlob;
 
-            if (0 == leftBlockCount)
-            {
-                this.state = State.Commit;
-            }
-            else
-            {
-                this.countdownEvent = new CountdownEvent(leftBlockCount);
-
-                this.state = State.UploadBlob;
-            }
-        }
+            this.FinishBlock();
+	}
 
         private void PrepareForPutBlob(int leftBlockCount)
         {
@@ -323,30 +304,32 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 "UploadBlobAsync called but state is not UploadBlob nor Error.", 
                 "Current state is {0}", 
                 this.state);
-
             TransferData transferData = this.GetFirstAvailable();
 
             if (null != transferData)
             {
                 using (transferData)
                 {
-                    if (transferData.MemoryBuffer.Length == 1)
+                    if (0 != transferData.Length)
                     {
-                        transferData.Stream = new MemoryStream(transferData.MemoryBuffer[0], 0, transferData.Length);
-                    }
-                    else
-                    {
-                        transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
-                    }
+                        if (transferData.MemoryBuffer.Length == 1)
+                        {
+                            transferData.Stream = new MemoryStream(transferData.MemoryBuffer[0], 0, transferData.Length);
+                        }
+                        else
+                        {
+                            transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
+                        }
 
-                    await this.blockBlob.PutBlockAsync(
-                        this.GetBlockId(transferData.StartOffset), 
-                        transferData.Stream, 
-                        null, 
-                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true), 
-                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions), 
-                        Utils.GenerateOperationContext(this.Controller.TransferContext), 
-                        this.CancellationToken);
+                        await this.blockBlob.PutBlockAsync(
+                            this.GetBlockId(transferData.StartOffset),
+                            transferData.Stream,
+                            null,
+                            Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
+                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                            Utils.GenerateOperationContext(this.Controller.TransferContext),
+                            this.CancellationToken);
+                    }
                 }
 
                 this.Controller.UpdateProgress(() =>
@@ -362,9 +345,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
                 });
 
+                Interlocked.Add(ref this.uploadedLength, transferData.Length);
+
                 this.FinishBlock();
             }
-
+            
             // Do not set hasWork to true because it's always true in State.UploadBlob
             // Otherwise it may cause CommitAsync be called multiple times:
             // 1. UploadBlobAsync downloads all content, but doesn't set hasWork to true yet
@@ -390,10 +375,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
 
             await this.blockBlob.PutBlockListAsync(
-                        this.blockIdSequence, 
-                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition), 
-                        blobRequestOptions, 
-                        operationContext, 
+                        this.blockIds.Values,
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                        blobRequestOptions,
+                        operationContext,
                         this.CancellationToken);
 
             // REST API PutBlockList cannot clear existing Content-Type of block blob, so if it's needed to clear existing
@@ -587,7 +572,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 return;
             }
 
-            if (this.countdownEvent.Signal())
+            if (Interlocked.Read(ref this.uploadedLength) == this.SharedTransferData.TotalLength)
             {
                 this.state = State.Commit;
             }
@@ -598,7 +583,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             Debug.Assert(startOffset % this.SharedTransferData.BlockSize == 0, "Block startOffset should be multiples of block size.");
 
             int count = (int)(startOffset / this.SharedTransferData.BlockSize);
-            return this.blockIdSequence[count];
+
+            string blockIdSuffix = count.ToString("D6", CultureInfo.InvariantCulture);
+            byte[] blockIdInBytes = System.Text.Encoding.UTF8.GetBytes(this.destLocation.BlockIdPrefix + blockIdSuffix);
+            string blockId = Convert.ToBase64String(blockIdInBytes);
+
+            lock (blockIdsLock)
+            {
+                this.blockIds.Add(count, blockId);
+            }
+
+            return blockId;
         }
     }
 }

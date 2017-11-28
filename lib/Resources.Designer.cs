@@ -10,7 +10,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.DataMovement {
     using System;
-    using System.Reflection;
+    
     
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.
@@ -19,7 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.WindowsAzure.Storage.DataMovement.Resources", typeof(Resources).GetTypeInfo().Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.WindowsAzure.Storage.DataMovement.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -84,6 +84,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         internal static string AsyncCopyFromFileToPageBlobNotSupportException {
             get {
                 return ResourceManager.GetString("AsyncCopyFromFileToPageBlobNotSupportException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AzureFile.
+        /// </summary>
+        internal static string AzureFile {
+            get {
+                return ResourceManager.GetString("AzureFile", resourceCulture);
             }
         }
         
@@ -531,11 +540,29 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Source might be changed by other process or application..
+        /// </summary>
+        internal static string SourceChangedException {
+            get {
+                return ResourceManager.GetString("SourceChangedException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Source does not exist..
         /// </summary>
         internal static string SourceDoesNotExistException {
             get {
                 return ResourceManager.GetString("SourceDoesNotExistException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Source must be fixed size when destination is {0}.
+        /// </summary>
+        internal static string SourceMustBeFixedSize {
+            get {
+                return ResourceManager.GetString("SourceMustBeFixedSize", resourceCulture);
             }
         }
         

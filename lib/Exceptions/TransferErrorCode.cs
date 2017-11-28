@@ -102,6 +102,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         SubTransferFails = 18,
 
         /// <summary>
+        /// The source file size is invalid for azure file.
+        /// </summary>
+        UploadFileSourceFileSizeInvalid = 19,
+
+        /// <summary>
         /// Uncategorized transfer error.
         /// </summary>
         Unknown = 32,

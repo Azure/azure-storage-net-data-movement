@@ -34,13 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         /// Transfer job instance.
         /// </summary>
         private TransferJob transferJob;
-
-        /// <summary>
-        /// Countdown event to track the download status.
-        /// Its count should be the same with count of chunks to be read.
-        /// </summary>
-        private CountdownEvent countdownEvent;
-
+        
         /// <summary>
         /// Transfer window in check point.
         /// </summary>
@@ -49,6 +43,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private volatile State state;
 
         private volatile bool hasWork;
+
+        private long readLength = 0;
+
+        private long readCompleted = 0;
 
         /// <summary>
         /// Stream to read from source and calculate md5 hash of source.
@@ -63,6 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.transferJob = this.SharedTransferData.TransferJob;
             this.hasWork = true;
+            this.readLength = 0;
         }
 
         private enum State
@@ -118,11 +117,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     this.md5HashStream.Dispose();
                     this.md5HashStream = null;
                 }
-
-                if (null != this.countdownEvent)
-                {
-                    this.countdownEvent.Dispose();
-                }
             }
         }
 
@@ -152,14 +146,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             Resources.StreamMustSupportReadException,
                             "inputStream"));
                     }
-
-                    if (!this.inputStream.CanSeek)
-                    {
-                        throw new NotSupportedException(string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.StreamMustSupportSeekException,
-                            "inputStream"));
-                    }
                 }
                 else
                 {
@@ -181,7 +167,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         }
 #if DOTNET5_4
                         string filePath = fileLocation.FilePath;
-                        if(Interop.CrossPlatformHelpers.IsWindows)
+                        if (Interop.CrossPlatformHelpers.IsWindows)
                         {
                             filePath = LongPath.ToUncPath(fileLocation.FilePath);
                         }
@@ -227,13 +213,39 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
             });
 
-            this.SharedTransferData.TotalLength = this.inputStream.Length;
-
-            int count = (int)Math.Ceiling((double)(this.SharedTransferData.TotalLength - this.transferJob.CheckPoint.EntryTransferOffset) / this.SharedTransferData.BlockSize);
-
-            if (null != this.transferJob.CheckPoint.TransferWindow)
+            try
             {
-                count += this.transferJob.CheckPoint.TransferWindow.Count;
+                this.SharedTransferData.TotalLength = this.inputStream.Length;
+
+            }
+            catch (Exception)
+            {
+                this.SharedTransferData.TotalLength = -1;
+            }
+
+            var checkpoint = this.transferJob.CheckPoint;
+
+            checkpoint.TransferWindow.Sort();
+
+            this.readLength = checkpoint.EntryTransferOffset;
+
+            if (checkpoint.TransferWindow.Any())
+            {
+                // The size of last block can be smaller than BlockSize.
+                this.readLength -= checkpoint.EntryTransferOffset - checkpoint.TransferWindow.Last();
+                this.readLength -= (checkpoint.TransferWindow.Count - 1) * this.SharedTransferData.BlockSize;
+            }
+
+            if (this.readLength < 0)
+            {
+                throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
+            }
+            else if ((checkpoint.EntryTransferOffset > 0) && (!this.inputStream.CanSeek))
+            {
+                throw new NotSupportedException(string.Format(
+                    CultureInfo.CurrentCulture,
+                    Resources.StreamMustSupportSeekException,
+                    "inputStream"));
             }
 
             this.lastTransferWindow = new Queue<long>(this.transferJob.CheckPoint.TransferWindow);
@@ -245,15 +257,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.PreProcessed = true;
 
-            // This reader will come into 'Finish' state after all chunks are read and MD5 calculation completes.
-            // So initialize the CountDownEvent to count (number of chunks to read) + 1 (md5 calculation).
-            this.countdownEvent = new CountdownEvent(count + 1);
-
-            if (0 != count)
+            if (this.readLength != this.SharedTransferData.TotalLength)
             {
                 // Change the state to 'ReadStream' before awaiting MD5 calculation task to not block the reader.
                 this.state = State.ReadStream;
                 this.hasWork = true;
+            }
+            else
+            {
+                Interlocked.Exchange(ref this.readCompleted, 1);
             }
 
             if (!this.md5HashStream.FinishedSeparateMd5Calculator)
@@ -295,12 +307,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         {
                             startOffset = this.transferJob.CheckPoint.EntryTransferOffset;
 
-                            if (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
+                            if ((this.SharedTransferData.TotalLength < 0) || (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength))
                             {
                                 this.transferJob.CheckPoint.TransferWindow.Add(startOffset);
                                 this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
                                     this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
-                                    this.SharedTransferData.TotalLength);
+                                    this.SharedTransferData.TotalLength < 0 ? long.MaxValue : this.SharedTransferData.TotalLength);
 
                                 canRead = true;
                             }
@@ -315,8 +327,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     }
                 }
 
-                if ((startOffset > this.SharedTransferData.TotalLength)
-                    || (startOffset < 0))
+                if ((this.SharedTransferData.TotalLength > 0) && ((startOffset > this.SharedTransferData.TotalLength)
+                    || (startOffset < 0)))
                 {
                     this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
                     throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
@@ -327,7 +339,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     MemoryBuffer = memoryBuffer,
                     BytesRead = 0,
                     StartOffset = startOffset,
-                    Length = (int)Math.Min(this.SharedTransferData.BlockSize, this.SharedTransferData.TotalLength - startOffset),
+                    Length = (int)Math.Min(this.SharedTransferData.BlockSize, this.SharedTransferData.TotalLength > 0 ? (this.SharedTransferData.TotalLength - startOffset) : long.MaxValue),
                     MemoryManager = this.Scheduler.MemoryManager,
                 };
 
@@ -353,7 +365,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 asyncState.BytesRead,
                 asyncState.Length - asyncState.BytesRead,
                 this.CancellationToken);
-
+            
             // If a parallel operation caused the controller to be placed in
             // error state exit early to avoid unnecessary I/O.
             // Note that this check needs to be after the EndRead operation
@@ -365,33 +377,55 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             asyncState.BytesRead += readBytes;
 
+            if (0 == readBytes)
+            {
+                this.ReadingDataHandler(asyncState, true);
+                return;
+            }
+
             if (asyncState.BytesRead < asyncState.Length)
             {
                 await this.ReadChunkAsync(asyncState);
             }
             else
             {
-                this.Controller.CheckCancellation();
-
-                if (!this.md5HashStream.MD5HashTransformBlock(asyncState.StartOffset, asyncState.MemoryBuffer, 0, asyncState.Length))
-                {
-                    // Error info has been set in Calculate MD5 action, just return
-                    return;
-                }
-
-                TransferData transferData = new TransferData(this.Scheduler.MemoryManager)
-                {
-                    StartOffset = asyncState.StartOffset,
-                    Length = asyncState.Length,
-                    MemoryBuffer = asyncState.MemoryBuffer
-                };
-
-                asyncState.MemoryBuffer = null;
-
-                this.SharedTransferData.AvailableData.TryAdd(transferData.StartOffset, transferData);
-
-                this.SetChunkFinish();
+                this.ReadingDataHandler(asyncState, false);
             }
+        }
+
+        private void ReadingDataHandler(ReadDataState asyncState, bool endofStream)
+        {
+            this.Controller.CheckCancellation();
+
+            if (!this.md5HashStream.MD5HashTransformBlock(asyncState.StartOffset, asyncState.MemoryBuffer, 0, asyncState.BytesRead))
+            {
+                // Error info has been set in Calculate MD5 action, just return
+                return;
+            }
+
+            TransferData transferData = new TransferData(this.Scheduler.MemoryManager)
+            {
+                StartOffset = asyncState.StartOffset,
+                Length = asyncState.BytesRead,
+                MemoryBuffer = asyncState.MemoryBuffer
+            };
+
+            long currentReadLength = Interlocked.Add(ref this.readLength, asyncState.BytesRead);
+
+            if ((currentReadLength == this.SharedTransferData.TotalLength) || endofStream)
+            {
+                Interlocked.Exchange(ref this.readCompleted, 1);
+            }
+
+            if (endofStream && (-1 != this.SharedTransferData.TotalLength) && (currentReadLength != this.SharedTransferData.TotalLength))
+            {
+                throw new TransferException(Resources.SourceChangedException);
+            }
+
+            asyncState.MemoryBuffer = null;
+            this.SharedTransferData.AvailableData.TryAdd(transferData.StartOffset, transferData);
+
+            this.SetChunkFinish();
         }
 
         private void SetHasWork()
@@ -403,6 +437,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             // Check if we have blocks available to download.
             if ((null != this.lastTransferWindow && this.lastTransferWindow.Any())
+                || -1 == this.SharedTransferData.TotalLength
                 || this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
             {
                 this.hasWork = true;
@@ -412,22 +447,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private void SetChunkFinish()
         {
-            if (this.countdownEvent.Signal())
+            if (1 == Interlocked.Read(ref this.readCompleted))
             {
-                this.state = State.Finished;
-                this.CloseOwnStream();
-
-                if (!this.md5HashStream.SucceededSeparateMd5Calculator)
+                // Should only get into this block once.
+                if (-1 == this.SharedTransferData.TotalLength)
                 {
-                    return;
+                    this.SharedTransferData.TotalLength = this.readLength;
                 }
 
-                var md5 = this.md5HashStream.MD5HashTransformFinalBlock();
-                this.SharedTransferData.Attributes = new Attributes()
+                this.state = State.Finished;
+                try
                 {
-                    ContentMD5 = md5,
-                    OverWriteAll = false
-                };
+                    if (!this.md5HashStream.SucceededSeparateMd5Calculator)
+                    {
+                        return;
+                    }
+
+                    var md5 = this.md5HashStream.MD5HashTransformFinalBlock();
+                    this.SharedTransferData.Attributes = new Attributes()
+                    {
+                        ContentMD5 = md5,
+                        OverWriteAll = false
+                    };
+                }
+                finally
+                {
+                    this.CloseOwnStream();
+                }
             }
         }
 

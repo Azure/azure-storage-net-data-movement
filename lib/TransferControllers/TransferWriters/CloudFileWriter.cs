@@ -44,6 +44,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         protected override void CheckInputStreamLength(long inputStreamLength)
         {
+            if (inputStreamLength < 0)
+            {
+                throw new TransferException(
+                    TransferErrorCode.UploadFileSourceFileSizeInvalid,
+                    string.Format(CultureInfo.CurrentCulture, Resources.SourceMustBeFixedSize, Resources.AzureFile));
+            }
+
             if (inputStreamLength > Constants.MaxCloudFileSize)
             {
                 string exceptionMessage = string.Format(

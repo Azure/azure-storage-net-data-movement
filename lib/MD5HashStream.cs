@@ -50,6 +50,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         private long md5hashOffset;
 
+        private bool canSeek = true;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MD5HashStream"/> class.
         /// </summary>
@@ -91,10 +93,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             if (!this.stream.CanSeek)
             {
-                throw new NotSupportedException(string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.StreamMustSupportSeekException,
-                    "Stream"));
+                canSeek = false;
+
+                if (!this.finishedSeparateMd5Calculator)
+                {
+                    throw new NotSupportedException(string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resources.StreamMustSupportSeekException,
+                        "Stream"));
+                }
             }
         }
 
@@ -225,7 +232,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             try
             {
-                this.stream.Position = readOffset;
+                if (canSeek)
+                {
+                    this.stream.Position = readOffset;
+                }
                 
                 return await this.stream.ReadAsync(
                     buffer,
@@ -261,7 +271,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             try
             {
-                this.stream.Position = readOffset;
+                if (canSeek)
+                {
+                    this.stream.Position = readOffset;
+                }
 
                 var currentChunk = 0;
                 var currentChunkOffset = 0;
@@ -334,7 +347,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             try
             {
-                this.stream.Position = writeOffset;
+                if (canSeek)
+                {
+                    this.stream.Position = writeOffset;
+                }
+
                 await this.stream.WriteAsync(
                     buffer,
                     offset,
@@ -368,7 +385,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             try
             {
-                this.stream.Position = writeOffset;
+                if (canSeek)
+                {
+                    this.stream.Position = writeOffset;
+                }
 
                 //TODO: Duplication of code
                 var currentChunk = 0;
@@ -634,7 +654,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             try
             {
-                this.stream.Position = readOffset;
+                if (canSeek)
+                {
+                    this.stream.Position = readOffset;
+                }
+
                 int readBytes = this.stream.Read(buffer, offset, count);
 
                 return readBytes;
