@@ -204,6 +204,10 @@ MD5 in property: {2}</value>
     <value>Blob type '{0}' is not supported.</value>
     <comment>{0} is the blob type name.</comment>
   </data>
+  <data name="SourceMustBeFixedSize" xml:space="preserve">
+    <value>Source must be fixed size when destination is {0}</value>
+    <comment>{0} is the is the destination blob type.</comment>
+  </data>
   <data name="OverwriteCallbackCancelTransferException" xml:space="preserve">
     <value>Skiped file "{0}" because target "{1}" already exists.</value>
     <comment>{0} is source file name, {1} is destination file name.</comment>
@@ -271,6 +275,9 @@ MD5 in property: {2}</value>
   <data name="SourceAndDestinationLocationCannotBeEqualException" xml:space="preserve">
     <value>Source and destination cannot be the same.</value>
   </data>
+  <data name="SourceChangedException" xml:space="preserve">
+    <value>Source might be changed by other process or application.</value>
+  </data>
   <data name="SourceDoesNotExistException" xml:space="preserve">
     <value>Source does not exist.</value>
   </data>
@@ -318,6 +325,9 @@ MD5 in property: {2}</value>
   </data>
   <data name="PageBlob" xml:space="preserve">
     <value>PageBlob</value>
+  </data>
+  <data name="AzureFile" xml:space="preserve">
+    <value>AzureFile</value>
   </data>
   <data name="SyncCopyFromUriToAzureBlobNotSupportedException" xml:space="preserve">
     <value>Copying from uri to Azure Blob Storage synchronously is not supported.</value>

@@ -294,71 +294,77 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 using (transferData)
                 {
                     long currentOffset = this.expectedOffset;
-                    this.expectedOffset += transferData.Length;
+                    if (0 != transferData.Length)
+                    {
+                        this.expectedOffset += transferData.Length;
 
-                    if (transferData.MemoryBuffer.Length == 1)
-                    {
-                        transferData.Stream = new MemoryStream(transferData.MemoryBuffer[0], 0, transferData.Length);
-                    }
-                    else
-                    {
-                        transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
-                    }
-
-                    AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true) ?? new AccessCondition();
-                    accessCondition.IfAppendPositionEqual = currentOffset;
-
-                    bool needToCheckContent = false;
-                    StorageException catchedStorageException = null;
-
-                    try
-                    {
-                        await this.appendBlob.AppendBlockAsync(transferData.Stream,
-                            null,
-                            accessCondition,
-                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                            Utils.GenerateOperationContext(this.Controller.TransferContext),
-                            this.CancellationToken);
-                    }
-#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-                    catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
-                    {
-                        var se = e as StorageException ?? e.InnerException as StorageException;
-#else
-                    catch (StorageException se)
-                    {
-#endif
-                        if ((null != se.RequestInformation) &&
-                            ((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode) &&
-                            (null != se.RequestInformation.ExtendedErrorInformation) &&
-                            (se.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition))
+                        if (transferData.MemoryBuffer.Length == 1)
                         {
-                            needToCheckContent = true;
-                            catchedStorageException = se;
+                            transferData.Stream = new MemoryStream(transferData.MemoryBuffer[0], 0, transferData.Length);
                         }
                         else
                         {
-                            throw;
+                            transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
                         }
-                    }
 
-                    if (needToCheckContent &&
-                        (!await this.ValidateUploadedChunkAsync(transferData.MemoryBuffer, currentOffset, (long)transferData.Length)))
-                    {
-                        throw new InvalidOperationException(Resources.DestinationChangedException, catchedStorageException);
+                        AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true) ?? new AccessCondition();
+                        accessCondition.IfAppendPositionEqual = currentOffset;
+
+                        bool needToCheckContent = false;
+                        StorageException catchedStorageException = null;
+
+
+                        try
+                        {
+                            await this.appendBlob.AppendBlockAsync(transferData.Stream,
+                                null,
+                                accessCondition,
+                                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                                Utils.GenerateOperationContext(this.Controller.TransferContext),
+                                this.CancellationToken);
+                        }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+                        catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
+                        {
+                            var se = e as StorageException ?? e.InnerException as StorageException;
+#else
+                        catch (StorageException se)
+                        {
+#endif
+                            if ((null != se.RequestInformation) &&
+                                ((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode) &&
+                                (null != se.RequestInformation.ExtendedErrorInformation) &&
+                                (se.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition))
+                            {
+                                needToCheckContent = true;
+                                catchedStorageException = se;
+                            }
+
+                            if (needToCheckContent &&
+                                (!await this.ValidateUploadedChunkAsync(transferData.MemoryBuffer, currentOffset, (long)transferData.Length)))
+                            {
+                                throw new InvalidOperationException(Resources.DestinationChangedException);
+                            }
+                        }
+
+                        if (needToCheckContent &&
+                            (!await this.ValidateUploadedChunkAsync(transferData.MemoryBuffer, currentOffset, (long)transferData.Length)))
+                        {
+                            throw new InvalidOperationException(Resources.DestinationChangedException, catchedStorageException);
+                        }
                     }
 
                     this.Controller.UpdateProgress(() =>
-                    {
-                        lock (this.SharedTransferData.TransferJob.CheckPoint.TransferWindowLock)
                         {
-                            this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(currentOffset);
-                        }
-                        this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
+                            lock (this.SharedTransferData.TransferJob.CheckPoint.TransferWindowLock)
+                            {
+                                this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(currentOffset);
+                            }
+                            this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
 
                         // update progress
                         this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
-                    });
+                        });
 
                     if (this.expectedOffset == this.SharedTransferData.TotalLength)
                     {
