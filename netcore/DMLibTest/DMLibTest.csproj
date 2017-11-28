@@ -24,6 +24,7 @@
     <Compile Include="..\..\test\DMLibTest\Cases\DelimiterTest.cs" Link="Cases\DelimiterTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\LongFilePathTest.cs" Link="Cases\LongFilePathTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\MetadataTest.cs" Link="Cases\MetadataTest.cs" />
+    <Compile Include="..\..\test\DMLibTest\Cases\NonseekableStreamTest.cs" Link="Cases\NonseekableStreamTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\OverwriteTest.cs" Link="Cases\OverwriteTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ProgressHandlerTest.cs" Link="Cases\ProgressHandlerTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ResumeTest.cs" Link="Cases\ResumeTest.cs" />
@@ -83,6 +84,7 @@
     <Compile Include="..\..\test\DMLibTest\Generated\UnsupportedDirectionTest_Generated.cs" Link="Generated\UnsupportedDirectionTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\DMLibTestConstants.cs" Link="Util\DMLibTestConstants.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\DMLibTestHelper.cs" Link="Util\DMLibTestHelper.cs" />
+    <Compile Include="..\..\test\DMLibTest\Util\DMLibTestStream.cs" Link="Util\DMLibTestStream.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\Helpers.cs" Link="Util\Helpers.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\SASGenerator.cs" Link="Util\SASGenerator.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\TestAccounts.cs" Link="Util\TestAccounts.cs" />

@@ -121,6 +121,18 @@ namespace DMLibTest
         }
     }
 
+    public class NonseekableStreamTestFixture : IDisposable
+    {
+        public NonseekableStreamTestFixture()
+        {
+            NonseekableStreamTest.MyClassInitialize(null);
+        }
+        public void Dispose()
+        {
+            NonseekableStreamTest.MyClassCleanup();
+        }
+    }
+
     public class OverwriteTestFixture : IDisposable
     {
         public OverwriteTestFixture()
