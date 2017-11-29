@@ -393,6 +393,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         private void ReadingDataHandler(ReadDataState asyncState, bool endofStream)
         {
             this.Controller.CheckCancellation();

@@ -28,7 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             long capacity, int bufferSize)
         {
             BufferSize = bufferSize;
-            long currentCapacity = capacity;
+            this.currentCapacity = capacity;
             long availableCells = capacity / bufferSize;
 
             int cellNumber = (int)Math.Min((long)Constants.MemoryManagerCellsMaximum, availableCells);

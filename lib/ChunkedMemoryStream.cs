@@ -39,6 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1725:ParameterNamesShouldMatchBaseDeclaration", MessageId = "1#")]
         public override long Seek(long offset, SeekOrigin seekOrigin)
         {
             var newPos = 0;
@@ -69,6 +70,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             throw new NotImplementedException();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1725:ParameterNamesShouldMatchBaseDeclaration", MessageId = "0#")]
         public override int Read(byte[] toBuffer, int offset, int count)
         {
             if (toBuffer == null)
@@ -126,6 +128,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return bytesReaded;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1725:ParameterNamesShouldMatchBaseDeclaration", MessageId = "0#")]
         public override void Write(byte[] fromBuffer, int offset, int count)
         {
             if (fromBuffer == null)
