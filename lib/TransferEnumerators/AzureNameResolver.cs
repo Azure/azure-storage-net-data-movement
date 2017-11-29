@@ -75,6 +75,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             get;
         }
 
+#if DOTNET5_4
+        protected char Delimiter
+        {
+            get
+            {
+                return this.delimiter;
+            }
+        }
+#endif
+        
         public string ResolveName(TransferEntry sourceEntry)
         {
             // 1) Unescape original string, original string is UrlEncoded.
