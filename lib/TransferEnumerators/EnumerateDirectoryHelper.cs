@@ -365,7 +365,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
                         try
                         {
-#if DOTNET5_4
                             if (CrossPlatformHelpers.IsLinux)
                             {
                                 fileEntryInfo = GetFileEntryInfo(filePath);
@@ -378,13 +377,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                                     FileAttributes = LongPathFile.GetAttributes(filePath)
                                 };
                             }
-#else
-                            fileEntryInfo = new EnumerateFileEntryInfo()
-                            {
-                                FileName = LongPath.GetFileName(filePath),
-                                FileAttributes = LongPathFile.GetAttributes(filePath)
-                            };
-#endif
                         }
                         // Cross-plat file system accessibility settings may cause exceptions while
                         // retrieving attributes from inaccessible paths. These paths shold be skipped.
@@ -402,21 +394,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                             !fileEntryInfo.FileName.Equals(@".."))
                         {
                             bool toBeEnumerated = false;
-#if DOTNET5_4
                             if (CrossPlatformHelpers.IsLinux)
                             {
                                 toBeEnumerated = ToEnumerateTheSubDir(LongPath.Combine(folder, fileEntryInfo.FileName), fileEntryInfo, followsymlink);
                             }
-
                             // TODO: Ignore junction point or not. Make it configurable.
                             else if (FileAttributes.ReparsePoint != (fileEntryInfo.FileAttributes & FileAttributes.ReparsePoint))
                             {
-#else
-                            // TODO: Ignore junction point or not. Make it configurable.
-                            if (FileAttributes.ReparsePoint != (fileEntryInfo.FileAttributes & FileAttributes.ReparsePoint))
-                            {
-                                
-#endif
                                 toBeEnumerated = true;
                             }
 
@@ -473,25 +457,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             }
         }
 
-#if DOTNET5_4
-        private static bool SymlinkedDirExists(string dirPath)
-        {
-            dirPath = dirPath.TrimEnd(Path.DirectorySeparatorChar);
-            UnixFileSystemInfo fileSystemInfo = UnixFileSystemInfo.GetFileSystemEntry(dirPath);
-            if (!fileSystemInfo.IsSymbolicLink)
-            {
-                return false;
-            }
-
-            UnixSymbolicLinkInfo symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
-            if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
-            {
-                return true;
-            }
-
-            return false;
-        }
-
         private static EnumerateFileEntryInfo GetFileEntryInfo(string filePath)
         {
             EnumerateFileEntryInfo fileEntryInfo = new EnumerateFileEntryInfo()
@@ -501,6 +466,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 SymlinkTarget = null
             };
 
+#if DOTNET5_4
             UnixFileSystemInfo fileSystemInfo = UnixFileSystemInfo.GetFileSystemEntry(filePath);
             if (fileSystemInfo.IsSymbolicLink)
             {
@@ -519,6 +485,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             {
                 fileEntryInfo.FileAttributes |= FileAttributes.Directory;
             }
+#endif
             return fileEntryInfo;
         }
 
@@ -532,7 +499,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             {
                 string fullPath = Path.GetFullPath(dirPath);
 
-                if (fullPath.StartsWith(AppendDirectorySeparator(fileEntryInfo.SymlinkTarget)))
+                if (fullPath.StartsWith(AppendDirectorySeparator(fileEntryInfo.SymlinkTarget), StringComparison.Ordinal))
                 {
                     throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.DeadLoop, fullPath, fileEntryInfo.SymlinkTarget));
                 }
@@ -543,9 +510,28 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             return false;
         }
 
+#if DOTNET5_4
+        private static bool SymlinkedDirExists(string dirPath)
+        {
+            dirPath = dirPath.TrimEnd(Path.DirectorySeparatorChar);
+            UnixFileSystemInfo fileSystemInfo = UnixFileSystemInfo.GetFileSystemEntry(dirPath);
+            if (!fileSystemInfo.IsSymbolicLink)
+            {
+                return false;
+            }
+
+            UnixSymbolicLinkInfo symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
+            if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
+            {
+                return true;
+            }
+
+            return false;
+        }
+        
         private static string GetParentPath(string filePath)
         {
-            if (filePath.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            if (filePath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
             {
                 filePath = filePath.Substring(0, filePath.Length - 1);
             }

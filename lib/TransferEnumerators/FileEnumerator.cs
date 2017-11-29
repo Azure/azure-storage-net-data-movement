@@ -30,7 +30,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         /// Initializes a new instance of the <see cref="FileEnumerator" /> class.
         /// </summary>
         /// <param name="location">Directory location.</param>
-        /// <param name="followsymlink">Indicating whether to enumerate symlinked subdirectories.</param>
+        /// <param name="followSymlink">Indicating whether to enumerate symlinked subdirectories.</param>
         public FileEnumerator(DirectoryLocation location, bool followSymlink)
         {
             this.location = location;

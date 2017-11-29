@@ -361,7 +361,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             DirectoryLocation sourceLocation = new DirectoryLocation(sourcePath);
             AzureFileDirectoryLocation destLocation = new AzureFileDirectoryLocation(destFileDir);
-            FileEnumerator sourceEnumerator = new FileEnumerator(sourceLocation, options.FollowSymlink);
+            FileEnumerator sourceEnumerator = new FileEnumerator(sourceLocation, null == options ? false : options.FollowSymlink);
             if (options != null)
             {
                 sourceEnumerator.SearchPattern = options.SearchPattern;
