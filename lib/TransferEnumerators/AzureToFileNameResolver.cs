@@ -32,7 +32,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         /// This is used to escape the first "/" or "/" following a "/".
         /// Like to escape "/abc///ac" to "%2Fabc/%2F%2Fac"
         /// </summary>
-        private static Regex escapeDirSeparators = new Regex("^/|(?<=/)/|$/");
+        private static Regex escapeDirSeparators = new Regex("^/|(?<=/)/|/$");
 #endif
 
         public AzureToFileNameResolver(char? delimiter)
