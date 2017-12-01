@@ -3,6 +3,7 @@
 namespace DMLibTest
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Threading;
     using DMLibTestCodeGen;
@@ -17,7 +18,7 @@ namespace DMLibTest
 #endif
     {
 
-        private static string UnicodeFileName = "Prefix"; //FileOp.NextString(random, random.Next(6, 10));
+        private static string UnicodeFileName = FileOp.NextString(random, random.Next(6, 10));
         private const string FolderSuffix = "_Folder";
         private const string FileSuffix = "_File";
         private const string SymlinkSuffix = "_Link";
@@ -346,6 +347,52 @@ namespace DMLibTest
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
             Test.Assert(result.Exceptions.Count == 1 && result.Exceptions[0] is TransferException && result.Exceptions[0].InnerException.Message.Contains("Too many levels of symbolic links"), "Verify expected exception is thrown.");
+#endif
+        }
+        
+        /// Uupload a symlinked dir
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalSource)]
+        public void Upload_Symlinked_RootDir()
+        {
+#if DNXCORE50
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
+            DMLibDataInfo targetDataInfo = new DMLibDataInfo("target");
+            
+            DirNode dirNode = new DirNode($"{UnicodeFileName}{FolderSuffix}");
+            dirNode.AddFileNode(new FileNode($"{UnicodeFileName}{FileSuffix}")
+            {
+                SizeInByte = 1024
+            });
+            
+            targetDataInfo.RootNode.AddDirNode(dirNode);
+
+            SourceAdaptor.CreateIfNotExists();
+            DestAdaptor.CreateIfNotExists();
+
+            SourceAdaptor.GenerateData(targetDataInfo);
+            sourceDataInfo.RootNode = DirNode.SymlinkedDir($"{UnicodeFileName}{SymlinkSuffix}", $"target", targetDataInfo.RootNode);
+            SourceAdaptor.GenerateData(sourceDataInfo);
+
+            TransferItem item = new TransferItem()
+            {
+                SourceObject = Path.Combine(SourceAdaptor.GetTransferObject(sourceDataInfo.RootPath, sourceDataInfo.RootNode) as string, sourceDataInfo.RootNode.Name),
+                DestObject = DestAdaptor.GetTransferObject(sourceDataInfo.RootPath, sourceDataInfo.RootNode),
+                IsDirectoryTransfer = true,
+                SourceType = DMLibTestContext.SourceType,
+                DestType = DMLibTestContext.DestType,
+                IsServiceCopy = DMLibTestContext.IsAsync,
+                TransferContext = new DirectoryTransferContext(),
+                Options = new UploadDirectoryOptions()
+                {
+                    Recursive = true,                    
+                },
+            };
+
+            var result = this.RunTransferItems(new List<TransferItem>() { item }, new TestExecutionOptions<DMLibDataInfo>());
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
 #endif
         }
 

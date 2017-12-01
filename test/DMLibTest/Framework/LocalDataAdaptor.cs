@@ -102,7 +102,16 @@ namespace DMLibTest
         private void GenerateDir(DirNode dirNode, string parentPath)
         {
             string dirPath = Path.Combine(parentPath, dirNode.Name);
-                     
+
+            if (!string.IsNullOrEmpty(dirNode.Content))
+            {
+                CreateSymlink(dirPath, dirNode.Content);
+
+                Test.Info("Building symlinked dir info of {0}", dirPath);
+                dirNode.BuildSymlinkedDirNode();
+                return;
+            }
+            
             DMLibDataHelper.CreateLocalDirIfNotExists(dirPath);
 
             foreach (var file in dirNode.FileNodes)
@@ -132,7 +141,7 @@ namespace DMLibTest
             }
             else
             {
-                throw new PlatformNotSupportedException();
+                //throw new PlatformNotSupportedException();
             }
         }
 
