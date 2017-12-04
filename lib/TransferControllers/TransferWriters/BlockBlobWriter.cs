@@ -246,7 +246,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             checkpoint.TransferWindow.Sort();
 
             this.uploadedLength = checkpoint.EntryTransferOffset;
-
+                        
             if (checkpoint.TransferWindow.Any())
             {
                 // The size of last block can be smaller than BlockSize.
@@ -256,6 +256,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             // Create sequence array.
             this.blockIds = new SortedDictionary<int, string>();
+            this.InitializeBlockIds();
 
             this.state = State.UploadBlob;
 
@@ -578,19 +579,44 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
         }
 
+        private void InitializeBlockIds()
+        {
+            int count = (int)Math.Ceiling((double)this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset / this.SharedTransferData.BlockSize);
+
+            for (int i = 0; i < count; ++i)
+            {
+                GetBlockIdByIndex(i);
+            }
+        }
+
         private string GetBlockId(long startOffset)
         {
             Debug.Assert(startOffset % this.SharedTransferData.BlockSize == 0, "Block startOffset should be multiples of block size.");
 
-            int count = (int)(startOffset / this.SharedTransferData.BlockSize);
+            int index = (int)(startOffset / this.SharedTransferData.BlockSize);
 
-            string blockIdSuffix = count.ToString("D6", CultureInfo.InvariantCulture);
+            string blockId = string.Empty;
+
+            lock (blockIdsLock)
+            {
+                if (this.blockIds.TryGetValue(index, out blockId))
+                {
+                    return blockId;
+                }
+            }
+
+            return GetBlockIdByIndex(index);
+        }
+
+        private string GetBlockIdByIndex(int index)
+        {
+            string blockIdSuffix = index.ToString("D6", CultureInfo.InvariantCulture);
             byte[] blockIdInBytes = System.Text.Encoding.UTF8.GetBytes(this.destLocation.BlockIdPrefix + blockIdSuffix);
             string blockId = Convert.ToBase64String(blockIdInBytes);
 
             lock (blockIdsLock)
             {
-                this.blockIds.Add(count, blockId);
+                this.blockIds.Add(index, blockId);
             }
 
             return blockId;

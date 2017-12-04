@@ -232,7 +232,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (checkpoint.TransferWindow.Any())
             {
                 // The size of last block can be smaller than BlockSize.
-                this.readLength -= checkpoint.EntryTransferOffset - checkpoint.TransferWindow.Last();
+                this.readLength -= Math.Min(checkpoint.EntryTransferOffset - checkpoint.TransferWindow.Last(), this.SharedTransferData.BlockSize);
                 this.readLength -= (checkpoint.TransferWindow.Count - 1) * this.SharedTransferData.BlockSize;
             }
 
