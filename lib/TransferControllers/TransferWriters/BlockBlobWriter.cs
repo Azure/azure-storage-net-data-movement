@@ -7,6 +7,7 @@
 namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
     using System.IO;
@@ -23,12 +24,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private volatile State state;
         private CountdownEvent countdownEvent;
         private string[] blockIdSequence;
-        private AzureBlobLocation destLocation;
-        private CloudBlockBlob blockBlob;
+        private readonly AzureBlobLocation destLocation;
+        private readonly CloudBlockBlob blockBlob;
 
         public BlockBlobWriter(
-            TransferScheduler scheduler,
-            SyncTransferController controller,
+            TransferScheduler scheduler, 
+            SyncTransferController controller, 
             CancellationToken cancellationToken)
             : base(scheduler, controller, cancellationToken)
         {
@@ -43,10 +44,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private enum State
         {
-            FetchAttributes,
-            UploadBlob,
-            Commit,
-            Error,
+            FetchAttributes, 
+            // Path 1: FetchAttributes -> UploadBlob -> Commit -> Finished
+            UploadBlob, 
+            Commit, 
+            // Path 2: FetchAttributes -> UploadBlobAndSetAttributes -> Finished
+            UploadBlobAndSetAttributes,
+            Error, 
             Finished
         };
 
@@ -56,24 +60,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             protected set;
         }
 
-        public override bool HasWork
-        {
-            get
-            {
-                return this.hasWork && 
-                    (!this.PreProcessed
-                    || ((this.state == State.UploadBlob) && this.SharedTransferData.AvailableData.Any())
-                    || ((this.state == State.Commit) && (null != this.SharedTransferData.Attributes)));
-            }
-        }
+        public override bool HasWork => this.hasWork && 
+                                        (!this.PreProcessed
+                                         || ((this.state == State.UploadBlob) && this.SharedTransferData.AvailableData.Any())
+                                         || ((this.state == State.Commit) && (null != this.SharedTransferData.Attributes))
+                                         || ((this.state == State.UploadBlobAndSetAttributes) && this.SharedTransferData.AvailableData.Any() && null != this.SharedTransferData.Attributes));
 
-        public override bool IsFinished
-        {
-            get
-            {
-                return State.Error == this.state || State.Finished == this.state;
-            }
-        }
+        public override bool IsFinished => State.Error == this.state || State.Finished == this.state;
 
         public override async Task DoWorkInternalAsync()
         {
@@ -88,7 +81,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 case State.Commit:
                     await this.CommitAsync();
                     break;
+                case State.UploadBlobAndSetAttributes:
+                    await this.UploadBlobAndSetAttributesAsync();
+                    break;
                 case State.Error:
+                case State.Finished:
                 default:
                     break;
             }
@@ -111,9 +108,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private async Task FetchAttributesAsync()
         {
             Debug.Assert(
-                this.state == State.FetchAttributes,
+                this.state == State.FetchAttributes, 
                 "FetchAttributesAsync called, but state isn't FetchAttributes", 
-                "Current state is {0}",
+                "Current state is {0}", 
                 this.state);
                         
             this.hasWork = false;
@@ -121,31 +118,32 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (this.SharedTransferData.TotalLength > Constants.MaxBlockBlobFileSize)
             {
                 string exceptionMessage = string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.BlobFileSizeTooLargeException,
-                            Utils.BytesToHumanReadableSize(this.SharedTransferData.TotalLength),
-                            Resources.BlockBlob,
+                            CultureInfo.CurrentCulture, 
+                            Resources.BlobFileSizeTooLargeException, 
+                            Utils.BytesToHumanReadableSize(this.SharedTransferData.TotalLength), 
+                            Resources.BlockBlob, 
                             Utils.BytesToHumanReadableSize(Constants.MaxBlockBlobFileSize));
 
                 throw new TransferException(
-                        TransferErrorCode.UploadSourceFileSizeTooLarge,
+                        TransferErrorCode.UploadSourceFileSizeTooLarge, 
                         exceptionMessage);
             }
 
             if (!this.Controller.IsForceOverwrite)
             {
                 AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
-                    this.destLocation.AccessCondition,
+                    this.destLocation.AccessCondition, 
                     this.destLocation.CheckedAccessCondition);
 
                 try
                 {
                     await this.destLocation.Blob.FetchAttributesAsync(
-                        accessCondition,
-                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        accessCondition, 
+                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions), 
+                        Utils.GenerateOperationContext(this.Controller.TransferContext), 
                         this.CancellationToken);
                 }
+
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
                 catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
                 {
@@ -181,8 +179,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         existingBlob = false;
                     }
-                    else if (null != se &&
-                        (0 == string.Compare(se.Message, Constants.BlobTypeMismatch, StringComparison.OrdinalIgnoreCase)))
+                    else if ((0 == string.Compare(se.Message, Constants.BlobTypeMismatch, StringComparison.OrdinalIgnoreCase)))
                     {
                         throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch, se);
                     }
@@ -198,22 +195,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
 
             this.destLocation.CheckedAccessCondition = true;
-
-            if (string.IsNullOrEmpty(this.destLocation.BlockIdPrefix))
-            {
-                // BlockIdPrefix is never set before that this is the first time to transfer this file.
-                // In block blob upload, it stores uploaded but not committed blocks on Azure Storage. 
-                // In DM, we use block id to identify the blocks uploaded so we only need to upload it once.
-                // Keep BlockIdPrefix in upload job object for restarting the transfer if anything happens.
-                this.destLocation.BlockIdPrefix = GenerateBlockIdPrefix();
-            }
-
+            
             if (!this.Controller.IsForceOverwrite)
             {
                 // If destination file exists, query user whether to overwrite it.
                 this.Controller.CheckOverwrite(
-                    existingBlob,
-                    this.SharedTransferData.TransferJob.Source.Instance,
+                    existingBlob, 
+                    this.SharedTransferData.TransferJob.Source.Instance, 
                     this.destLocation.Blob);
             }
 
@@ -225,14 +213,45 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 {
                     throw new InvalidOperationException(Resources.FailedToGetBlobTypeException);
                 }
+
                 if (this.destLocation.Blob.Properties.BlobType != BlobType.BlockBlob)
                 {
                     throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch);
                 }
 
                 Debug.Assert(
-                    this.destLocation.Blob.Properties.BlobType == BlobType.BlockBlob,
+                    this.destLocation.Blob.Properties.BlobType == BlobType.BlockBlob, 
                     "BlobType should be BlockBlob if we reach here.");
+            }
+
+            SingleObjectCheckpoint checkpoint = this.SharedTransferData.TransferJob.CheckPoint;
+
+            int leftBlockCount = (int)Math.Ceiling(
+                (this.SharedTransferData.TotalLength - checkpoint.EntryTransferOffset) / (double)this.SharedTransferData.BlockSize) + checkpoint.TransferWindow.Count;
+
+            if (this.SharedTransferData.TotalLength > 0
+                && this.SharedTransferData.TotalLength <= Constants.SingleRequestBlobSizeThreshold)
+            {
+                this.PrepareForPutBlob(leftBlockCount);
+            }
+            else
+            {
+                this.PrepareForPutBlockAndPutBlockList(leftBlockCount);
+            }
+
+            this.PreProcessed = true;
+            this.hasWork = true;
+        }
+
+        private void PrepareForPutBlockAndPutBlockList(int leftBlockCount)
+        {
+            if (string.IsNullOrEmpty(this.destLocation.BlockIdPrefix))
+            {
+                // BlockIdPrefix is never set before that this is the first time to transfer this file.
+                // In block blob upload, it stores uploaded but not committed blocks on Azure Storage. 
+                // In DM, we use block id to identify the blocks uploaded so we only need to upload it once.
+                // Keep BlockIdPrefix in upload job object for restarting the transfer if anything happens.
+                this.destLocation.BlockIdPrefix = this.GenerateBlockIdPrefix();
             }
 
             // Calculate number of blocks.
@@ -245,15 +264,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             for (int i = 0; i < numBlocks; ++i)
             {
                 string blockIdSuffix = i.ToString("D6", CultureInfo.InvariantCulture);
-                byte[] blockIdInBytes = System.Text.Encoding.UTF8.GetBytes(this.destLocation.BlockIdPrefix + blockIdSuffix);
+                byte[] blockIdInBytes = Encoding.UTF8.GetBytes(this.destLocation.BlockIdPrefix + blockIdSuffix);
                 string blockId = Convert.ToBase64String(blockIdInBytes);
                 this.blockIdSequence[i] = blockId;
             }
-
-            SingleObjectCheckpoint checkpoint = this.SharedTransferData.TransferJob.CheckPoint;
-
-            int leftBlockCount = (int)Math.Ceiling(
-                (this.SharedTransferData.TotalLength - checkpoint.EntryTransferOffset) / (double)this.SharedTransferData.BlockSize) + checkpoint.TransferWindow.Count;
 
             if (0 == leftBlockCount)
             {
@@ -265,19 +279,27 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 this.state = State.UploadBlob;
             }
+        }
 
-            this.PreProcessed = true;
-            this.hasWork = true;
+        private void PrepareForPutBlob(int leftBlockCount)
+        {
+            if (0 == leftBlockCount)
+            {
+                this.SetFinish();
+            }
+            else
+            {
+                this.state = State.UploadBlobAndSetAttributes;
+            }
         }
 
         private string GenerateBlockIdPrefix()
         {
-            //var blockIdPrefix = Guid.NewGuid().ToString("N") + "-";
+            // var blockIdPrefix = Guid.NewGuid().ToString("N") + "-";
 
             // Originally the blockId is an GUID + "-". It will cause some problem when switch machines or jnl get cleaned
             // to upload to the same block blob - block id is not shared between the 2 DMLib instances
             // and it may result in reaching the limitation of maximum 50000 uncommited blocks + 50000 committed blocks.
-            //
             // Change it to hash based prefix to make it preditable and can be shared between multiple DMLib instances
             string blobNameHash;
             using (var md5 = new MD5Wrapper())
@@ -297,9 +319,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private async Task UploadBlobAsync()
         {
             Debug.Assert(
-                State.UploadBlob == this.state || State.Error == this.state,
-                "UploadBlobAsync called but state is not UploadBlob nor Error.",
-                "Current state is {0}",
+                State.UploadBlob == this.state || State.Error == this.state, 
+                "UploadBlobAsync called but state is not UploadBlob nor Error.", 
+                "Current state is {0}", 
                 this.state);
 
             TransferData transferData = this.GetFirstAvailable();
@@ -318,13 +340,107 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     }
 
                     await this.blockBlob.PutBlockAsync(
-                        this.GetBlockId(transferData.StartOffset),
-                        transferData.Stream,
-                        null,
-                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
-                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        this.GetBlockId(transferData.StartOffset), 
+                        transferData.Stream, 
+                        null, 
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true), 
+                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions), 
+                        Utils.GenerateOperationContext(this.Controller.TransferContext), 
                         this.CancellationToken);
+                }
+
+                this.Controller.UpdateProgress(() =>
+                {
+                    lock (this.SharedTransferData.TransferJob.CheckPoint.TransferWindowLock)
+                    {
+                        this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(transferData.StartOffset);
+                    }
+
+                    this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
+
+                    // update progress
+                    this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
+                });
+
+                this.FinishBlock();
+            }
+
+            // Do not set hasWork to true because it's always true in State.UploadBlob
+            // Otherwise it may cause CommitAsync be called multiple times:
+            // 1. UploadBlobAsync downloads all content, but doesn't set hasWork to true yet
+            // 2. Call CommitAysnc, set hasWork to false
+            // 3. UploadBlobAsync set hasWork to true.
+            // 4. Call CommitAsync again since hasWork is true.
+        }
+
+        private async Task CommitAsync()
+        {
+            Debug.Assert(
+                this.state == State.Commit, 
+                "CommitAsync called, but state isn't Commit", 
+                "Current state is {0}", 
+                this.state);
+
+            this.hasWork = false;
+
+            Utils.SetAttributes(this.blockBlob, this.SharedTransferData.Attributes);
+            await this.Controller.SetCustomAttributesAsync(this.blockBlob);
+
+            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
+            OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
+
+            await this.blockBlob.PutBlockListAsync(
+                        this.blockIdSequence, 
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition), 
+                        blobRequestOptions, 
+                        operationContext, 
+                        this.CancellationToken);
+
+            // REST API PutBlockList cannot clear existing Content-Type of block blob, so if it's needed to clear existing
+            // Content-Type, REST API SetBlobProperties must be called explicitly:
+            // 1. The attributes are inherited from others and Content-Type is null or empty.
+            // 2. User specifies Content-Type to string.Empty while uploading.
+            if ((this.SharedTransferData.Attributes.OverWriteAll && string.IsNullOrEmpty(this.blockBlob.Properties.ContentType))
+                || (!this.SharedTransferData.Attributes.OverWriteAll && this.blockBlob.Properties.ContentType == string.Empty))
+            {
+                await this.blockBlob.SetPropertiesAsync(
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition), 
+                    blobRequestOptions, 
+                    operationContext, 
+                    this.CancellationToken);
+            }
+
+            this.SetFinish();
+        }
+
+        private async Task UploadBlobAndSetAttributesAsync()
+        {
+            Debug.Assert(
+                State.UploadBlobAndSetAttributes == this.state || State.Error == this.state,
+                "UploadBlobAndSetAttributesAsync called but state is not UploadBlobAndSetAttributes nor Error.",
+                "Current state is {0}",
+                this.state);
+
+            TransferData transferData = this.GetFirstAvailable();
+
+            if (null != transferData)
+            {
+                using (transferData)
+                {
+                    if (transferData.MemoryBuffer.Length == 1)
+                    {
+                        transferData.Stream = new MemoryStream(transferData.MemoryBuffer[0], 0, transferData.Length);
+                    }
+                    else
+                    {
+                        transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
+                    }
+
+                    Utils.SetAttributes(this.blockBlob, this.SharedTransferData.Attributes);
+
+                    await this.Controller.SetCustomAttributesAsync(this.blockBlob);
+
+                    await this.DoUploadAndSetBlobAttributes(transferData.Stream);
                 }
 
                 this.Controller.UpdateProgress(() =>
@@ -339,55 +455,113 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
                 });
 
-                this.FinishBlock();
+                this.SetFinish();
             }
-
-            // Do not set hasWork to true because it's always true in State.UploadBlob
-            // Otherwise it may cause CommitAsync be called multiple times:
-            //     1. UploadBlobAsync downloads all content, but doesn't set hasWork to true yet
-            //     2. Call CommitAysnc, set hasWork to false
-            //     3. UploadBlobAsync set hasWork to true.
-            //     4. Call CommitAsync again since hasWork is true.
         }
 
-        private async Task CommitAsync()
+        /// <summary>
+        /// Upload using put blob and set customized blob attributes.
+        /// Note to ensure DMLib's behavior consistency, this method: 
+        /// 1. Uses x-ms-blob-content-encoding and x-ms-blob-content-language as a workaround to bypass request canonicalization
+        ///    forced by REST API PutBlob.
+        /// 2. As .Net core version's XSCL checks format of Cache-Control and Content-Type, uses x-ms-blob-cache-control and x-ms-blob-content-type
+        ///    as a workaround to bypass XSCL's header validation when necessary.
+        /// 3. As REST API PutBlob would generate ContentMD5 and overwrite customized ContentMD5, 
+        ///    uses SetProperties to set customized ContentMD5 when necessary.
+        /// 4. REST API PutBlob would set Content-Type to application/octet-stream by default, if provided Content-Type is null or empty.
+        ///    To set Content-Type correctly, REST API SetBlobProperties must be called explicitly.
+        /// </summary>
+        /// <param name="sourceStream">Source stream.</param>
+        /// <returns><see cref="Task"/></returns>
+        private async Task DoUploadAndSetBlobAttributes(Stream sourceStream)
         {
-            Debug.Assert(
-                this.state == State.Commit,
-                "CommitAsync called, but state isn't Commit",
-                "Current state is {0}",
-                this.state);
+            string providedMD5 = this.blockBlob.Properties.ContentMD5;
 
-            this.hasWork = false;
+            var accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition);
+            var blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
+            var operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
+            operationContext.UserHeaders = new Dictionary<string, string>(capacity: 7); // Use 7 as capacity, a prime larger than 4, in case of collision, and runtime reallocation.
 
-            Utils.SetAttributes(this.blockBlob, this.SharedTransferData.Attributes);
-            await this.Controller.SetCustomAttributesAsync(this.blockBlob);
-
-            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
-            OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
-
-            await this.blockBlob.PutBlockListAsync(
-                        this.blockIdSequence,
-                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                        blobRequestOptions,
-                        operationContext,
-                        this.CancellationToken);
-
-            // REST API PutBlockList cannot clear existing Content-Type of block blob, so if it's needed to clear existing
-            // Content-Type, REST API SetBlobProperties must be called explicitly:
-            // 1. The attributes are inherited from others and Content-Type is null or empty.
-            // 2. User specifies Content-Type to string.Empty while uploading.
-            if ((this.SharedTransferData.Attributes.OverWriteAll && string.IsNullOrEmpty(this.blockBlob.Properties.ContentType))
-                || (!this.SharedTransferData.Attributes.OverWriteAll && this.blockBlob.Properties.ContentType == string.Empty))
+            if (!string.IsNullOrEmpty(this.blockBlob.Properties.CacheControl))
             {
-                await this.blockBlob.SetPropertiesAsync(
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                    blobRequestOptions,
-                    operationContext,
-                    this.CancellationToken);
+                operationContext.UserHeaders.Add(
+                    Shared.Protocol.Constants.HeaderConstants.BlobCacheControlHeader,
+                    this.blockBlob.Properties.CacheControl);
+
+                this.blockBlob.Properties.CacheControl = null;
             }
 
-            this.SetFinish();
+            if (!string.IsNullOrEmpty(this.blockBlob.Properties.ContentEncoding))
+            {
+                operationContext.UserHeaders.Add(
+                    Shared.Protocol.Constants.HeaderConstants.BlobContentEncodingHeader,
+                    this.blockBlob.Properties.ContentEncoding);
+
+                this.blockBlob.Properties.ContentEncoding = null;
+            }
+
+            if (!string.IsNullOrEmpty(this.blockBlob.Properties.ContentLanguage))
+            {
+                operationContext.UserHeaders.Add(
+                    Shared.Protocol.Constants.HeaderConstants.BlobContentLanguageHeader,
+                    this.blockBlob.Properties.ContentLanguage);
+
+                this.blockBlob.Properties.ContentLanguage = null;
+            }
+
+            if (!string.IsNullOrEmpty(this.blockBlob.Properties.ContentType))
+            {
+                operationContext.UserHeaders.Add(
+                    Shared.Protocol.Constants.HeaderConstants.BlobContentTypeHeader,
+                    this.blockBlob.Properties.ContentType);
+
+                this.blockBlob.Properties.ContentType = null;
+            }
+
+            await this.blockBlob.UploadFromStreamAsync(
+                sourceStream,
+                accessCondition,
+                blobRequestOptions,
+                operationContext,
+                this.CancellationToken);
+
+            if (providedMD5 != this.blockBlob.Properties.ContentMD5
+                || (this.SharedTransferData.Attributes.OverWriteAll && string.IsNullOrEmpty(this.blockBlob.Properties.ContentType))
+                || (!this.SharedTransferData.Attributes.OverWriteAll && this.blockBlob.Properties.ContentType == string.Empty))
+            {
+                this.blockBlob.Properties.ContentMD5 = providedMD5;
+
+                if (operationContext.UserHeaders.ContainsKey(Shared.Protocol.Constants.HeaderConstants.BlobCacheControlHeader))
+                {
+                    this.blockBlob.Properties.CacheControl =
+                        operationContext.UserHeaders[Shared.Protocol.Constants.HeaderConstants.BlobCacheControlHeader];
+                }
+
+                if (operationContext.UserHeaders.ContainsKey(Shared.Protocol.Constants.HeaderConstants.BlobContentEncodingHeader))
+                {
+                    this.blockBlob.Properties.ContentEncoding =
+                        operationContext.UserHeaders[Shared.Protocol.Constants.HeaderConstants.BlobContentEncodingHeader];
+                }
+
+                if (operationContext.UserHeaders.ContainsKey(Shared.Protocol.Constants.HeaderConstants.BlobContentLanguageHeader))
+                {
+                    this.blockBlob.Properties.ContentLanguage =
+                        operationContext.UserHeaders[
+                            Shared.Protocol.Constants.HeaderConstants.BlobContentLanguageHeader];
+                }
+
+                if (operationContext.UserHeaders.ContainsKey(Shared.Protocol.Constants.HeaderConstants.BlobContentTypeHeader))
+                {
+                    this.blockBlob.Properties.ContentType =
+                        operationContext.UserHeaders[Shared.Protocol.Constants.HeaderConstants.BlobContentTypeHeader];
+                }
+
+                await this.blockBlob.SetPropertiesAsync(
+                    accessCondition,
+                    blobRequestOptions,
+                    Utils.GenerateOperationContext(this.Controller.TransferContext),
+                    this.CancellationToken);
+            }
         }
 
         private void SetFinish()
@@ -400,9 +574,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private void FinishBlock()
         {
             Debug.Assert(
-                this.state == State.UploadBlob || this.state == State.Error,
-                "FinishBlock called, but state isn't Upload or Error",
-                "Current state is {0}",
+                this.state == State.UploadBlob || this.state == State.Error, 
+                "FinishBlock called, but state isn't Upload or Error", 
+                "Current state is {0}", 
                 this.state);
 
             // If a parallel operation caused the controller to be placed in

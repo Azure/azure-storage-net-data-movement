@@ -16,7 +16,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     internal class SyncTransferController : TransferControllerBase
     {
         private readonly TransferReaderWriterBase reader;
-        private readonly Lazy<TransferReaderWriterBase> writer;
+        private readonly TransferReaderWriterBase writer;
 
         public SyncTransferController(
             TransferScheduler transferScheduler, 
@@ -46,14 +46,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
 
             this.reader = this.GetReader(transferJob.Source);
-            this.writer = new Lazy<TransferReaderWriterBase>(() => this.GetWriter(transferJob.Destination), LazyThreadSafetyMode.PublicationOnly);
+            this.writer = this.GetWriter(transferJob.Destination);
 
             this.SharedTransferData.OnTotalLengthChanged += (sender, args) =>
             {
                 // For large block blob uploading, we need to re-calculate the BlockSize according to the total size
                 // The formula: Ceiling(TotalSize / (50000 * DefaultBlockSize)) * DefaultBlockSize. This will make sure the 
                 // new block size will be mutiple of DefaultBlockSize(aka MemoryManager's chunk size)
-                if (this.writer.Value is BlockBlobWriter)
+                if (this.writer is BlockBlobWriter)
                 {
                     var normalMaxBlockBlobSize = (long)50000 * Constants.DefaultBlockSize;
 
@@ -75,12 +75,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     this.SharedTransferData.BlockSize = blockSize;
                     this.SharedTransferData.MemoryChunksRequiredEachTime = memoryChunksRequiredEachTime;
-                }
-                else if (this.writer.Value is PutBlobWriter)
-                {
-                    // For small block blob uploading, we need to ensure only one block need be uploaded.
-                    this.SharedTransferData.BlockSize = Constants.SingleRequestBlobSizeThreshold;
-                    this.SharedTransferData.MemoryChunksRequiredEachTime = 1;
                 }
                 else
                 {
@@ -108,8 +102,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             get
             {
                 var hasWork = (!this.reader.PreProcessed && this.reader.HasWork)
-                    || (this.reader.PreProcessed && this.writer.Value.HasWork)
-                    || (this.reader.HasWork && this.writer.Value.PreProcessed);
+                    || (this.reader.PreProcessed && this.writer.HasWork)
+                    || (this.writer.PreProcessed && this.reader.HasWork);
 
                 return !this.ErrorOccurred && hasWork;
             }
@@ -121,16 +115,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 await this.reader.DoWorkInternalAsync();
             }
-            else if (this.reader.PreProcessed && this.writer.Value.HasWork)
+            else if (this.reader.PreProcessed && this.writer.HasWork)
             {
-                await this.writer.Value.DoWorkInternalAsync();
+                await this.writer.DoWorkInternalAsync();
             }
-            else if (this.reader.HasWork && this.writer.Value.PreProcessed)
+            else if (this.writer.PreProcessed && this.reader.HasWork)
             {
                 await this.reader.DoWorkInternalAsync();
             }
 
-            return this.ErrorOccurred || this.writer.Value.IsFinished;
+            return this.ErrorOccurred || this.writer.IsFinished;
         }
 
         protected override void SetErrorState(Exception ex)
@@ -168,7 +162,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             Resources.UnsupportedBlobTypeException, 
                             sourceBlob.BlobType));
                     }
-
                 case TransferLocationType.AzureFile:
                     return new CloudFileReader(this.Scheduler, this, this.CancellationToken);
                 default:
@@ -196,15 +189,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     }
                     else if (destBlob is CloudBlockBlob)
                     {
-                        if (this.SharedTransferData.TotalLength > 0 
-                            && this.SharedTransferData.TotalLength <= Constants.SingleRequestBlobSizeThreshold)
-                        {
-                            return new PutBlobWriter(this.Scheduler, this, this.CancellationToken);
-                        }
-                        else
-                        {
-                            return new BlockBlobWriter(this.Scheduler, this, this.CancellationToken);
-                        }
+                        return new BlockBlobWriter(this.Scheduler, this, this.CancellationToken);
                     }
                     else if (destBlob is CloudAppendBlob)
                     {
@@ -237,7 +222,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 this.reader?.Dispose();
 
-                this.writer?.Value?.Dispose();
+                this.writer?.Dispose();
 
                 foreach(var transferData in this.SharedTransferData.AvailableData.Values)
                 {
