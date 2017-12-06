@@ -265,7 +265,7 @@
         {
             int bigFileSizeInKB = 5 * 1024; // 5 MB
             int smallFileSizeInKB = 1; // 1 KB
-            int bigFileNum = 5;
+            int bigFileNum = 20;
             int smallFileNum = 50;
 
             string longString = StraightALongString;
@@ -320,7 +320,7 @@
         {
             int bigFileSizeInKB = 5 * 1024; // 5 MB
             int smallFileSizeInKB = 1; // 1 KB
-            int bigFileNum = 5;
+            int bigFileNum = 20;
             int smallFileNum = 50;
 
             this.TestDirectorySetAttribute_Restart(
