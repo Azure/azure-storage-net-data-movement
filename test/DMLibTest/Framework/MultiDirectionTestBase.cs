@@ -154,9 +154,9 @@ namespace DMLibTest
 
             try
             {
-                //this.CleanupData();
-                //MultiDirectionTestBase<TDataInfo, TDataType>.SourceAdaptor.Reset();
-                //MultiDirectionTestBase<TDataInfo, TDataType>.DestAdaptor.Reset();
+                this.CleanupData();
+                MultiDirectionTestBase<TDataInfo, TDataType>.SourceAdaptor.Reset();
+                MultiDirectionTestBase<TDataInfo, TDataType>.DestAdaptor.Reset();
             }
             catch
             {
@@ -166,9 +166,9 @@ namespace DMLibTest
 
         public virtual void CleanupData()
         {
-            //this.CleanupData(
-            //    MultiDirectionTestBase<TDataInfo, TDataType>.CleanupSource,
-            //    MultiDirectionTestBase<TDataInfo, TDataType>.CleanupDestination);
+            this.CleanupData(
+                MultiDirectionTestBase<TDataInfo, TDataType>.CleanupSource,
+                MultiDirectionTestBase<TDataInfo, TDataType>.CleanupDestination);
         }
 
         protected void CleanupData(bool cleanupSource, bool cleanupDestination)

@@ -346,6 +346,11 @@ namespace DMLibTest
             };
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
+            foreach (var exception in result.Exceptions)
+            {
+                Test.Info(exception.Message);
+            }
+
             Test.Assert(result.Exceptions.Count == 1 && result.Exceptions[0] is TransferException && result.Exceptions[0].InnerException.Message.Contains("Too many levels of symbolic links"), "Verify expected exception is thrown.");
 #endif
         }
@@ -358,7 +363,8 @@ namespace DMLibTest
 #if DNXCORE50
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
             DMLibDataInfo targetDataInfo = new DMLibDataInfo("target");
-            
+            UnicodeFileName = "TempTestName";
+
             DirNode dirNode = new DirNode($"{UnicodeFileName}{FolderSuffix}");
             dirNode.AddFileNode(new FileNode($"{UnicodeFileName}{FileSuffix}")
             {
@@ -371,7 +377,7 @@ namespace DMLibTest
             DestAdaptor.CreateIfNotExists();
 
             SourceAdaptor.GenerateData(targetDataInfo);
-            sourceDataInfo.RootNode = DirNode.SymlinkedDir($"{UnicodeFileName}{SymlinkSuffix}", $"target", targetDataInfo.RootNode);
+            sourceDataInfo.RootNode = DirNode.SymlinkedDir($"{UnicodeFileName}{SymlinkSuffix}", "target", targetDataInfo.RootNode);
             SourceAdaptor.GenerateData(sourceDataInfo);
 
             TransferItem item = new TransferItem()
@@ -383,11 +389,10 @@ namespace DMLibTest
                 DestType = DMLibTestContext.DestType,
                 IsServiceCopy = DMLibTestContext.IsAsync,
                 TransferContext = new DirectoryTransferContext(),
-                Options = new UploadDirectoryOptions()
-                {
-                    Recursive = true,                    
-                },
+                Options = DefaultTransferDirectoryOptions
             };
+
+            (item.Options as UploadDirectoryOptions).Recursive = true;
 
             var result = this.RunTransferItems(new List<TransferItem>() { item }, new TestExecutionOptions<DMLibDataInfo>());
 
