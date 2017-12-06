@@ -9,6 +9,7 @@
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <AssetTargetFallback>$(AssetTargetFallback);dnxcore50;portable-net45+win8</AssetTargetFallback>
     <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
+    <DebugType>portable</DebugType>
     <DefineConstants>$(DefineConstants);DOTNET5_4;DNXCORE50;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;RUNTIME_INFORMATION</DefineConstants>
   </PropertyGroup>
 
