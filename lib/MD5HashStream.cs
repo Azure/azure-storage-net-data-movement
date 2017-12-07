@@ -308,6 +308,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         bytesToRead,
                         cancellationToken);
 
+                    totalBytesRead += bytesRead;
                     if (bytesRead < bytesToRead)
                     {
                         // No data anymore
@@ -320,8 +321,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         currentChunk++;
                         currentChunkOffset = 0;
                     }
-
-                    totalBytesRead += bytesRead;
                     count -= bytesRead;
                 }
                 return totalBytesRead;
