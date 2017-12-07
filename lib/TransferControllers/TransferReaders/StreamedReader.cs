@@ -457,24 +457,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
 
                 this.state = State.Finished;
-                try
+                if (!this.md5HashStream.SucceededSeparateMd5Calculator)
                 {
-                    if (!this.md5HashStream.SucceededSeparateMd5Calculator)
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    var md5 = this.md5HashStream.MD5HashTransformFinalBlock();
-                    this.SharedTransferData.Attributes = new Attributes()
-                    {
-                        ContentMD5 = md5,
-                        OverWriteAll = false
-                    };
-                }
-                finally
+                var md5 = this.md5HashStream.MD5HashTransformFinalBlock();
+                this.CloseOwnStream();
+
+                this.SharedTransferData.Attributes = new Attributes()
                 {
-                    this.CloseOwnStream();
-                }
+                    ContentMD5 = md5,
+                    OverWriteAll = false
+                };
             }
         }
 
