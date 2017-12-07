@@ -339,11 +339,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                                 needToCheckContent = true;
                                 catchedStorageException = se;
                             }
-
-                            if (needToCheckContent &&
-                                (!await this.ValidateUploadedChunkAsync(transferData.MemoryBuffer, currentOffset, (long)transferData.Length)))
+                            else
                             {
-                                throw new InvalidOperationException(Resources.DestinationChangedException);
+                                throw;
                             }
                         }
 
