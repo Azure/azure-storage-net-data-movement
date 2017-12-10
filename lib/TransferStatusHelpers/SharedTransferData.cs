@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public TransferJob TransferJob { get; set; }
 
         /// <summary>
-        /// Gest or sets list of available transfer data from source.
+        /// Gets or sets list of available transfer data from source.
         /// </summary>
         public ConcurrentDictionary<long, TransferData> AvailableData { get; set; }
 

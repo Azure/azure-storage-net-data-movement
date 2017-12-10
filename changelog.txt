@@ -1,6 +1,6 @@
 2017.12.15 Version 0.6.6
  * Blob Service
-   - Small file transfer optimization. Use put blob during upload block blob when blob size is small than 4MB to save request.
+   - Small file transfer optimization. Use put blob to upload block blob when blob size is small than 4MB to save request and optimize performance.
 
 2017.11.15 Version 0.6.5
  * All Services
