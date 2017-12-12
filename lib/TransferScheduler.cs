@@ -211,6 +211,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
             {
                 var storageException = ex as StorageException ?? ex.InnerException as StorageException;
+
+                if (storageException.InnerException is OperationCanceledException)
+                {
+                    throw storageException.InnerException;
+                }
+
                 throw new TransferException(TransferErrorCode.Unknown,
                     Resources.UncategorizedException,
                     storageException);
