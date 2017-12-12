@@ -217,6 +217,9 @@ namespace DMLibTest
                 },
             };
 
+            // This case may takes very long time.
+            options.TimeoutInMs = 60 * 60 * 1000;
+
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             // For sync copy, recalculate md5 of destination by downloading the file to local.
@@ -258,8 +261,11 @@ namespace DMLibTest
                     transferOptions.Recursive = true;
                     (transferOptions as UploadDirectoryOptions).FollowSymlink = true;
                     item.Options = transferOptions;
-                },
+                }
             };
+
+            // This case may takes very long time.
+            options.TimeoutInMs = 60 * 60 * 1000;
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
             Test.Assert(result.Exceptions.Count == 1 && result.Exceptions[0] is TransferException && result.Exceptions[0].InnerException.Message.Contains("Too many levels of symbolic links"), "Verify expected exception is thrown.");
@@ -342,8 +348,11 @@ namespace DMLibTest
                     (transferOptions as UploadDirectoryOptions).FollowSymlink = true;
                     item.Options = transferOptions;
                 },
-                DisableSourceCleaner = true
+                DisableSourceCleaner = true,
             };
+
+            // This case may takes very long time.
+            options.TimeoutInMs = 60 * 60 * 1000;
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
             foreach (var exception in result.Exceptions)

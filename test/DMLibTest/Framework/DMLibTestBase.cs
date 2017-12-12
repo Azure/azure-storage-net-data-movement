@@ -235,7 +235,10 @@ namespace DMLibTest
 
                 try
                 {
-                    Task.WaitAll(allTasks.Values.ToArray(), options.TimeoutInMs);
+                    if (!Task.WaitAll(allTasks.Values.ToArray(), options.TimeoutInMs))
+                    {
+                        Test.Error("Running transfer items timed out");
+                    }
                 }
                 catch (Exception e)
                 {
