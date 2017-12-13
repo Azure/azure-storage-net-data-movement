@@ -17,7 +17,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.WindowsAzure.Storage.Blob;
-    using System.Collections.Generic;
 
     internal sealed class BlockBlobWriter : TransferReaderWriterBase
     {
@@ -212,22 +211,34 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     "BlobType should be BlockBlob if we reach here.");
             }
 
+            var checkpoint = this.SharedTransferData.TransferJob.CheckPoint;
+
+            checkpoint.TransferWindow.Sort();
+
+            this.uploadedLength = checkpoint.EntryTransferOffset;
+
+            if (checkpoint.TransferWindow.Any())
+            {
+                // The size of last block can be smaller than BlockSize.
+                this.uploadedLength -= Math.Min(checkpoint.EntryTransferOffset - checkpoint.TransferWindow.Last(), this.SharedTransferData.BlockSize);
+                this.uploadedLength -= (checkpoint.TransferWindow.Count - 1) * this.SharedTransferData.BlockSize;
+            }
 
             if (this.SharedTransferData.TotalLength > 0
                 && this.SharedTransferData.TotalLength <= Constants.SingleRequestBlobSizeThreshold)
             {
-                this.PrepareForPutBlob(leftBlockCount);
+                this.PrepareForPutBlob();
             }
             else
             {
-                this.PrepareForPutBlockAndPutBlockList(leftBlockCount);
+                this.PrepareForPutBlockAndPutBlockList();
             }
 
             this.PreProcessed = true;
             this.hasWork = true;
         }
 
-        private void PrepareForPutBlockAndPutBlockList(int leftBlockCount)
+        private void PrepareForPutBlockAndPutBlockList()
         {
             if (string.IsNullOrEmpty(this.destLocation.BlockIdPrefix))
             {
@@ -236,23 +247,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 // In DM, we use block id to identify the blocks uploaded so we only need to upload it once.
                 // Keep BlockIdPrefix in upload job object for restarting the transfer if anything happens.
                 this.destLocation.BlockIdPrefix = this.GenerateBlockIdPrefix();
-            }
-
-            // Calculate number of blocks.
-            int numBlocks = (int)Math.Ceiling(
-                this.SharedTransferData.TotalLength / (double)this.SharedTransferData.BlockSize);
-            var checkpoint = this.SharedTransferData.TransferJob.CheckPoint;
-
-            checkpoint.TransferWindow.Sort();
-
-            this.uploadedLength = checkpoint.EntryTransferOffset;
-                        
-            if (checkpoint.TransferWindow.Any())
-            {
-                // The size of last block can be smaller than BlockSize.
-                this.uploadedLength -= Math.Min(checkpoint.EntryTransferOffset - checkpoint.TransferWindow.Last(), this.SharedTransferData.BlockSize);
-                this.uploadedLength -= (checkpoint.TransferWindow.Count - 1) * this.SharedTransferData.BlockSize;
-            }
+            }            
 
             // Create sequence array.
             this.blockIds = new SortedDictionary<int, string>();
@@ -263,9 +258,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.FinishBlock();
 	}
 
-        private void PrepareForPutBlob(int leftBlockCount)
+        private void PrepareForPutBlob()
         {
-            if (0 == leftBlockCount)
+            if (this.SharedTransferData.TotalLength == this.uploadedLength)
             {
                 this.SetFinish();
             }
