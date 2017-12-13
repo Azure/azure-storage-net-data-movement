@@ -48,6 +48,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private long readCompleted = 0;
 
+        private int setCompletionDone = 0;
+
         /// <summary>
         /// Stream to read from source and calculate md5 hash of source.
         /// </summary>
@@ -216,7 +218,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             try
             {
                 this.SharedTransferData.TotalLength = this.inputStream.Length;
-
             }
             catch (Exception)
             {
@@ -450,26 +451,29 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             if (1 == Interlocked.Read(ref this.readCompleted))
             {
-                // Should only get into this block once.
-                if (-1 == this.SharedTransferData.TotalLength)
+                if (0 == Interlocked.Exchange(ref this.setCompletionDone, 1))
                 {
-                    this.SharedTransferData.TotalLength = this.readLength;
+                    // Should only get into this block once.
+                    if (-1 == this.SharedTransferData.TotalLength)
+                    {
+                        this.SharedTransferData.TotalLength = this.readLength;
+                    }
+
+                    this.state = State.Finished;
+                    if (!this.md5HashStream.SucceededSeparateMd5Calculator)
+                    {
+                        return;
+                    }
+
+                    var md5 = this.md5HashStream.MD5HashTransformFinalBlock();
+                    this.CloseOwnStream();
+
+                    this.SharedTransferData.Attributes = new Attributes()
+                    {
+                        ContentMD5 = md5,
+                        OverWriteAll = false
+                    };
                 }
-
-                this.state = State.Finished;
-                if (!this.md5HashStream.SucceededSeparateMd5Calculator)
-                {
-                    return;
-                }
-
-                var md5 = this.md5HashStream.MD5HashTransformFinalBlock();
-                this.CloseOwnStream();
-
-                this.SharedTransferData.Attributes = new Attributes()
-                {
-                    ContentMD5 = md5,
-                    OverWriteAll = false
-                };
             }
         }
 
