@@ -19,7 +19,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -500,6 +500,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         internal static string RestartableLogCorrupted {
             get {
                 return ResourceManager.GetString("RestartableLogCorrupted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resuming transfer from or to a stream is not supported. .
+        /// </summary>
+        internal static string ResumeStreamTransferNotSupported {
+            get {
+                return ResourceManager.GetString("ResumeStreamTransferNotSupported", resourceCulture);
             }
         }
         

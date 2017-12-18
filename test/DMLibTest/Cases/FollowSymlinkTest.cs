@@ -76,7 +76,7 @@ namespace DMLibTest
         public void FollowSymlink_Set_True()
         {
 #if DNXCORE50
-            var uploadOption = new UploadDirectoryOptions();
+           var uploadOption = new UploadDirectoryOptions();
             bool gotException = false;
 
             try
@@ -104,6 +104,11 @@ namespace DMLibTest
         public void FollowSymlink_1_SymlinkDir()
         {
 #if DNXCORE50
+            if (!CrossPlatformHelpers.IsLinux)
+            {
+                return;
+            }
+
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo("rootfolder");
 
             var dirNode = new DirNode($"{UnicodeFileName}{FolderSuffix}");
@@ -145,6 +150,10 @@ namespace DMLibTest
         public void FollowSymlink_Random_SymlinkDir_OnSameLevel()
         {
 #if DNXCORE50
+            if (!CrossPlatformHelpers.IsLinux)
+            {
+                return;
+            }
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo("rootfolder");
 
             int level = random.Next(2, 40);
@@ -197,6 +206,10 @@ namespace DMLibTest
         public void FollowSymlink_Random_Levels_SymlinkDir()
         {
 #if DNXCORE50
+            if (!CrossPlatformHelpers.IsLinux)
+            {
+                return;
+            }
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo("rootfolder");
 
             int level = random.Next(2, 40);
@@ -244,6 +257,10 @@ namespace DMLibTest
         public void FollowSymlink_Random_Levels_40_SymlinkDir()
         {
 #if DNXCORE50
+            if (!CrossPlatformHelpers.IsLinux)
+            {
+                return;
+            }
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo("rootfolder");
 
             int level = random.Next(40, 60);
@@ -281,6 +298,10 @@ namespace DMLibTest
         public void FollowSymlink_DeadLoop_1()
         {
 #if DNXCORE50
+            if (!CrossPlatformHelpers.IsLinux)
+            {
+                return;
+            }
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo("rootfolder");
             DirNode targetFolder = new DirNode($"{UnicodeFileName}{FolderSuffix}");
             targetFolder.AddFileNode(new FileNode($"{UnicodeFileName}{FileSuffix}")
@@ -319,6 +340,10 @@ namespace DMLibTest
         public void FollowSymlink_DeadLoop_2()
         {
 #if DNXCORE50
+            if (!CrossPlatformHelpers.IsLinux)
+            {
+                return;
+            }
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo("rootfolder");
             DMLibDataInfo targetDataInfo = new DMLibDataInfo("targetC");
 
@@ -370,6 +395,10 @@ namespace DMLibTest
         public void Upload_Symlinked_RootDir()
         {
 #if DNXCORE50
+            if (!CrossPlatformHelpers.IsLinux)
+            {
+                return;
+            }
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
             DMLibDataInfo targetDataInfo = new DMLibDataInfo("target");
             UnicodeFileName = "TempTestName";
