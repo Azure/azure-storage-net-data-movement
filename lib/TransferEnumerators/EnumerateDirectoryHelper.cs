@@ -467,23 +467,32 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             };
 
 #if DOTNET5_4
-            UnixFileSystemInfo fileSystemInfo = UnixFileSystemInfo.GetFileSystemEntry(filePath);
-            if (fileSystemInfo.IsSymbolicLink)
+            try
             {
-                fileEntryInfo.FileAttributes |= FileAttributes.ReparsePoint;
-                fileEntryInfo.SymlinkTarget = Path.GetFullPath(Path.Combine(GetParentPath(filePath), (fileSystemInfo as UnixSymbolicLinkInfo).ContentsPath));
+                UnixFileSystemInfo fileSystemInfo = UnixFileSystemInfo.GetFileSystemEntry(filePath);
+                if (fileSystemInfo.IsSymbolicLink)
+                {
+                    fileEntryInfo.FileAttributes |= FileAttributes.ReparsePoint;
+                    fileEntryInfo.SymlinkTarget = Path.GetFullPath(Path.Combine(GetParentPath(filePath), (fileSystemInfo as UnixSymbolicLinkInfo).ContentsPath));
 
-                UnixSymbolicLinkInfo symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
-        
-                if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
+                    UnixSymbolicLinkInfo symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
+
+                    if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
+                    {
+                        fileEntryInfo.FileAttributes |= FileAttributes.Directory;
+                    }
+                }
+
+                if (fileSystemInfo.IsDirectory)
                 {
                     fileEntryInfo.FileAttributes |= FileAttributes.Directory;
                 }
             }
-
-            if (fileSystemInfo.IsDirectory)
+            catch (DllNotFoundException ex)
             {
-                fileEntryInfo.FileAttributes |= FileAttributes.Directory;
+                throw new TransferException(TransferErrorCode.FailToEnumerateDirectory,
+                    Resources.UnableToLoadDLL,
+                    ex);
             }
 #endif
             return fileEntryInfo;
@@ -514,16 +523,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         private static bool SymlinkedDirExists(string dirPath)
         {
             dirPath = dirPath.TrimEnd(Path.DirectorySeparatorChar);
-            UnixFileSystemInfo fileSystemInfo = UnixFileSystemInfo.GetFileSystemEntry(dirPath);
-            if (!fileSystemInfo.IsSymbolicLink)
+            try
             {
-                return false;
-            }
+                UnixFileSystemInfo fileSystemInfo = UnixFileSystemInfo.GetFileSystemEntry(dirPath);
+                if (!fileSystemInfo.IsSymbolicLink)
+                {
+                    return false;
+                }
 
-            UnixSymbolicLinkInfo symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
-            if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
+                UnixSymbolicLinkInfo symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
+                if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
+                {
+                    return true;
+                }
+            }
+            catch (DllNotFoundException ex)
             {
-                return true;
+                throw new TransferException(TransferErrorCode.FailToEnumerateDirectory,
+                    Resources.UnableToLoadDLL,
+                    ex);
             }
 
             return false;
