@@ -376,4 +376,7 @@ MD5 in property: {2}</value>
     <value>File {0} is too long, relative path must not exceed 1024 characters. </value>
     <comment>{0} is the relative path of the file which exceed the 1024 characters limit.</comment>
   </data>
+  <data name="ResumeStreamTransferNotSupported" xml:space="preserve">
+    <value>Resuming transfer from or to a stream is not supported. </value>
+  </data>
 </root>

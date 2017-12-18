@@ -1324,6 +1324,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 transfer = transferContext.Checkpoint.GetTransfer(sourceLocation, destLocation, transferMethod);
                 if (transfer != null)
                 {
+                    if (sourceLocation is StreamLocation || destLocation is StreamLocation)
+                    {
+                        throw new TransferException(Resources.ResumeStreamTransferNotSupported);
+                    }
+
                     // update transfer location information
                     UpdateTransferLocation(transfer.Source, sourceLocation);
                     UpdateTransferLocation(transfer.Destination, destLocation);
