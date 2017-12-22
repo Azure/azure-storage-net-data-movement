@@ -311,7 +311,7 @@ MD5 in property: {2}</value>
     <value>TransferEntry.CopyId cannot be null or empty because we need it to verify we are monitoring the right blob copying process.</value>
   </data>
   <data name="UnableToLoadDLL" xml:space="preserve">
-    <value>Unable to load a dll, this might because the disk where the specific dll is located is not mounted with exec permission.</value>
+    <value>Unable to load a dll, this might because the target dll is located on a disk without exec permission.</value>
   </data>
   <data name="UnsupportedBlobTypeException" xml:space="preserve">
     <value>The given blob type {0} is not supported.</value>

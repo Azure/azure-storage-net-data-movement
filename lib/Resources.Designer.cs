@@ -693,7 +693,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unable to load a dll, this might because the disk where the specific dll is located is not mounted with exec permission..
+        ///   Looks up a localized string similar to Unable to load a dll, this might because the target dll is located on a disk without exec permission..
         /// </summary>
         internal static string UnableToLoadDLL {
             get {
