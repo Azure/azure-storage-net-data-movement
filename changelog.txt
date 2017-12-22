@@ -1,3 +1,14 @@
+2017.12.22 Version 0.7.0
+ * All Services on both platforms
+   - Added support of uploading from non-seekable, non-fixed sized stream to block blob or append blob
+   - Added support of uploading from non-seekable stream to page blob, azure file
+   - Added error reporting about DataMovement Library doesn't support resuming of transferring from or to a stream 
+ * All Services on .Net Core
+   - Added support of transferring directory with symlinked subdirectories on Unix/Linux platforms
+ * Blob Service on .Net Core
+   - Fixed issue of not escaping '/' correctly when using character other than '/' as delimiter when downloading from a blob directory
+   - Fixed issue of not escaping continuous '/' in destination name correctly when downloading from a blob directory 
+
 2017.12.15 Version 0.6.6
  * Blob Service
    - Small file transfer optimization. Use put blob to upload block blob when blob size is small than 4MB to save request and optimize performance.
