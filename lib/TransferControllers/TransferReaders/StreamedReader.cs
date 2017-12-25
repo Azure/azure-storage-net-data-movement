@@ -219,7 +219,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 this.SharedTransferData.TotalLength = this.inputStream.Length;
             }
-            catch (Exception)
+            catch (NotSupportedException)
             {
                 this.SharedTransferData.TotalLength = -1;
             }
