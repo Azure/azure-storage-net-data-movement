@@ -131,6 +131,7 @@
   <HelpKINode Title="FileSkipped event" Url="html/3ce72054-fbab-7260-5c62-0029a5b120b2.htm" />
   <HelpKINode Title="FileTransferred event" Url="html/534ac52a-46ca-1372-4753-590fd50746f8.htm" />
   <HelpKINode Title="Flush method" Url="html/60fe04ce-dce4-7118-d7f2-d39a2681c8ea.htm" />
+  <HelpKINode Title="FollowSymlink property" Url="html/eed8fb20-e477-bff7-aadd-0bd3347b0636.htm" />
   <HelpKINode Title="ForceOverwrite method" Url="html/6ad4792e-3549-4f82-6e55-6d83ee4e9730.htm" />
   <HelpKINode Title="GetObjectData method">
     <HelpKINode Title="TransferCheckpoint.GetObjectData Method " Url="html/2c2a61c9-2a21-449f-fcdc-2b6d1b75ac63.htm" />
@@ -318,7 +319,9 @@
     <HelpKINode Title="properties" Url="html/9d88caa7-835f-00bc-7f0d-07615cf04342.htm" />
   </HelpKINode>
   <HelpKINode Title="UploadDirectoryOptions.BlobType property" Url="html/0213fba2-4d94-78bb-61ab-f28250b1124f.htm" />
+  <HelpKINode Title="UploadDirectoryOptions.FollowSymlink property" Url="html/eed8fb20-e477-bff7-aadd-0bd3347b0636.htm" />
   <HelpKINode Title="UploadDirectoryOptions.UploadDirectoryOptions constructor" Url="html/3434c116-88a7-e109-865f-73ad9ba33f5b.htm" />
+  <HelpKINode Title="UploadFileSourceFileSizeInvalid enumeration member" Url="html/c0cc97ae-9bd8-37b2-a727-c4d714b5cc8f.htm" />
   <HelpKINode Title="UploadOptions class">
     <HelpKINode Title="UploadOptions Class" Url="html/ef2b9911-8cbd-bd35-7ed5-ee3abfa62d00.htm" />
     <HelpKINode Title="about UploadOptions class" Url="html/ef2b9911-8cbd-bd35-7ed5-ee3abfa62d00.htm" />
