@@ -30,7 +30,7 @@ namespace DMLibTest.Util
                     return this.internalStream.Position;
                 }
 
-                throw new InvalidOperationException();
+                throw new NotSupportedException();
             }
 
             set
@@ -40,7 +40,7 @@ namespace DMLibTest.Util
                     this.internalStream.Position = value;
                 }
 
-                throw new InvalidOperationException();
+                throw new NotSupportedException();
             }
         }
 
@@ -53,7 +53,7 @@ namespace DMLibTest.Util
                     return this.internalStream.Length;
                 }
 
-                throw new InvalidOperationException();
+                throw new NotSupportedException();
             }
         }
 
@@ -69,7 +69,7 @@ namespace DMLibTest.Util
                 return this.internalStream.Seek(offset, origin);
             }
 
-            throw new InvalidOperationException();
+            throw new NotSupportedException();
         }
 
         public override void SetLength(long value)
