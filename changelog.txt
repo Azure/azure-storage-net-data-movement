@@ -1,5 +1,5 @@
 2017.12.22 Version 0.7.0
- * All Services on both platforms
+ * All Services on both .Net Framework and .Net Core
    - Added support of uploading from non-seekable, non-fixed sized stream to block blob or append blob
    - Added support of uploading from non-seekable stream to page blob, azure file
    - Added error reporting about DataMovement Library doesn't support resuming of transferring from or to a stream 
