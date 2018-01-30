@@ -224,7 +224,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 this.writer?.Dispose();
 
-                foreach(var transferData in this.SharedTransferData.AvailableData.Values)
+                foreach (var transferData in this.SharedTransferData.AvailableData.Values)
                 {
                     transferData.Dispose();
                 }
