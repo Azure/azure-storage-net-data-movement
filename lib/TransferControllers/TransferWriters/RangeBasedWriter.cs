@@ -137,7 +137,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 try
                 {
-                    await this.DoFetchAttributesAsync();
+                    await Utils.ExecuteXsclApiCallAsync(
+                        async () => await this.DoFetchAttributesAsync(),
+                        this.CancellationToken);
                 }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
                 catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
@@ -213,7 +215,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.hasWork = false;
 
-            await this.DoCreateAsync(this.SharedTransferData.TotalLength);
+            await Utils.ExecuteXsclApiCallAsync(
+                async () => await this.DoCreateAsync(this.SharedTransferData.TotalLength),
+                this.CancellationToken);
 
             this.InitUpload();
         }
@@ -330,7 +334,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 {
                     transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
                 }
-                await this.WriteRangeAsync(transferData);
+
+                await Utils.ExecuteXsclApiCallAsync(
+                    async () => await this.WriteRangeAsync(transferData),
+                    this.CancellationToken);
             }
 
             this.FinishChunk(transferData);
@@ -386,7 +393,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.hasWork = false;
 
-            await this.DoCommitAsync();
+            await Utils.ExecuteXsclApiCallAsync(
+                async () => await this.DoCommitAsync(),
+                this.CancellationToken);
             
             this.SetFinished();
         }

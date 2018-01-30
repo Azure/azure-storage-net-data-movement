@@ -124,10 +124,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 try
                 {
-                    await this.destLocation.Blob.FetchAttributesAsync(
-                        accessCondition, 
-                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions), 
-                        Utils.GenerateOperationContext(this.Controller.TransferContext), 
+                    await Utils.ExecuteXsclApiCallAsync(
+                        async () => await this.destLocation.Blob.FetchAttributesAsync(
+                            accessCondition, 
+                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions), 
+                            Utils.GenerateOperationContext(this.Controller.TransferContext), 
+                            this.CancellationToken),
                         this.CancellationToken);
                 }
 
@@ -317,14 +319,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
                         }
 
-                        await this.blockBlob.PutBlockAsync(
-                            this.GetBlockId(transferData.StartOffset),
-                            transferData.Stream,
-                            null,
-                            Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
-                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                            Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        await Utils.ExecuteXsclApiCallAsync(
+                            async () => await this.blockBlob.PutBlockAsync(
+                                this.GetBlockId(transferData.StartOffset),
+                                transferData.Stream,
+                                null,
+                                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
+                                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                                Utils.GenerateOperationContext(this.Controller.TransferContext),
+                                this.CancellationToken),
                             this.CancellationToken);
+
                     }
                 }
 
