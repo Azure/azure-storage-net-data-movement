@@ -565,8 +565,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
             if (null != se.RequestInformation
                 && se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict
-                && null != se.RequestInformation.ExtendedErrorInformation
-                && string.Equals(se.RequestInformation.ExtendedErrorInformation.ErrorCode, "ResourceAlreadyExists"))
+                && string.Equals(se.RequestInformation.ErrorCode, "ResourceAlreadyExists"))
             {
                 return true;
             }

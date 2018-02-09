@@ -333,8 +333,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 #endif
                             if ((null != se.RequestInformation) &&
                                 ((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode) &&
-                                (null != se.RequestInformation.ExtendedErrorInformation) &&
-                                (se.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition))
+                                (se.RequestInformation.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition))
                             {
                                 needToCheckContent = true;
                                 catchedStorageException = se;

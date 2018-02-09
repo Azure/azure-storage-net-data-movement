@@ -495,8 +495,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (null != se)
             {
                 if (null != se.RequestInformation
-                && null != se.RequestInformation.ExtendedErrorInformation
-                && BlobErrorCodeStrings.PendingCopyOperation == se.RequestInformation.ExtendedErrorInformation.ErrorCode)
+                && BlobErrorCodeStrings.PendingCopyOperation == se.RequestInformation.ErrorCode)
                 {
                     CopyState copyState = this.FetchCopyStateAsync().Result;
 
