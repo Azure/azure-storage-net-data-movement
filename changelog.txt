@@ -1,3 +1,7 @@
+2018.02.10 Version 0.7.1
+ * All Services on both .Net Framework and .Net Core
+   - Upgraded azure storage client library to 9.0.0 
+
 2017.12.22 Version 0.7.0
  * All Services on both .Net Framework and .Net Core
    - Added support of uploading from non-seekable, non-fixed sized stream to block blob or append blob
