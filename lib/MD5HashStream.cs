@@ -391,7 +391,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                 //TODO: Duplication of code
                 var currentChunk = 0;
-                var currentChunkOffset = 1;
+                var currentChunkOffset = 0;
 
                 // Seek to the correct chunk and offset
                 while (offset != 0 && currentChunk != buffers.Length)
