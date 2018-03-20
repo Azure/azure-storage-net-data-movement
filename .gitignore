@@ -183,3 +183,7 @@ FakesAssemblies/
 # DNX
 project.lock.json
 artifacts/
+
+# Vim swap files
+.*.swp
+.*.swo

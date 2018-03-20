@@ -21,5 +21,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// If not specified, it defaults to false.
         /// </summary>
         public bool DisableContentMD5Validation { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag that indicates whether to validate the MD5 hash of each storage transaction
+        /// Any given download may be broken up into a number of transactions in which a piece of the source object is downloaded
+        /// If set to true, each transaction MD5 will be validated; otherwise, the transactions will not be validated
+        /// If not specified, it defaults to true
+        /// </summary>
+        public bool UseTransactionalMD5 { get; set; } = true;
     }
 }

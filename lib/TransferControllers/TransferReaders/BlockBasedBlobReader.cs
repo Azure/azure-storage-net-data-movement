@@ -36,7 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private TransferJob transferJob;
 
         /// <summary>
-        /// Value to indicate whether the transfer is finished. 
+        /// Value to indicate whether the transfer is finished.
         /// This is to tell the caller that the reader can be disposed,
         /// Both error happened or completed will be treated to be finished.
         /// </summary>
@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.sourceBlob = this.sourceLocation.Blob;
 
             Debug.Assert(
-                (this.sourceBlob is CloudBlockBlob) ||(this.sourceBlob is CloudAppendBlob), 
+                (this.sourceBlob is CloudBlockBlob) ||(this.sourceBlob is CloudAppendBlob),
             "Initializing BlockBlobReader while source location is not a block blob or an append blob.");
 
             this.hasWork = true;
@@ -73,7 +73,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         public override bool HasWork
         {
-            get 
+            get
             {
                 return this.hasWork;
             }
@@ -171,7 +171,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
             }
-            
+
             this.SharedTransferData.DisableContentMD5Validation =
                 null != this.sourceLocation.BlobRequestOptions ?
                 this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.HasValue ?
@@ -188,7 +188,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
 
             this.lastTransferWindow = new Queue<long>(this.SharedTransferData.TransferJob.CheckPoint.TransferWindow);
-            
+
             int downloadCount = this.lastTransferWindow.Count +
                 (int)Math.Ceiling((double)(this.sourceBlob.Properties.Length - this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset) / this.SharedTransferData.BlockSize);
 
@@ -314,32 +314,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                var blockSize = Constants.DefaultBlockSize; // 4MB
-
-                var startOffset = asyncState.StartOffset;
-                var remainingLength = asyncState.Length;
-                var index = 0;
-
-                do
-                {
-                    var length = Math.Min(blockSize, remainingLength);
-
-                    var memoryStream = new MemoryStream(asyncState.MemoryBuffer[index], 0, length);
-                    await this.sourceBlob.DownloadRangeToStreamAsync(
-                                memoryStream,
-                                startOffset,
-                                length,
-                                accessCondition,
-                                Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                                Utils.GenerateOperationContext(this.Controller.TransferContext),
-                                this.CancellationToken);
-
-                    index++;
-                    startOffset += length;
-                    remainingLength -= length;
-                } while (remainingLength > 0);
+                asyncState.MemoryStream = new ChunkedMemoryStream(asyncState.MemoryBuffer, 0, asyncState.Length);
+                await this.sourceBlob.DownloadRangeToStreamAsync(
+                    asyncState.MemoryStream,
+                    asyncState.StartOffset,
+                    asyncState.Length,
+                    accessCondition,
+                    Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                    Utils.GenerateOperationContext(this.Controller.TransferContext),
+                    this.CancellationToken
+                );
             }
-            
+
             TransferData transferData = new TransferData(this.Scheduler.MemoryManager)
             {
                 StartOffset = asyncState.StartOffset,
@@ -349,8 +335,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.SharedTransferData.AvailableData.TryAdd(transferData.StartOffset, transferData);
 
-            // Set memory buffer to null. We don't want its dispose method to 
-            // be called once our asyncState is disposed. The memory should 
+            // Set memory buffer to null. We don't want its dispose method to
+            // be called once our asyncState is disposed. The memory should
             // not be reused yet, we still need to write it to disk.
             asyncState.MemoryBuffer = null;
 
