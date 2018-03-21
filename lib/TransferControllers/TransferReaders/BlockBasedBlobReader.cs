@@ -44,6 +44,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private volatile bool hasWork;
 
+        private volatile bool useFallback = false;
+
         private CountdownEvent downloadCountdownEvent;
 
         public BlockBasedBlobReader(
@@ -211,9 +213,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.hasWork = false;
 
-            byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
+            byte[][] memoryBuffer = null;
+            if (useFallback)
+            {
+                memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
+            }
 
-            if (null != memoryBuffer)
+            if (!useFallback || null != memoryBuffer)
             {
                 long startOffset = 0;
 
@@ -246,7 +252,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     if (!canUpload)
                     {
                         this.hasWork = true;
-                        this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
+                        if (null != memoryBuffer)
+                        {
+                            this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
+                        }
                         return;
                     }
                 }
@@ -254,7 +263,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 if ((startOffset > this.SharedTransferData.TotalLength)
                     || (startOffset < 0))
                 {
-                    this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
+                    if (null != memoryBuffer)
+                    {
+                        this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
+                    }
                     throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
                 }
 
@@ -295,50 +307,88 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                  this.sourceBlob.Properties.ETag,
                  this.sourceLocation.AccessCondition);
 
-            if (asyncState.MemoryBuffer.Length == 1)
+            if (useFallback)
             {
-                // We're to download this block.
-                asyncState.MemoryStream =
-                    new MemoryStream(
-                        asyncState.MemoryBuffer[0],
-                        0,
-                        asyncState.Length);
-                await this.sourceBlob.DownloadRangeToStreamAsync(
-                            asyncState.MemoryStream,
-                            asyncState.StartOffset,
-                            asyncState.Length,
-                            accessCondition,
-                            Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                            Utils.GenerateOperationContext(this.Controller.TransferContext),
-                            this.CancellationToken);
+                // TODO: Address case in which the memory buffer is null
+                // e.g. the useFallback flag was flipped just before this "if"
+                Debug.Assert(null != asyncState.MemoryBuffer);
+                if (asyncState.MemoryBuffer.Length == 1)
+                {
+                    // We're to download this block.
+                    asyncState.MemoryStream =
+                        new MemoryStream(
+                            asyncState.MemoryBuffer[0],
+                            0,
+                            asyncState.Length);
+                    await this.sourceBlob.DownloadRangeToStreamAsync(
+                                asyncState.MemoryStream,
+                                asyncState.StartOffset,
+                                asyncState.Length,
+                                accessCondition,
+                                Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                                Utils.GenerateOperationContext(this.Controller.TransferContext),
+                                this.CancellationToken);
+                }
+                else
+                {
+                    asyncState.MemoryStream = new ChunkedMemoryStream(asyncState.MemoryBuffer, 0, asyncState.Length);
+                    await this.sourceBlob.DownloadRangeToStreamAsync(
+                        asyncState.MemoryStream,
+                        asyncState.StartOffset,
+                        asyncState.Length,
+                        accessCondition,
+                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        this.CancellationToken
+                    );
+                }
+
+                TransferData transferData = new TransferData(this.Scheduler.MemoryManager)
+                {
+                    StartOffset = asyncState.StartOffset,
+                    Length = asyncState.Length,
+                    MemoryBuffer = asyncState.MemoryBuffer
+                };
+
+                this.SharedTransferData.AvailableData.TryAdd(transferData.StartOffset, transferData);
+
+                // Set memory buffer to null. We don't want its dispose method to
+                // be called once our asyncState is disposed. The memory should
+                // not be reused yet, we still need to write it to disk.
+                asyncState.MemoryBuffer = null;
             }
             else
             {
-                asyncState.MemoryStream = new ChunkedMemoryStream(asyncState.MemoryBuffer, 0, asyncState.Length);
-                await this.sourceBlob.DownloadRangeToStreamAsync(
-                    asyncState.MemoryStream,
-                    asyncState.StartOffset,
-                    asyncState.Length,
-                    accessCondition,
-                    Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                    Utils.GenerateOperationContext(this.Controller.TransferContext),
-                    this.CancellationToken
+                // TODO: See above, but this time the concern is memory leaks
+                Debug.Assert(null == asyncState.MemoryBuffer);
+
+                var stream = new PipelineMemoryStream(
+                    asyncState.MemoryManager,
+                    (byte[] buffer, int offset, int count) => {
+                        TransferData transferData = new TransferData(asyncState.MemoryManager)
+                        {
+                            StartOffset = asyncState.StartOffset + asyncState.BytesRead,
+                            Length = count,
+                            MemoryBuffer = new byte[][]{buffer}
+                        };
+                        asyncState.BytesRead += count;
+
+                        this.SharedTransferData.AvailableData.TryAdd(transferData.StartOffset, transferData);
+                    }
                 );
+
+                using (stream) {
+                    await this.sourceBlob.DownloadRangeToStreamAsync(
+                        stream,
+                        asyncState.StartOffset,
+                        asyncState.Length,
+                        accessCondition,
+                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        this.CancellationToken
+                    );
+                }
             }
-
-            TransferData transferData = new TransferData(this.Scheduler.MemoryManager)
-            {
-                StartOffset = asyncState.StartOffset,
-                Length = asyncState.Length,
-                MemoryBuffer = asyncState.MemoryBuffer
-            };
-
-            this.SharedTransferData.AvailableData.TryAdd(transferData.StartOffset, transferData);
-
-            // Set memory buffer to null. We don't want its dispose method to
-            // be called once our asyncState is disposed. The memory should
-            // not be reused yet, we still need to write it to disk.
-            asyncState.MemoryBuffer = null;
 
             this.SetFinish();
             this.SetBlockDownloadHasWork();

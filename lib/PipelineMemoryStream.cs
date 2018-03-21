@@ -24,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private MemoryManager manager;
         private Action<byte[], int, int> callback;
 
-        public PipelineMemoryStream(IMemoryManager manager, Action<byte[], int, int> callback)
+        public PipelineMemoryStream(MemoryManager manager, Action<byte[], int, int> callback)
         {
             this.buffer = manager.RequireBuffer();
             Debug.Assert(this.buffer != null); // TODO: Handle null return
