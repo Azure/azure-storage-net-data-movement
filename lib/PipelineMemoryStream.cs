@@ -10,6 +10,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Diagnostics;
     using System.IO;
     using System.Collections.Generic;
+    using System.Threading;
 
     // The following class is designed under the assumption that writes much are smaller on average than the buffer-size
     // It is still correct without this assumption, but it's performance could be improved
@@ -24,13 +25,42 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private MemoryManager manager;
         private Action<byte[], int, int> callback;
 
+        // How long to spend trying to allocate memory before giving up
+        // In milliseconds
+        public int AllocationTimeout { get; set; } = 30 * 1000; // Default 30 seconds
+
         public PipelineMemoryStream(MemoryManager manager, Action<byte[], int, int> callback)
         {
-            this.buffer = manager.RequireBuffer();
-            Debug.Assert(this.buffer != null); // TODO: Handle null return
-            this.length = buffer.Length;
             this.manager = manager;
             this.callback = callback;
+            ReplaceBuffer();
+            this.length = buffer.Length;
+        }
+
+        // Replace the current buffer with a new one
+        private void ReplaceBuffer()
+        {
+            // On failure, use exponetial backoff
+            int sleepTime = 1;
+            int remaining = AllocationTimeout;
+            do {
+                this.buffer = this.manager.RequireBuffer();
+                if (this.buffer == null)
+                {
+                    if (remaining > 0)
+                    {
+                        Console.WriteLine($"Backing off for {sleepTime} hot milliseconds");
+                        Thread.Sleep((int)Math.Min(sleepTime, remaining));
+                        remaining -= sleepTime;
+                        sleepTime *= 2;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"THROW!!");
+                        throw new TransferException(TransferErrorCode.FailToAllocateMemory);
+                    }
+                }
+            } while (this.buffer == null);
         }
 
         public override void Flush()
@@ -41,9 +71,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 this.length += this.offset;
                 this.offset = 0;
 
-                // Get a new buffer to continue writing data
-                this.buffer = this.manager.RequireBuffer();
-                Debug.Assert(this.buffer != null); // TODO: Handle null return
+                ReplaceBuffer();
             }
         }
 
