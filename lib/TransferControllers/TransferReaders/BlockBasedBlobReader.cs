@@ -46,6 +46,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private volatile bool useFallback = false;
 
+        private int requestBlockSize = 16 * 1024 * 1024;
+
         private CountdownEvent downloadCountdownEvent;
 
         public BlockBasedBlobReader(
@@ -213,10 +215,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.hasWork = false;
 
-            byte[][] memoryBuffer = null;
+            byte[][] memoryBuffer;
+            int effectiveBlockSize;
             if (useFallback)
             {
+                effectiveBlockSize = this.SharedTransferData.BlockSize;
                 memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
+            }
+            else
+            {
+                // TODO: Decide how to set this number
+                effectiveBlockSize = (int)Math.Max(this.requestBlockSize, this.SharedTransferData.BlockSize);
+                memoryBuffer = null; // PipelineMemoryStream will handle requesting a buffer
             }
 
             if (!useFallback || null != memoryBuffer)
@@ -237,14 +247,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         {
                             startOffset = this.transferJob.CheckPoint.EntryTransferOffset;
 
-                            if (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
+                            // Write to the journal in chunks of the size expected by the writer
+                            for (int remaining = effectiveBlockSize; remaining > 0; remaining -= this.SharedTransferData.BlockSize)
                             {
-                                this.transferJob.CheckPoint.TransferWindow.Add(startOffset);
-                                this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
-                                    this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
-                                    this.SharedTransferData.TotalLength);
+                                if (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
+                                {
+                                    this.transferJob.CheckPoint.TransferWindow.Add(this.transferJob.CheckPoint.EntryTransferOffset);
+                                    this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
+                                        this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
+                                        this.SharedTransferData.TotalLength);
 
-                                canUpload = true;
+                                    canUpload = true;
+                                }
+                                else break;
                             }
                         }
                     }
@@ -260,8 +275,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     }
                 }
 
-                if ((startOffset > this.SharedTransferData.TotalLength)
-                    || (startOffset < 0))
+                if ((startOffset > this.SharedTransferData.TotalLength) || (startOffset < 0))
                 {
                     if (null != memoryBuffer)
                     {
@@ -277,7 +291,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     MemoryBuffer = memoryBuffer,
                     BytesRead = 0,
                     StartOffset = startOffset,
-                    Length = (int)Math.Min(this.SharedTransferData.BlockSize, this.SharedTransferData.TotalLength - startOffset),
+                    Length = (int)Math.Min(effectiveBlockSize, this.SharedTransferData.TotalLength - startOffset),
                     MemoryManager = this.Scheduler.MemoryManager,
                 };
 
@@ -362,7 +376,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 // TODO: See above, but this time the concern is memory leaks
                 Debug.Assert(null == asyncState.MemoryBuffer);
 
-                var stream = new PipelineMemoryStream(
+                var stream = new PipelineMemoryStream (
                     asyncState.MemoryManager,
                     (byte[] buffer, int offset, int count) => {
                         TransferData transferData = new TransferData(asyncState.MemoryManager)
