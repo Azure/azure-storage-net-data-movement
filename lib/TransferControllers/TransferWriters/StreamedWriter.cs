@@ -77,7 +77,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     ((State.OpenOutputStream == this.state)
                     || (State.CalculateMD5 == this.state)
                     || ((State.Write == this.state)
-                        && ((this.SharedTransferData.TotalLength == this.expectOffset) || this.SharedTransferData.AvailableData.ContainsKey(this.expectOffset))));
+                        && ((this.SharedTransferData.TotalLength == this.expectOffset) || this.SharedTransferData.ContainsKey(this.expectOffset))));
             }
         }
 
@@ -265,7 +265,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
             long currentWriteOffset = this.expectOffset;
             TransferData transferData;
-            if (this.SharedTransferData.AvailableData.TryRemove(this.expectOffset, out transferData))
+            if (this.SharedTransferData.TryRemove(this.expectOffset, out transferData))
             {
                 this.expectOffset = Math.Min(this.expectOffset + transferData.Length, this.SharedTransferData.TotalLength);
             }

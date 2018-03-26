@@ -36,8 +36,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.SharedTransferData = new SharedTransferData()
             {
-                TransferJob = this.TransferJob,
-                AvailableData = new ConcurrentDictionary<long, TransferData>(),
+                TransferJob = this.TransferJob
             };
 
             if (null == transferJob.CheckPoint)
@@ -48,7 +47,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.reader = this.GetReader(transferJob.Source);
             this.writer = this.GetWriter(transferJob.Destination);
 
-            this.SharedTransferData.OnTotalLengthChanged += (sender, args) =>
+            this.SharedTransferData.TotalLengthChanged += (sender, e) =>
             {
                 // For large block blob uploading, we need to re-calculate the BlockSize according to the total size
                 // The formula: Ceiling(TotalSize / (50000 * DefaultBlockSize)) * DefaultBlockSize. This will make sure the
@@ -213,12 +212,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 this.writer?.Dispose();
 
-                foreach(var transferData in this.SharedTransferData.AvailableData.Values)
+                foreach(var transferData in this.SharedTransferData.Values)
                 {
                     transferData.Dispose();
                 }
 
-                this.SharedTransferData.AvailableData.Clear();
+                this.SharedTransferData.Clear();
             }
         }
     }

@@ -63,9 +63,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         public override bool HasWork => this.hasWork && 
                                         (!this.PreProcessed
-                                         || ((this.state == State.UploadBlob) && this.SharedTransferData.AvailableData.Any())
+                                         || ((this.state == State.UploadBlob) && !this.SharedTransferData.IsEmpty)
                                          || ((this.state == State.Commit) && (null != this.SharedTransferData.Attributes))
-                                         || ((this.state == State.UploadBlobAndSetAttributes) && this.SharedTransferData.AvailableData.Any() && null != this.SharedTransferData.Attributes));
+                                         || ((this.state == State.UploadBlobAndSetAttributes) && !this.SharedTransferData.IsEmpty && null != this.SharedTransferData.Attributes));
 
         public override bool IsFinished => State.Error == this.state || State.Finished == this.state;
 

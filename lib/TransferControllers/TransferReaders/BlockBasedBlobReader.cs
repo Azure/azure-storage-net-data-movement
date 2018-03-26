@@ -46,8 +46,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private volatile bool useFallback = false;
 
-        private int requestBlockSize = 16 * 1024 * 1024;
-
         private CountdownEvent downloadCountdownEvent;
 
         public BlockBasedBlobReader(
@@ -224,8 +222,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                // TODO: Decide how to set this number
-                effectiveBlockSize = (int)Math.Max(this.requestBlockSize, this.SharedTransferData.BlockSize);
+                effectiveBlockSize = (int)Math.Max(this.Scheduler.Pacer.RangeRequestSize, this.SharedTransferData.BlockSize);
                 memoryBuffer = null; // PipelineMemoryStream will handle requesting a buffer
             }
 
@@ -253,8 +250,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                                 if (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
                                 {
                                     this.transferJob.CheckPoint.TransferWindow.Add(this.transferJob.CheckPoint.EntryTransferOffset);
+                                    // TODO: Does incrementing by less than a block size (i.e. Math.Min(this.SharedTransferData.BlockSize, remaining))
+                                    // break anything in the transfer?
                                     this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
-                                        this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
+                                        this.transferJob.CheckPoint.EntryTransferOffset + Math.Min(this.SharedTransferData.BlockSize, remaining),
                                         this.SharedTransferData.TotalLength);
 
                                     canUpload = true;
@@ -364,7 +363,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     MemoryBuffer = asyncState.MemoryBuffer
                 };
 
-                this.SharedTransferData.AvailableData.TryAdd(transferData.StartOffset, transferData);
+                this.SharedTransferData.TryAdd(transferData.StartOffset, transferData);
 
                 // Set memory buffer to null. We don't want its dispose method to
                 // be called once our asyncState is disposed. The memory should
@@ -379,15 +378,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 var stream = new PipelineMemoryStream (
                     asyncState.MemoryManager,
                     (byte[] buffer, int offset, int count) => {
+                        Debug.Assert(offset == 0); // In our case this should always be zero
                         TransferData transferData = new TransferData(asyncState.MemoryManager)
                         {
                             StartOffset = asyncState.StartOffset + asyncState.BytesRead,
                             Length = count,
-                            MemoryBuffer = new byte[][]{buffer}
+                            MemoryBuffer = new byte[][]{ buffer }
                         };
                         asyncState.BytesRead += count;
 
-                        this.SharedTransferData.AvailableData.TryAdd(transferData.StartOffset, transferData);
+                        this.SharedTransferData.TryAdd(transferData.StartOffset, transferData);
                     }
                 );
 

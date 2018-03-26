@@ -49,14 +49,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 {
                     if (remaining > 0)
                     {
-                        Console.WriteLine($"Backing off for {sleepTime} hot milliseconds");
                         Thread.Sleep((int)Math.Min(sleepTime, remaining));
                         remaining -= sleepTime;
                         sleepTime *= 2;
                     }
                     else
                     {
-                        Console.WriteLine($"THROW!!");
+                        // TODO: This doesn't seem to exit the transfer so much as make it get stuck :(
                         throw new TransferException(TransferErrorCode.FailToAllocateMemory);
                     }
                 }

@@ -439,7 +439,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         MemoryBuffer = buffer.MemoryBuffer
                     };
 
-                    this.SharedTransferData.AvailableData.TryAdd(buffer.StartOffset, transferData);
+                    this.SharedTransferData.TryAdd(buffer.StartOffset, transferData);
                 }
             }
         }
