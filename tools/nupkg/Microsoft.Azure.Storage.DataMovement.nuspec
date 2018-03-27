@@ -6,8 +6,9 @@
     <title>Microsoft Azure Storage Data Movement Library</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
+	<copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=624876</licenseUrl>
-    <projectUrl>http://go.microsoft.com/fwlink/?LinkId=624878</projectUrl>
+    <projectUrl>https://github.com/Azure/azure-storage-net-data-movement</projectUrl>
     <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>Microsoft Azure Storage DataMovement Library offers a set of APIs extending the existing Azure Storage .Net Client Library to help customer transfer Azure Blob and File Storage with high-performance, scalability and reliability.
