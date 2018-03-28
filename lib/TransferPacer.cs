@@ -31,7 +31,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             // Subtract from scheduled volume any unread data
             var sharedData = controller.SharedTransferData;
             Interlocked.Add(ref totalScheduledVolume, sharedData.ReadLength - sharedData.TotalLength);
-            Debug.Assert(totalScheduledVolume >= 0);
+            Debug.Assert(Interlocked.Read(ref totalScheduledVolume) >= 0);
 
             // Subtract buffered data from buffered volume
             foreach (var transferData in sharedData.Values)
@@ -47,16 +47,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public int RangeRequestSize {
             get
             {
-                var value = this.totalScheduledVolume / Configurations.ParallelOperations;
-                return (int)Math.Max(Constants.MinBlockSize, Math.Min(value, Constants.MaxBlockSize));
-            }
-        }
-
-        public bool RequestHold
-        {
-            get
-            {
-                return Configurations.MaximumCacheSize - totalBufferedVolume < RangeRequestSize;
+                long value = Math.Min(
+                    Interlocked.Read(ref this.totalScheduledVolume),
+                    Configurations.MaximumCacheSize);
+                value /= Configurations.ParallelOperations;
+                value = Math.Max(Constants.MinBlockSize, Math.Min(value, Constants.MaxBlockSize));
+                return (int)value;
             }
         }
           
@@ -70,7 +66,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 Interlocked.Add(ref totalScheduledVolume, -(e.Data.Length));
                 Interlocked.Add(ref totalBufferedVolume, e.Data.Length);
             }
-            Debug.Assert(totalScheduledVolume >= 0);
+            Debug.Assert(Interlocked.Read(ref totalScheduledVolume) >= 0);
         }
 
         private void dataRemovedHandler(object sender, TransferDataEventArgs e)
@@ -79,13 +75,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 Interlocked.Add(ref totalBufferedVolume, -(e.Data.Length));
             }
-            Debug.Assert(totalBufferedVolume >= 0);
+            Debug.Assert(Interlocked.Read(ref totalBufferedVolume) >= 0);
         }
         
         private void lengthChangedHandler(object sender, ValueChangeEventArgs<long> e)
         {
             Interlocked.Add(ref totalScheduledVolume, e.New - e.Old);
-            Debug.Assert(totalScheduledVolume >= 0);
+            Debug.Assert(Interlocked.Read(ref totalScheduledVolume) >= 0);
         }
     }
 }

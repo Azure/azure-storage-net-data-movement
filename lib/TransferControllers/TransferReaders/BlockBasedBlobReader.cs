@@ -213,26 +213,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.hasWork = false;
 
-            byte[][] memoryBuffer = null;
-            int effectiveBlockSize = 0;
-            bool proceed = false;
+            int rangeRequestSize = 0;
             if (useFallback)
             {
-                effectiveBlockSize = this.SharedTransferData.BlockSize;
-                memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
-                proceed = memoryBuffer != null;
+                rangeRequestSize = this.SharedTransferData.BlockSize;
             }
             else
             {
-                if (!this.Scheduler.Pacer.RequestHold)
-                {
-                    effectiveBlockSize = (int)Math.Max(this.Scheduler.Pacer.RangeRequestSize, this.SharedTransferData.BlockSize);
-                    memoryBuffer = null; // PipelineMemoryStream will handle requesting a buffer
-                    proceed = true;
-                }
+                rangeRequestSize = (int)Math.Max(this.Scheduler.Pacer.RangeRequestSize, this.SharedTransferData.BlockSize);
             }
 
-            if (proceed)
+            // Round down effectiveBlock size to the nearest memory chunk size
+            rangeRequestSize = (rangeRequestSize / this.Scheduler.TransferOptions.MemoryChunkSize) * this.Scheduler.TransferOptions.MemoryChunkSize;
+
+            // TODO: Try to delay this allocation to avoid failures
+            var memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(rangeRequestSize / this.Scheduler.TransferOptions.MemoryChunkSize);
+
+            if (null != memoryBuffer)
             {
                 long startOffset = 0;
 
@@ -251,48 +248,34 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         {
                             startOffset = this.transferJob.CheckPoint.EntryTransferOffset;
 
-                            // Write to the journal in chunks of the size expected by the writer
-                            int remaining = effectiveBlockSize;
-                            while (remaining >= this.Scheduler.TransferOptions.MemoryChunkSize)
+                            // Write to the journal in MemoryChunk sized intervals
+                            int remaining = rangeRequestSize;
+                            while (remaining > 0 && this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
                             {
-                                if (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
-                                {
-                                    if (this.transferJob.CheckPoint.TransferWindow.Contains(this.transferJob.CheckPoint.EntryTransferOffset))
-                                    {
-                                        break;
-                                    }
-                                    this.transferJob.CheckPoint.TransferWindow.Add(this.transferJob.CheckPoint.EntryTransferOffset);
-                                    this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
-                                        this.transferJob.CheckPoint.EntryTransferOffset + this.Scheduler.TransferOptions.MemoryChunkSize,
-                                        this.SharedTransferData.TotalLength);
+                                this.transferJob.CheckPoint.TransferWindow.Add(this.transferJob.CheckPoint.EntryTransferOffset);
+                                this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
+                                    this.transferJob.CheckPoint.EntryTransferOffset + this.Scheduler.TransferOptions.MemoryChunkSize,
+                                    this.SharedTransferData.TotalLength);
 
-                                    canUpload = true;
-                                }
-                                else break;
-                                remaining -= this.Scheduler.TransferOptions.MemoryChunkSize;
+                                canUpload = true;
+                                remaining = Math.Max(remaining - this.Scheduler.TransferOptions.MemoryChunkSize, 0);
                             }
 
-                            effectiveBlockSize -= remaining;
+                            rangeRequestSize -= remaining;
                         }
                     }
 
                     if (!canUpload)
                     {
                         this.hasWork = true;
-                        if (null != memoryBuffer)
-                        {
-                            this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
-                        }
+                        this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
                         return;
                     }
                 }
 
                 if ((startOffset > this.SharedTransferData.TotalLength) || (startOffset < 0))
                 {
-                    if (null != memoryBuffer)
-                    {
-                        this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
-                    }
+                    this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
                     throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
                 }
 
@@ -303,7 +286,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     MemoryBuffer = memoryBuffer,
                     BytesRead = 0,
                     StartOffset = startOffset,
-                    Length = effectiveBlockSize,
+                    Length = rangeRequestSize,
                     MemoryManager = this.Scheduler.MemoryManager,
                 };
 
@@ -333,7 +316,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                  this.sourceBlob.Properties.ETag,
                  this.sourceLocation.AccessCondition);
 
-            if (null != asyncState.MemoryBuffer)
+            if (useFallback)
             {
                 // This is the fallback code path
                 if (asyncState.MemoryBuffer.Length == 1)
@@ -375,66 +358,46 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 };
 
                 this.SharedTransferData.TryAdd(transferData.StartOffset, transferData);
-
-                // Set memory buffer to null. We don't want its dispose method to
-                // be called once our asyncState is disposed. The memory should
-                // not be reused yet, we still need to write it to disk.
-                asyncState.MemoryBuffer = null;
-                this.SetFinish();
             }
             else
             {
-                try
-                {
-                    var stream = new PipelineMemoryStream (
-                        asyncState.MemoryManager,
-                        (byte[] buffer, int offset, int count) => {
-                            Debug.Assert(offset == 0); // In our case this should always be zero
-                            TransferData transferData = new TransferData(asyncState.MemoryManager)
-                            {
-                                StartOffset = asyncState.StartOffset + asyncState.BytesRead,
-                                Length = count,
-                                MemoryBuffer = new byte[][]{ buffer }
-                            };
-                            asyncState.BytesRead += count;
-
-                            this.SharedTransferData.TryAdd(transferData.StartOffset, transferData);
-                        }
-                    );
-
-                    using (stream)
-                    {
-                        await this.sourceBlob.DownloadRangeToStreamAsync(
-                            stream,
-                            asyncState.StartOffset,
-                            asyncState.Length,
-                            accessCondition,
-                            Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                            Utils.GenerateOperationContext(this.Controller.TransferContext),
-                            this.CancellationToken
-                        );
-                    }
-
-                    this.SetFinish();
-                }
-                catch (Exception ex) when ((ex as TransferException ?? ex.InnerException as TransferException)?.ErrorCode == TransferErrorCode.FailToAllocateMemory)
-                {
-                    lock (this.transferJob.CheckPoint.TransferWindowLock)
-                    {
-                        this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
-                            this.transferJob.CheckPoint.EntryTransferOffset,
-                            asyncState.StartOffset);
-
-                        // Assumption: BytesRead is a multiple of MemoryChunkSize
-                        // This is the inverse of adding offset the the checkpoint that happens above
-                        for (int offset = asyncState.BytesRead; offset < asyncState.Length; offset += this.Scheduler.TransferOptions.MemoryChunkSize)
+                var stream = new PipelineMemoryStream (
+                    asyncState.MemoryBuffer,
+                    (byte[] buffer, int offset, int count) => {
+                        Debug.Assert(offset == 0); // In our case this should always be zero
+                        TransferData transferData = new TransferData(asyncState.MemoryManager)
                         {
-                            this.transferJob.CheckPoint.TransferWindow.Remove(asyncState.StartOffset + offset);
-                        }
+                            StartOffset = asyncState.StartOffset + asyncState.BytesRead,
+                            Length = count,
+                            MemoryBuffer = new byte[][]{ buffer }
+                        };
+                        asyncState.BytesRead += count;
+                        Debug.Assert(asyncState.BytesRead <= asyncState.Length);
+
+                        this.SharedTransferData.TryAdd(transferData.StartOffset, transferData);
                     }
+                );
+
+                using (stream)
+                {
+                    await this.sourceBlob.DownloadRangeToStreamAsync(
+                        stream,
+                        asyncState.StartOffset,
+                        asyncState.Length,
+                        accessCondition,
+                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        this.CancellationToken
+                    );
                 }
             }
 
+            // Set memory buffer to null. We don't want its dispose method to
+            // be called once our asyncState is disposed. The memory should
+            // not be reused yet, we still need to write it to disk.
+            asyncState.MemoryBuffer = null;
+
+            this.SetFinish();
             this.SetBlockDownloadHasWork();
         }
 

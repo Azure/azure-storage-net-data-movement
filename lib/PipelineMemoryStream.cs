@@ -18,66 +18,47 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
     internal class PipelineMemoryStream : Stream
     {
-        private byte[] buffer;
-        private int length;      // including data which has been returned
-        private int offset;      // within the private buffer
+        private byte[][] buffers = null;
+        private int index = 0;    // of the current buffer
+        private int length = 0;   // including data which has been returned
+        private int offset = 0;   // within current private buffer
+        private int position = 0; // across all buffers
 
-        private MemoryManager manager;
         private Action<byte[], int, int> callback;
 
-        // How long to spend trying to allocate memory before giving up
-        // In milliseconds
-        public int AllocationTimeout { get; set; } = 30 * 1000; // Default 30 seconds
-
-        public PipelineMemoryStream(MemoryManager manager, Action<byte[], int, int> callback)
+        public PipelineMemoryStream(byte[][] buffers, Action<byte[], int, int> callback)
         {
-            this.manager = manager;
+            this.buffers = buffers;
             this.callback = callback;
-            ReplaceBuffer();
-            this.length = buffer.Length;
-        }
 
-        // Replace the current buffer with a new one
-        private void ReplaceBuffer()
-        {
-            // On failure, use exponetial backoff
-            int sleepTime = 1;
-            int remaining = AllocationTimeout;
-            do {
-                this.buffer = this.manager.RequireBuffer();
-                if (this.buffer == null)
-                {
-                    if (remaining > 0)
-                    {
-                        Thread.Sleep((int)Math.Min(sleepTime, remaining));
-                        remaining -= sleepTime;
-                        sleepTime *= 2;
-                    }
-                    else
-                    {
-                        throw new TransferException(TransferErrorCode.FailToAllocateMemory);
-                    }
-                }
-            } while (this.buffer == null);
+            foreach (var buffer in buffers)
+            {
+                this.length += buffer.Length;
+            }
         }
 
         public override void Flush()
         {
             if (this.offset > 0) {
                 // After this call, the receiver owns the sent buffer
-                this.callback(this.buffer, 0, this.offset);
-                this.length += this.offset;
-                this.offset = 0;
+                this.callback(this.buffers[this.index], 0, this.offset);
 
-                ReplaceBuffer();
+                // Move position forward by the remaining buffer length
+                // Any unsued space in the sent buffer is lost to us
+                this.position += this.buffers[this.index].Length - this.offset;
+                this.buffers[this.index] = null;
+                this.offset = 0;
+                this.index += 1;
             }
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            if (this.buffer == null)
+            // Check if we can fit this data in the remaining buffers
+            if (this.index >= this.buffers.Length || count > (this.length - this.position))
             {
-                ReplaceBuffer();
+                // TODO: Add an error message
+                throw new InvalidOperationException();
             }
 
             if (buffer == null)
@@ -91,42 +72,29 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             int remaining = count;
-            int availible = this.buffer.Length - this.offset;
 
             while (remaining > 0)
             {
-                // Find n: The bytes to be written on this iteration
-                int n = remaining;
-                if (n > availible) {
-                    n = availible;
+                int availible = this.buffers[this.index].Length - this.offset;
+                if (availible <= 0) {
+                    this.Flush();
+                    availible = this.buffers[this.index].Length;
                 }
+
+                // Find n: The bytes to be written on this iteration
+                int n = remaining > availible ? availible : remaining;
 
                 //Write n bytes to the current chunk
-                Array.Copy(buffer, offset, this.buffer, this.offset, n);
+                Array.Copy(buffer, offset, this.buffers[this.index], this.offset, n);
                 offset += n;
                 this.offset += n;
+                this.position += n;
                 remaining -= n;
-
-                // If we have just filled our internal buffer, flush
-                availible = this.buffer.Length - this.offset;
-                if (availible == 0) {
-                    this.Flush();
-                    availible = this.buffer.Length;
-                }
             }
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                if (this.buffer != null)
-                {
-                    this.manager.ReleaseBuffer(this.buffer);
-                    this.buffer = null;
-                }
-            }
-
             base.Dispose(disposing);
         }
 
@@ -152,7 +120,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         public override long Position
         {
-            get { return this.length - this.buffer.Length + this.offset; }
+            get { return this.position; }
             set { throw new NotSupportedException(); }
         }
 
