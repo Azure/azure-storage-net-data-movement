@@ -28,8 +28,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 if (value < ReadLength)
                 {
-                    // TODO: Add an error message
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(value));
                 }
 
                 // The order in which events are sent to the handler cannot be gaurenteed
