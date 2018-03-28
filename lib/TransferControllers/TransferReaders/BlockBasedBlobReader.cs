@@ -333,11 +333,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                  this.sourceBlob.Properties.ETag,
                  this.sourceLocation.AccessCondition);
 
-            if (useFallback)
+            if (null != asyncState.MemoryBuffer)
             {
-                // TODO: Address case in which the memory buffer is null
-                // e.g. the useFallback flag was flipped just before this "if"
-                Debug.Assert(null != asyncState.MemoryBuffer);
+                // This is the fallback code path
                 if (asyncState.MemoryBuffer.Length == 1)
                 {
                     // We're to download this block.
@@ -386,9 +384,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                // TODO: See above, but this time the concern is memory leaks
-                Debug.Assert(null == asyncState.MemoryBuffer);
-
                 try
                 {
                     var stream = new PipelineMemoryStream (
