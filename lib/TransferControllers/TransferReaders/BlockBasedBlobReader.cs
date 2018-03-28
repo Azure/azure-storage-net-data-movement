@@ -238,7 +238,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 if (!this.IsTransferWindowEmpty())
                 {
-                    // TODO: This is wrong. This block size needs to be set here
+                    // TODO: Now that BlockSize is highly variable, this may not be correct
                     startOffset = this.lastTransferWindow.Dequeue();
                 }
                 else
