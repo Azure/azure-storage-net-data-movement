@@ -29,7 +29,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private const int DefaultRetryCountOtherError = 3;
 
         /// <summary>
-        /// Stores the default maximum execution time across all potential retries. 
+        /// Stores the default maximum execution time across all potential retries.
         /// </summary>
         private static readonly TimeSpan DefaultMaximumExecutionTime =
             TimeSpan.FromSeconds(900);
@@ -140,12 +140,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             /// </summary>
             private ExponentialRetry retryPolicy;
 
-#if !DOTNET5_4
             /// <summary>
             /// Indicate whether has met x-ms once or more.
             /// </summary>
             private bool gotXMsError = false;
-#endif
 
             /// <summary>
             /// Initializes a new instance of the <see cref="TransferRetryPolicy"/> class.
@@ -189,12 +187,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             /// Determines whether the operation should be retried and the interval until the next retry.
             /// </summary>
             /// <param name="retryContext">
-            /// A RetryContext object that indicates the number of retries, the results of the last request, 
+            /// A RetryContext object that indicates the number of retries, the results of the last request,
             /// and whether the next retry should happen in the primary or secondary location, and specifies the location mode.</param>
             /// <param name="operationContext">An OperationContext object for tracking the current operation.</param>
             /// <returns>
-            /// A RetryInfo object that indicates the location mode, 
-            /// and whether the next retry should happen in the primary or secondary location. 
+            /// A RetryInfo object that indicates the location mode,
+            /// and whether the next retry should happen in the primary or secondary location.
             /// If null, the operation will not be retried. </returns>
             public RetryInfo Evaluate(RetryContext retryContext, OperationContext operationContext)
             {
@@ -258,9 +256,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 int currentRetryCount,
                 Exception lastException)
             {
-#if DOTNET5_4
-                return true;
-#else
                 if (this.gotXMsError)
                 {
                     return true;
@@ -299,6 +294,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                             }
                         }
                     }
+
+                    TransferException transferException = storageException.InnerException as TransferException;
+
+                    if (null != transferException)
+                    {
+                        return false;
+                    }
                 }
 
                 if (currentRetryCount < this.maxAttemptsOtherError)
@@ -307,7 +309,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 }
 
                 return false;
-#endif
             }
         }
     }

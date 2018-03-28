@@ -23,16 +23,24 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             sharedData.TransferDataAdded += dataAddedHandler;
             sharedData.TotalLengthChanged += lengthChangedHandler;
         }
-        
+
         // Must occur after the controller has stopped
+        // (i.e. No more events will be received)
         public void Deregister(SyncTransferController controller)
         {
             // Subtract from scheduled volume any unread data
             var sharedData = controller.SharedTransferData;
             Interlocked.Add(ref totalScheduledVolume, sharedData.ReadLength - sharedData.TotalLength);
             Debug.Assert(totalScheduledVolume >= 0);
-            
+
+            // Subtract buffered data from buffered volume
+            foreach (var transferData in sharedData.Values)
+            {
+                Interlocked.Add(ref totalBufferedVolume, -(transferData.Length));
+            }
+
             sharedData.TransferDataAdded -= dataAddedHandler;
+            sharedData.TransferDataRemoved -= dataRemovedHandler;
             sharedData.TotalLengthChanged -= lengthChangedHandler;
         }
         
@@ -43,16 +51,35 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 return (int)Math.Max(Constants.MinBlockSize, Math.Min(value, Constants.MaxBlockSize));
             }
         }
+
+        public bool RequestHold
+        {
+            get
+            {
+                return Configurations.MaximumCacheSize - totalBufferedVolume < RangeRequestSize;
+            }
+        }
           
         private long totalScheduledVolume = 0;
+        private long totalBufferedVolume = 0;
         
         private void dataAddedHandler(object sender, TransferDataEventArgs e)
         {
             if (e.Success)
             {
                 Interlocked.Add(ref totalScheduledVolume, -(e.Data.Length));
+                Interlocked.Add(ref totalBufferedVolume, e.Data.Length);
             }
             Debug.Assert(totalScheduledVolume >= 0);
+        }
+
+        private void dataRemovedHandler(object sender, TransferDataEventArgs e)
+        {
+            if (e.Success)
+            {
+                Interlocked.Add(ref totalBufferedVolume, -(e.Data.Length));
+            }
+            Debug.Assert(totalBufferedVolume >= 0);
         }
         
         private void lengthChangedHandler(object sender, ValueChangeEventArgs<long> e)

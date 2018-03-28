@@ -81,6 +81,7 @@
     <Compile Include="FileNativeMethods.cs" />
     <Compile Include="LongPathFile.cs" />
     <Compile Include="LongPathFileStream.cs" />
+    <Compile Include="PipelineMemoryStream.cs" />
     <Compile Include="TestHook\FaultInjectionPoint.cs" />
     <Compile Include="DirectoryTransferContext.cs" />
     <Compile Include="Interop\Interop.cs" />
@@ -185,6 +186,7 @@
     <Compile Include="TransferOptions\DirectoryOptions.cs" />
     <Compile Include="TransferOptions\DownloadDirectoryOptions.cs" />
     <Compile Include="TransferOptions\UploadDirectoryOptions.cs" />
+    <Compile Include="TransferPacer.cs" />
     <Compile Include="TransferStatus.cs" />
     <Compile Include="TransferScheduler.cs" />
     <Compile Include="TransferConfigurations.cs" />

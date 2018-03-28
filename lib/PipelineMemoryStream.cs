@@ -55,7 +55,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     }
                     else
                     {
-                        // TODO: This doesn't seem to exit the transfer so much as make it get stuck :(
                         throw new TransferException(TransferErrorCode.FailToAllocateMemory);
                     }
                 }
@@ -76,6 +75,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         public override void Write(byte[] buffer, int offset, int count)
         {
+            if (this.buffer == null)
+            {
+                ReplaceBuffer();
+            }
+
             if (buffer == null)
             {
                 throw new ArgumentNullException(nameof(buffer));
@@ -85,7 +89,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 throw new ArgumentOutOfRangeException(nameof(count));
             }
-
 
             int remaining = count;
             int availible = this.buffer.Length - this.offset;
@@ -117,8 +120,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             if (disposing)
             {
-                this.manager.ReleaseBuffer(this.buffer);
-                this.buffer = null;
+                if (this.buffer != null)
+                {
+                    this.manager.ReleaseBuffer(this.buffer);
+                    this.buffer = null;
+                }
             }
 
             base.Dispose(disposing);
