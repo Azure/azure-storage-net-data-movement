@@ -24,11 +24,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private int offset = 0;   // within current private buffer
         private int position = 0; // across all buffers
 
+        private MemoryManager manager; // Used to return unused buffers
         private Action<byte[], int, int> callback;
 
-        public PipelineMemoryStream(byte[][] buffers, Action<byte[], int, int> callback)
+        public PipelineMemoryStream(byte[][] buffers, MemoryManager manager, Action<byte[], int, int> callback)
         {
             this.buffers = buffers;
+            this.manager = manager;
             this.callback = callback;
 
             foreach (var buffer in buffers)
@@ -95,6 +97,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         protected override void Dispose(bool disposing)
         {
+
+            if (this.buffers != null && this.manager != null)
+            {
+                for (int i=0; i< this.buffers.Length; i++)
+                {
+                    if (this.buffers[i] != null)
+                    {
+                        this.manager.ReleaseBuffer(this.buffers[i]);
+                        this.buffers[i] = null;
+                    }
+                }
+            }
+
             base.Dispose(disposing);
         }
 

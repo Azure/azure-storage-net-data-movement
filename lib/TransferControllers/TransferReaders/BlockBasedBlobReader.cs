@@ -363,6 +363,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 var stream = new PipelineMemoryStream (
                     asyncState.MemoryBuffer,
+                    asyncState.MemoryManager,
                     (byte[] buffer, int offset, int count) => {
                         Debug.Assert(offset == 0); // In our case this should always be zero
                         TransferData transferData = new TransferData(asyncState.MemoryManager)
