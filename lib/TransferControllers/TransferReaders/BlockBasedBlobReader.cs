@@ -214,7 +214,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
 
             int rangeRequestSize = 0;
-            if (useFallback)
+            if (useFallback || !this.IsTransferWindowEmpty())
             {
                 rangeRequestSize = this.SharedTransferData.BlockSize;
             }
@@ -235,7 +235,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 if (!this.IsTransferWindowEmpty())
                 {
-                    // TODO: Now that BlockSize is highly variable, this may not be correct
                     startOffset = this.lastTransferWindow.Dequeue();
                 }
                 else
