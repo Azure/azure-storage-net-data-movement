@@ -78,7 +78,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 Interlocked.Add(ref this.readLength, value.Length);
                 Debug.Assert(Interlocked.Read(ref readLength) <= TotalLength);
-                Debug.Assert(Interlocked.Read(ref readLength) >= WrittenLength);
             }
 
             var handler = TransferDataAdded;
@@ -101,7 +100,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 Interlocked.Add(ref this.writtenLength, value.Length);
                 Debug.Assert(Interlocked.Read(ref writtenLength) <= TotalLength);
-                Debug.Assert(Interlocked.Read(ref writtenLength) <= ReadLength);
             }
 
             var handler = TransferDataRemoved;
