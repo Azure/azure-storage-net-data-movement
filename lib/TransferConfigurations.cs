@@ -184,7 +184,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <param name="newBlockSize"></param>
         internal void UpdateMaximumCacheSize(int newBlockSize)
         {
-            this.MaximumCacheSize = (long)3 * newBlockSize * this.ParallelOperations;
+            // TODO: This is no longer a very good way to set the max cache size
+            this.MaximumCacheSize = (long)10 * newBlockSize * this.ParallelOperations;
         }
     }
 }
