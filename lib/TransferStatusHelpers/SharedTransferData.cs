@@ -47,6 +47,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         public long ReadLength { get { return Interlocked.Read(ref readLength); } }
+
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public long WrittenLength { get { return Interlocked.Read(ref writtenLength); } }
 
         public int BlockSize { get; set; }
@@ -115,9 +117,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         public bool ContainsKey(long key) => this.data.ContainsKey(key);
+
         public bool IsEmpty { get { return this.data.IsEmpty; } }
+
         public void Clear() => this.data.Clear();
+
         public ICollection<TransferData> Values { get { return this.data.Values; } }
+
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public ICollection<long> Keys { get { return this.data.Keys; } }
 
         public event EventHandler<ValueChangeEventArgs<long>> TotalLengthChanged;
@@ -134,7 +141,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     internal class TransferDataEventArgs : EventArgs
     {
         public TransferData Data { get; set; }
+
+        [global::System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public long Offset { get; set; }
+
         public bool Success { get; set; }
     }
 }
