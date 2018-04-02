@@ -220,13 +220,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                rangeRequestSize = (int)Math.Max(this.Scheduler.Pacer.RangeRequestSize, this.SharedTransferData.BlockSize);
+                rangeRequestSize = (int)Math.Min(this.SharedTransferData.TotalLength - this.transferJob.CheckPoint.EntryTransferOffset, this.Scheduler.Pacer.RangeRequestSize);
+                rangeRequestSize = (int)Math.Max(rangeRequestSize, this.SharedTransferData.BlockSize);
             }
 
             // Round down effectiveBlock size to the nearest memory chunk size
             rangeRequestSize = (rangeRequestSize / this.Scheduler.TransferOptions.MemoryChunkSize) * this.Scheduler.TransferOptions.MemoryChunkSize;
-
-            // TODO: Try to delay this allocation to avoid failures
             var memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(rangeRequestSize / this.Scheduler.TransferOptions.MemoryChunkSize);
 
             if (null != memoryBuffer)
