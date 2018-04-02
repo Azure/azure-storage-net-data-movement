@@ -68,8 +68,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             // Check if we can fit this data in the remaining buffers
             if (this.index >= this.buffers.Length || count > (this.length - this.position))
             {
-                // TODO: Add an error message
-                throw new InvalidOperationException();
+                throw new InvalidOperationException(Resources.InsufficientBufferSpaceException);
             }
 
             if (buffer == null)

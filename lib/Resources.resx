@@ -382,4 +382,7 @@ MD5 in property: {2}</value>
   <data name="ResumeStreamTransferNotSupported" xml:space="preserve">
     <value>Resuming transfer from or to a stream is not supported. </value>
   </data>
+  <data name="InsufficientBufferSpaceException" xml:space="preserve">
+    <value>Not enough buffer space to write the requested data</value>
+  </data>
 </root>
