@@ -46,8 +46,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
-        public long ReadLength { get => Interlocked.Read(ref readLength); }
-        public long WrittenLength { get => Interlocked.Read(ref writtenLength); }
+        public long ReadLength { get { return Interlocked.Read(ref readLength); } }
+        public long WrittenLength { get { return Interlocked.Read(ref writtenLength); } }
 
         public int BlockSize { get; set; }
 
@@ -115,10 +115,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         public bool ContainsKey(long key) => this.data.ContainsKey(key);
-        public bool IsEmpty { get => this.data.IsEmpty; }
+        public bool IsEmpty { get { return this.data.IsEmpty; } }
         public void Clear() => this.data.Clear();
-        public ICollection<TransferData> Values { get => this.data.Values; }
-        public ICollection<long> Keys { get => this.data.Keys; }
+        public ICollection<TransferData> Values { get { return this.data.Values; } }
+        public ICollection<long> Keys { get { return this.data.Keys; } }
 
         public event EventHandler<ValueChangeEventArgs<long>> TotalLengthChanged;
         public event EventHandler<TransferDataEventArgs> TransferDataAdded;
