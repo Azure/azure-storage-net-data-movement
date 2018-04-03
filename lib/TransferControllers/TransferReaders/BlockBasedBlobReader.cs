@@ -214,7 +214,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
 
             int rangeRequestSize = 0;
-            if (useFallback || !this.IsTransferWindowEmpty())
+            if (useFallback || !this.IsTransferWindowEmpty() || (this.sourceLocation.BlobRequestOptions.UseTransactionalMD5 ?? true))
             {
                 rangeRequestSize = this.SharedTransferData.BlockSize;
             }
