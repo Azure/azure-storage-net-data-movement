@@ -5,6 +5,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Diagnostics;
     using System.Threading;
 
+    /// <summary>
+    /// <c>TransferPacer</c> takes in performance and state data and adjusts transfer parameters
+    /// This class will be a central point for the tuning of performance attributes
+    /// </summary>
     internal class TransferPacer
     {
         /// <summary>
@@ -12,7 +16,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         public TransferConfigurations Configurations { get; set; }
       
-        // Must occur before the controller is active
+        /// <summary>
+        /// Registers a <c>SyncTransferController</c> to be tracked by, and factored into pacing adjustments
+        /// </summary>
+        /// <remarks>
+        /// Must occur before the controller is active
+        /// </remarks>
         public void Register(SyncTransferController controller)
         {
             // Add the length to our total volume. 
@@ -24,8 +33,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             sharedData.TotalLengthChanged += lengthChangedHandler;
         }
 
-        // Must occur after the controller has stopped
-        // (i.e. No more events will be received)
+        /// <summary>
+        /// Deregisters a registered <c>SyncTransferController</c>
+        /// </summary>
+        /// <remarks>
+        /// Must occur after the controller has stopped (i.e. No more events will be received)
+        /// </remarks>
         public void Deregister(SyncTransferController controller)
         {
             // Subtract from scheduled volume any unread data
@@ -44,6 +57,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             sharedData.TotalLengthChanged -= lengthChangedHandler;
         }
         
+        /// <summary>
+        /// The tuned range size to request for HTTP GET download requests
+        /// </summary>
         public int RangeRequestSize {
             get
             {
