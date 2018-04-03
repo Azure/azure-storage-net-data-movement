@@ -214,7 +214,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
 
             int rangeRequestSize = 0;
-            if (useFallback || !this.IsTransferWindowEmpty() || (this.sourceLocation.BlobRequestOptions.UseTransactionalMD5 ?? true))
+            if (useFallback || !this.IsTransferWindowEmpty())
             {
                 rangeRequestSize = this.SharedTransferData.BlockSize;
             }
@@ -222,6 +222,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 rangeRequestSize = (int)Math.Min(this.SharedTransferData.TotalLength - this.transferJob.CheckPoint.EntryTransferOffset, this.Scheduler.Pacer.RangeRequestSize);
                 rangeRequestSize = (int)Math.Max(rangeRequestSize, this.SharedTransferData.BlockSize);
+            }
+            if (this.sourceLocation.BlobRequestOptions.UseTransactionalMD5 ?? true)
+            {
+                rangeRequestSize = (int)Math.Min(rangeRequestSize, Constants.MaxTransactionalMD5Size);
             }
 
             // Round down effectiveBlock size to the nearest memory chunk size
