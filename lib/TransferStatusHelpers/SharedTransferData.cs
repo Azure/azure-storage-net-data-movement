@@ -46,13 +46,25 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
+        /// <summary>
+        /// Gets the amount of data put into this <c>SharedTransferData</c> by the reader
+        /// </summary>
         public long ReadLength { get { return Interlocked.Read(ref readLength); } }
 
+        /// <summary>
+        /// Gets the amount of data taken out of this <c>SharedTransferData</c> by the writer
+        /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public long WrittenLength { get { return Interlocked.Read(ref writtenLength); } }
 
+        /// <summary>
+        /// Gets the set block size for this transfer
+        /// </summary>
         public int BlockSize { get; set; }
 
+        /// <summary>
+        /// Gets the memory chunks needed to hold <c>BlockSize</c> bytes of data
+        /// </summary>
         public int MemoryChunksRequiredEachTime { get; set; }
 
         /// <summary>
@@ -72,6 +84,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         public Attributes Attributes { get; set; }
 
+        /// <summary>
+        /// Attempt to add a new <c>TransferData</c> object to this dictionary-like store
+        /// </summary>
+        /// <param name="key">The start offset of the data</param>
+        /// <param name="value">The <c>TransferData</c> object which holds the data</param>
+        /// <returns>True if the <c>TransferData</c> was added. False otherwise</returns>
         public bool TryAdd(long key, TransferData value)
         {
             var success = this.data.TryAdd(key, value);
@@ -94,6 +112,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return success;
         }
 
+        /// <summary>
+        /// Attempt remove a <c>TransferData</c> object from this dictionary-like store
+        /// </summary>
+        /// <param name="key">The start offset of the data</param>
+        /// <param name="value">The output reference for the retreived transfer data</param>
+        /// <returns>True is data was successfully removed. False otherwise</returns>
         public bool TryRemove(long key, out TransferData value)
         {
             var success = this.data.TryRemove(key, out value);
@@ -116,19 +140,47 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return success;
         }
 
+        /// <summary>
+        /// Checks if a start offset is in this dictionary-like store
+        /// </summary>
+        /// <param name="key">The start offset</param>
+        /// <returns>True if data with that start offset is in the store</returns>
         public bool ContainsKey(long key) => this.data.ContainsKey(key);
 
+        /// <summary>
+        /// True if there is no transfer data in this object
+        /// </summary>
         public bool IsEmpty { get { return this.data.IsEmpty; } }
 
+        /// <summary>
+        /// Removes all transfer data from this object
+        /// </summary>
         public void Clear() => this.data.Clear();
 
+        /// <summary>
+        /// Gets a collection of <c>TransferData</c> objects stored
+        /// </summary>
         public ICollection<TransferData> Values { get { return this.data.Values; } }
 
+        /// <summary>
+        /// Gets a collection of start offsets stored
+        /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public ICollection<long> Keys { get { return this.data.Keys; } }
 
+        /// <summary>
+        /// Called when the <c>Length</c> property changes
+        /// </summary>
         public event EventHandler<ValueChangeEventArgs<long>> TotalLengthChanged;
+
+        /// <summary>
+        /// Called when transfer data is added
+        /// </summary>
         public event EventHandler<TransferDataEventArgs> TransferDataAdded;
+
+        /// <summary>
+        /// Called when transfer data is removed
+        /// </summary>
         public event EventHandler<TransferDataEventArgs> TransferDataRemoved;
     }
 
