@@ -148,19 +148,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// This is the wrapper for executing APIs defined in Azure storage .Net client library, 
         /// when wishing to return from thread pool immediately.
-        /// As XSCL based on .Net Framework uses self-customized APM, this method uses Task.Run as calling wrapper
-        /// for XSCL APIs when the code is based on .Net Framework, in order to return from thread pool immediately.
+        /// As XSCL based on .Net Framework uses self-customized APM, and since XSCL 9.0.0.0, 
+        /// .Net Core implementation changed async pattern, which removed Task.Run wrapper previously existed.
+        /// This method uses Task.Run as calling wrapper for XSCL APIs, in order to return from thread pool immediately.
         /// </summary>
         /// <param name="func">Function to be called.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for a task to complete.</param>
         /// <returns>The <see cref="Task"/>.</returns>
         public static async Task ExecuteXsclApiCallAsync(Func<Task> func, CancellationToken cancellationToken)
         {
-#if DOTNET5_4
-            await func();
-#else
             await Task.Run(async () => await func(), cancellationToken);
-#endif
         }
 
         public static Attributes GenerateAttributes(CloudBlob blob)
