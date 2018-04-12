@@ -364,6 +364,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             Task.Run(() =>
                 {
+                    var sw = new SpinWait();
+
                     while (!this.cancellationTokenSource.Token.IsCancellationRequested && !this.controllerQueue.IsCompleted)
                     {
                         // While there's work queuing or work that's been dequeue
@@ -379,7 +381,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                                 // If we don't have the requested amount of active tasks
                                 // running, get a task item from any active transfer item
                                 // that has work available.
-                                this.DoWorkFrom(this.activeControllerItems);
+                                if (!this.DoWorkFrom(this.activeControllerItems))
+                                {
+                                    sw.SpinOnce();
+                                }
+                                else
+                                {
+                                    sw.Reset();
+                                }
                             }
                         }
 
