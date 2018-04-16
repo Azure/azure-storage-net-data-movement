@@ -144,11 +144,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         internal const int ListSegmentLengthMultiplier = 8;
 
         internal const string BlobTypeMismatch = "Blob type of the blob reference doesn't match blob type of the blob.";
-
+        
         /// <summary>
-        /// The blob size threshold used to decide when to put a blob with a single request.
+        /// The maximum size of a block blob that can be uploaded with a single Put Blob request.
         /// </summary>
-        internal const int SingleRequestBlobSizeThreshold = DefaultBlockSize;
+        internal const long MaxSinglePutBlobSize = 256 * 1024 * 1024;
 
         /// <summary>
         /// The product name used in UserAgent header.

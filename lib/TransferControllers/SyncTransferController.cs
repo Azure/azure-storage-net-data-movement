@@ -19,8 +19,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private readonly TransferReaderWriterBase writer;
 
         public SyncTransferController(
-            TransferScheduler transferScheduler, 
-            TransferJob transferJob, 
+            TransferScheduler transferScheduler,
+            TransferJob transferJob,
             CancellationToken userCancellationToken)
             : base(transferScheduler, transferJob, userCancellationToken)
         {
@@ -36,8 +36,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.SharedTransferData = new SharedTransferData()
             {
-                TransferJob = this.TransferJob, 
-                AvailableData = new ConcurrentDictionary<long, TransferData>(), 
+                TransferJob = this.TransferJob,
+                AvailableData = new ConcurrentDictionary<long, TransferData>(),
             };
 
             if (null == transferJob.CheckPoint)
@@ -61,9 +61,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     var memoryChunksRequiredEachTime = (int)Math.Ceiling((double)this.SharedTransferData.TotalLength / normalMaxBlockBlobSize);
                     var blockSize = memoryChunksRequiredEachTime * Constants.DefaultBlockSize;
 
+                    // Take the block size user specified when it's greater than the calculated value
                     if (TransferManager.Configurations.BlockSize > blockSize)
                     {
-                        // Take the block size user specified when it's greater than the calculated value
                         blockSize = TransferManager.Configurations.BlockSize;
                         memoryChunksRequiredEachTime = (int)Math.Ceiling((double)blockSize / Constants.DefaultBlockSize);
                     }
@@ -71,6 +71,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         // Try to increase the memory pool size
                         this.Scheduler.TransferOptions.UpdateMaximumCacheSize(blockSize);
+                    }
+
+                    // If data size is smaller than block size, fit block size according to total length, in order to minimize buffer allocation,
+                    // and save space and time.
+                    if (this.SharedTransferData.TotalLength < blockSize)
+                    {
+                        // Note total length could be 0, in this case, use default block size.
+                        memoryChunksRequiredEachTime = Math.Max(1,
+                            (int)Math.Ceiling((double)this.SharedTransferData.TotalLength / Constants.DefaultBlockSize));
+                        blockSize = memoryChunksRequiredEachTime * Constants.DefaultBlockSize;
                     }
 
                     this.SharedTransferData.BlockSize = blockSize;
@@ -154,12 +164,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         return new BlockBasedBlobReader(this.Scheduler, this, this.CancellationToken);
                     }
-                    else 
+                    else
                     {
                         throw new InvalidOperationException(
                             string.Format(
-                            CultureInfo.CurrentCulture, 
-                            Resources.UnsupportedBlobTypeException, 
+                            CultureInfo.CurrentCulture,
+                            Resources.UnsupportedBlobTypeException,
                             sourceBlob.BlobType));
                     }
                 case TransferLocationType.AzureFile:
@@ -167,8 +177,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 default:
                     throw new InvalidOperationException(
                         string.Format(
-                        CultureInfo.CurrentCulture, 
-                        Resources.UnsupportedTransferLocationException, 
+                        CultureInfo.CurrentCulture,
+                        Resources.UnsupportedTransferLocationException,
                         sourceLocation.Type));
             }
         }
@@ -199,8 +209,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         throw new InvalidOperationException(
                             string.Format(
-                            CultureInfo.CurrentCulture, 
-                            Resources.UnsupportedBlobTypeException, 
+                            CultureInfo.CurrentCulture,
+                            Resources.UnsupportedBlobTypeException,
                             destBlob.BlobType));
                     }
                 case TransferLocationType.AzureFile:
@@ -208,8 +218,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 default:
                     throw new InvalidOperationException(
                         string.Format(
-                        CultureInfo.CurrentCulture, 
-                        Resources.UnsupportedTransferLocationException, 
+                        CultureInfo.CurrentCulture,
+                        Resources.UnsupportedTransferLocationException,
                         destLocation.Type));
             }
         }

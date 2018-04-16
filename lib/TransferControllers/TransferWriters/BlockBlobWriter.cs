@@ -225,9 +225,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.uploadedLength -= Math.Min(checkpoint.EntryTransferOffset - checkpoint.TransferWindow.Last(), this.SharedTransferData.BlockSize);
                 this.uploadedLength -= (checkpoint.TransferWindow.Count - 1) * this.SharedTransferData.BlockSize;
             }
+            
+            var singlePutBlobSizeThreshold = Math.Min(this.SharedTransferData.BlockSize, Constants.MaxSinglePutBlobSize);
 
             if (this.SharedTransferData.TotalLength > 0
-                && this.SharedTransferData.TotalLength <= Constants.SingleRequestBlobSizeThreshold)
+                && this.SharedTransferData.TotalLength <= singlePutBlobSizeThreshold)
             {
                 this.PrepareForPutBlob();
             }
