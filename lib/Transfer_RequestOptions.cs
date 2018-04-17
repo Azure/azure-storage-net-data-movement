@@ -7,6 +7,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
     using System.Diagnostics;
+    using System.Globalization;
     using System.Net;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
@@ -162,7 +163,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         : DefaultFileRequestOptions;
                     break;
                 default:
-                    throw new ArgumentException($"{nameof(location)} is invalid, cannot get IRequestOptions for location type {location.Type}");
+                    throw new ArgumentException(
+                        string.Format(
+                            CultureInfo.CurrentCulture, 
+                            "{0} is invalid, cannot get IRequestOptions for location type {1}", 
+                            nameof(location), 
+                            location.Type));
             }
 
             return requestOptions;
