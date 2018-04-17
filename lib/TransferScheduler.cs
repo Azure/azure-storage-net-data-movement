@@ -342,6 +342,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                             this.controllerResetEvent = null;
                         }
 
+                        if (null != this.queueAddedEvent)
+                        {
+                            this.queueAddedEvent.Dispose();
+                            this.queueAddedEvent = null;
+                        }
+
                         this.memoryManager = null;
                     }
                 }
