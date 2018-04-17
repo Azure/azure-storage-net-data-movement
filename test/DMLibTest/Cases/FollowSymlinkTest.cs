@@ -101,6 +101,60 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalSource)]
+        public void FollowSymlink_1_BrokenSymlink()
+        {
+#if DNXCORE50
+            if (!CrossPlatformHelpers.IsLinux)
+            {
+                return;
+            }
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo("rootfolder");
+
+            var dirNode = new DirNode($"{UnicodeFileName}{FolderSuffix}");
+            dirNode.AddFileNode(new FileNode($"{UnicodeFileName}{FileSuffix}")
+            {
+                SizeInByte = 1024
+            });
+
+            sourceDataInfo.RootNode.AddDirNode(dirNode);
+            sourceDataInfo.RootNode.AddDirNode(DirNode.SymlinkedDir($"{UnicodeFileName}{SymlinkSuffix}", dirNode.Name, dirNode));
+            dirNode = new DirNode($"{UnicodeFileName}{FolderSuffix}_1");
+            sourceDataInfo.RootNode.AddDirNode(DirNode.SymlinkedDir($"{UnicodeFileName}{SymlinkSuffix}_1", dirNode.Name, dirNode));
+
+            SourceAdaptor.GenerateData(sourceDataInfo);
+
+            sourceDataInfo.RootNode.DeleteDirNode($"{UnicodeFileName}{SymlinkSuffix}_1");
+
+            var options = new TestExecutionOptions<DMLibDataInfo>()
+            {
+                IsDirectoryTransfer = true,
+                DisableSourceGenerator = true,
+                DisableSourceCleaner = true,
+                TransferItemModifier = (notUsed, item) =>
+                {
+                    dynamic transferOptions = DefaultTransferDirectoryOptions;
+                    transferOptions.Recursive = true;
+                    (transferOptions as UploadDirectoryOptions).FollowSymlink = true;
+                    item.Options = transferOptions;
+                },
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            // For sync copy, recalculate md5 of destination by downloading the file to local.
+            if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+            {
+                DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
+            }
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+#endif
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalSource)]
         public void FollowSymlink_1_SymlinkDir()
         {
 #if DNXCORE50
