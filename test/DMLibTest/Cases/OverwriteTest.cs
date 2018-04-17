@@ -93,15 +93,15 @@ namespace DMLibTest.Cases
 
                 if (fileName.Equals(destExistYName))
                 {
-                    transferContext.ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY();
+                    transferContext.ShouldOverwriteCallbackAsync = DMLibInputHelper.GetDefaultOverwiteCallbackY();
                 }
                 else if (fileName.Equals(destExistNName))
                 {
-                    transferContext.ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackN();
+                    transferContext.ShouldOverwriteCallbackAsync = DMLibInputHelper.GetDefaultOverwiteCallbackN();
                 }
                 else if (fileName.Equals(destNotExistYName))
                 {
-                    transferContext.ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY();
+                    transferContext.ShouldOverwriteCallbackAsync = DMLibInputHelper.GetDefaultOverwiteCallbackY();
                 }
 
                 transferItem.TransferContext = transferContext;
@@ -154,7 +154,7 @@ namespace DMLibTest.Cases
             DMLibDataHelper.AddOneFileInBytes(destDataInfo.RootNode, destExistNName, 1024);
 
             TransferContext transferContext = new DirectoryTransferContext();
-            transferContext.ShouldOverwriteCallback = (source, destination) =>
+            transferContext.ShouldOverwriteCallbackAsync = async (source, destination) =>
             {
                 if (DMLibTestHelper.TransferInstanceToString(source).EndsWith(destExistNName))
                 {
@@ -246,7 +246,7 @@ namespace DMLibTest.Cases
             DMLibDataHelper.AddOneFileInBytes(destDataInfo.RootNode, destExistName, 1024);
 
             TransferContext transferContext = new SingleTransferContext();
-            transferContext.ShouldOverwriteCallback = TransferContext.ForceOverwrite;
+            transferContext.ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite;
 
             int skipCount = 0;
             int successCount = 0;
@@ -311,7 +311,7 @@ namespace DMLibTest.Cases
             DMLibDataHelper.AddOneFileInBytes(destDataInfo.RootNode, destExistName, 1024);
 
             TransferContext transferContext = new DirectoryTransferContext();
-            transferContext.ShouldOverwriteCallback = TransferContext.ForceOverwrite;
+            transferContext.ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite;
 
             int skipCount = 0;
             int successCount = 0;

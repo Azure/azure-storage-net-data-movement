@@ -422,7 +422,7 @@ namespace DMLibTest
                         ProgressHandler = progressChecker.GetProgressHandler(),
 
                         // Need this overwrite callback since some files is already transferred to destination
-                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY(),
+                        ShouldOverwriteCallbackAsync = DMLibInputHelper.GetDefaultOverwiteCallbackY(),
                     };
 
                     eventChecker.Reset();

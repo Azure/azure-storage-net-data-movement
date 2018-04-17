@@ -120,7 +120,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.hasWork = false;
 
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 // We do check point consistancy validation in reader, and directly use it in writer.
                 if ((null != this.TransferJob.CheckPoint.TransferWindow)
@@ -161,7 +161,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     if (!this.Controller.IsForceOverwrite)
                     {
-                        this.Controller.CheckOverwrite(
+                        await this.Controller.CheckOverwriteAsync(
                             LongPathFile.Exists(filePath), 
                             this.TransferJob.Source.Instance, 
                             filePath);

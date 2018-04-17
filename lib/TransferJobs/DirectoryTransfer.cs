@@ -137,7 +137,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     return false;
                 }
 
-                return this.DirectoryContext.ShouldOverwriteCallback == TransferContext.ForceOverwrite;
+                return this.DirectoryContext.ShouldOverwriteCallbackAsync == TransferContext.ForceOverwrite;
             }
         }
 
