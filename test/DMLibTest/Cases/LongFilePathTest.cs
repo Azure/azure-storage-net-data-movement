@@ -18,8 +18,10 @@ namespace DMLibTest.Cases
     using Microsoft.WindowsAzure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
     using DMLibTest.Framework;
+    using System.Threading.Tasks;
 #if DNXCORE50
     using Xunit;
+    using System.Threading.Tasks;
 
     [MultiDirectionTestClass]
     public class LongFilePathTest : DMLibTestBase, IClassFixture<LongFilePathTestFixture>, IDisposable
@@ -735,7 +737,7 @@ namespace DMLibTest.Cases
                         ProgressHandler = progressChecker.GetProgressHandler(),
 
                         // Need this overwrite callback since some files is already transferred to destination
-                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY(),
+                        ShouldOverwriteCallbackAsync = DMLibInputHelper.GetDefaultOverwiteCallbackY(),
                     };
 
                     eventChecker.Reset();
@@ -894,7 +896,7 @@ namespace DMLibTest.Cases
                         ProgressHandler = progressChecker.GetProgressHandler(),
 
                         // Need this overwrite callback since some files is already transferred to destination
-                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY(),
+                        ShouldOverwriteCallbackAsync = DMLibInputHelper.GetDefaultOverwiteCallbackY(),
                     };
 
                     eventChecker.Reset();
@@ -1082,24 +1084,27 @@ namespace DMLibTest.Cases
             DirectoryTransferContext dirTransferContext = new DirectoryTransferContext();
 
             List<String> notTransferredFileNames = new List<String>();
-            dirTransferContext.ShouldTransferCallback = (source, dest) =>
+            dirTransferContext.ShouldTransferCallbackAsync = async (source, dest) =>
             {
-                if (Helper.RandomBoolean())
+                return await Task.Run(() =>
                 {
-                    return true;
-                }
-                else
-                {
-                    Interlocked.Decrement(ref expectedTransferred);
-                    string fullName = DMLibTestHelper.TransferInstanceToString(source);
-                    string fileName = fullName.Substring(fullName.IndexOf(DMLibTestBase.FileName));
-                    lock (notTransferredFileNames)
+                    if (Helper.RandomBoolean())
                     {
-                        notTransferredFileNames.Add(fileName);
+                        return true;
                     }
-                    Test.Info("{0} is filterred in ShouldTransfer.", fileName);
-                    return false;
-                }
+                    else
+                    {
+                        Interlocked.Decrement(ref expectedTransferred);
+                        string fullName = DMLibTestHelper.TransferInstanceToString(source);
+                        string fileName = fullName.Substring(fullName.IndexOf(DMLibTestBase.FileName));
+                        lock (notTransferredFileNames)
+                        {
+                            notTransferredFileNames.Add(fileName);
+                        }
+                        Test.Info("{0} is filterred in ShouldTransfer.", fileName);
+                        return false;
+                    }
+                });
             };
 
             dirTransferContext.FileTransferred += (object sender, TransferEventArgs args) =>

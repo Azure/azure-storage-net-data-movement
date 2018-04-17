@@ -170,7 +170,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     throw;
                 }
 
-                this.Controller.CheckOverwrite(
+                await this.Controller.CheckOverwriteAsync(
                     exist,
                     this.TransferJob.Source.Instance,
                     this.TransferJob.Destination.Instance);

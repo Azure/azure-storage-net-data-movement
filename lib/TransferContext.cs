@@ -7,11 +7,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
     using System;
     using System.IO;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Represents the context for a transfer, and provides additional runtime information about its execution.
     /// </summary>
     public abstract class TransferContext
     {
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         /// <summary>
         /// Callback used to force overwrite the destination without existence check. 
         /// It can be used when destination credentials only contains write permission.
@@ -22,7 +25,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <remarks>
         /// Read permission is still required in destination credentials in serivce side copy for copy status monitoring.
         /// </remarks>
-        public static bool ForceOverwrite(object source, object destination)
+        public static async Task<bool> ForceOverwrite(object source, object destination)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             return true;
         }
@@ -104,7 +108,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets or sets the callback invoked to tell whether to overwrite an existing destination.
         /// </summary>
-        public ShouldOverwriteCallback ShouldOverwriteCallback
+        public ShouldOverwriteCallbackAsync ShouldOverwriteCallbackAsync
         {
             get;
             set;
@@ -114,7 +118,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Gets or sets the callback invoked to set destination's attributes in memory. 
         /// The attributes set in this callback will be sent to azure storage service. 
         /// </summary>
-        public SetAttributesCallback SetAttributesCallback
+        public SetAttributesCallbackAsync SetAttributesCallbackAsync
         {
             get;
             set;

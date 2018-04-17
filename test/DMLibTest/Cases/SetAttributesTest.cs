@@ -110,7 +110,7 @@
             {
                 context = new DirectoryTransferContext()
                 {
-                    SetAttributesCallback = destObj =>
+                    SetAttributesCallbackAsync = async (destObj) =>
                     {
                         Test.Error("SetAttributes callback should not be invoked when destination is local");
                     }
@@ -120,7 +120,7 @@
             {
                 context = new SingleTransferContext()
                 {
-                    SetAttributesCallback = destObj =>
+                    SetAttributesCallbackAsync = async (destObj) =>
                     {
                         Test.Error("SetAttributes callback should not be invoked when destination is local");
                     }
@@ -169,7 +169,7 @@
 
             TransferContext context = new SingleTransferContext()
             {
-                SetAttributesCallback = destObj =>
+                SetAttributesCallbackAsync = async (destObj) =>
                 {
                     dynamic destCloudObj = destObj;
 
@@ -222,7 +222,7 @@
 
             DirectoryTransferContext context = new DirectoryTransferContext()
             {
-                SetAttributesCallback = destObj =>
+                SetAttributesCallbackAsync = async (destObj) =>
                 {
                     dynamic destCloudObj = destObj;
 
@@ -344,7 +344,7 @@
                     smallFileNum, 
                     smallFileSizeInKB);
                 }, 
-                destObj =>
+                async (destObj) =>
                 {
                     dynamic destCloudObj = destObj;
 
@@ -384,7 +384,7 @@
             int smallFileNum, 
             Action<DirNode> bigFileDirAddFileAction, 
             Action<DirNode> smallFileDirAddFileAction, 
-            SetAttributesCallback setAttributesCallback = null, 
+            SetAttributesCallbackAsync setAttributesCallback = null, 
             Action<DMLibDataInfo> sourceDataInfoDecorator = null)
         {
             int totalFileNum = bigFileNum + smallFileNum;
@@ -409,7 +409,7 @@
                 bool isStreamJournal = random.Next(0, 2) == 0;
 
                 var transferContext = isStreamJournal ? new DirectoryTransferContext(journalStream) : new DirectoryTransferContext();
-                transferContext.SetAttributesCallback = setAttributesCallback;
+                transferContext.SetAttributesCallbackAsync = setAttributesCallback;
 
                 var progressChecker = new ProgressChecker(totalFileNum, totalSizeInBytes, totalFileNum, null, 0, totalSizeInBytes);
                 transferContext.ProgressHandler = progressChecker.GetProgressHandler();
@@ -491,7 +491,7 @@
                     };
                 }
                 
-                resumeContext.SetAttributesCallback = setAttributesCallback;
+                resumeContext.SetAttributesCallbackAsync = setAttributesCallback;
 
                 eventChecker.Reset();
                 eventChecker.Apply(resumeContext);
@@ -517,9 +517,9 @@
                         ProgressHandler = progressChecker.GetProgressHandler(), 
 
                         // Need this overwrite callback since some files is already transferred to destination
-                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY(), 
+                        ShouldOverwriteCallbackAsync = DMLibInputHelper.GetDefaultOverwiteCallbackY(), 
 
-                        SetAttributesCallback = setAttributesCallback
+                        SetAttributesCallbackAsync = setAttributesCallback
                     };
 
                     eventChecker.Reset();

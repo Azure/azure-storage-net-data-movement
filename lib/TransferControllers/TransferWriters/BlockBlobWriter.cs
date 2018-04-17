@@ -141,15 +141,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 catch (StorageException se)
                 {
 #endif
-                    this.HandleFetchAttributesResult(se);
+                    await this.HandleFetchAttributesResultAsync(se);
                     return;
                 }
             }
 
-            this.HandleFetchAttributesResult(null);
+            await this.HandleFetchAttributesResultAsync(null);
         }
 
-        private void HandleFetchAttributesResult(Exception e)
+        private async Task HandleFetchAttributesResultAsync(Exception e)
         {
             bool existingBlob = !this.Controller.IsForceOverwrite;
 
@@ -188,7 +188,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (!this.Controller.IsForceOverwrite)
             {
                 // If destination file exists, query user whether to overwrite it.
-                this.Controller.CheckOverwrite(
+                await this.Controller.CheckOverwriteAsync(
                     existingBlob, 
                     this.SharedTransferData.TransferJob.Source.Instance, 
                     this.destLocation.Blob);
