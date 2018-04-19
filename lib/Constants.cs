@@ -30,6 +30,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public const int DefaultMemoryChunkSize = 4 * 1024 * 1024;
 
         /// <summary>
+        /// The metadata key for empty blobs which represent directories in file system.
+        /// </summary>
+        public const string DirectoryBlobMetadataKey = "hdi_isfolder";
+
+        /// <summary>
         /// Maximum windows file path is 260 characters, including a terminating NULL characters.
         /// This leaves 259 useable characters.
         /// </summary>
