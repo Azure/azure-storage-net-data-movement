@@ -23,6 +23,7 @@
     <Compile Include="..\..\test\DMLibTest\Cases\CheckContentMD5Test.cs" Link="Cases\CheckContentMD5Test.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ChunkedMemoryStreamTests.cs" Link="Cases\ChunkedMemoryStreamTests.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\DelimiterTest.cs" Link="Cases\DelimiterTest.cs" />
+    <Compile Include="..\..\test\DMLibTest\Cases\DummyTransferTest.cs" Link="Cases\DummyTransferTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\FollowSymlinkTest.cs" Link="Cases\FollowSymlinkTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\LongFilePathTest.cs" Link="Cases\LongFilePathTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\MetadataTest.cs" Link="Cases\MetadataTest.cs" />

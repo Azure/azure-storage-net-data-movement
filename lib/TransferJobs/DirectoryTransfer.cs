@@ -344,9 +344,42 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             TransferLocation sourceLocation = GetSourceTransferLocation(this.Source, entry);
             TransferLocation destLocation = GetDestinationTransferLocation(this.Destination, entry);
-            SingleObjectTransfer transfer = new SingleObjectTransfer(sourceLocation, destLocation, this.TransferMethod);
+            var transferMethod = IsDummyCopy(entry) ? TransferMethod.DummyCopy : this.TransferMethod;
+            SingleObjectTransfer transfer = new SingleObjectTransfer(sourceLocation, destLocation, transferMethod);
             transfer.Context = this.Context;
             return transfer;
+        }
+
+        private bool IsDummyCopy(TransferEntry entry)
+        {
+            if (this.Source.Type == TransferLocationType.AzureBlobDirectory
+                && this.Destination.Type == TransferLocationType.LocalDirectory)
+            {
+                if(IsDirectoryBlob((entry as AzureBlobEntry)?.Blob))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool IsDirectoryBlob(CloudBlob blob)
+        {
+            if (blob != null)
+            {
+                if (blob.Properties.Length == 0)
+                {
+                    foreach (var metadata in blob.Metadata)
+                    {
+                        if (String.Compare(metadata.Key, Constants.DirectoryBlobMetadataKey, StringComparison.OrdinalIgnoreCase) == 0
+                            && String.Compare(metadata.Value, "true", StringComparison.OrdinalIgnoreCase) == 0)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         protected override void UpdateTransfer(Transfer transfer)
