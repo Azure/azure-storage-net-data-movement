@@ -217,6 +217,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     // Ignore this folder if we have no right to discovery it.
                     continue;
                 }
+                catch (UnauthorizedAccessException)
+                {
+                    // Ignore this folder if we have no right to discovery it.
+                    continue;
+                }
 #else // CODE_ACCESS_SECURITY
                 try
                 {
