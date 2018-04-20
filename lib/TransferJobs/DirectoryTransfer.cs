@@ -365,8 +365,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private static bool IsDirectoryBlob(CloudBlob blob)
         {
-            if (blob != null
-                && blob.Properties != null)
+            if (blob != null)
             {
                 if (blob.Properties.Length == 0)
                 {
