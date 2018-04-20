@@ -20,8 +20,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     /// </summary>
     internal class DummyTransferController : TransferControllerBase
     {
-        private bool hasWork = true;
-        private bool isFinished = false;
+        private enum Status
+        {
+            NotStarted,
+            Started,
+            Finished,
+            ErrorOccured
+        };
+        private Status status = Status.NotStarted;
 
         public DummyTransferController(
             TransferScheduler transferScheduler,
@@ -45,23 +51,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
         }
 
-        public bool ErrorOccurred
-        {
-            get;
-            private set;
-        }
-
         public override bool HasWork
         {
             get
             {
-                return !this.ErrorOccurred && hasWork && !isFinished;
+                return status == Status.NotStarted;
             }
         }
 
         protected override async Task<bool> DoWorkInternalAsync()
         {
-            hasWork = false;
+            status = Status.Started;
 
             await Task.Run(
                 () =>
@@ -99,24 +99,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                                 exceptionMessage);
                     }
 
-                    isFinished = true;
+                    status = Status.Finished;
                 }, this.CancellationToken);
-            return isFinished || this.ErrorOccurred;
+            return status == Status.Finished || status == Status.ErrorOccured;
         }
 
         protected override void SetErrorState(Exception ex)
         {
-            this.ErrorOccurred = true;
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            base.Dispose(disposing);
-
-            if (disposing)
-            {
-                ;
-            }
+            status = Status.ErrorOccured;
         }
     }
 }
