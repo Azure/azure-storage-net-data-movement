@@ -48,6 +48,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Transfer options that this manager will pass to transfer controllers.
         /// </summary>
         private TransferConfigurations transferOptions;
+        
+        /// <summary>
+        /// Transfer pacer which is used to adjust adaptive parameters and performance logging
+        /// </summary>
+        private TransferPacer pacer;
 
         /// <summary>
         /// Wait handle event for completion.
@@ -95,6 +100,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             // If no options specified create a default one.
             this.transferOptions = options ?? new TransferConfigurations();
+            
+            this.pacer = new TransferPacer { Configurations = this.transferOptions };
 
             this.internalControllerQueue = new ConcurrentQueue<ITransferController>();
             this.controllerQueue = new BlockingCollection<ITransferController>(
@@ -128,6 +135,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             get
             {
                 return this.transferOptions;
+            }
+        }
+        
+        /// <summary>
+        /// Gets the tranfser pacer which controller auto-tuned paramters and logging
+        /// </summary>
+        internal TransferPacer Pacer
+        {
+            get
+            {
+                return this.pacer;
             }
         }
 
@@ -192,7 +210,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             switch (job.Transfer.TransferMethod)
             {
                 case TransferMethod.SyncCopy:
-                    controller = new SyncTransferController(this, job, cancellationToken);
+                    SyncTransferController syncController;
+                    controller = syncController = new SyncTransferController(this, job, cancellationToken);
+                    pacer.Register(syncController);
                     break;
 
                 case TransferMethod.AsyncCopy:
@@ -397,6 +417,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             object dummy;
             this.activeControllerItems.TryRemove(transferController, out dummy);
+            
+            var syncController = transferController as SyncTransferController;
+            if (syncController != null)
+            {
+                pacer.Deregister(syncController);
+            }
         }
 
         private bool DoWorkFrom(

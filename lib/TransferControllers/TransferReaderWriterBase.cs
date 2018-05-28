@@ -95,13 +95,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         public TransferData GetFirstAvailable()
         {
             TransferData transferData = null;
-            var transferDatas = this.SharedTransferData.AvailableData.Values;
+            var transferDatas = this.SharedTransferData.Values;
 
             if (transferDatas.Any())
             {
                 transferData = transferDatas.First();
                 TransferData tempData;
-                this.SharedTransferData.AvailableData.TryRemove(transferData.StartOffset, out tempData);
+                this.SharedTransferData.TryRemove(transferData.StartOffset, out tempData);
                 return transferData;
             }
 

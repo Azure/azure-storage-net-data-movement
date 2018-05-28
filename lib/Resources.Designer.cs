@@ -727,5 +727,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
                 return ResourceManager.GetString("UnsupportedTransferLocationException", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Not enough buffer space to write the requested data
+        /// </summary>
+        internal static string InsufficientBufferSpaceException {
+            get {
+                return ResourceManager.GetString("InsufficientBufferSpaceException", resourceCulture);
+            }
+        }
     }
 }

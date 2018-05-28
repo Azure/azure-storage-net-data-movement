@@ -425,7 +425,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
 
             asyncState.MemoryBuffer = null;
-            this.SharedTransferData.AvailableData.TryAdd(transferData.StartOffset, transferData);
+            this.SharedTransferData.TryAdd(transferData.StartOffset, transferData);
 
             this.SetChunkFinish();
         }

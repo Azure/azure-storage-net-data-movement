@@ -30,6 +30,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public const int DefaultMemoryChunkSize = 4 * 1024 * 1024;
 
         /// <summary>
+        /// Max size supported for transactional md5 checking, 4MB.
+        /// </summary>
+        public const int MaxTransactionalMD5Size = 4 * 1024 * 1024;
+
+        /// <summary>
         /// Maximum windows file path is 260 characters, including a terminating NULL characters.
         /// This leaves 259 useable characters.
         /// </summary>

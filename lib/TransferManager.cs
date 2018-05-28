@@ -392,6 +392,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                 BlobRequestOptions requestOptions = Transfer_RequestOptions.DefaultBlobRequestOptions;
                 requestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
+                requestOptions.UseTransactionalMD5 = options.UseTransactionalMD5;
                 sourceLocation.BlobRequestOptions = requestOptions;
             }
 
@@ -443,6 +444,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                 BlobRequestOptions requestOptions = Transfer_RequestOptions.DefaultBlobRequestOptions;
                 requestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
+                requestOptions.UseTransactionalMD5 = options.UseTransactionalMD5;
                 sourceLocation.BlobRequestOptions = requestOptions;
             }
 

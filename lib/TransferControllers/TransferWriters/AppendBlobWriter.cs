@@ -54,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 return this.hasWork &&
                     ((State.FetchAttributes == this.state) ||
                     (State.Create == this.state) ||
-                    (State.UploadBlob == this.state && this.SharedTransferData.AvailableData.ContainsKey(this.expectedOffset)) ||
+                    (State.UploadBlob == this.state && this.SharedTransferData.ContainsKey(this.expectedOffset)) ||
                     (State.Commit == this.state && null != this.SharedTransferData.Attributes));
             }
         }
@@ -283,7 +283,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
 
             TransferData transferData = null;
-            if (!this.SharedTransferData.AvailableData.TryRemove(this.expectedOffset, out transferData))
+            if (!this.SharedTransferData.TryRemove(this.expectedOffset, out transferData))
             {
                 this.hasWork = true;
                 return;

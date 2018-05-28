@@ -65,7 +65,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 return this.hasWork &&
                     (!this.PreProcessed
-                    || ((State.Upload == this.state) && this.SharedTransferData.AvailableData.Any())
+                    || ((State.Upload == this.state) && !this.SharedTransferData.IsEmpty)
                     || ((State.Commit == this.state) && (null != this.SharedTransferData.Attributes)));
             }
         }
