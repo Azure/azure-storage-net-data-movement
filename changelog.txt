@@ -6,6 +6,7 @@
      SetAttributesCallback --> SetAttributesCallbackAsync
  * Blob Service
    - Added support for directory markers (hdi_isfolder=true) produced by Hadoop file system drivers for Blob storage
+   - Use the value set in TransferConfigurations.BlockSize as threshold to upload block blob with a single put blob request, the default value is 4MB 
 
 2018.02.10 Version 0.7.1
  * All Services on both .Net Framework and .Net Core
