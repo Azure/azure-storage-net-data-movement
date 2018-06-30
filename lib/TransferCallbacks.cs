@@ -5,13 +5,16 @@
 //------------------------------------------------------------------------------
 namespace Microsoft.WindowsAzure.Storage.DataMovement
 {
+    using System;
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Callback invoked to tell whether to overwrite an existing destination.
     /// </summary>
     /// <param name="source">Instance of source used to overwrite the destination.</param>
     /// <param name="destination">Instance of destination to be overwritten.</param>
     /// <returns>True if the file should be overwritten; otherwise false.</returns>
-    public delegate bool ShouldOverwriteCallback(
+    public delegate Task<bool> ShouldOverwriteCallbackAsync(
         object source,
         object destination);
 
@@ -21,7 +24,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// <param name="source">Instance of the transfer source.</param>
     /// <param name="destination">Instance of the transfer destination.</param>
     /// <returns>True if the transfer should be done; otherwise false.</returns>
-    public delegate bool ShouldTransferCallback(
+    public delegate Task<bool> ShouldTransferCallbackAsync(
         object source,
         object destination);
 
@@ -30,5 +33,5 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     /// The attributes set in this callback will be sent to azure storage service. 
     /// </summary>
     /// <param name="destination">Instance of destination to be overwritten.</param>
-    public delegate void SetAttributesCallback(object destination);
+    public delegate Task SetAttributesCallbackAsync(object destination);
 }

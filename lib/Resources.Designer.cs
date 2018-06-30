@@ -261,6 +261,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to create directory {0} because a file already exists with the same name.
+        /// </summary>
+        internal static string FailedToCreateDirectoryException {
+            get {
+                return ResourceManager.GetString("FailedToCreateDirectoryException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to enumerate directory {0} with file pattern {1}..
         /// </summary>
         internal static string FailedToEnumerateDirectory {
@@ -716,6 +725,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         internal static string UnsupportedBlobTypeException {
             get {
                 return ResourceManager.GetString("UnsupportedBlobTypeException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported dummy transfer type..
+        /// </summary>
+        internal static string UnsupportedDummyTransferException {
+            get {
+                return ResourceManager.GetString("UnsupportedDummyTransferException", resourceCulture);
             }
         }
         

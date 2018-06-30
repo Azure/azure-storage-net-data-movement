@@ -18,5 +18,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// and monitor the copying progress until the copy finished.
         /// </summary>
         AsyncCopy,
+
+        /// <summary>
+        /// Creates dummy objects only, no data transfer will happen.
+        /// </summary>
+        DummyCopy,
     }
 }

@@ -173,7 +173,7 @@ namespace S3ToAzureSample
             // Add progress handler
             context.ProgressHandler = progressRecorder;
 
-            context.ShouldOverwriteCallback = Program.OverwritePrompt;
+            context.ShouldOverwriteCallbackAsync = Program.OverwritePrompt;
 
             while (!jobQueue.IsCompleted)
             {
@@ -312,31 +312,34 @@ namespace S3ToAzureSample
         /// <param name="source">Instance of source used to overwrite the destination.</param>
         /// <param name="destination">Instance of the destination to be overwritten.</param>
         /// <returns>True if the destination should be overwritten; otherwise false.</returns>
-        private static bool OverwritePrompt(object source, object destination)
+        private static async Task<bool> OverwritePrompt(object source, object destination)
         {
-            lock (consoleLock)
+            return await Task<bool>.Run(() =>
             {
-                Console.WriteLine("{0} already exists. Do you want to overwrite it with {1}? (Y/N)", ToString(destination), ToString(source));
-
-                while (true)
+                lock (consoleLock)
                 {
-                    ConsoleKeyInfo keyInfo = Console.ReadKey(true);
-                    char key = keyInfo.KeyChar;
+                    Console.WriteLine("{0} already exists. Do you want to overwrite it with {1}? (Y/N)", ToString(destination), ToString(source));
 
-                    if (key == 'y' || key == 'Y')
+                    while (true)
                     {
-                        Console.WriteLine("User choose to overwrite the destination.");
-                        return true;
-                    }
-                    else if (key == 'n' || key == 'N')
-                    {
-                        Console.WriteLine("User choose NOT to overwrite the destination.");
-                        return false;
-                    }
+                        ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                        char key = keyInfo.KeyChar;
 
-                    Console.WriteLine("Please press 'y' or 'n'.");
+                        if (key == 'y' || key == 'Y')
+                        {
+                            Console.WriteLine("User choose to overwrite the destination.");
+                            return true;
+                        }
+                        else if (key == 'n' || key == 'N')
+                        {
+                            Console.WriteLine("User choose NOT to overwrite the destination.");
+                            return false;
+                        }
+
+                        Console.WriteLine("Please press 'y' or 'n'.");
+                    }
                 }
-            }
+            });
         }
 
         /// <summary>

@@ -315,7 +315,7 @@ namespace DMLibTest.Cases
                 DestObject,
                 DMLibTestContext.IsAsync,
                 new CopyDirectoryOptions() { Recursive = true },
-                new DirectoryTransferContext() { ShouldOverwriteCallback = TransferContext.ForceOverwrite });
+                new DirectoryTransferContext() { ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite });
             Test.Assert(task.Wait(15 * 60 * 100), "Tansfer finished in time.");
             Test.Assert(task.Result.NumberOfFilesFailed == 0, "No Failed File.");
             Test.Assert(task.Result.NumberOfFilesSkipped == 0, "No Skipped File.");
@@ -362,7 +362,7 @@ namespace DMLibTest.Cases
                 DestObject,
                 DMLibTestContext.IsAsync,
                 new CopyDirectoryOptions() { Recursive = true },
-                new DirectoryTransferContext() { ShouldOverwriteCallback = TransferContext.ForceOverwrite  });
+                new DirectoryTransferContext() { ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite  });
             try
             {
                 task.Wait(15 * 60 * 100);

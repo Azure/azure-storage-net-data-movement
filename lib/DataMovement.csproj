@@ -105,6 +105,7 @@
     <Compile Include="TransferControllers\AsyncCopyControllers\BlobAsyncCopyController.cs" />
     <Compile Include="TransferControllers\AsyncCopyControllers\FileAsyncCopyController.cs" />
     <Compile Include="TransferControllers\AsyncCopyControllers\AsyncCopyController.cs" />
+    <Compile Include="TransferControllers\DummyTransferController.cs" />
     <Compile Include="TransferControllers\TransferReaders\CloudFileReader.cs" />
     <Compile Include="TransferControllers\TransferReaders\PageBlobReader.cs" />
     <Compile Include="TransferControllers\TransferReaders\RangeBasedReader.cs" />

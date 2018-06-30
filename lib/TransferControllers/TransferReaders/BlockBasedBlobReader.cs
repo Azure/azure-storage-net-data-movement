@@ -57,7 +57,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.sourceBlob = this.sourceLocation.Blob;
 
             Debug.Assert(
-                (this.sourceBlob is CloudBlockBlob) ||(this.sourceBlob is CloudAppendBlob), 
+                (this.sourceBlob is CloudBlockBlob) || (this.sourceBlob is CloudAppendBlob),
             "Initializing BlockBlobReader while source location is not a block blob or an append blob.");
 
             this.hasWork = true;
@@ -73,7 +73,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         public override bool HasWork
         {
-            get 
+            get
             {
                 return this.hasWork;
             }
@@ -125,10 +125,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             try
             {
-                await this.sourceBlob.FetchAttributesAsync(
-                    accessCondition,
-                    Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                    Utils.GenerateOperationContext(this.Controller.TransferContext),
+                await Utils.ExecuteXsclApiCallAsync(
+                    async () => await this.sourceBlob.FetchAttributesAsync(
+                        accessCondition,
+                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        this.CancellationToken),
                     this.CancellationToken);
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
@@ -171,7 +173,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
             }
-            
+
             this.SharedTransferData.DisableContentMD5Validation =
                 null != this.sourceLocation.BlobRequestOptions ?
                 this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.HasValue ?
@@ -188,7 +190,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
 
             this.lastTransferWindow = new Queue<long>(this.SharedTransferData.TransferJob.CheckPoint.TransferWindow);
-            
+
             int downloadCount = this.lastTransferWindow.Count +
                 (int)Math.Ceiling((double)(this.sourceBlob.Properties.Length - this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset) / this.SharedTransferData.BlockSize);
 
@@ -303,14 +305,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         asyncState.MemoryBuffer[0],
                         0,
                         asyncState.Length);
-                await this.sourceBlob.DownloadRangeToStreamAsync(
-                            asyncState.MemoryStream,
-                            asyncState.StartOffset,
-                            asyncState.Length,
-                            accessCondition,
-                            Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                            Utils.GenerateOperationContext(this.Controller.TransferContext),
-                            this.CancellationToken);
+                await Utils.ExecuteXsclApiCallAsync(
+                    async () => await this.sourceBlob.DownloadRangeToStreamAsync(
+                        asyncState.MemoryStream,
+                        asyncState.StartOffset,
+                        asyncState.Length,
+                        accessCondition,
+                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        this.CancellationToken),
+                    this.CancellationToken);
             }
             else
             {
@@ -325,21 +329,24 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     var length = Math.Min(blockSize, remainingLength);
 
                     var memoryStream = new MemoryStream(asyncState.MemoryBuffer[index], 0, length);
-                    await this.sourceBlob.DownloadRangeToStreamAsync(
-                                memoryStream,
-                                startOffset,
-                                length,
-                                accessCondition,
-                                Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                                Utils.GenerateOperationContext(this.Controller.TransferContext),
-                                this.CancellationToken);
+
+                    await Utils.ExecuteXsclApiCallAsync(
+                        async () => await this.sourceBlob.DownloadRangeToStreamAsync(
+                            memoryStream,
+                            startOffset,
+                            length,
+                            accessCondition,
+                            Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                            Utils.GenerateOperationContext(this.Controller.TransferContext),
+                            this.CancellationToken),
+                        this.CancellationToken);
 
                     index++;
                     startOffset += length;
                     remainingLength -= length;
                 } while (remainingLength > 0);
             }
-            
+
             TransferData transferData = new TransferData(this.Scheduler.MemoryManager)
             {
                 StartOffset = asyncState.StartOffset,

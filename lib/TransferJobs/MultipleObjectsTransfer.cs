@@ -351,7 +351,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 this.SourceEnumerator.EnumerateContinuationToken = this.enumerateContinuationToken.ListContinuationToken;
             }
 
-            ShouldTransferCallback shouldTransferCallback = this.DirectoryContext?.ShouldTransferCallback;
+            ShouldTransferCallbackAsync shouldTransferCallback = this.DirectoryContext?.ShouldTransferCallbackAsync;
 
             try
             {
@@ -384,11 +384,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                         }
                     }
 
-                    this.shouldTransferQueue.EnqueueJob(() =>
+                    this.shouldTransferQueue.EnqueueJob(async () =>
                     {
                         SingleObjectTransfer candidate = this.CreateTransfer(entry);
 
-                        bool shouldTransfer = shouldTransferCallback == null || shouldTransferCallback(candidate.Source.Instance, candidate.Destination.Instance);
+                        bool shouldTransfer = shouldTransferCallback == null || await shouldTransferCallback(candidate.Source.Instance, candidate.Destination.Instance);
 
                         return new Tuple<SingleObjectTransfer, TransferEntry>(shouldTransfer ? candidate : null, entry);
                     });

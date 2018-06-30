@@ -198,6 +198,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 case TransferMethod.AsyncCopy:
                     controller = AsyncCopyController.CreateAsyncCopyController(this, job, cancellationToken);
                     break;
+
+                case TransferMethod.DummyCopy:
+                    controller = new DummyTransferController(this, job, cancellationToken);
+                    break;
             }
 
             Utils.CheckCancellation(this.cancellationTokenSource.Token);
