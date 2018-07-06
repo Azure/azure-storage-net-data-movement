@@ -49,8 +49,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         // With this solution, 
         // a. when persisting a DirectoryTransfer, we don't save its subtransfers with it, instead we'll allocate a new 
         //    transfer chunk for each subtransfer. 
-        // b. We don't persist its TransferProgressTracker with Transfer instance, intead we save the TransferProgressTracker to a separate place.
-        // Please referece to explaination in StreamJournal for details.
+        // b. We don't persist its TransferProgressTracker with Transfer instance, instead we save the TransferProgressTracker to a separate place.
+        // Please reference to explaination in StreamJournal for details.
 
 #if !BINARY_SERIALIZATION
         [DataMember]
@@ -145,6 +145,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             else
             {
                 this.ProgressTracker = new TransferProgressTracker();
+            }
+
+            if (this.Source != null)
+            {
+                this.Source.IsInstanceInfoFetched = null;
+            }
+
+            if (this.Destination != null)
+            {
+                this.Destination.IsInstanceInfoFetched = null;
             }
         }
 #endif

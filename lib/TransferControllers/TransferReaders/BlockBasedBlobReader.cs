@@ -21,19 +21,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         /// <summary>
         /// Instance to represent source location.
         /// </summary>
-        private AzureBlobLocation sourceLocation;
+        private readonly AzureBlobLocation sourceLocation;
 
         /// <summary>
         /// Block/append blob instance to be downloaded from.
         /// </summary>
-        private CloudBlob sourceBlob;
+        private readonly CloudBlob sourceBlob;
 
         /// <summary>
         /// Window to record unfinished chunks to be retransferred again.
         /// </summary>
         private Queue<long> lastTransferWindow;
 
-        private TransferJob transferJob;
+        private readonly TransferJob transferJob;
 
         /// <summary>
         /// Value to indicate whether the transfer is finished. 
@@ -42,7 +42,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         /// </summary>
         private volatile bool isFinished = false;
 
-        private volatile bool hasWork;
+        /// <summary>
+        /// Work token indicates whether this reader has work, could be 0(no work) or 1(has work).
+        /// </summary>
+        private volatile int workToken;
+
+        private volatile bool isStateSwitchedInternal;
 
         private CountdownEvent downloadCountdownEvent;
 
@@ -54,13 +59,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.transferJob = this.SharedTransferData.TransferJob;
             this.sourceLocation = this.transferJob.Source as AzureBlobLocation;
-            this.sourceBlob = this.sourceLocation.Blob;
+            this.sourceBlob = this.sourceLocation?.Blob;
 
             Debug.Assert(
                 (this.sourceBlob is CloudBlockBlob) || (this.sourceBlob is CloudAppendBlob),
             "Initializing BlockBlobReader while source location is not a block blob or an append blob.");
 
-            this.hasWork = true;
+            this.workToken = 1;
         }
 
         public override bool IsFinished
@@ -75,7 +80,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             get
             {
-                return this.hasWork;
+                return this.workToken == 1;
             }
         }
 
@@ -115,43 +120,52 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private async Task FetchAttributeAsync()
         {
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
+
+            await Task.Yield();
+
             this.NotifyStarting();
 
-            AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                this.sourceLocation.ETag,
-                this.sourceLocation.AccessCondition,
-                this.sourceLocation.CheckedAccessCondition);
-
-            try
+            if (this.sourceLocation.IsInstanceInfoFetched != true)
             {
-                await Utils.ExecuteXsclApiCallAsync(
-                    async () => await this.sourceBlob.FetchAttributesAsync(
-                        accessCondition,
-                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                        Utils.GenerateOperationContext(this.Controller.TransferContext),
-                        this.CancellationToken),
-                    this.CancellationToken);
-            }
+                AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
+                 this.sourceLocation.ETag,
+                 this.sourceLocation.AccessCondition,
+                 this.sourceLocation.CheckedAccessCondition);
+
+                try
+                {
+                    await this.sourceBlob.FetchAttributesAsync(
+                            accessCondition,
+                            Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                            Utils.GenerateOperationContext(this.Controller.TransferContext),
+                            this.CancellationToken).ConfigureAwait(false);
+                }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
-            {
-                var e = ex as StorageException ?? ex.InnerException as StorageException;
+                catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
+                {
+                    var e = ex as StorageException ?? ex.InnerException as StorageException;
 #else
-            catch (StorageException e)
-            {
+                catch (StorageException e)
+                {
 #endif
-                if (null != e.RequestInformation &&
-                    e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
-                {
-                    throw new InvalidOperationException(Resources.SourceBlobDoesNotExistException, e);
-                }
-                else
-                {
-                    throw;
+                    if (null != e.RequestInformation &&
+                        e.RequestInformation.HttpStatusCode == (int)HttpStatusCode.NotFound)
+                    {
+                        throw new InvalidOperationException(Resources.SourceBlobDoesNotExistException, e);
+                    }
+                    else
+                    {
+                        throw;
+                    }
                 }
             }
 
+            // Note: If the transfer job's dispatch root is directory transfer, no need to check access condition for source location.
+            // If the transfer job's dispatch root is single transfer, access condition has been checked if logic reach here.
             this.sourceLocation.CheckedAccessCondition = true;
 
             if (this.sourceBlob.Properties.BlobType == BlobType.Unspecified)
@@ -169,49 +183,67 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.sourceLocation.ETag = this.sourceBlob.Properties.ETag;
             }
             else if ((this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset > this.sourceBlob.Properties.Length)
-                || (this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset < 0))
+                 || (this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset < 0))
             {
                 throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
             }
 
             this.SharedTransferData.DisableContentMD5Validation =
-                null != this.sourceLocation.BlobRequestOptions ?
-                this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.HasValue ?
-                this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.Value : false : false;
+                 null != this.sourceLocation.BlobRequestOptions ?
+                 this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.HasValue ?
+                 this.sourceLocation.BlobRequestOptions.DisableContentMD5Validation.Value : false : false;
 
             this.SharedTransferData.TotalLength = this.sourceBlob.Properties.Length;
+
             this.SharedTransferData.Attributes = Utils.GenerateAttributes(this.sourceBlob);
 
             if ((0 == this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset)
-                && (null != this.SharedTransferData.TransferJob.CheckPoint.TransferWindow)
-                && (0 != this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Count))
+                 && (null != this.SharedTransferData.TransferJob.CheckPoint.TransferWindow)
+                 && (0 != this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Count))
             {
                 throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
             }
 
-            this.lastTransferWindow = new Queue<long>(this.SharedTransferData.TransferJob.CheckPoint.TransferWindow);
+            // Only initialize private queue when TransferWindow is necessary.
+            if (!this.EnableOneChunkFileOptimization)
+            {
+                this.lastTransferWindow = new Queue<long>(this.SharedTransferData.TransferJob.CheckPoint.TransferWindow);
+            }
 
-            int downloadCount = this.lastTransferWindow.Count +
-                (int)Math.Ceiling((double)(this.sourceBlob.Properties.Length - this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset) / this.SharedTransferData.BlockSize);
+            int downloadCount = (this.lastTransferWindow == null ? 0 : this.lastTransferWindow.Count) +
+                 (int)Math.Ceiling((double)(this.sourceBlob.Properties.Length - this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset) / this.SharedTransferData.BlockSize);
 
             if (0 == downloadCount)
             {
                 this.isFinished = true;
                 this.PreProcessed = true;
-                this.hasWork = true;
+                this.workToken = 1;
+
+                return;
+            }
+
+            if (this.EnableOneChunkFileOptimization)
+            {
+                this.isStateSwitchedInternal = true;
+                await this.DownloadBlockBlobAsync().ConfigureAwait(false);
+
+                this.PreProcessed = true;
             }
             else
             {
                 this.downloadCountdownEvent = new CountdownEvent(downloadCount);
-
-                this.PreProcessed = true;
-                this.hasWork = true;
+                this.PreProcessed = true; // Note: PreProcessed should be set before workToken, otherwise SyncTransferController would schedule reader again before writer PreProcess
+                this.workToken = 1;
             }
+
         }
 
         private async Task DownloadBlockBlobAsync()
         {
-            this.hasWork = false;
+            if (!this.isStateSwitchedInternal && Interlocked.CompareExchange(ref this.workToken, 0, 1) == 0)
+            {
+                return;
+            }
 
             byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
 
@@ -219,48 +251,52 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 long startOffset = 0;
 
-                if (!this.IsTransferWindowEmpty())
+                // Only multi-chunk file need transfer window calculation.
+                if (!this.EnableOneChunkFileOptimization)
                 {
-                    startOffset = this.lastTransferWindow.Dequeue();
-                }
-                else
-                {
-                    bool canUpload = false;
-
-                    lock (this.transferJob.CheckPoint.TransferWindowLock)
+                    if (!this.IsTransferWindowEmpty())
                     {
-                        if (this.transferJob.CheckPoint.TransferWindow.Count < Constants.MaxCountInTransferWindow)
+                        startOffset = this.lastTransferWindow.Dequeue();
+                    }
+                    else
+                    {
+                        bool canUpload = false;
+
+                        lock (this.transferJob.CheckPoint.TransferWindowLock)
                         {
-                            startOffset = this.transferJob.CheckPoint.EntryTransferOffset;
-
-                            if (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
+                            if (this.transferJob.CheckPoint.TransferWindow.Count < Constants.MaxCountInTransferWindow)
                             {
-                                this.transferJob.CheckPoint.TransferWindow.Add(startOffset);
-                                this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
-                                    this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
-                                    this.SharedTransferData.TotalLength);
+                                startOffset = this.transferJob.CheckPoint.EntryTransferOffset;
 
-                                canUpload = true;
+                                if (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
+                                {
+                                    this.transferJob.CheckPoint.TransferWindow.Add(startOffset);
+                                    this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
+                                        this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
+                                        this.SharedTransferData.TotalLength);
+
+                                    canUpload = true;
+                                }
                             }
+                        }
+
+                        if (!canUpload)
+                        {
+                            this.workToken = 1;
+                            this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
+                            return;
                         }
                     }
 
-                    if (!canUpload)
+                    if ((startOffset > this.SharedTransferData.TotalLength)
+                        || (startOffset < 0))
                     {
-                        this.hasWork = true;
                         this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
-                        return;
+                        throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
                     }
-                }
 
-                if ((startOffset > this.SharedTransferData.TotalLength)
-                    || (startOffset < 0))
-                {
-                    this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
-                    throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
+                    this.SetBlockDownloadHasWork();
                 }
-
-                this.SetBlockDownloadHasWork();
 
                 ReadDataState asyncState = new ReadDataState
                 {
@@ -273,7 +309,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 using (asyncState)
                 {
-                    await this.DownloadChunkAsync(asyncState);
+                    await this.DownloadChunkAsync(asyncState).ConfigureAwait(false);
                 }
 
                 return;
@@ -285,6 +321,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private async Task DownloadChunkAsync(ReadDataState asyncState)
         {
             Debug.Assert(null != asyncState, "asyncState object expected");
+            
+            // Use Yield to return to scheduling main logic immediately, and to improve scheduling efficiency.
+            if (!this.isStateSwitchedInternal)
+            {
+                await Task.Yield();
+            }
 
             // If a parallel operation caused the controller to be placed in
             // error state exit early to avoid unnecessary I/O.
@@ -305,16 +347,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         asyncState.MemoryBuffer[0],
                         0,
                         asyncState.Length);
-                await Utils.ExecuteXsclApiCallAsync(
-                    async () => await this.sourceBlob.DownloadRangeToStreamAsync(
-                        asyncState.MemoryStream,
-                        asyncState.StartOffset,
-                        asyncState.Length,
-                        accessCondition,
-                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                        Utils.GenerateOperationContext(this.Controller.TransferContext),
-                        this.CancellationToken),
-                    this.CancellationToken);
+                await this.sourceBlob.DownloadRangeToStreamAsync(
+                         asyncState.MemoryStream,
+                         asyncState.StartOffset,
+                         asyncState.Length,
+                         accessCondition,
+                         Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                         Utils.GenerateOperationContext(this.Controller.TransferContext),
+                         this.CancellationToken).ConfigureAwait(false);
             }
             else
             {
@@ -330,16 +370,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     var memoryStream = new MemoryStream(asyncState.MemoryBuffer[index], 0, length);
 
-                    await Utils.ExecuteXsclApiCallAsync(
-                        async () => await this.sourceBlob.DownloadRangeToStreamAsync(
+                    await this.sourceBlob.DownloadRangeToStreamAsync(
                             memoryStream,
                             startOffset,
                             length,
                             accessCondition,
                             Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                             Utils.GenerateOperationContext(this.Controller.TransferContext),
-                            this.CancellationToken),
-                        this.CancellationToken);
+                            this.CancellationToken);
 
                     index++;
                     startOffset += length;
@@ -361,8 +399,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             // not be reused yet, we still need to write it to disk.
             asyncState.MemoryBuffer = null;
 
-            this.SetFinish();
-            this.SetBlockDownloadHasWork();
+            // When there is only one chunk, after read the only chunk, reader's work has finished, no more work to do.
+            if (this.EnableOneChunkFileOptimization)
+            {
+                this.isFinished = true;
+            }
+            else
+            {
+                this.SetFinish();
+                this.SetBlockDownloadHasWork();
+            }
         }
 
         private void SetFinish()
@@ -384,7 +430,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (!this.IsTransferWindowEmpty()
                 || this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
             {
-                this.hasWork = true;
+                this.workToken = 1;
                 return;
             }
         }

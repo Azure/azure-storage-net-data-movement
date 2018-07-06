@@ -33,7 +33,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private long lastTransferOffset;
         private TransferDownloadBuffer currentDownloadBuffer = null;
 
-        private volatile bool hasWork;
+        /// <summary>
+        /// Work token indicates whether this reader has work, could be 0(no work) or 1(has work).
+        /// </summary>
+        private volatile int workToken;
 
         public RangeBasedReader(
             TransferScheduler scheduler,
@@ -43,7 +46,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.transferJob = this.SharedTransferData.TransferJob;
             this.Location = this.transferJob.Source;
-            this.hasWork = true;
+            this.workToken = 1;
         }
 
         private enum State
@@ -85,7 +88,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             get 
             {
-                return this.hasWork;
+                return this.workToken == 1;
             }
         }
 
@@ -129,7 +132,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.state == State.FetchAttributes,
                 "FetchAttributesAsync called, but state isn't FetchAttributes");
 
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
+
             this.NotifyStarting();
 
             try
@@ -176,14 +183,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             if (!this.rangesSpanList.Any())
             {
-                // InitDownloadInfo will set hasWork.
+                // InitDownloadInfo will set workToken.
                 this.InitDownloadInfo();
                 this.PreProcessed = true;
                 return;
             }
 
             this.PreProcessed = true;
-            this.hasWork = true;
+            this.workToken = 1;
         }
 
         private async Task GetRangesAsync()
@@ -192,13 +199,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 (this.state == State.GetRanges) || (this.state == State.Error),
                 "GetRangesAsync called, but state isn't GetRanges or Error");
 
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
 
             this.lastTransferOffset = this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset;
 
             int spanIndex = Interlocked.Increment(ref this.getRangesSpanIndex);
 
-            this.hasWork = spanIndex < (this.rangesSpanList.Count - 1);
+            this.workToken = (spanIndex < (this.rangesSpanList.Count - 1)) ? 1 : 0;
 
             RangesSpan rangesSpan = this.rangesSpanList[spanIndex];
 
@@ -271,7 +281,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.state == State.Error || this.state == State.Download,
                 "DownloadRangeAsync called, but state isn't Download or Error");
 
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
 
             if (State.Error == this.state)
             {
@@ -388,7 +401,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             // Check if we have ranges available to download.
             if (this.nextDownloadIndex < this.rangeList.Count)
             {
-                this.hasWork = true;
+                this.workToken = 1;
                 return;
             }
         }
@@ -777,7 +790,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             else
             {
                 this.toDownloadItemsCountdownEvent = new CountdownEvent(this.rangeList.Count);
-                this.hasWork = true;
+                this.workToken = 1;
             }
         }
 
@@ -786,7 +799,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (this.toDownloadItemsCountdownEvent.Signal())
             {
                 this.state = State.Finished;
-                this.hasWork = false;
+                this.workToken = 0;
             }
         }
         

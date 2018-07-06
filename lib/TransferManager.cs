@@ -23,15 +23,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     public static class TransferManager
     {
         /// <summary>
-        /// Transfer scheduler that schedules execution of transfer jobs
-        /// </summary>
-        private static TransferScheduler scheduler = new TransferScheduler();
-
-        /// <summary>
         /// Transfer configurations associated with the transfer manager
         /// </summary>
         private static TransferConfigurations configurations = new TransferConfigurations();
 
+        /// <summary>
+        /// Transfer scheduler that schedules execution of transfer jobs
+        /// </summary>
+        private static TransferScheduler scheduler = new TransferScheduler(configurations);
+        
         /// <summary>
         /// Stores all running transfers
         /// </summary>

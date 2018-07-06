@@ -9,24 +9,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
+    using System.Linq;
     using System.Runtime.Serialization;
 #if BINARY_SERIALIZATION
     using System.Runtime.Serialization.Formatters.Binary;
 #endif
-    using System.Text;
 
     internal class StreamJournal
     {
         //------------------------------------------------------------------------------------------------------
         // 0-255: Journal format version string: Assembly name + version
-        // 256 - 511: Journal head, keep the list of used chunks for transfer instances and free chunks.
+        // 256 - 511: Journal head, keep the list of used chunks for transfer instances and free chunks, and the count of sub-transfers preserved in the journal.
         // 512 - (SubTransferContentOffset-1) : Last 1K for progress tracker of the transfer instance, and rests are base transfer instance.
         // A base transfer can be a SingleObjectTransfer or a MultipleObjectTransfer, if it's a MultipleObjectTransfer,
         // there could be multiple subtransfers, each subtransfer is a SingleObjectTransfer.
         // SubTransferContentOffset- : Chunks for transfer instances
         // Size of each chunk is 10K, 9K for transfer instance, 1K for progress tracker of the transfer instance.
         // In the journal, it only allows one base transfer, which means user can only add one transfer to the checkpoint using stream journal.
-
         //------------------------------------------------------------------------------------------------------
 
         /// <summary>
@@ -121,6 +120,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         long freeChunkHead = 0;
         long freeChunkTail = 0;
 
+        long preservedSubTransferCount = 0;
+
         /// <summary>
         /// This is the granularity to allocation memory buffer.
         /// 4K buffer would be enough for most of the TransferEntry serialization.
@@ -147,7 +148,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             lock (this.journalLock)
             {
-                if (stream.Length == 0)
+                if (this.ReadAndCheckEmpty())
                 {
                     this.stream.Position = 0;
 
@@ -164,13 +165,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 }
                 else
                 {
-                    stream.Position = 0;
+                    this.stream.Position = 0;
 #if BINARY_SERIALIZATION
                     string version = (string)formatter.Deserialize(this.stream);
 #else
                     string version = (string)this.ReadObject(this.stringSerializer);
 #endif
-
                     if (!string.Equals(version, Constants.FormatVersion, StringComparison.Ordinal))
                     {
                         throw new System.InvalidOperationException(
@@ -187,6 +187,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.usedChunkTail = this.ReadLong();
                     this.freeChunkHead = this.ReadLong();
                     this.freeChunkTail = this.ReadLong();
+                    this.preservedSubTransferCount = this.ReadLong();
 
                     // absolute path
                     this.stream.Position = ContentOffset;
@@ -265,7 +266,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 this.WriteObject(this.progressCheckerSerializer, transfer.ProgressTracker);
 #endif
                 this.baseTransfer = transfer;
-                this.stream.Flush();
             }
         }
 
@@ -307,7 +307,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 {
                     this.usedChunkHead = offset;
                     this.usedChunkTail = this.usedChunkHead;
-                    
+
                     // Set the transferEntry's previous and next trunk to 0.
                     this.stream.Position = offset;
                     this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
@@ -329,8 +329,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.usedChunkTail = offset;
                 }
 
+                this.preservedSubTransferCount++;
+
                 this.WriteJournalHead();
-                this.stream.Flush();
             }
         }
 
@@ -340,7 +341,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 if (transfer.StreamJournalOffset == this.baseTransfer.StreamJournalOffset)
                 {
-                    this.stream.SetLength(0);
+                    try
+                    {
+                        this.stream.SetLength(0);
+                    }
+                    catch (NotSupportedException)
+                    {
+                        // Catch by design, if user provided stream doesn't support SetLength, 
+                        // user should be responsible to remove journal after transfer.
+                        // TODO: Logging
+                    }
+                    
                     return;
                 }
 
@@ -409,8 +420,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.usedChunkTail = previousUsedChunk;
                 }
 
+                this.preservedSubTransferCount--;
+
                 this.WriteJournalHead();
-                this.stream.Flush();
             }
         }
 
@@ -433,7 +445,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     this.WriteObject(this.progressCheckerSerializer, item as TransferProgressTracker);
                 }
 #endif
-                this.stream.Flush();
             }
         }
 
@@ -454,7 +465,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     else
                     {
                         this.stream.Position = currentOffset;
-                        
+
                         long previousUsedChunk = this.ReadLong();
                         long nextUsedChunk = this.ReadLong();
 
@@ -601,6 +612,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.stream.Write(BitConverter.GetBytes(this.usedChunkTail), 0, sizeof(long));
             this.stream.Write(BitConverter.GetBytes(this.freeChunkHead), 0, sizeof(long));
             this.stream.Write(BitConverter.GetBytes(this.freeChunkTail), 0, sizeof(long));
+            this.stream.Write(BitConverter.GetBytes(this.preservedSubTransferCount), 0, sizeof(long));
         }
 
         private long ReadLong()
@@ -625,6 +637,24 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new InvalidOperationException(Resources.RestartableLogCorrupted);
 #endif
             }
+        }
+
+        /// <summary>
+        /// Read from journal file and check whether the journal file is empty.
+        /// </summary>
+        /// <returns>True if the journal file is empty.</returns>
+        private bool ReadAndCheckEmpty()
+        {
+            this.stream.Position = 0;
+
+            this.AllocateBuffer(JournalHeadOffset);
+            
+            if (this.stream.Read(this.memoryBuffer, 0, JournalHeadOffset) < JournalHeadOffset)
+            {
+                return true;
+            }
+
+            return !this.memoryBuffer.Any(c => c != 0);
         }
 
         /// <summary>
@@ -673,7 +703,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
             else
             {
-                return this.stream.Length <= SubTransferContentOffset ? SubTransferContentOffset : ((this.stream.Length - SubTransferContentOffset) / TransferChunkSize + 1) * TransferChunkSize + SubTransferContentOffset;
+                return this.stream.Length <= SubTransferContentOffset ? SubTransferContentOffset : (this.preservedSubTransferCount * TransferChunkSize + SubTransferContentOffset);
             }
         }
 
@@ -699,7 +729,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 throw new InvalidOperationException(Resources.RestartableLogCorrupted);
 #endif
             }
-            
+
             this.serializerStream.Position = 0;
             return serializer.Deserialize(this.serializerStream);
         }

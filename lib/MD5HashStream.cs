@@ -355,7 +355,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     buffer,
                     offset,
                     count,
-                    cancellationToken);
+                    cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -376,7 +376,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             if (buffers.Length == 1)
             {
-                await this.WriteAsync(writeOffset, buffers[0], offset, count, cancellationToken);
+                await this.WriteAsync(writeOffset, buffers[0], offset, count, cancellationToken).ConfigureAwait(false);
                 return;
             }
 

@@ -21,10 +21,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     internal sealed class AppendBlobWriter : TransferReaderWriterBase
     {
         private volatile State state;
-        private volatile bool hasWork;
         private AzureBlobLocation destLocation;
         private CloudAppendBlob appendBlob;
         private long expectedOffset = 0;
+
+        /// <summary>
+        /// Work token indicates whether this writer has work, could be 0(no work) or 1(has work).
+        /// </summary>
+        private volatile int workToken;
 
         /// <summary>
         /// To indicate whether the destination already exist before this writing.
@@ -44,14 +48,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             Debug.Assert(null != this.appendBlob, "The destination is not an append blob while initializing a AppendBlobWriter instance.");
 
             this.state = State.FetchAttributes;
-            this.hasWork = true;
+            this.workToken = 1;
         }
 
         public override bool HasWork
         {
             get 
             {
-                return this.hasWork &&
+                return this.workToken == 1 &&
                     ((State.FetchAttributes == this.state) ||
                     (State.Create == this.state) ||
                     (State.UploadBlob == this.state && this.SharedTransferData.AvailableData.ContainsKey(this.expectedOffset)) ||
@@ -107,7 +111,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 "Current state is {0}",
                 this.state);
 
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
 
             if (this.SharedTransferData.TotalLength > Constants.MaxAppendBlobFileSize)
             {
@@ -240,15 +247,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            this.hasWork = true;
+            this.workToken = 1;
         }
 
         private async Task CreateAsync()
         {
             Debug.Assert(State.Create == this.state, "Calling CreateAsync, state should be Create");
 
-            this.hasWork = false; 
-            
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
+
             AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
                  this.destLocation.AccessCondition,
                  true);
@@ -277,19 +287,22 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.state = State.UploadBlob;
             }
 
-            this.hasWork = true;
+            this.workToken = 1;
         }
 
         private async Task UploadBlobAsync()
         {
             Debug.Assert(State.UploadBlob == this.state, "Calling UploadBlobAsync, state should be UploadBlob");
 
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
 
             TransferData transferData = null;
             if (!this.SharedTransferData.AvailableData.TryRemove(this.expectedOffset, out transferData))
             {
-                this.hasWork = true;
+                this.workToken = 1;
                 return;
             }
 
@@ -375,7 +388,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         this.state = State.Commit;
                     }
 
-                    this.hasWork = true;
+                    this.workToken = 1;
                 }
             }
         }
@@ -393,7 +406,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             Debug.Assert(State.Commit == this.state, "Calling CommitAsync, state should be Commit");
 
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
 
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
@@ -492,7 +508,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.state = State.Finished;
             this.NotifyFinished(null);
-            this.hasWork = false;
+            this.workToken = 0;
         }
     }
 }
