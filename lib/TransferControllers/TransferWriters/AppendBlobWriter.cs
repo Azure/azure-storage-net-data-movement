@@ -133,10 +133,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 try
                 {
-                    await this.appendBlob.FetchAttributesAsync(
-                        accessCondition,
-                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                    await Utils.ExecuteXsclApiCallAsync(
+                        async () => await this.appendBlob.FetchAttributesAsync(
+                            accessCondition,
+                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                            Utils.GenerateOperationContext(this.Controller.TransferContext),
+                            this.CancellationToken),
                         this.CancellationToken);
 
                     this.destExist = true;
@@ -170,17 +172,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            this.HandleFetchAttributesResult(existingBlob);
+            await this.HandleFetchAttributesResultAsync(existingBlob);
         }
 
-        private void HandleFetchAttributesResult(bool existingBlob)
+        private async Task HandleFetchAttributesResultAsync(bool existingBlob)
         {
             this.destLocation.CheckedAccessCondition = true;
 
             if (!this.Controller.IsForceOverwrite)
             {
                 // If destination file exists, query user whether to overwrite it.
-                this.Controller.CheckOverwrite(
+                await this.Controller.CheckOverwriteAsync(
                     existingBlob,
                     this.SharedTransferData.TransferJob.Source.Instance,
                     this.appendBlob);
@@ -256,10 +258,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.CleanupPropertyForCanonicalization();
             }
 
-            await this.appendBlob.CreateOrReplaceAsync(
-                accessCondition,
-                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions, true),
-                Utils.GenerateOperationContext(this.Controller.TransferContext),
+            await Utils.ExecuteXsclApiCallAsync(
+                async () => await this.appendBlob.CreateOrReplaceAsync(
+                    accessCondition,
+                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions, true),
+                    Utils.GenerateOperationContext(this.Controller.TransferContext),
+                    this.CancellationToken),
                 this.CancellationToken);
 
             this.PreProcessed = true;
@@ -316,11 +320,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                         try
                         {
-                            await this.appendBlob.AppendBlockAsync(transferData.Stream,
-                                null,
-                                accessCondition,
-                                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                                Utils.GenerateOperationContext(this.Controller.TransferContext),
+                            await Utils.ExecuteXsclApiCallAsync(
+                                async () => await this.appendBlob.AppendBlockAsync(
+                                    transferData.Stream,
+                                    null,
+                                    accessCondition,
+                                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                                    Utils.GenerateOperationContext(this.Controller.TransferContext),
+                                    this.CancellationToken),
                                 this.CancellationToken);
                         }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
@@ -393,10 +400,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             if (!this.Controller.IsForceOverwrite && !this.destExist)
             {
-                await this.appendBlob.FetchAttributesAsync(
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                    blobRequestOptions,
-                    operationContext,
+                await Utils.ExecuteXsclApiCallAsync(
+                    async () => await this.appendBlob.FetchAttributesAsync(
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                        blobRequestOptions,
+                        operationContext,
+                        this.CancellationToken),
                     this.CancellationToken);
             }
 

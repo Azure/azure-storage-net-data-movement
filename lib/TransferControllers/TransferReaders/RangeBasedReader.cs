@@ -134,7 +134,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             try
             {
-                await this.DoFetchAttributesAsync();
+                await Utils.ExecuteXsclApiCallAsync(
+                    async () => await this.DoFetchAttributesAsync(),
+                    this.CancellationToken);
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
@@ -407,7 +409,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             if (asyncState.Range.HasData)
             {
-                await this.DoDownloadRangeToStreamAsync(asyncState);
+                await Utils.ExecuteXsclApiCallAsync(
+                    async () => await this.DoDownloadRangeToStreamAsync(asyncState),
+                    this.CancellationToken);
             }
             else
             {

@@ -34,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         /// Transfer job instance.
         /// </summary>
         private TransferJob transferJob;
-        
+
         /// <summary>
         /// Transfer window in check point.
         /// </summary>
@@ -302,24 +302,27 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 {
                     bool canRead = false;
 
-                    lock (this.transferJob.CheckPoint.TransferWindowLock)
+                    // TransferWindow.Count is not necessary to be included in TransferWindowLock block, as current StreamReader
+                    // is the only entry for adding TransferWindow size, and the logic adding TransferWindow size is always executed in one thread. 
+                    if (this.transferJob.CheckPoint.TransferWindow.Count < Constants.MaxCountInTransferWindow)
                     {
-                        if (this.transferJob.CheckPoint.TransferWindow.Count < Constants.MaxCountInTransferWindow)
-                        {
-                            startOffset = this.transferJob.CheckPoint.EntryTransferOffset;
+                        startOffset = this.transferJob.CheckPoint.EntryTransferOffset;
 
-                            if ((this.SharedTransferData.TotalLength < 0) || (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength))
+                        if ((this.SharedTransferData.TotalLength < 0) || (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength))
+                        {
+                            lock (this.transferJob.CheckPoint.TransferWindowLock)
                             {
                                 this.transferJob.CheckPoint.TransferWindow.Add(startOffset);
-                                this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
+                            }
+
+                            this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
                                     this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
                                     this.SharedTransferData.TotalLength < 0 ? long.MaxValue : this.SharedTransferData.TotalLength);
 
-                                canRead = true;
-                            }
+                            canRead = true;
                         }
                     }
-
+                    
                     if (!canRead)
                     {
                         this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
@@ -366,7 +369,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 asyncState.BytesRead,
                 asyncState.Length - asyncState.BytesRead,
                 this.CancellationToken);
-            
+
             // If a parallel operation caused the controller to be placed in
             // error state exit early to avoid unnecessary I/O.
             // Note that this check needs to be after the EndRead operation

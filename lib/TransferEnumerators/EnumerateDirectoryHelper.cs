@@ -217,6 +217,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     // Ignore this folder if we have no right to discovery it.
                     continue;
                 }
+                catch (UnauthorizedAccessException)
+                {
+                    // Ignore this folder if we have no right to discovery it.
+                    continue;
+                }
 #else // CODE_ACCESS_SECURITY
                 try
                 {
@@ -477,9 +482,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
                     UnixSymbolicLinkInfo symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
 
-                    if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
+                    try
                     {
-                        fileEntryInfo.FileAttributes |= FileAttributes.Directory;
+                        if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
+                        {
+                            fileEntryInfo.FileAttributes |= FileAttributes.Directory;
+                        }
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Just ignore exception thrown here. 
+                        // later there will be "FileNotFoundException" thrown out when trying to open the file before transferring.
                     }
                 }
 

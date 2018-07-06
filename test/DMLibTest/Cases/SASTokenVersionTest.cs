@@ -129,7 +129,7 @@ namespace DMLibTest.Cases
                     transferItem.TransferContext = new SingleTransferContext();
                 }
 
-                transferItem.TransferContext.ShouldOverwriteCallback = TransferContext.ForceOverwrite;
+                transferItem.TransferContext.ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite;
             };
             
 

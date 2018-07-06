@@ -95,6 +95,19 @@ namespace DMLibTest
         }
     }
 
+    public class DummyTransferTestFixture : IDisposable
+    {
+        public DummyTransferTestFixture()
+        {
+            DummyTransferTest.MyClassInitialize(null);
+        }
+
+        public void Dispose()
+        {
+            DummyTransferTest.MyClassCleanup();
+        }
+    }
+
     public class FollowSymlinkTestFixture : IDisposable
     {
         public FollowSymlinkTestFixture()

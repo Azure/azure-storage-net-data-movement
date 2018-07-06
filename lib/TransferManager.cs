@@ -112,6 +112,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
 
+            BlobRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(destLocation) as BlobRequestOptions;
+            Debug.Assert(requestOptions != null, "Should get default BlobRequestOptions successfully.");
+            destLocation.BlobRequestOptions = requestOptions;
+
             return UploadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
         }
 
@@ -157,6 +161,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
+
+            BlobRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(destLocation) as BlobRequestOptions;
+            Debug.Assert(requestOptions != null, "Should get default BlobRequestOptions successfully.");
+            destLocation.BlobRequestOptions = requestOptions;
 
             return UploadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
         }
@@ -204,6 +212,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
 
+            FileRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(destLocation) as FileRequestOptions;
+            Debug.Assert(requestOptions != null, "Should get default FileRequestOptions successfully.");
+            destLocation.FileRequestOptions = requestOptions;
+
             return UploadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
         }
 
@@ -249,6 +261,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
+
+            FileRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(destLocation) as FileRequestOptions;
+            Debug.Assert(requestOptions != null, "Should get default FileRequestOptions successfully.");
+            destLocation.FileRequestOptions = requestOptions;
 
             return UploadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
         }
@@ -321,6 +337,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 sourceEnumerator.Recursive = options.Recursive;
             }
 
+            BlobRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(destLocation) as BlobRequestOptions;
+            Debug.Assert(requestOptions != null, "Should get default BlobRequestOptions successfully.");
+            destLocation.BlobRequestOptions = requestOptions;
+
             return UploadDirectoryInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context, cancellationToken);
         }
 
@@ -368,6 +388,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 sourceEnumerator.Recursive = options.Recursive;
             }
 
+            FileRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(destLocation) as FileRequestOptions;
+            Debug.Assert(requestOptions != null, "Should get default FileRequestOptions successfully.");
+            destLocation.FileRequestOptions = requestOptions;
+
             return UploadDirectoryInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context, cancellationToken);
         }
 
@@ -389,8 +413,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             if (options != null)
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
-
-                BlobRequestOptions requestOptions = Transfer_RequestOptions.DefaultBlobRequestOptions;
+                
+                BlobRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(sourceLocation) as BlobRequestOptions;
+                Debug.Assert(requestOptions != null, "Should get default BlobRequestOptions successfully.");
                 requestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
                 sourceLocation.BlobRequestOptions = requestOptions;
             }
@@ -441,7 +466,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
 
-                BlobRequestOptions requestOptions = Transfer_RequestOptions.DefaultBlobRequestOptions;
+                BlobRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(sourceLocation) as BlobRequestOptions;
+                Debug.Assert(requestOptions != null, "Should get default BlobRequestOptions successfully.");
                 requestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
                 sourceLocation.BlobRequestOptions = requestOptions;
             }
@@ -492,7 +518,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
 
-                FileRequestOptions requestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
+                FileRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(sourceLocation) as FileRequestOptions;
+                Debug.Assert(requestOptions != null, "Should get default FileRequestOptions successfully.");
                 requestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
                 sourceLocation.FileRequestOptions = requestOptions;
             }
@@ -542,8 +569,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             if (options != null)
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
-
-                FileRequestOptions requestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
+                
+                FileRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(sourceLocation) as FileRequestOptions;
+                Debug.Assert(requestOptions != null, "Should get default FileRequestOptions successfully.");
                 requestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
                 sourceLocation.FileRequestOptions = requestOptions;
             }
@@ -584,7 +612,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 sourceEnumerator.Recursive = options.Recursive;
                 sourceEnumerator.IncludeSnapshots = options.IncludeSnapshots;
 
-                BlobRequestOptions requestOptions = Transfer_RequestOptions.DefaultBlobRequestOptions;
+                BlobRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(sourceLocation) as BlobRequestOptions;
+                Debug.Assert(requestOptions != null, "Should get default BlobRequestOptions successfully.");
                 requestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
                 sourceLocation.BlobRequestOptions = requestOptions;
             }
@@ -626,7 +655,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 sourceEnumerator.SearchPattern = options.SearchPattern;
                 sourceEnumerator.Recursive = options.Recursive;
 
-                FileRequestOptions requestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
+                FileRequestOptions requestOptions = Transfer_RequestOptions.CreateDefaultRequestOptions(sourceLocation) as FileRequestOptions;
+                Debug.Assert(requestOptions != null, "Should get default FileRequestOptions successfully.");
                 requestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
                 sourceLocation.FileRequestOptions = requestOptions;
             }

@@ -124,10 +124,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 try
                 {
-                    await this.destLocation.Blob.FetchAttributesAsync(
-                        accessCondition, 
-                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions), 
-                        Utils.GenerateOperationContext(this.Controller.TransferContext), 
+                    await Utils.ExecuteXsclApiCallAsync(
+                        async () => await this.destLocation.Blob.FetchAttributesAsync(
+                            accessCondition, 
+                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions), 
+                            Utils.GenerateOperationContext(this.Controller.TransferContext), 
+                            this.CancellationToken),
                         this.CancellationToken);
                 }
 
@@ -139,15 +141,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 catch (StorageException se)
                 {
 #endif
-                    this.HandleFetchAttributesResult(se);
+                    await this.HandleFetchAttributesResultAsync(se);
                     return;
                 }
             }
 
-            this.HandleFetchAttributesResult(null);
+            await this.HandleFetchAttributesResultAsync(null);
         }
 
-        private void HandleFetchAttributesResult(Exception e)
+        private async Task HandleFetchAttributesResultAsync(Exception e)
         {
             bool existingBlob = !this.Controller.IsForceOverwrite;
 
@@ -186,7 +188,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (!this.Controller.IsForceOverwrite)
             {
                 // If destination file exists, query user whether to overwrite it.
-                this.Controller.CheckOverwrite(
+                await this.Controller.CheckOverwriteAsync(
                     existingBlob, 
                     this.SharedTransferData.TransferJob.Source.Instance, 
                     this.destLocation.Blob);
@@ -223,9 +225,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.uploadedLength -= Math.Min(checkpoint.EntryTransferOffset - checkpoint.TransferWindow.Last(), this.SharedTransferData.BlockSize);
                 this.uploadedLength -= (checkpoint.TransferWindow.Count - 1) * this.SharedTransferData.BlockSize;
             }
+            
+            var singlePutBlobSizeThreshold = Math.Min(this.SharedTransferData.BlockSize, Constants.MaxSinglePutBlobSize);
 
             if (this.SharedTransferData.TotalLength > 0
-                && this.SharedTransferData.TotalLength <= Constants.SingleRequestBlobSizeThreshold)
+                && this.SharedTransferData.TotalLength <= singlePutBlobSizeThreshold)
             {
                 this.PrepareForPutBlob();
             }
@@ -317,14 +321,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
                         }
 
-                        await this.blockBlob.PutBlockAsync(
-                            this.GetBlockId(transferData.StartOffset),
-                            transferData.Stream,
-                            null,
-                            Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
-                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                            Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        await Utils.ExecuteXsclApiCallAsync(
+                            async () => await this.blockBlob.PutBlockAsync(
+                                this.GetBlockId(transferData.StartOffset),
+                                transferData.Stream,
+                                null,
+                                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
+                                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                                Utils.GenerateOperationContext(this.Controller.TransferContext),
+                                this.CancellationToken),
                             this.CancellationToken);
+
                     }
                 }
 

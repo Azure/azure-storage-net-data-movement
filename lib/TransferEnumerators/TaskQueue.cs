@@ -33,12 +33,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         /// Enqueue a task into the tasks queue. This method blocks if the queue reaches its capacity.
         /// </summary>
         /// <param name="func">Task to enqueue.</param>
-        public void EnqueueJob(Func<T> func)
+        public void EnqueueJob(Func<Task<T>> func)
         {
-            Task<T> task = new Task<T>(func);
-            queue.Add(task);
-
-            task.Start();
+            queue.Add(Task.Run(func));
         }
 
         /// <summary>

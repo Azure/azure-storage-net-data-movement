@@ -85,6 +85,32 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.Local | DMLibDataType.BlockBlob | DMLibDataType.CloudFile | DMLibDataType.Stream, DMLibDataType.BlockBlob)]
+        public void ToLbb_16MBBlockSizeAndSmallFiles()
+        {
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + 36 + "MB", 36 * 1024); // 36MB, should use 16MB block size, PutBlock and PutBlockList
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + 16 + "MB", 16 * 1024); // 16MB, should use 16MB block size, PutBlob
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + 14 + "MB", 14 * 1024); // 14MB, should use 16MB block size, PutBlob
+            DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + 8 + "MB", 8 * 1024); // 8MB, should use 8MB block size, PutBlob
+
+            for (int i = 0; i < 2; i++)
+            {
+                DMLibDataHelper.AddOneFile(sourceDataInfo.RootNode, DMLibTestBase.FileName + "_" + i, i); // 0 and 1KB file
+            }
+
+            var options = new TestExecutionOptions<DMLibDataInfo>()
+            {
+                BlockSize = 16 * 1024 * 1024 // 16MB
+            };
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            this.ValidateDestinationMD5ByDownloading(result.DataInfo, options);
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.Local | DMLibDataType.BlockBlob | DMLibDataType.CloudFile | DMLibDataType.Stream, DMLibDataType.BlockBlob)]
         public void ToLbb_100MBBlockSizeAndSmallFiles()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
