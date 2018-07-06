@@ -42,7 +42,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private volatile State state;
 
-        private volatile bool hasWork;
+        /// <summary>
+        /// Work token indicates whether this reader has work, could be 0(no work) or 1(has work).
+        /// </summary>
+        private volatile int workToken;
 
         private long readLength = 0;
 
@@ -62,7 +65,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             : base(scheduler, controller, cancellationToken)
         {
             this.transferJob = this.SharedTransferData.TransferJob;
-            this.hasWork = true;
+            this.workToken = 1;
             this.readLength = 0;
         }
 
@@ -86,7 +89,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             get
             {
-                return this.hasWork;
+                return this.workToken == 1;
             }
         }
 
@@ -128,57 +131,60 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 State.OpenInputStream == this.state,
                 "OpenInputStreamAsync called, but state is not OpenInputStream.");
 
-            this.hasWork = false;
-
-            await Task.Run(() =>
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
             {
-                this.NotifyStarting();
-                this.Controller.CheckCancellation();
+                return;
+            }
 
-                if (this.transferJob.Source.Type == TransferLocationType.Stream)
+            await Task.Yield();
+
+            this.NotifyStarting();
+            this.Controller.CheckCancellation();
+
+            if (this.transferJob.Source.Type == TransferLocationType.Stream)
+            {
+                StreamLocation streamLocation = this.transferJob.Source as StreamLocation;
+                this.inputStream = streamLocation.Stream;
+                this.ownsStream = false;
+
+                if (!this.inputStream.CanRead)
                 {
-                    StreamLocation streamLocation = this.transferJob.Source as StreamLocation;
-                    this.inputStream = streamLocation.Stream;
-                    this.ownsStream = false;
-
-                    if (!this.inputStream.CanRead)
-                    {
-                        throw new NotSupportedException(string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.StreamMustSupportReadException,
-                            "inputStream"));
-                    }
+                    throw new NotSupportedException(string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resources.StreamMustSupportReadException,
+                        "inputStream"));
                 }
-                else
-                {
-                    FileLocation fileLocation = this.transferJob.Source as FileLocation;
-                    Debug.Assert(
-                        null != fileLocation,
-                        "Initializing StreamedReader instance, but source is neither a stream nor a file");
+            }
+            else
+            {
+                FileLocation fileLocation = this.transferJob.Source as FileLocation;
+                Debug.Assert(
+                    null != fileLocation,
+                    "Initializing StreamedReader instance, but source is neither a stream nor a file");
 
-                    try
+                try
+                {
+                    if (fileLocation.RelativePath != null
+                        && fileLocation.RelativePath.Length > Constants.MaxRelativePathLength)
                     {
-                        if (fileLocation.RelativePath != null
-                            && fileLocation.RelativePath.Length > Constants.MaxRelativePathLength)
-                        {
-                            string errorMessage = string.Format(
-                                CultureInfo.CurrentCulture,
-                                Resources.RelativePathTooLong,
-                                fileLocation.RelativePath);
-                            throw new TransferException(TransferErrorCode.OpenFileFailed, errorMessage);
-                        }
+                        string errorMessage = string.Format(
+                            CultureInfo.CurrentCulture,
+                            Resources.RelativePathTooLong,
+                            fileLocation.RelativePath);
+                        throw new TransferException(TransferErrorCode.OpenFileFailed, errorMessage);
+                    }
 #if DOTNET5_4
-                        string filePath = fileLocation.FilePath;
-                        if (Interop.CrossPlatformHelpers.IsWindows)
-                        {
-                            filePath = LongPath.ToUncPath(fileLocation.FilePath);
-                        }
-                        // Attempt to open the file first so that we throw an exception before getting into the async work
-                        this.inputStream = new FileStream(
-                            filePath,
-                            FileMode.Open,
-                            FileAccess.Read,
-                            FileShare.Read);
+                    string filePath = fileLocation.FilePath;
+                    if (Interop.CrossPlatformHelpers.IsWindows)
+                    {
+                        filePath = LongPath.ToUncPath(fileLocation.FilePath);
+                    }
+                    // Attempt to open the file first so that we throw an exception before getting into the async work
+                    this.inputStream = new FileStream(
+                        filePath,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.Read);
 #else
                         this.inputStream = LongPathFile.Open(
                             fileLocation.FilePath,
@@ -186,34 +192,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             FileAccess.Read,
                             FileShare.Read);
 #endif
-                        this.ownsStream = true;
-                    }
-                    catch (Exception ex)
+                    this.ownsStream = true;
+                }
+                catch (Exception ex)
+                {
+                    if ((ex is NotSupportedException) ||
+                        (ex is IOException) ||
+                        (ex is UnauthorizedAccessException) ||
+                        (ex is SecurityException) ||
+                        (ex is ArgumentException && !(ex is ArgumentNullException)))
                     {
-                        if ((ex is NotSupportedException) ||
-                            (ex is IOException) ||
-                            (ex is UnauthorizedAccessException) ||
-                            (ex is SecurityException) ||
-                            (ex is ArgumentException && !(ex is ArgumentNullException)))
-                        {
-                            string exceptionMessage = string.Format(
-                                        CultureInfo.CurrentCulture,
-                                        Resources.FailedToOpenFileException,
-                                        fileLocation.FilePath,
-                                        ex.Message);
+                        string exceptionMessage = string.Format(
+                                    CultureInfo.CurrentCulture,
+                                    Resources.FailedToOpenFileException,
+                                    fileLocation.FilePath,
+                                    ex.Message);
 
-                            throw new TransferException(
-                                    TransferErrorCode.OpenFileFailed,
-                                    exceptionMessage,
-                                    ex);
-                        }
-                        else
-                        {
-                            throw;
-                        }
+                        throw new TransferException(
+                                TransferErrorCode.OpenFileFailed,
+                                exceptionMessage,
+                                ex);
+                    }
+                    else
+                    {
+                        throw;
                     }
                 }
-            });
+            }
 
             try
             {
@@ -224,32 +229,36 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.SharedTransferData.TotalLength = -1;
             }
 
-            var checkpoint = this.transferJob.CheckPoint;
-
-            checkpoint.TransferWindow.Sort();
-
-            this.readLength = checkpoint.EntryTransferOffset;
-
-            if (checkpoint.TransferWindow.Any())
+            // Only do calculation related to transfer window when the file contains multiple chunks.
+            if (!this.EnableOneChunkFileOptimization)
             {
-                // The size of last block can be smaller than BlockSize.
-                this.readLength -= Math.Min(checkpoint.EntryTransferOffset - checkpoint.TransferWindow.Last(), this.SharedTransferData.BlockSize);
-                this.readLength -= (checkpoint.TransferWindow.Count - 1) * this.SharedTransferData.BlockSize;
-            }
+                var checkpoint = this.transferJob.CheckPoint;
 
-            if (this.readLength < 0)
-            {
-                throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
-            }
-            else if ((checkpoint.EntryTransferOffset > 0) && (!this.inputStream.CanSeek))
-            {
-                throw new NotSupportedException(string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.StreamMustSupportSeekException,
-                    "inputStream"));
-            }
+                checkpoint.TransferWindow.Sort();
 
-            this.lastTransferWindow = new Queue<long>(this.transferJob.CheckPoint.TransferWindow);
+                this.readLength = checkpoint.EntryTransferOffset;
+
+                if (checkpoint.TransferWindow.Any())
+                {
+                    // The size of last block can be smaller than BlockSize.
+                    this.readLength -= Math.Min(checkpoint.EntryTransferOffset - checkpoint.TransferWindow.Last(), this.SharedTransferData.BlockSize);
+                    this.readLength -= (checkpoint.TransferWindow.Count - 1) * this.SharedTransferData.BlockSize;
+                }
+
+                if (this.readLength < 0)
+                {
+                    throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
+                }
+                else if ((checkpoint.EntryTransferOffset > 0) && (!this.inputStream.CanSeek))
+                {
+                    throw new NotSupportedException(string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resources.StreamMustSupportSeekException,
+                        "inputStream"));
+                }
+
+                this.lastTransferWindow = new Queue<long>(this.transferJob.CheckPoint.TransferWindow);
+            }
 
             this.md5HashStream = new MD5HashStream(
                 this.inputStream,
@@ -262,7 +271,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 // Change the state to 'ReadStream' before awaiting MD5 calculation task to not block the reader.
                 this.state = State.ReadStream;
-                this.hasWork = true;
+                this.workToken = 1;
             }
             else
             {
@@ -286,7 +295,20 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.state == State.ReadStream || this.state == State.Error,
                 "ReadChunks called, but state isn't ReadStream or Error");
 
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
+
+            // Work with yield is good for overall scheduling efficiency, i.e. other works would be scheduled faster.
+            // While work without yield is good for current files reading efficiency(e.g. transfering only 1 1TB file).
+            // So when file has only one chunk, the possibility of current file influencing overall throughput might be less.
+            // And in this case do Yield, otherwise, temporarily work without yield.
+            // TODO: the threshold to do yield could be further tuned.
+            if (this.EnableOneChunkFileOptimization)
+            { 
+                await Task.Yield();
+            }
 
             byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
 
@@ -294,40 +316,47 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 long startOffset = 0;
 
-                if (0 != this.lastTransferWindow.Count)
+                // Only do calculation related to transfer window when the file contains multiple chunks.
+                if (!this.EnableOneChunkFileOptimization)
                 {
-                    startOffset = this.lastTransferWindow.Dequeue();
-                }
-                else
-                {
-                    bool canRead = false;
-
-                    // TransferWindow.Count is not necessary to be included in TransferWindowLock block, as current StreamReader
-                    // is the only entry for adding TransferWindow size, and the logic adding TransferWindow size is always executed in one thread. 
-                    if (this.transferJob.CheckPoint.TransferWindow.Count < Constants.MaxCountInTransferWindow)
+                    if (0 != this.lastTransferWindow.Count)
                     {
-                        startOffset = this.transferJob.CheckPoint.EntryTransferOffset;
-
-                        if ((this.SharedTransferData.TotalLength < 0) || (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength))
-                        {
-                            lock (this.transferJob.CheckPoint.TransferWindowLock)
-                            {
-                                this.transferJob.CheckPoint.TransferWindow.Add(startOffset);
-                            }
-
-                            this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
-                                    this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
-                                    this.SharedTransferData.TotalLength < 0 ? long.MaxValue : this.SharedTransferData.TotalLength);
-
-                            canRead = true;
-                        }
+                        startOffset = this.lastTransferWindow.Dequeue();
                     }
-                    
-                    if (!canRead)
+                    else
                     {
-                        this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
-                        this.hasWork = true;
-                        return;
+                        bool canRead = false;
+
+                        // TransferWindow.Count is not necessary to be included in TransferWindowLock block, as current StreamReader
+                        // is the only entry for adding TransferWindow size, and the logic adding TransferWindow size is always executed in one thread. 
+                        if (this.transferJob.CheckPoint.TransferWindow.Count < Constants.MaxCountInTransferWindow)
+                        {
+                            startOffset = this.transferJob.CheckPoint.EntryTransferOffset;
+
+                            if ((this.SharedTransferData.TotalLength < 0) || (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength))
+                            {
+                                lock (this.transferJob.CheckPoint.TransferWindowLock)
+                                {
+                                    if ((this.SharedTransferData.TotalLength < 0) || (this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength))
+                                    {
+                                        this.transferJob.CheckPoint.TransferWindow.Add(startOffset);
+                                    }
+                                }
+
+                                this.transferJob.CheckPoint.EntryTransferOffset = Math.Min(
+                                        this.transferJob.CheckPoint.EntryTransferOffset + this.SharedTransferData.BlockSize,
+                                        this.SharedTransferData.TotalLength < 0 ? long.MaxValue : this.SharedTransferData.TotalLength);
+
+                                canRead = true;
+                            }
+                        }
+
+                        if (!canRead)
+                        {
+                            this.Scheduler.MemoryManager.ReleaseBuffers(memoryBuffer);
+                            this.workToken = 1;
+                            return;
+                        }
                     }
                 }
 
@@ -445,7 +474,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 || -1 == this.SharedTransferData.TotalLength
                 || this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
             {
-                this.hasWork = true;
+                this.workToken = 1;
                 return;
             }
         }

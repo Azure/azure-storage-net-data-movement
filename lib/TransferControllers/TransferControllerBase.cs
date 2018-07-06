@@ -218,7 +218,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             // within this controller.
             // Trigger the CancellationTokenSource asynchronously. Otherwise, all controllers sharing the same
             // userCancellationToken will keep running until this.cancellationTokenSource.Cancel() returns.
-            Task.Run(() => 
+            Task.Run(() =>
                 {
                     lock (this.cancelLock)
                     {
@@ -275,17 +275,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             if (Interlocked.CompareExchange(ref this.notifiedFinish, 1, 0) == 0)
             {
-                ThreadPool.QueueUserWorkItem((userData) =>
+                if (null != exception)
                 {
-                    if (null != exception)
-                    {
-                        this.TaskCompletionSource.SetException(exception);
-                    }
-                    else
-                    {
-                        this.TaskCompletionSource.SetResult(null);
-                    }
-                });
+                    this.TaskCompletionSource.SetException(exception);
+                }
+                else
+                {
+                    this.TaskCompletionSource.SetResult(null);
+                }
             }
         }
 
@@ -370,14 +367,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         public async Task CheckOverwriteAsync(
             bool exist,
-            object source, 
+            object source,
             object dest)
         {
             if (null == this.TransferJob.Overwrite)
             {
                 if (exist)
                 {
-                    if (null == this.TransferContext || null == this.TransferContext.ShouldOverwriteCallbackAsync || ! await this.TransferContext.ShouldOverwriteCallbackAsync(source, dest))
+                    if (null == this.TransferContext || null == this.TransferContext.ShouldOverwriteCallbackAsync || !await this.TransferContext.ShouldOverwriteCallbackAsync(source, dest))
                     {
                         this.TransferJob.Overwrite = false;
                     }

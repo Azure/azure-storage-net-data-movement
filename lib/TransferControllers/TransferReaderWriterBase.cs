@@ -44,6 +44,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             get;
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to enable small file optimization.
+        /// </summary>
+        internal bool EnableSmallFileOptimization
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether to enable optimization for small file with only one chunk.
+        /// </summary>
+        protected bool EnableOneChunkFileOptimization
+        {
+            get
+            {
+                if (this.EnableSmallFileOptimization && 
+                    this.SharedTransferData.TotalLength > 0 &&
+                    this.SharedTransferData.TotalLength <= Constants.MinBlockSize)
+                {
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
         protected TransferScheduler Scheduler
         {
             get;

@@ -47,6 +47,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
             this.reader = this.GetReader(transferJob.Source);
             this.writer = this.GetWriter(transferJob.Destination);
+            
+            this.CheckAndEnableSmallFileOptimization();
 
             this.SharedTransferData.OnTotalLengthChanged += (sender, args) =>
             {
@@ -82,7 +84,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             (int)Math.Ceiling((double)this.SharedTransferData.TotalLength / Constants.DefaultBlockSize));
                         blockSize = memoryChunksRequiredEachTime * Constants.DefaultBlockSize;
                     }
-
                     this.SharedTransferData.BlockSize = blockSize;
                     this.SharedTransferData.MemoryChunksRequiredEachTime = memoryChunksRequiredEachTime;
                 }
@@ -221,6 +222,20 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         CultureInfo.CurrentCulture,
                         Resources.UnsupportedTransferLocationException,
                         destLocation.Type));
+            }
+        }
+
+        /// <summary>
+        /// Currently only do small file optimization for block/append blob download, and block blob upload.
+        /// Further small file optimization would be done according to feedbacks.
+        /// </summary>
+        private void CheckAndEnableSmallFileOptimization()
+        {
+            if ((this.reader is BlockBasedBlobReader && this.writer is StreamedWriter) ||
+                (this.reader is StreamedReader && this.writer is BlockBlobWriter))
+            {
+                this.reader.EnableSmallFileOptimization = true;
+                this.writer.EnableSmallFileOptimization = true;
             }
         }
 
