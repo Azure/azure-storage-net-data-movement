@@ -541,6 +541,37 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             return messageBuilder.ToString();
         }
 
+        public static IEnumerable<T> CatchException<T>(Func<IEnumerable<T>> srcEnumerable, Action<Exception> exceptionHandler)
+        {
+            IEnumerator<T> enumerator = null;
+            bool next = true;
+            try
+            {
+                enumerator = srcEnumerable().GetEnumerator();
+                next = enumerator.MoveNext();
+            }
+            catch (Exception ex)
+            {
+                exceptionHandler(ex);
+                yield break;
+            }
+
+            while (next)
+            {
+                yield return enumerator.Current;
+
+                try
+                {
+                    next = enumerator.MoveNext();
+                }
+                catch (Exception ex)
+                {
+                    exceptionHandler(ex);
+                    yield break;
+                }
+            }
+        }
+
         private static void AssignToRequestOptions(
             IRequestOptions targetRequestOptions, 
             IRequestOptions customRequestOptions)

@@ -21,7 +21,7 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
-    <DefineConstants>$(DefineConstants);DOTNET5_4;GENERIC_MARSHAL_SIZEOF;RUNTIME_INFORMATION;TRANSPARENCY_V2;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;NO_FILEFORMAT_EX</DefineConstants>
+    <DefineConstants>$(DefineConstants);DOTNET5_4;GENERIC_MARSHAL_SIZEOF;RUNTIME_INFORMATION;TRANSPARENCY_V2;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;NO_FILEFORMAT_EX;TEST_HOOK</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

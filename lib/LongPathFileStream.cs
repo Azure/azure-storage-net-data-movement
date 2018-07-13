@@ -378,6 +378,23 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         public static IEnumerable<string> EnumerateFileSystemEntries(string path, string searchPattern, SearchOption searchOption)
         {
+#if (DEBUG && TEST_HOOK)
+            FaultInjectionPoint fip = new FaultInjectionPoint(FaultInjectionPoint.FIP_ThrowExceptionOnDirectory);
+            string fiValue;
+
+            if (fip.TryGetValue(out fiValue) && !String.IsNullOrEmpty(fiValue))
+            {
+                if (!fiValue.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                {
+                    fiValue = fiValue + Path.DirectorySeparatorChar.ToString();
+                }
+
+                if (path.EndsWith(fiValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception("test exception thrown because of FIP_ThrowExceptionOnDirectory is enabled");
+                }
+            }
+#endif
 #if DOTNET5_4
             return Directory.EnumerateFileSystemEntries(path, searchPattern, searchOption);
 #else

@@ -22,6 +22,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     internal class FaultInjectionPoint
     {
         public static string FIP_ThrowExceptionAfterEnumerated = "ThrowExceptionAfterEnumerated";
+        public static string FIP_ThrowExceptionOnDirectory = "ThrowExceptionOnDirectory";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FaultInjectionPoint" /> class

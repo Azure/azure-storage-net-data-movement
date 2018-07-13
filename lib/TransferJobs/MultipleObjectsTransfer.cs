@@ -291,6 +291,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                 await listTask;
             }
+            catch (Exception ex)
+            {
+                if (ex is TransferException)
+                {
+                    throw;
+                }
+                else
+                {
+                    throw new TransferException(TransferErrorCode.Unknown, ex.Message, ex);
+                }
+            }
             finally
             {
                 // wait for outstanding transfers to complete
