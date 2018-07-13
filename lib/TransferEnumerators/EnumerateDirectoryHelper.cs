@@ -241,7 +241,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     // Ignore this folder if we have no right to discovery it.
                     continue;
                 }
-                catch (IOException ex)
+                catch (Exception ex)
                 {
                     throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.EnumerateDirectoryException, folder), ex);
                 }
@@ -261,7 +261,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     }
 
                     // Load files directly under this folder.
-                    foreach (var filePath in LongPathDirectory.EnumerateFileSystemEntries(folder, filePattern, SearchOption.TopDirectoryOnly))
+                    foreach (var filePath in Utils.CatchException(() =>
+                        {
+                            return LongPathDirectory.EnumerateFileSystemEntries(folder, filePattern, SearchOption.TopDirectoryOnly);
+                        },
+                        (ex) =>
+                        {
+                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.EnumerateDirectoryException, folder), ex);
+                        }))
                     {
                         Utils.CheckCancellation(cancellationToken);
 
@@ -362,7 +369,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     }
 
                     // Add sub-folders.
-                    foreach (var filePath in LongPathDirectory.EnumerateFileSystemEntries(folder, "*", SearchOption.TopDirectoryOnly))
+                    foreach (var filePath in Utils.CatchException(() =>
+                        {
+                            return LongPathDirectory.EnumerateFileSystemEntries(folder, "*", SearchOption.TopDirectoryOnly);
+                        },
+                        (ex) =>
+                        {
+                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.EnumerateDirectoryException, folder), ex);
+                        }))
                     {
                         Utils.CheckCancellation(cancellationToken);
 
@@ -388,7 +402,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                         catch (FileNotFoundException) { }
                         catch (IOException) { }
                         catch (UnauthorizedAccessException) { }
-                        
+
                         if (null == fileEntryInfo)
                         {
                             continue;
