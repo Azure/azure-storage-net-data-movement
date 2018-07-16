@@ -34,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Initializes a new instance of the <see cref="DirectoryTransferContext" /> class.
         /// </summary>
         /// <param name="journalStream">The stream into which the transfer journal info will be written into. 
-        /// It can resume the previours paused transfer from its journal stream.</param>
+        /// It can resume the previous paused transfer from its journal stream.</param>
         public DirectoryTransferContext(Stream journalStream)
             :base(journalStream)
         {
