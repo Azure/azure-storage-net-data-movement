@@ -293,7 +293,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
             catch (Exception ex)
             {
-                if (ex is TransferException)
+                if (ex is TransferException || ex is OperationCanceledException)
                 {
                     throw;
                 }
