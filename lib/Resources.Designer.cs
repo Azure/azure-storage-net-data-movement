@@ -288,6 +288,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to get information for file {0}..
+        /// </summary>
+        internal static string FailedToGetFileInfoException {
+            get {
+                return ResourceManager.GetString("FailedToGetFileInfoException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to open file {0}: {1}..
         /// </summary>
         internal static string FailedToOpenFileException {

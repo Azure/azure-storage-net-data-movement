@@ -359,6 +359,10 @@ MD5 in property: {2}</value>
   <data name="FailedToValidateDestinationException" xml:space="preserve">
     <value>Failed to validate destination.</value>
   </data>
+  <data name="FailedToGetFileInfoException" xml:space="preserve">
+    <value>Failed to get information for file {0}.</value>
+    <comment>{0} is the file path.</comment>
+  </data>
   <data name="SearchPatternInRecursiveModeFromAzureFileNotSupportedException" xml:space="preserve">
     <value>Search pattern is not supported in recursive mode when the source is an Azure file directory.</value>
   </data>
