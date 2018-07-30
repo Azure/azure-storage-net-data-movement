@@ -302,6 +302,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                         catch (FileNotFoundException) { }
                         catch (IOException) { }
                         catch (UnauthorizedAccessException) { }
+                        catch (Exception ex)
+                        {
+                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.FailedToGetFileInfoException, filePath), ex);
+                        }
 
                         if (null == fileEntryInfo)
                         {
@@ -402,6 +406,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                         catch (FileNotFoundException) { }
                         catch (IOException) { }
                         catch (UnauthorizedAccessException) { }
+                        catch (Exception ex)
+                        {
+                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.FailedToGetFileInfoException, filePath), ex);
+                        }
 
                         if (null == fileEntryInfo)
                         {
