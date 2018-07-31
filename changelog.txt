@@ -1,3 +1,10 @@
+2018.07.31 Version 0.8.1
+ * All Services on both .Net Framework and .Net Core
+   - Upgrade azure storage client library to 9.3.0
+   - Enhance exception handling during enumeration to avoid throwing out unexpected exceptions
+ * Blob Service
+   - Optimize on block blob uploading and downloading
+
 2018.06.14 Version 0.8.0
  * All Services on both .Net Framework and .Net Core
    - Changed following callbacks to asynchronized methods:
