@@ -28,4 +28,13 @@
     <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="azure.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
