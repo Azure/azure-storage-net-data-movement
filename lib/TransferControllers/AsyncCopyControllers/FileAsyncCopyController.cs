@@ -76,6 +76,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         protected override Task<string> DoStartCopyAsync()
         {
+            // To copy from source to blob, DataMovement Library should overwrite destination's properties and meta datas.
+            // Clear destination's meta data here to avoid using destination's meta data.
+            // Please reference to https://docs.microsoft.com/en-us/rest/api/storageservices/copy-file.
+            this.destFile.Metadata.Clear();
+
             OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
             if (null != this.SourceUri)
             {
