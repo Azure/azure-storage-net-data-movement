@@ -1,4 +1,9 @@
-﻿
+﻿//------------------------------------------------------------------------------
+// <copyright file="FollowSymlinkTest.cs" company="Microsoft">
+//    Copyright (c) Microsoft Corporation
+// </copyright>
+//------------------------------------------------------------------------------
+
 
 namespace DMLibTest
 {

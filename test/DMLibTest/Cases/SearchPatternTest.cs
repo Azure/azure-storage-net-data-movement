@@ -3,6 +3,7 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
+
 namespace DMLibTest
 {
     using System;

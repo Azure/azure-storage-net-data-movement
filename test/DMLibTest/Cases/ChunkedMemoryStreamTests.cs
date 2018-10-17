@@ -3,6 +3,7 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
+
 #if DEBUG
 namespace DMLibTest.Cases
 {
