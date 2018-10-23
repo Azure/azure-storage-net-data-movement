@@ -24,9 +24,9 @@ namespace DMLibTest.Cases
     using Xunit;
 
     [Collection(Collections.Global)]
-    public class NonseekableStreamTest : DMLibTestBase, IClassFixture<NonseekableStreamTestFixture>, IDisposable
+    public class StreamTest : DMLibTestBase, IClassFixture<StreamTestFixture>, IDisposable
     {
-        public NonseekableStreamTest()
+        public StreamTest()
         {
             MyTestInitialize();
         }
@@ -356,13 +356,14 @@ namespace DMLibTest.Cases
 
             FileNode fileNode = sourceDataInfo.RootNode.GetFileNode(FileName);
 
+
             int streamCount = random.Next(2, 6);
             for (int i = 0; i < streamCount; ++i)
             {
                 downloadItems.Add(new TransferItem()
                 {
                     SourceObject = sourceAdaptor.GetTransferObject(string.Empty, fileNode),
-                    DestObject = destAdaptor1.GetTransferObject(string.Empty, new FileNode($"{FileName}_{i}") { SizeInByte = fileSizeInByte }),
+                    DestObject = (destAdaptor1 as LocalDataAdaptor).GetTransferObject(string.Empty, $"{FileName}_{i}"),
                     SourceType = sourceType,
                     DestType = DMLibDataType.Stream,
                     IsServiceCopy = false

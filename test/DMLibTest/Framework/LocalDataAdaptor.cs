@@ -49,6 +49,32 @@ namespace DMLibTest
             }
         }
 
+        public object GetTransferObject(string rootPath, string relativePath, StorageCredentials credentials = null)
+        {
+            if (credentials != null)
+            {
+                throw new NotSupportedException("Credentials is not supported in LocalDataAdaptor.");
+            }
+
+            string filePath = Path.Combine(this.BasePath, rootPath, relativePath);
+
+            if (this.useStream)
+            {
+                if (SourceOrDest.Source == this.SourceOrDest)
+                {
+                    return new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                }
+                else
+                {
+                    return new FileStream(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                }
+            }
+            else
+            {
+                return filePath;
+            }
+        }
+
         public override object GetTransferObject(string rootPath, DirNode dirNode, StorageCredentials credentials = null)
         {
             if (this.useStream)

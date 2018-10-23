@@ -138,6 +138,8 @@ namespace DMLibTest
                         Exception jobException = result.Exceptions[0];
                         Test.Info("{0}", jobException);
                         VerificationHelper.VerifyExceptionErrorMessage(jobException, "Cannot deserialize to TransferLocation when its TransferLocationType is Stream.");
+                        transferItem.DisableStreamDispose = false;
+                        transferItem.CloseStreamIfNecessary();
                         return;
                     }
                 }
