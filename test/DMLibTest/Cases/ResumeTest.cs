@@ -91,6 +91,7 @@ namespace DMLibTest
                         item.CancellationToken = tokenSource.Token;
                         item.TransferContext = transferContext;
                         transferItem = item;
+                        item.DisableStreamDispose = true;
                     };
 
                 TransferCheckpoint firstCheckpoint = null, secondCheckpoint = null;
@@ -116,6 +117,11 @@ namespace DMLibTest
                         // Cancel the transfer and store the second checkpoint
                         tokenSource.Cancel();
                     };
+
+                if ((DMLibTestContext.SourceType == DMLibDataType.Stream) || (DMLibTestContext.DestType == DMLibDataType.Stream))
+                {
+                    options.DisableDestinationFetch = true;
+                }
 
                 // Cancel and store checkpoint for resume
                 var result = this.ExecuteTestCase(sourceDataInfo, options);

@@ -172,12 +172,6 @@ namespace DMLibTest
                 CloudFile newCloudFile = new CloudFile(cloudFile.Uri, cloudFile.ServiceClient.Credentials);
                 return newCloudFile;
             }
-            else if (locationObject is FileStream)
-            {
-                FileStream fileStream = locationObject as FileStream;
-                FileStream newFileStream = new FileStream(fileStream.Name, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-                return newFileStream;
-            }
             else
             {
                 return locationObject;
