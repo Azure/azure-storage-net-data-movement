@@ -1,3 +1,11 @@
+2018.10.25 Version 0.9.0
+ * All Services on both .Net Framework and .Net Core
+   - Upgrade azure storage client library to 9.3.2
+   - Enhance exception handling during enumeration to add more detailed error messages
+   - Disable transational MD5 on sync copying when using HTTPS protocol
+   - Change to overwrite destination's metadata with source's metadata in async copying instead of keeping destination's metadata
+   - Add support for download from the same Azure Blob/Azure File to different Stream intances with multiple transfer jobs
+
 2018.07.31 Version 0.8.1
  * All Services on both .Net Framework and .Net Core
    - Upgrade azure storage client library to 9.3.0
