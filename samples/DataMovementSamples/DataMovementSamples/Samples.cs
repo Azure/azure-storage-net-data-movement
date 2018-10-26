@@ -42,6 +42,10 @@ namespace DataMovementSamples
                 Console.WriteLine("Data movement download sample.");
                 BlobDownloadSample().Wait();
 
+                Console.WriteLine();
+                Console.WriteLine("Data movement download to stream sample");
+                BlobDownloadToStreamSample().Wait();
+
                 // Directory transfer samples
                 Console.WriteLine();
                 Console.WriteLine("Data movement directory upload sample");
@@ -99,6 +103,8 @@ namespace DataMovementSamples
                 CloudBlob destBlob = destination as CloudBlob;
                 destBlob.Properties.ContentType = "image/png";
             };
+
+            context.ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite;
 
             // Start the upload
             await TransferManager.UploadAsync(sourceFileName, destinationBlob, options, context);
@@ -254,6 +260,71 @@ namespace DataMovementSamples
 
             // Print out the final transfer state
             Console.WriteLine("Final transfer state: {0}", recorder.ToString());
+        }
+
+        /// <summary>
+        /// Download data from Azure storage.
+        ///   1. Download a CloudBlob to a Stream instance
+        ///   2. Download the same CloudBlob with step #1 to a different Stream instance
+        ///   3. Download another CloudBlob to a different stream with content MD5 validation disabled
+        ///   4. Show the overall progress of all transfers
+        /// </summary>
+        private static async Task BlobDownloadToStreamSample()
+        {
+            string sourceBlobName1 = "azure_blockblob.png";
+            string sourceBlobName2 = "azure_blockblob2.png";
+
+            // Create the source CloudBlob instances
+            CloudBlob sourceBlob1 = await Util.GetCloudBlobAsync(ContainerName, sourceBlobName1, BlobType.BlockBlob);
+            CloudBlob sourceBlob2 = await Util.GetCloudBlobAsync(ContainerName, sourceBlobName2, BlobType.BlockBlob);
+
+            // Create a TransferContext shared by both transfers
+            SingleTransferContext sharedTransferContext = new SingleTransferContext();
+
+            // Record the overall progress
+            ProgressRecorder recorder = new ProgressRecorder();
+            sharedTransferContext.ProgressHandler = recorder;
+
+            MemoryStream memoryStream1_1 = new MemoryStream();
+            MemoryStream memoryStream1_2 = new MemoryStream();
+            MemoryStream memoryStream2 = new MemoryStream();
+
+            try
+            {
+                // Start the blob download
+                Task task1 = TransferManager.DownloadAsync(sourceBlob1, memoryStream1_1, null /* options */, sharedTransferContext);
+
+                // Start to download the same blob to another Stream
+                // Please note, DataMovement Library will download blob once for each of downloads.
+                // For example, if you start two downloads from the same source blob to two different Stream instance, 
+                // DataMovement Library will download the blob content twice.
+                Task task2 = TransferManager.DownloadAsync(sourceBlob1, memoryStream1_2, null /* options */, sharedTransferContext);
+
+                // Create a DownloadOptions to disable md5 check after data is downloaded. Otherwise, data movement 
+                // library will check the md5 checksum stored in the ContentMD5 property of the source CloudFile/CloudBlob
+                // You can uncomment following codes, enable ContentMD5Validation and have a try.
+                //   sourceBlob2.Properties.ContentMD5 = "WrongMD5";
+                //   sourceBlob2.SetProperties();
+                DownloadOptions options = new DownloadOptions();
+                options.DisableContentMD5Validation = true;
+
+                // Start the download
+                Task task3 = TransferManager.DownloadAsync(sourceBlob2, memoryStream2, options, sharedTransferContext);
+
+                // Wait for all transfers to finish
+                await task1;
+                await task2;
+                await task3;
+
+                // Print out the final transfer state
+                Console.WriteLine("Final transfer state: {0}", recorder.ToString());
+            }
+            finally
+            {
+                memoryStream1_1.Dispose();
+                memoryStream1_2.Dispose();
+                memoryStream2.Dispose();
+            }
         }
 
         /// <summary>
