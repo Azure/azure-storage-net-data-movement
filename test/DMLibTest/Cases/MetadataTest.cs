@@ -11,6 +11,7 @@ namespace DMLibTest
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using MS.Test.Common.MsTestLib;
     using System;
+    using Microsoft.WindowsAzure.Storage.DataMovement;
 
     [MultiDirectionTestClass]
     public class MetadataTest : DMLibTestBase
@@ -85,6 +86,68 @@ namespace DMLibTest
             sourceDataInfo.RootNode.AddFileNode(fileNode);
 
             var result = this.ExecuteTestCase(sourceDataInfo, new TestExecutionOptions<DMLibDataInfo>());
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, true)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile, true)]
+        public void TestMetadataOverwrite()
+        {
+            Dictionary<string, string> metadata = new Dictionary<string, string>();
+            metadata.Add(FileOp.NextCIdentifierString(random), FileOp.NextNormalString(random));
+            metadata.Add(FileOp.NextCIdentifierString(random), FileOp.NextNormalString(random));
+
+            Test.Info("Metadata is =====================");
+            foreach (var keyValue in metadata)
+            {
+                Test.Info("name:{0}  value:{1}", keyValue.Key, keyValue.Value);
+            }
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            FileNode fileNode = new FileNode(DMLibTestBase.FileName)
+            {
+                SizeInByte = DMLibTestBase.FileSizeInKB * 1024L,
+                Metadata = metadata
+            };
+            sourceDataInfo.RootNode.AddFileNode(fileNode);
+
+            Dictionary<string, string> destMetadata = new Dictionary<string, string>();
+            destMetadata.Add(FileOp.NextCIdentifierString(random), FileOp.NextNormalString(random));
+            destMetadata.Add(FileOp.NextCIdentifierString(random), FileOp.NextNormalString(random));
+
+            Test.Info("Destination metadata is =====================");
+            foreach (var keyValue in destMetadata)
+            {
+                Test.Info("name:{0}  value:{1}", keyValue.Key, keyValue.Value);
+            }
+
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(string.Empty);
+            fileNode = new FileNode(DMLibTestBase.FileName)
+            {
+                SizeInByte = DMLibTestBase.FileSizeInKB * 1024L,
+                Metadata = destMetadata
+            };
+            destDataInfo.RootNode.AddFileNode(fileNode);
+            var option = new TestExecutionOptions<DMLibDataInfo>()
+                {
+                    DestTransferDataInfo = destDataInfo
+                };
+
+            SingleTransferContext transferContext = new SingleTransferContext();
+            transferContext.ShouldOverwriteCallbackAsync = async (source, dest) =>
+            {
+                return true;
+            };
+
+            option.TransferItemModifier = (inputFileNode, transferItem) =>
+            {
+                transferItem.TransferContext = transferContext;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, option);
 
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
