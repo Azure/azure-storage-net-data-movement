@@ -101,7 +101,7 @@ Once you setup the storage blob context, you can start to use `WindowsAzure.Stor
 ```csharp
 // Setup the number of the concurrent operations
 TransferManager.Configurations.ParallelOperations = 64;
-// Setup the transfer context and track the upoload progress
+// Setup the transfer context and track the upload progress
 SingleTransferContext context = new SingleTransferContext();
 context.ProgressHandler = new Progress<TransferStatus>((progress) =>
 {
