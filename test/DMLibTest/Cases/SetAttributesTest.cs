@@ -1,4 +1,10 @@
-﻿namespace DMLibTest.Cases
+﻿//------------------------------------------------------------------------------
+// <copyright file="SetAttributesTest.cs" company="Microsoft">
+//    Copyright (c) Microsoft Corporation
+// </copyright>
+//------------------------------------------------------------------------------
+
+namespace DMLibTest.Cases
 {
     using System;
     using System.Collections.Generic;

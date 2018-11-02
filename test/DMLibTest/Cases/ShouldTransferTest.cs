@@ -3,6 +3,7 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
+
 namespace DMLibTest.Cases
 {
     using DMLibTestCodeGen;

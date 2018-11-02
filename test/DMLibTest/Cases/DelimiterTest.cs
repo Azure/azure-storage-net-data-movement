@@ -1,4 +1,10 @@
-﻿namespace DMLibTest.Cases
+﻿//------------------------------------------------------------------------------
+// <copyright file="DelimiterTest.cs" company="Microsoft">
+//    Copyright (c) Microsoft Corporation
+// </copyright>
+//------------------------------------------------------------------------------
+
+namespace DMLibTest.Cases
 {
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;

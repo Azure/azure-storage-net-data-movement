@@ -386,11 +386,18 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
                     this.shouldTransferQueue.EnqueueJob(async () =>
                     {
-                        SingleObjectTransfer candidate = this.CreateTransfer(entry);
+                        try
+                        {
+                            SingleObjectTransfer candidate = this.CreateTransfer(entry);
 
-                        bool shouldTransfer = shouldTransferCallback == null || await shouldTransferCallback(candidate.Source.Instance, candidate.Destination.Instance);
+                            bool shouldTransfer = shouldTransferCallback == null || await shouldTransferCallback(candidate.Source.Instance, candidate.Destination.Instance);
 
-                        return new Tuple<SingleObjectTransfer, TransferEntry>(shouldTransfer ? candidate : null, entry);
+                            return new Tuple<SingleObjectTransfer, TransferEntry>(shouldTransfer ? candidate : null, entry);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new TransferException(TransferErrorCode.FailToEnumerateDirectory, string.Format(CultureInfo.CurrentCulture, "Error happens when handling entry {0}: {1}", entry.ToString(), ex.Message), ex);
+                        }
                     });
                 }
             }

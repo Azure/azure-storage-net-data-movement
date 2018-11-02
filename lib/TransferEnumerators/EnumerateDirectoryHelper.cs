@@ -229,7 +229,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     // since the OS can block access to some paths. Getting files from a location
                     // will force path discovery checks which will indicate whether or not the user
                     // is authorized to access the directory.
-                    LongPathDirectory.GetFiles(folder);
+                    foreach (var fileItem in LongPathDirectory.EnumerateFileSystemEntries(folder, "*", SearchOption.TopDirectoryOnly))
+                    {
+                        // Just try to get the first item in directly to check whether has permission to access the directory.
+                        break;
+                    }
                 }
                 catch (SecurityException)
                 {

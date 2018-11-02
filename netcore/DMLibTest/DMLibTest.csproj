@@ -27,7 +27,7 @@
     <Compile Include="..\..\test\DMLibTest\Cases\FollowSymlinkTest.cs" Link="Cases\FollowSymlinkTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\LongFilePathTest.cs" Link="Cases\LongFilePathTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\MetadataTest.cs" Link="Cases\MetadataTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\NonseekableStreamTest.cs" Link="Cases\NonseekableStreamTest.cs" />
+    <Compile Include="..\..\test\DMLibTest\Cases\StreamTest.cs" Link="Cases\StreamTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\OverwriteTest.cs" Link="Cases\OverwriteTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ProgressHandlerTest.cs" Link="Cases\ProgressHandlerTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ResumeTest.cs" Link="Cases\ResumeTest.cs" />
@@ -106,7 +106,7 @@
     <ProjectReference Include="..\MsTestLib\MsTestLib.csproj" />
     <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
-    <PackageReference Include="WindowsAzure.Storage" Version="9.3.0" />
+    <PackageReference Include="WindowsAzure.Storage" Version="9.3.2" />
   </ItemGroup>
 
   <ItemGroup>

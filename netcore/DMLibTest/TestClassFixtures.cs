@@ -147,15 +147,15 @@ namespace DMLibTest
         }
     }
 
-    public class NonseekableStreamTestFixture : IDisposable
+    public class StreamTestFixture : IDisposable
     {
-        public NonseekableStreamTestFixture()
+        public StreamTestFixture()
         {
-            NonseekableStreamTest.MyClassInitialize(null);
+            StreamTest.MyClassInitialize(null);
         }
         public void Dispose()
         {
-            NonseekableStreamTest.MyClassCleanup();
+            StreamTest.MyClassCleanup();
         }
     }
 

@@ -1,4 +1,9 @@
-﻿
+﻿//------------------------------------------------------------------------------
+// <copyright file="StreamTest.cs" company="Microsoft">
+//    Copyright (c) Microsoft Corporation
+// </copyright>
+//------------------------------------------------------------------------------
+
 namespace DMLibTest.Cases
 {
     using System;
@@ -6,20 +11,22 @@ namespace DMLibTest.Cases
     using System.IO;
     using System.Linq;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using DMLibTest.Util;
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.DataMovement;
     using Microsoft.WindowsAzure.Storage.File;
     using MS.Test.Common.MsTestLib;
 #if DNXCORE50
     using Xunit;
 
     [Collection(Collections.Global)]
-    public class NonseekableStreamTest : DMLibTestBase, IClassFixture<NonseekableStreamTestFixture>, IDisposable
+    public class StreamTest : DMLibTestBase, IClassFixture<StreamTestFixture>, IDisposable
     {
-        public NonseekableStreamTest()
+        public StreamTest()
         {
             MyTestInitialize();
         }
@@ -35,7 +42,7 @@ namespace DMLibTest.Cases
         }
 #else
     [TestClass]
-    public class NonseekableStreamTest : DMLibTestBase
+    public class StreamTest : DMLibTestBase
     {
 #endif
         private static readonly long[] VariedFileSize = new long[] { 0, 1, 4194304};
@@ -44,7 +51,7 @@ namespace DMLibTest.Cases
         [ClassInitialize()]
         public static void MyClassInitialize(TestContext testContext)
         {
-            Test.Info("Class Initialize: NonseekableStreamTest");
+            Test.Info("Class Initialize: StreamTest");
             DMLibTestBase.BaseClassInitialize(testContext);
             DMLibTestBase.CleanupSource = false;            
         }
@@ -66,7 +73,23 @@ namespace DMLibTest.Cases
         {
             base.BaseTestCleanup();
         }
-#endregion
+        #endregion
+
+        [TestMethod]
+        [TestCategory(Tag.Function)]
+#if DNXCORE50
+        [TestStartEnd()]
+#endif
+        public void DownloadToMultipleStreams_Positive()
+        {
+            DownloadToMultipleStreams(DMLibDataType.BlockBlob, random.Next(200, 1025) * 1024 * 1024, (random.Next(4, 101) / 4) * 4 * 1024 * 1024);
+
+            DMLibDataType[] sourceTypes = new DMLibDataType[] { DMLibDataType.BlockBlob, DMLibDataType.AppendBlob, DMLibDataType.PageBlob, DMLibDataType.CloudFile };
+            foreach (var sourceType in sourceTypes)
+            {
+                DownloadToMultipleStreams(sourceType, random.Next(10, 100) * 1024 * 1024);
+            }
+        }
 
         [TestMethod]
         [TestCategory(Tag.Function)]
@@ -309,6 +332,73 @@ namespace DMLibTest.Cases
 
             sourceAdaptor.Cleanup();
             destAdaptor.Cleanup();
+        }
+
+        private void DownloadToMultipleStreams(DMLibDataType sourceType, long fileSize, int blockSize = 0)
+        {
+            DataAdaptor<DMLibDataInfo> sourceAdaptor = GetSourceAdaptor(sourceType);
+            DataAdaptor<DMLibDataInfo> destAdaptor1 = GetDestAdaptor(DMLibDataType.Stream);
+
+            Test.Info("SourceType: {0}, filesize {1}, blocksize {2}", sourceType, fileSize, blockSize);
+
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            long fileSizeInByte = fileSize;
+
+            sourceDataInfo.RootNode.AddFileNode(new FileNode(FileName)
+            {
+                SizeInByte = fileSizeInByte,
+            });
+
+            sourceAdaptor.GenerateData(sourceDataInfo);
+            destAdaptor1.CreateIfNotExists();
+
+            List<TransferItem> downloadItems = new List<TransferItem>();
+
+            FileNode fileNode = sourceDataInfo.RootNode.GetFileNode(FileName);
+
+
+            int streamCount = random.Next(2, 6);
+            for (int i = 0; i < streamCount; ++i)
+            {
+                downloadItems.Add(new TransferItem()
+                {
+                    SourceObject = sourceAdaptor.GetTransferObject(string.Empty, fileNode),
+                    DestObject = (destAdaptor1 as LocalDataAdaptor).GetTransferObject(string.Empty, $"{FileName}_{i}"),
+                    SourceType = sourceType,
+                    DestType = DMLibDataType.Stream,
+                    IsServiceCopy = false
+                });
+            }
+
+            var options = new TestExecutionOptions<DMLibDataInfo>()
+                {
+                    DisableDestinationFetch = true,
+                };
+
+            if (0 != blockSize)
+            {
+                options.BlockSize = blockSize;
+            }
+
+            // Execution
+            var result = this.RunTransferItems(
+                downloadItems,
+                options);
+
+            // Verify all files are transfered successfully
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception occurs.");
+
+            DMLibDataInfo destDataInfo = destAdaptor1.GetTransferDataInfo(string.Empty);
+
+            foreach (FileNode destFileNode in destDataInfo.EnumerateFileNodes())
+            {
+                var toBeValidateFileNode = destFileNode.Clone(FileName);
+                FileNode sourceFileNode = sourceDataInfo.RootNode.GetFileNode(FileName);
+                Test.Assert(DMLibDataHelper.Equals(sourceFileNode, toBeValidateFileNode), "Verify transfer result.");
+            }
+
+            sourceAdaptor.Cleanup();
+            destAdaptor1.Cleanup();
         }
     }
 }

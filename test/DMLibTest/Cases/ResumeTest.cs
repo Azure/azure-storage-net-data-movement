@@ -91,6 +91,7 @@ namespace DMLibTest
                         item.CancellationToken = tokenSource.Token;
                         item.TransferContext = transferContext;
                         transferItem = item;
+                        item.DisableStreamDispose = true;
                     };
 
                 TransferCheckpoint firstCheckpoint = null, secondCheckpoint = null;
@@ -117,6 +118,11 @@ namespace DMLibTest
                         tokenSource.Cancel();
                     };
 
+                if ((DMLibTestContext.SourceType == DMLibDataType.Stream) || (DMLibTestContext.DestType == DMLibDataType.Stream))
+                {
+                    options.DisableDestinationFetch = true;
+                }
+
                 // Cancel and store checkpoint for resume
                 var result = this.ExecuteTestCase(sourceDataInfo, options);
 
@@ -132,6 +138,8 @@ namespace DMLibTest
                         Exception jobException = result.Exceptions[0];
                         Test.Info("{0}", jobException);
                         VerificationHelper.VerifyExceptionErrorMessage(jobException, "Cannot deserialize to TransferLocation when its TransferLocationType is Stream.");
+                        transferItem.DisableStreamDispose = false;
+                        transferItem.CloseStreamIfNecessary();
                         return;
                     }
                 }

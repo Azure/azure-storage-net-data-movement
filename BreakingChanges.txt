@@ -1,3 +1,7 @@
+Tracking Breaking Changes since 0.8.1
+
+   - Change to overwrite destination's metadata with source's metadata in async copying instead of keeping destination's metadata
+
 Tracking Breaking Changes since 0.7.1
 
   - Changed following callbacks to asynchronized methods:

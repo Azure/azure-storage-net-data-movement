@@ -89,6 +89,12 @@ namespace DMLibTest
             set;
         }
 
+        public bool DisableStreamDispose
+        {
+            get;
+            set;
+        }
+
         public Exception Exception
         {
             get;
@@ -97,25 +103,28 @@ namespace DMLibTest
 
         public void CloseStreamIfNecessary()
         {
-            Stream sourceStream = this.SourceObject as Stream;
-            Stream destStream = this.DestObject as Stream;
-            
-            if (sourceStream != null)
+            if (!DisableStreamDispose)
             {
-#if DNXCORE50
-                sourceStream.Dispose();
-#else
-                sourceStream.Close();
-#endif
-            }
+                Stream sourceStream = this.SourceObject as Stream;
+                Stream destStream = this.DestObject as Stream;
 
-            if (destStream != null)
-            {
+                if (sourceStream != null)
+                {
 #if DNXCORE50
-                destStream.Dispose();
+                    sourceStream.Dispose();
 #else
-                destStream.Close();
+                    sourceStream.Close();
 #endif
+                }
+
+                if (destStream != null)
+                {
+#if DNXCORE50
+                    destStream.Dispose();
+#else
+                    destStream.Close();
+#endif
+                }
             }
         }
 
@@ -162,12 +171,6 @@ namespace DMLibTest
                 CloudFile cloudFile = locationObject as CloudFile;
                 CloudFile newCloudFile = new CloudFile(cloudFile.Uri, cloudFile.ServiceClient.Credentials);
                 return newCloudFile;
-            }
-            else if (locationObject is FileStream)
-            {
-                FileStream fileStream = locationObject as FileStream;
-                FileStream newFileStream = new FileStream(fileStream.Name, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-                return newFileStream;
             }
             else
             {

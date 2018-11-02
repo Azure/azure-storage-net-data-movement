@@ -9,6 +9,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System;
     using System.Globalization;
     using System.IO;
+    using System.Runtime.CompilerServices;
     using System.Runtime.Serialization;
 
 #if !BINARY_SERIALIZATION
@@ -16,6 +17,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #endif
     internal class StreamLocation : TransferLocation
     {
+        private static ConditionalWeakTable<Stream, string> StreamIdTable = new ConditionalWeakTable<Stream, string>();
+        string streamLocationIdentity = string.Empty;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="StreamLocation"/> class.
         /// </summary>
@@ -28,6 +32,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             this.Stream = stream;
+
+            string identity = null;
+            if (StreamIdTable.TryGetValue(stream, out identity))
+            {
+                this.streamLocationIdentity = identity;
+            }
+            else
+            {
+                this.streamLocationIdentity = Guid.NewGuid().ToString();
+                StreamIdTable.Add(stream, this.streamLocationIdentity);
+            }
         }
 
 #if !BINARY_SERIALIZATION
@@ -105,7 +120,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         //     A string that represents the transfer location.
         public override string ToString()
         {
-            return this.Stream.ToString();
+            return streamLocationIdentity;
         }
     }
 }

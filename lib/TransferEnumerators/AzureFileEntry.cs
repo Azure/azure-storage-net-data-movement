@@ -35,5 +35,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             get;
             private set;
         }
+
+        public override string ToString()
+        {
+            return File.ConvertToString();
+        }
     }
 }

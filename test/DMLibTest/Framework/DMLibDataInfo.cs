@@ -93,9 +93,10 @@ namespace DMLibTest
                     {
                         yield return component;
                     }
-
+                    
                     yield return this.Name;
                 }
+
             }
         }
     }

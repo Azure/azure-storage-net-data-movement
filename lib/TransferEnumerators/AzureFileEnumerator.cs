@@ -230,7 +230,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                         string errorMessage = string.Format(
                             CultureInfo.CurrentCulture,
                             Resources.FailedToEnumerateDirectory,
-                            this.location.FileDirectory.SnapshotQualifiedUri.AbsoluteUri,
+                            directory.SnapshotQualifiedUri.AbsoluteUri,
                             string.Empty);
 
                         TransferException exception =
