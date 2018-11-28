@@ -18,17 +18,24 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #else
     [DataContract]
 #endif // BINARY_SERIALIZATION
+    [KnownType(typeof(SerializableFileRequestOptions))]
     internal class AzureFileDirectoryLocation : TransferLocation
 #if BINARY_SERIALIZATION
         , ISerializable
 #endif // BINARY_SERIALIZATION
     {
         private const string FileDirName = "FileDir";
-        
+        private const string RequestOptionsName = "RequestOptions";
+
 #if !BINARY_SERIALIZATION
         [DataMember]
 #endif
         private SerializableCloudFileDirectory fileDirectorySerializer;
+
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
+        private SerializableRequestOptions requestOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureFileDirectoryLocation"/> class.
@@ -54,6 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             this.fileDirectorySerializer = (SerializableCloudFileDirectory)info.GetValue(FileDirName, typeof(SerializableCloudFileDirectory));
+            this.requestOptions = (SerializableRequestOptions)info.GetValue(RequestOptionsName, typeof(SerializableRequestOptions));
         }
 #endif // BINARY_SERIALIZATION
 
@@ -95,8 +103,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         internal FileRequestOptions FileRequestOptions
         {
-            get;
-            set;
+            get
+            {
+                return (FileRequestOptions)SerializableRequestOptions.GetRequestOptions(this.requestOptions);
+            }
+
+            set
+            {
+                SerializableRequestOptions.SetRequestOptions(ref this.requestOptions, value);
+            }
         }
 
 #if BINARY_SERIALIZATION
@@ -113,6 +128,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             info.AddValue(FileDirName, this.fileDirectorySerializer, typeof(SerializableCloudFileDirectory));
+            info.AddValue(RequestOptionsName, this.requestOptions, typeof(SerializableRequestOptions));
         }
 #endif // BINARY_SERIALIZATION
 

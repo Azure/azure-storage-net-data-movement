@@ -18,17 +18,24 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 #else
     [DataContract]
 #endif // BINARY_SERIALIZATION
+    [KnownType(typeof(SerializableBlobRequestOptions))]
     internal class AzureBlobDirectoryLocation : TransferLocation
 #if BINARY_SERIALIZATION
         , ISerializable
 #endif // BINARY_SERIALIZATION
     {
         private const string BlobDirName = "CloudBlobDir";
+        private const string RequestOptionsName = "RequestOptions";
 
 #if !BINARY_SERIALIZATION
         [DataMember]
 #endif
         private SerializableCloudBlobDirectory blobDirectorySerializer;
+
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
+        private SerializableRequestOptions requestOptions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureBlobDirectoryLocation"/> class.
@@ -54,6 +61,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             this.blobDirectorySerializer = (SerializableCloudBlobDirectory)info.GetValue(BlobDirName, typeof(SerializableCloudBlobDirectory));
+            this.requestOptions = (SerializableBlobRequestOptions)info.GetValue(RequestOptionsName, typeof(SerializableBlobRequestOptions));
         }
 #endif // BINARY_SERIALIZATION
 
@@ -95,8 +103,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         internal BlobRequestOptions BlobRequestOptions
         {
-            get;
-            set;
+            get
+            {
+                return (BlobRequestOptions)SerializableBlobRequestOptions.GetRequestOptions(this.requestOptions);
+            }
+            set
+            {
+                SerializableRequestOptions.SetRequestOptions(ref this.requestOptions, value);
+            }
         }
 
 #if BINARY_SERIALIZATION
@@ -113,6 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             info.AddValue(BlobDirName, this.blobDirectorySerializer, typeof(SerializableCloudBlobDirectory));
+            info.AddValue(RequestOptionsName, this.requestOptions, typeof(SerializableBlobRequestOptions));
         }
 #endif // BINARY_SERIALIZATION
 

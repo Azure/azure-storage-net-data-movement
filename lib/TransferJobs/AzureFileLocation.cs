@@ -30,13 +30,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         private const string RequestOptionsName = "RequestOptions";
         private const string ETagName = "ETag";
 
+#if !BINARY_SERIALIZATION
         [DataMember]
+#endif
         private SerializableAccessCondition accessCondition;
 
+#if !BINARY_SERIALIZATION
         [DataMember]
+#endif
         private SerializableRequestOptions requestOptions;
 
+#if !BINARY_SERIALIZATION
         [DataMember]
+#endif
         private SerializableCloudFile fileSerializer;
 
         
