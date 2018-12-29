@@ -8,7 +8,6 @@ namespace DMLibTest
     using System;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
-    using Microsoft.WindowsAzure.Storage.Table;
 
     [Flags]
     public enum SharedAccessPermissions
@@ -37,11 +36,6 @@ namespace DMLibTest
         public static SharedAccessFilePermissions ToFilePermissions(this SharedAccessPermissions sap)
         {
             return (SharedAccessFilePermissions)Enum.Parse(typeof(SharedAccessFilePermissions), sap.ToString());
-        }
-
-        public static SharedAccessTablePermissions ToTablePermissions(this SharedAccessPermissions sap)
-        {
-            return (SharedAccessTablePermissions)Enum.Parse(typeof(SharedAccessTablePermissions), sap.ToString());
         }
 
         public static SharedAccessPermissions ToCommonPermissions(this Enum specificPermissions)

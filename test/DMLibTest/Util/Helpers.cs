@@ -18,16 +18,13 @@ namespace DMLibTest
     using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
-
+    using DMLibTest.Framework;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using Microsoft.WindowsAzure.Storage.Table;
     using MS.Test.Common.MsTestLib;
-
-    using DMLibTest.Framework;
     using StorageBlobType = Microsoft.WindowsAzure.Storage.Blob.BlobType;
 
     /// <summary>
@@ -106,7 +103,7 @@ namespace DMLibTest
         public static void WaitForTakingEffect(dynamic cloudStorageClient)
         {
             Test.Assert(
-                cloudStorageClient is CloudBlobClient || cloudStorageClient is CloudTableClient || cloudStorageClient is CloudFileClient,
+                cloudStorageClient is CloudBlobClient || cloudStorageClient is CloudFileClient,
                 "The argument should only be CloudStorageClient.");
 
             if (DMLibTestHelper.GetTestAgainst() != TestAgainst.PublicAzure)
@@ -2690,7 +2687,7 @@ namespace DMLibTest
                 CloudBlobContainer container = BlobClient.GetContainerReference(containerName);
                 if (!container.Exists())
                     return true;
-                IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All);
+                IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, RequestOptions.DefaultBlobRequestOptions);
                 if (blobs != null)
                 {
                     if (blobs.Count() > 500)
@@ -2725,7 +2722,7 @@ namespace DMLibTest
                 }
 
                 Thread.Sleep(5 * 1000);
-                if (container.ListBlobs(null, true, BlobListingDetails.All).Any())
+                if (container.ListBlobs(null, true, BlobListingDetails.All, RequestOptions.DefaultBlobRequestOptions).Any())
                 {
                     Test.Warn("The container hasn't been cleaned actually.");
                     Test.Info("Trying to cleanup the container by recreating it...");
@@ -2736,7 +2733,7 @@ namespace DMLibTest
                     return true;
                 }
             }
-            catch (Exception e) when (Helper.IsNotFoundStorageException(e) || Helper.IsConflictStorageException(e))
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e) || Helper.IsConflictStorageException(e) || e is OperationCanceledException)
             {
                 return CleanupContainerByRecreateIt(containerName);
             }

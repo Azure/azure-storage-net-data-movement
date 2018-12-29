@@ -8,7 +8,7 @@ namespace DMLibTest
     {
         public static void Create(this CloudBlobContainer container, BlobRequestOptions requestOptions = null, OperationContext operationContext = null)
         {
-            container.CreateAsync(requestOptions, operationContext).GetAwaiter().GetResult();
+            container.CreateAsync(BlobContainerPublicAccessType.Off, requestOptions, operationContext).GetAwaiter().GetResult();
         }
 
         public static bool CreateIfNotExists(this CloudBlobContainer container, BlobRequestOptions requestOptions = null, OperationContext operationContext = null)

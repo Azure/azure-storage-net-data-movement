@@ -37,27 +37,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         private static ConcurrentDictionary<TransferKey, Transfer> allTransfers = new ConcurrentDictionary<TransferKey, Transfer>();
 
-#if REQUEST_EVENT_ARGS_EXPOSES_REQUEST // DNX profiles don't expose the HttpWebRequest through RequestEventArgs, so the user agent cannot be set
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1810:InitializeReferenceTypeStaticFieldsInline", Justification = "Performance")]
-        static TransferManager()
-        {
-            OperationContext.GlobalSendingRequest += (sender, args) =>
-            {
-                // User agent string format: [UserAgentPrefix] <DMLib product token> <XSCL product token>
-                // e.g. Suppose UserAgentPrefix is "MyApp", the overall user agent string would be like
-                // 'MyApp DataMovement/0.5.0.0 WA-Storage/8.0.0 (.NET CLR 4.0.30319.34014; Win32NT 6.2.9200.0)' 
-                string userAgent = Constants.UserAgent + " " + Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent;
-
-                if (!string.IsNullOrEmpty(configurations.UserAgentPrefix))
-                {
-                    userAgent = configurations.UserAgentPrefix + " " + userAgent;
-                }
-                
-                args.Request.UserAgent = userAgent;
-            };
-        }
-#endif // REQUEST_EVENT_ARGS_EXPOSES_REQUEST
-
         /// <summary>
         /// Gets or sets the transfer configurations associated with the transfer manager
         /// </summary>

@@ -14,6 +14,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     using System.Threading.Tasks;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+    using Microsoft.WindowsAzure.Storage.DataMovement.Extensions;
     using Microsoft.WindowsAzure.Storage.File;
 
     internal abstract class AsyncCopyController : TransferControllerBase
@@ -497,7 +498,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 if (null != se.RequestInformation
                 && BlobErrorCodeStrings.PendingCopyOperation == se.RequestInformation.ErrorCode)
                 {
-                    CopyState copyState = this.FetchCopyStateAsync().Result;
+                    StorageCopyState copyState = this.FetchCopyStateAsync().Result;
 
                     if (null == copyState)
                     {
@@ -564,7 +565,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
             this.StartCallbackHandler();
 
-            CopyState copyState = null;
+            StorageCopyState copyState = null;
 
             try
             {
@@ -593,7 +594,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             await this.HandleFetchCopyStateResultAsync(copyState);
         }
 
-        private async Task HandleFetchCopyStateResultAsync(CopyState copyState)
+        private async Task HandleFetchCopyStateResultAsync(StorageCopyState copyState)
         {
             if (null == copyState)
             {
@@ -617,7 +618,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             Resources.MismatchFoundBetweenLocalAndServerCopyIdsException);
                 }
 
-                if (CopyStatus.Success == copyState.Status)
+                if (StorageCopyStatus.Success == copyState.Status)
                 {
                     this.UpdateTransferProgress(copyState);
 
@@ -632,7 +633,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     this.SetFinished();
                 }
-                else if (CopyStatus.Pending == copyState.Status)
+                else if (StorageCopyStatus.Pending == copyState.Status)
                 {
                     this.UpdateTransferProgress(copyState);
 
@@ -657,7 +658,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
         }
 
-        private void UpdateTransferProgress(CopyState copyState)
+        private void UpdateTransferProgress(StorageCopyState copyState)
         {
             if (null != copyState &&
                 copyState.TotalBytes.HasValue)
@@ -782,7 +783,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         protected abstract Task DoFetchDestAttributesAsync();
         protected abstract Task<string> DoStartCopyAsync();
         protected abstract void DoHandleGetDestinationException(StorageException se);
-        protected abstract Task<CopyState> FetchCopyStateAsync();
+        protected abstract Task<StorageCopyState> FetchCopyStateAsync();
         protected abstract Task SetAttributesAsync(SetAttributesCallbackAsync setAttributes);
     }
 }

@@ -12,7 +12,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using Microsoft.WindowsAzure.Storage.Table;
 
     /// <summary>
     /// Defines default RequestOptions for every type of transfer job.
@@ -172,30 +171,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
 
             return requestOptions;
-        }
-
-        /// <summary>
-        /// Gets the default <see cref="TableRequestOptions"/>.
-        /// </summary>
-        /// <value>The default <see cref="TableRequestOptions"/></value>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode", Justification = "It will be called in TableDataMovement project.")]
-        public static TableRequestOptions DefaultTableRequestOptions
-        {
-            get
-            {
-                IRetryPolicy defaultRetryPolicy = new TransferRetryPolicy(
-                    retryPoliciesDefaultBackoff,
-                    DefaultRetryCountXMsError,
-                    DefaultRetryCountOtherError);
-
-                return new TableRequestOptions
-                {
-                    MaximumExecutionTime = DefaultMaximumExecutionTime,
-                    RetryPolicy = defaultRetryPolicy,
-                    ServerTimeout = DefaultServerTimeout,
-                    PayloadFormat = TablePayloadFormat.Json
-                };
-            }
         }
 
         /// <summary>
