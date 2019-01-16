@@ -37,25 +37,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Extensions
         public StorageCopyState(Microsoft.WindowsAzure.Storage.Blob.CopyState blobCopyState)
         {
             this.CopyId = blobCopyState.CopyId;
-            this.CompletionTime = blobCopyState.CompletionTime;
             this.SetStatus(blobCopyState.Status);
             this.Source = blobCopyState.Source;
             this.BytesCopied = blobCopyState.BytesCopied;
             this.TotalBytes = blobCopyState.TotalBytes;
             this.StatusDescription = blobCopyState.StatusDescription;
-            this.DestinationSnapshotTime = blobCopyState.DestinationSnapshotTime;
         }
 
         public StorageCopyState(Microsoft.WindowsAzure.Storage.File.CopyState fileCopyState)
         {
             this.CopyId = fileCopyState.CopyId;
-            this.CompletionTime = fileCopyState.CompletionTime;
             this.SetStatus(fileCopyState.Status);
             this.Source = fileCopyState.Source;
             this.BytesCopied = fileCopyState.BytesCopied;
             this.TotalBytes = fileCopyState.TotalBytes;
             this.StatusDescription = fileCopyState.StatusDescription;
-            this.DestinationSnapshotTime = fileCopyState.DestinationSnapshotTime;
         }
 
         private void SetStatus(Microsoft.WindowsAzure.Storage.Blob.CopyStatus blobCopyStatus)
@@ -114,11 +110,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Extensions
         public string CopyId { get; private set; }
         //
         // Summary:
-        //     Gets the time the copy operation completed, and indicates whether completion
-        //     was due to a successful copy, the cancelling of the operation, or a failure.
-        public DateTimeOffset? CompletionTime { get; private set; }
-        //
-        // Summary:
         //     Gets the status of the copy operation.
         public StorageCopyStatus Status { get; private set; }
         //
@@ -137,10 +128,5 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Extensions
         // Summary:
         //     Gets the description of the current status, if any.
         public string StatusDescription { get; private set; }
-        //
-        // Summary:
-        //     Gets the incremental destination snapshot time for the latest incremental copy,
-        //     if present.
-        public DateTimeOffset? DestinationSnapshotTime { get; private set; }
     }
 }
