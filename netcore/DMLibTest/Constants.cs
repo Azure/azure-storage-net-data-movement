@@ -7,18 +7,4 @@ namespace DMLibTest
     {
         public const string Global = "global";
     }
-
-    internal static class RequestOptions
-    {
-        public static BlobRequestOptions DefaultBlobRequestOptions
-        {
-            get
-            {
-                return new BlobRequestOptions()
-                {
-                    MaximumExecutionTime = TimeSpan.FromMinutes(15)
-                };
-            }
-        }
-    }
 }

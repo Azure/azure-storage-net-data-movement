@@ -2687,7 +2687,7 @@ namespace DMLibTest
                 CloudBlobContainer container = BlobClient.GetContainerReference(containerName);
                 if (!container.Exists())
                     return true;
-                IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, RequestOptions.DefaultBlobRequestOptions);
+                IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, DMLibTestConstants.RequestOptions.DefaultBlobRequestOptions);
                 if (blobs != null)
                 {
                     if (blobs.Count() > 500)
@@ -2722,7 +2722,7 @@ namespace DMLibTest
                 }
 
                 Thread.Sleep(5 * 1000);
-                if (container.ListBlobs(null, true, BlobListingDetails.All, RequestOptions.DefaultBlobRequestOptions).Any())
+                if (container.ListBlobs(null, true, BlobListingDetails.All, DMLibTestConstants.RequestOptions.DefaultBlobRequestOptions).Any())
                 {
                     Test.Warn("The container hasn't been cleaned actually.");
                     Test.Info("Trying to cleanup the container by recreating it...");
