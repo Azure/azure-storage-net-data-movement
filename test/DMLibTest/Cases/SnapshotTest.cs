@@ -323,7 +323,7 @@ namespace DMLibTest.Cases
             Test.Assert(task.Result.NumberOfFilesTransferred == fileCount, string.Format("Transferred file :{0} == {1}", task.Result.NumberOfFilesTransferred, fileCount));
 
             // verify that Files in Share Snapshot is transferred
-            IEnumerable<IListFileItem> sourceFiles = SourceObject.ListFilesAndDirectories();
+            IEnumerable<IListFileItem> sourceFiles = SourceObject.ListFilesAndDirectories(HelperConst.DefaultFileOptions);
             foreach (IListFileItem item in sourceFiles)
             {
                 if (item is CloudFile)

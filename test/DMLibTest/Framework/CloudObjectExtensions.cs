@@ -63,11 +63,13 @@ namespace DMLibTest
         public static BlobRequestOptions DefaultBlobOptions = new BlobRequestOptions
         {
             RetryPolicy = new LinearRetry(TimeSpan.FromSeconds(90), 3),
+            MaximumExecutionTime = TimeSpan.FromMinutes(15)
         };
 
         public static FileRequestOptions DefaultFileOptions = new FileRequestOptions
         {
             RetryPolicy = new LinearRetry(TimeSpan.FromSeconds(90), 3),
+            MaximumExecutionTime = TimeSpan.FromMinutes(15)
         };
     }
 }

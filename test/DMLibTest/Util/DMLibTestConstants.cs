@@ -10,6 +10,7 @@ namespace DMLibTest
     using MS.Test.Common.MsTestLib;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
     using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.WindowsAzure.Storage.File;
 
     public static class Tag
     {
@@ -117,20 +118,6 @@ namespace DMLibTest
 
                 Test.Verbose("Recursive folder depth: {0}", recursiveFolderDepth);
                 return recursiveFolderDepth;
-            }
-        }
-
-        internal static class RequestOptions
-        {
-            public static BlobRequestOptions DefaultBlobRequestOptions
-            {
-                get
-                {
-                    return new BlobRequestOptions()
-                    {
-                        MaximumExecutionTime = TimeSpan.FromMinutes(15)
-                    };
-                }
             }
         }
     }
