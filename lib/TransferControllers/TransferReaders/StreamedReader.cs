@@ -488,7 +488,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     // Should only get into this block once.
                     if (-1 == this.SharedTransferData.TotalLength)
                     {
-                        this.SharedTransferData.TotalLength = this.readLength;
+                        this.SharedTransferData.UpdateTotalLength(this.readLength);
                     }
 
                     this.state = State.Finished;

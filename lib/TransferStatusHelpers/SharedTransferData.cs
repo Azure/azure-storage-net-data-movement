@@ -27,6 +27,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             }
         }
 
+        /// <summary>
+        /// Update totallength but don't update BlockSize accordingly.
+        /// </summary>
+        /// <param name="value"></param>
+        public void UpdateTotalLength(long value)
+        {
+            this.totalLength = value;
+        }
+
         public int BlockSize { get; set; }
 
         public int MemoryChunksRequiredEachTime { get; set; }
