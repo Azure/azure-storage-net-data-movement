@@ -81,7 +81,7 @@ namespace DMLibTest.Cases
 
         private void TestAccessCondition(SourceOrDest sourceOrDest)
         {
-            string eTag = "notmatch";
+            string eTag = "\"notmatch\"";
             AccessCondition accessCondition = new AccessCondition()
             {
                 IfMatchETag = eTag
@@ -147,10 +147,10 @@ namespace DMLibTest.Cases
             Exception exception = result.Exceptions[0];
 #if DNXCORE50
             VerificationHelper.VerifyTransferException(exception, TransferErrorCode.Unknown);
-
-            // TODO: The InnerException is as expected but has a different message and HttpStatusCode
-            // compared to the desktop version of XSCL; is this an XSCL bug?
-            VerificationHelper.VerifyStorageException(exception.InnerException, 0, "The format of value 'notmatch' is invalid.");
+            
+            // Verify innner StorageException
+            VerificationHelper.VerifyStorageException(exception.InnerException, (int)HttpStatusCode.PreconditionFailed,
+                "The condition specified using HTTP conditional header(s) is not met.");
 #else
             VerificationHelper.VerifyTransferException(exception, TransferErrorCode.Unknown);
 
