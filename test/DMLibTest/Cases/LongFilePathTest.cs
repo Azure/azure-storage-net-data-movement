@@ -299,7 +299,7 @@ namespace DMLibTest.Cases
                 {
                     Test.Assert(result.Exceptions.Count == 1, "Verify transfer is skipped when source is stream.");
                     exception = result.Exceptions[0];
-                    VerificationHelper.VerifyTransferException(result.Exceptions[0], TransferErrorCode.NotOverwriteExistingDestination, "Skiped file");
+                    VerificationHelper.VerifyTransferException(result.Exceptions[0], TransferErrorCode.NotOverwriteExistingDestination, "Skipped file");
                 }
                 else
                 {
@@ -329,7 +329,7 @@ namespace DMLibTest.Cases
                     {
                         Test.Assert(result.Exceptions.Count == 1, "Verify transfer is skipped when source is stream.");
                         exception = result.Exceptions[0];
-                        VerificationHelper.VerifyTransferException(result.Exceptions[0], TransferErrorCode.NotOverwriteExistingDestination, "Skiped file");
+                        VerificationHelper.VerifyTransferException(result.Exceptions[0], TransferErrorCode.NotOverwriteExistingDestination, "Skipped file");
                     }
                     else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && !DMLibTestContext.IsAsync)
                     {
