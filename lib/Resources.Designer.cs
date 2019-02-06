@@ -378,7 +378,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Skiped file &quot;{0}&quot; because target &quot;{1}&quot; already exists..
+        ///   Looks up a localized string similar to Skipped file &quot;{0}&quot; because target &quot;{1}&quot; already exists..
         /// </summary>
         internal static string OverwriteCallbackCancelTransferException {
             get {
