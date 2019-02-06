@@ -133,7 +133,7 @@ namespace DMLibTest.Cases
                 Test.Assert(transferException != null, "Verify the exception is a TransferException");
 
                 VerificationHelper.VerifyTransferException(transferException, TransferErrorCode.NotOverwriteExistingDestination,
-                    "Skiped file", destExistNName);
+                    "Skipped file", destExistNName);
             }
         }
 
@@ -176,7 +176,7 @@ namespace DMLibTest.Cases
                 Test.Assert(transferException != null, "Verify the exception is a TransferException");
 
                 VerificationHelper.VerifyTransferException(transferException, TransferErrorCode.NotOverwriteExistingDestination,
-                    "Skiped file", destExistNName);
+                    "Skipped file", destExistNName);
             };
 
             transferContext.FileTransferred += (object sender, TransferEventArgs args) =>
