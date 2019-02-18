@@ -1,3 +1,9 @@
+Tracking Breaking Changes since 0.9.0
+
+   - Changed dependency from azure storage client library 9.3.2 to azure storage blob client library 9.4.2 and azure storage file client library 9.4.2
+     To upgrade to DataMovement Library 0.10.0 from previous version, please uninstall azure storage client library package first to avoid compiling error
+   - For DataMovement Library on .Net Framework, the minimum required .Net Framework version changed from 4.5 to 4.5.2
+
 Tracking Breaking Changes since 0.8.1
 
    - Change to overwrite destination's metadata with source's metadata in async copying instead of keeping destination's metadata
