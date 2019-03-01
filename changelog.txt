@@ -1,4 +1,4 @@
-2019.02.18 Version 0.10.0
+2019.02.18 Version 0.10.1
  * All Services on both .Net Framework and .Net Core
    - Changed dependency from azure storage client library 9.3.2 to azure storage blob client library 9.4.2 and azure storage file client library 9.4.2
    - Fixed issue of config to disable content MD5 checking in download doesn't take effect during resuming
