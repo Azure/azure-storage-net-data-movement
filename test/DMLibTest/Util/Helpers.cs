@@ -18,16 +18,13 @@ namespace DMLibTest
     using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
-
+    using DMLibTest.Framework;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Auth;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using Microsoft.WindowsAzure.Storage.Table;
     using MS.Test.Common.MsTestLib;
-
-    using DMLibTest.Framework;
     using StorageBlobType = Microsoft.WindowsAzure.Storage.Blob.BlobType;
 
     /// <summary>
@@ -85,7 +82,7 @@ namespace DMLibTest
             try
             {
                 CloudBlobContainer container = BlobClient.GetContainerReference(containerName);
-                IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All);
+                IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, HelperConst.DefaultBlobOptions);
                 if (blobs != null)
                 {
                     foreach (CloudBlob blob in blobs)
@@ -106,7 +103,7 @@ namespace DMLibTest
         public static void WaitForTakingEffect(dynamic cloudStorageClient)
         {
             Test.Assert(
-                cloudStorageClient is CloudBlobClient || cloudStorageClient is CloudTableClient || cloudStorageClient is CloudFileClient,
+                cloudStorageClient is CloudBlobClient || cloudStorageClient is CloudFileClient,
                 "The argument should only be CloudStorageClient.");
 
             if (DMLibTestHelper.GetTestAgainst() != TestAgainst.PublicAzure)
@@ -1975,7 +1972,7 @@ namespace DMLibTest
                 localSubDirs.Add(Path.GetFileName(localSubDir));
             }
 
-            foreach (IListFileItem item in dir.ListFilesAndDirectories())
+            foreach (IListFileItem item in dir.ListFilesAndDirectories(HelperConst.DefaultFileOptions))
             {
                 if (item is CloudFile)
                 {
@@ -2120,7 +2117,7 @@ namespace DMLibTest
         public static IEnumerable<string> EnumerateFiles(CloudFileDirectory dir, bool recursive)
         {
             var folders = new List<CloudFileDirectory>();
-            foreach (IListFileItem item in dir.ListFilesAndDirectories())
+            foreach (IListFileItem item in dir.ListFilesAndDirectories(HelperConst.DefaultFileOptions))
             {
                 if (item is CloudFile)
                 {
@@ -2166,7 +2163,7 @@ namespace DMLibTest
         public static IEnumerable<string> EnumerateDirectories(CloudFileDirectory dir, bool recursive)
         {
             List<string> dirs = new List<string>();
-            foreach (IListFileItem item in dir.ListFilesAndDirectories())
+            foreach (IListFileItem item in dir.ListFilesAndDirectories(HelperConst.DefaultFileOptions))
             {
                 if (item is CloudFileDirectory)
                 {
@@ -2235,7 +2232,7 @@ namespace DMLibTest
             }
             else
             {
-                if (root.ListFilesAndDirectories().Count() > 500)
+                if (root.ListFilesAndDirectories(HelperConst.DefaultFileOptions).Count() > 500)
                     return CleanupFileShareByRecreateIt(shareName);
             }
 
@@ -2245,7 +2242,7 @@ namespace DMLibTest
 
         public static void CleanupFileDirectory(CloudFileDirectory cloudDirectory)
         {
-            foreach (IListFileItem item in cloudDirectory.ListFilesAndDirectories())
+            foreach (IListFileItem item in cloudDirectory.ListFilesAndDirectories(HelperConst.DefaultFileOptions))
             {
                 if (item is CloudFile)
                 {
@@ -2501,7 +2498,7 @@ namespace DMLibTest
             try
             {
                 CloudBlobContainer container = BlobClient.GetContainerReference(containerName);
-                IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, listingDetails);
+                IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, listingDetails, HelperConst.DefaultBlobOptions);
                 if (blobs != null)
                 {
                     foreach (CloudBlob blob in blobs)
@@ -2690,7 +2687,7 @@ namespace DMLibTest
                 CloudBlobContainer container = BlobClient.GetContainerReference(containerName);
                 if (!container.Exists())
                     return true;
-                IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All);
+                IEnumerable<IListBlobItem> blobs = container.ListBlobs(null, true, BlobListingDetails.All, HelperConst.DefaultBlobOptions);
                 if (blobs != null)
                 {
                     if (blobs.Count() > 500)
@@ -2725,7 +2722,7 @@ namespace DMLibTest
                 }
 
                 Thread.Sleep(5 * 1000);
-                if (container.ListBlobs(null, true, BlobListingDetails.All).Any())
+                if (container.ListBlobs(null, true, BlobListingDetails.All, HelperConst.DefaultBlobOptions).Any())
                 {
                     Test.Warn("The container hasn't been cleaned actually.");
                     Test.Info("Trying to cleanup the container by recreating it...");
@@ -2736,7 +2733,7 @@ namespace DMLibTest
                     return true;
                 }
             }
-            catch (Exception e) when (Helper.IsNotFoundStorageException(e) || Helper.IsConflictStorageException(e))
+            catch (Exception e) when (Helper.IsNotFoundStorageException(e) || Helper.IsConflictStorageException(e) || e is OperationCanceledException)
             {
                 return CleanupContainerByRecreateIt(containerName);
             }
@@ -3374,7 +3371,7 @@ namespace DMLibTest
                 CloudBlobContainer container = BlobClient.GetContainerReference(containerName);
                 if (container.Exists())
                 {
-                    IEnumerable<IListBlobItem> blobs = container.ListBlobs(blobName, true, BlobListingDetails.All);
+                    IEnumerable<IListBlobItem> blobs = container.ListBlobs(blobName, true, BlobListingDetails.All, HelperConst.DefaultBlobOptions);
                     foreach (CloudBlob blob in blobs)
                     {
                         if (blob.Name == blobName)

@@ -1,4 +1,7 @@
-﻿namespace DMLibTest
+﻿using System;
+using Microsoft.WindowsAzure.Storage.Blob;
+
+namespace DMLibTest
 {
     internal static class Collections
     {

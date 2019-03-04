@@ -7,6 +7,8 @@ namespace DMLibTest.Cases
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
+    using System.Threading;
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.WindowsAzure.Storage.DataMovement;
@@ -147,15 +149,15 @@ namespace DMLibTest.Cases
             TransferEventChecker eventChecker = new TransferEventChecker();
             TransferContext context = new DirectoryTransferContext();
             eventChecker.Apply(context);
-            
+
             bool failureReported = false;
             context.FileFailed += (sender, args) =>
+            {
+                if (args.Exception != null)
                 {
-                    if (args.Exception != null)
-                    {
-                        failureReported = args.Exception.Message.Contains(checkWrongMD5File);
-                    }
-                };
+                    failureReported = args.Exception.Message.Contains(checkWrongMD5File);
+                }
+            };
 
             ProgressChecker progressChecker = new ProgressChecker(4, totalSize, 3, 1, 0, totalSize);
             context.ProgressHandler = progressChecker.GetProgressHandler();
@@ -218,6 +220,305 @@ namespace DMLibTest.Cases
             else
             {
                 VerificationHelper.VerifyExceptionErrorMessage(transferExceptions[0], new string[] { "The MD5 hash calculated from the downloaded data does not match the MD5 hash stored in the property of source" });
+            }
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.LocalDest)]
+        public void TestDirectoryCheckContentMD5Resume()
+        {
+            long fileSize = 5 * 1024;
+            int fileCountMulti = 32;
+            long totalSize = fileSize * 4 * fileCountMulti;
+            string wrongMD5 = "wrongMD5";
+
+            string checkWrongMD5File = "checkWrongMD5File";
+            string checkCorrectMD5File = "checkCorrectMD5File";
+            string notCheckWrongMD5File = "notCheckWrongMD5File";
+            string notCheckCorrectMD5File = "notCheckCorrectMD5File";
+
+            // Prepare data for transfer items with checkMD5
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            DirNode checkMD5Folder = new DirNode("checkMD5");
+            for (int i = 0; i < fileCountMulti; ++i)
+            {
+                var wrongMD5FileNode = new FileNode($"{checkWrongMD5File}_{i}")
+                {
+                    SizeInByte = fileSize,
+                    MD5 = wrongMD5
+                };
+
+                checkMD5Folder.AddFileNode(wrongMD5FileNode);
+
+                DMLibDataHelper.AddOneFileInBytes(checkMD5Folder, $"{checkCorrectMD5File}_{i}", fileSize);
+            }
+            sourceDataInfo.RootNode.AddDirNode(checkMD5Folder);
+
+            // Prepare data for transfer items with disabling MD5 check
+            DirNode notCheckMD5Folder = new DirNode("notCheckMD5");
+
+            for (int i = 0; i < fileCountMulti; ++i)
+            {
+                var wrongMD5FileNode = new FileNode($"{notCheckWrongMD5File}_{i}")
+                {
+                    SizeInByte = fileSize,
+                    MD5 = wrongMD5
+                };
+
+                notCheckMD5Folder.AddFileNode(wrongMD5FileNode);
+
+                DMLibDataHelper.AddOneFileInBytes(notCheckMD5Folder, $"{notCheckCorrectMD5File}_{i}", fileSize);
+            }
+
+            sourceDataInfo.RootNode.AddDirNode(notCheckMD5Folder);
+            
+            SourceAdaptor.GenerateData(sourceDataInfo);
+
+            TransferEventChecker eventChecker = new TransferEventChecker();
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            TransferContext context = new DirectoryTransferContext();
+            eventChecker.Apply(context);
+            
+            ProgressChecker progressChecker = new ProgressChecker(4 * fileCountMulti, totalSize, 3 * fileCountMulti, null, 0, totalSize);
+            context.ProgressHandler = progressChecker.GetProgressHandler();
+            List<Exception> transferExceptions = new List<Exception>();
+           
+            TransferItem checkMD5Item = new TransferItem()
+            {
+                SourceObject = SourceAdaptor.GetTransferObject(sourceDataInfo.RootPath, checkMD5Folder),
+                DestObject = DestAdaptor.GetTransferObject(sourceDataInfo.RootPath, checkMD5Folder),
+                IsDirectoryTransfer = true,
+                SourceType = DMLibTestContext.SourceType,
+                DestType = DMLibTestContext.DestType,
+                IsServiceCopy = DMLibTestContext.IsAsync,
+                TransferContext = context,
+                Options = new DownloadDirectoryOptions()
+                {
+                    DisableContentMD5Validation = false,
+                    Recursive = true,
+                },
+                CancellationToken = cancellationTokenSource.Token,
+            };
+
+            TransferItem notCheckMD5Item = new TransferItem()
+            {
+                SourceObject = SourceAdaptor.GetTransferObject(sourceDataInfo.RootPath, notCheckMD5Folder),
+                DestObject = DestAdaptor.GetTransferObject(sourceDataInfo.RootPath, notCheckMD5Folder),
+                IsDirectoryTransfer = true,
+                SourceType = DMLibTestContext.SourceType,
+                DestType = DMLibTestContext.DestType,
+                IsServiceCopy = DMLibTestContext.IsAsync,
+                TransferContext = context,
+                Options = new DownloadDirectoryOptions()
+                {
+                    DisableContentMD5Validation = true,
+                    Recursive = true,
+                },
+                CancellationToken = cancellationTokenSource.Token
+            };
+
+            var executionOption = new TestExecutionOptions<DMLibDataInfo>();
+            executionOption.AfterAllItemAdded = () =>
+            {
+                // Wait until there are data transferred
+                progressChecker.DataTransferred.WaitOne();
+                
+                // Cancel the transfer and store the second checkpoint
+                cancellationTokenSource.Cancel();
+            };
+            executionOption.LimitSpeed = true;
+
+            var testResult = this.RunTransferItems(new List<TransferItem>() { checkMD5Item, notCheckMD5Item }, executionOption);
+
+            eventChecker = new TransferEventChecker();
+            context = new DirectoryTransferContext(DMLibTestHelper.RandomReloadCheckpoint(context.LastCheckpoint));
+            eventChecker.Apply(context);
+
+            bool failureReported = false;
+            context.FileFailed += (sender, args) =>
+            {
+                if (args.Exception != null)
+                {
+                    failureReported = args.Exception.Message.Contains(checkWrongMD5File);
+                }
+
+                transferExceptions.Add(args.Exception);
+            };
+
+            progressChecker.Reset();
+            context.ProgressHandler = progressChecker.GetProgressHandler();
+
+            checkMD5Item = checkMD5Item.Clone();
+            notCheckMD5Item = notCheckMD5Item.Clone();
+
+            checkMD5Item.TransferContext = context;
+            notCheckMD5Item.TransferContext = context;
+
+            testResult = this.RunTransferItems(new List<TransferItem>() { checkMD5Item, notCheckMD5Item }, new TestExecutionOptions<DMLibDataInfo>());
+
+            DMLibDataInfo expectedDataInfo = sourceDataInfo.Clone();
+            DMLibDataInfo actualDataInfo = testResult.DataInfo;
+            for (int i = 0; i < fileCountMulti; ++i)
+            {
+                expectedDataInfo.RootNode.GetDirNode(checkMD5Folder.Name).DeleteFileNode($"{checkWrongMD5File}_{i}");
+                expectedDataInfo.RootNode.GetDirNode(notCheckMD5Folder.Name).DeleteFileNode($"{notCheckWrongMD5File}_{i}");
+                actualDataInfo.RootNode.GetDirNode(checkMD5Folder.Name).DeleteFileNode($"{checkWrongMD5File}_{i}");
+                actualDataInfo.RootNode.GetDirNode(notCheckMD5Folder.Name).DeleteFileNode($"{notCheckWrongMD5File}_{i}");
+            }
+
+            Test.Assert(DMLibDataHelper.Equals(expectedDataInfo, actualDataInfo), "Verify transfer result.");
+            Test.Assert(failureReported, "Verify md5 check failure is reported.");
+            VerificationHelper.VerifyFinalProgress(progressChecker, 3 * fileCountMulti, 0, fileCountMulti);
+
+            if (testResult.Exceptions.Count != 0 || transferExceptions.Count != fileCountMulti)
+            {
+                Test.Error("Expect one exception but actually no exception is thrown.");
+            }
+            else
+            {
+                for (int i = 0; i < fileCountMulti; ++i)
+                {
+                    VerificationHelper.VerifyExceptionErrorMessage(transferExceptions[i], new string[] { "The MD5 hash calculated from the downloaded data does not match the MD5 hash stored in the property of source" });
+                }
+            }
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.LocalDest)]
+        public void TestDirectoryCheckContentMD5StreamResume()
+        {
+            TestDirectoryCheckContentMD5StreamResume(true);
+            TestDirectoryCheckContentMD5StreamResume(false);
+        }
+
+        private void TestDirectoryCheckContentMD5StreamResume(bool checkMD5)
+        {
+            long fileSize = 5 * 1024;
+            int fileCountMulti = 32;
+            long totalSize = fileSize * 4 * fileCountMulti;
+            string wrongMD5 = "wrongMD5";
+
+            string wrongMD5File = "wrongMD5File";
+            string correctMD5File = "correctMD5File";
+
+            // Prepare data for transfer items with checkMD5
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            DirNode checkMD5Folder = new DirNode(checkMD5 ? "checkMD5" : "notCheckMD5");
+            for (int i = 0; i < fileCountMulti; ++i)
+            {
+                var wrongMD5FileNode = new FileNode($"{wrongMD5File}_{i}")
+                {
+                    SizeInByte = fileSize,
+                    MD5 = wrongMD5
+                };
+
+                checkMD5Folder.AddFileNode(wrongMD5FileNode);
+
+                DMLibDataHelper.AddOneFileInBytes(checkMD5Folder, $"{correctMD5File}_{i}", fileSize);
+            }
+            sourceDataInfo.RootNode.AddDirNode(checkMD5Folder);
+
+            SourceAdaptor.GenerateData(sourceDataInfo);
+            DestAdaptor.Cleanup();
+
+            TransferEventChecker eventChecker = new TransferEventChecker();
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            using (var resumeStream = new MemoryStream())
+            {
+                TransferContext context = new DirectoryTransferContext(resumeStream);
+                eventChecker.Apply(context);
+
+                ProgressChecker progressChecker = new ProgressChecker(2 * fileCountMulti,
+                    totalSize, checkMD5 ? fileCountMulti : 2 * fileCountMulti, null, 0, totalSize);
+
+                context.ProgressHandler = progressChecker.GetProgressHandler();
+                List<Exception> transferExceptions = new List<Exception>();
+
+                TransferItem checkMD5Item = new TransferItem()
+                {
+                    SourceObject = SourceAdaptor.GetTransferObject(sourceDataInfo.RootPath, checkMD5Folder),
+                    DestObject = DestAdaptor.GetTransferObject(sourceDataInfo.RootPath, checkMD5Folder),
+                    IsDirectoryTransfer = true,
+                    SourceType = DMLibTestContext.SourceType,
+                    DestType = DMLibTestContext.DestType,
+                    IsServiceCopy = DMLibTestContext.IsAsync,
+                    TransferContext = context,
+                    Options = new DownloadDirectoryOptions()
+                    {
+                        DisableContentMD5Validation = !checkMD5,
+                        Recursive = true,
+                    },
+                    CancellationToken = cancellationTokenSource.Token,
+                };
+
+                var executionOption = new TestExecutionOptions<DMLibDataInfo>();
+                executionOption.AfterAllItemAdded = () =>
+                {
+                // Wait until there are data transferred
+                progressChecker.DataTransferred.WaitOne();
+
+                // Cancel the transfer and store the second checkpoint
+                cancellationTokenSource.Cancel();
+                };
+                executionOption.LimitSpeed = true;
+
+                var testResult = this.RunTransferItems(new List<TransferItem>() { checkMD5Item }, executionOption);
+
+                eventChecker = new TransferEventChecker();
+                resumeStream.Position = 0;
+                context = new DirectoryTransferContext(resumeStream);
+                eventChecker.Apply(context);
+
+                bool failureReported = false;
+                context.FileFailed += (sender, args) =>
+                {
+                    if (args.Exception != null)
+                    {
+                        failureReported = args.Exception.Message.Contains(wrongMD5File);
+                    }
+
+                    transferExceptions.Add(args.Exception);
+                };
+
+                progressChecker.Reset();
+                context.ProgressHandler = progressChecker.GetProgressHandler();
+
+                checkMD5Item = checkMD5Item.Clone();
+
+                checkMD5Item.TransferContext = context;
+
+                testResult = this.RunTransferItems(new List<TransferItem>() { checkMD5Item }, new TestExecutionOptions<DMLibDataInfo>());
+
+                DMLibDataInfo expectedDataInfo = sourceDataInfo.Clone();
+                DMLibDataInfo actualDataInfo = testResult.DataInfo;
+                for (int i = 0; i < fileCountMulti; ++i)
+                {
+                    expectedDataInfo.RootNode.GetDirNode(checkMD5Folder.Name).DeleteFileNode($"{wrongMD5File}_{i}");
+                    actualDataInfo.RootNode.GetDirNode(checkMD5Folder.Name).DeleteFileNode($"{wrongMD5File}_{i}");
+                }
+
+                Test.Assert(DMLibDataHelper.Equals(expectedDataInfo, actualDataInfo), "Verify transfer result.");
+                Test.Assert(checkMD5 ? failureReported : !failureReported, "Verify md5 check failure is expected.");
+                VerificationHelper.VerifyFinalProgress(progressChecker, checkMD5 ? fileCountMulti : 2 * fileCountMulti, 0, checkMD5 ? fileCountMulti : 0);
+
+                if (checkMD5)
+                {
+                    if (testResult.Exceptions.Count != 0 || transferExceptions.Count != fileCountMulti)
+                    {
+                        Test.Error("Expect one exception but actually no exception is thrown.");
+                    }
+                    else
+                    {
+                        for (int i = 0; i < fileCountMulti; ++i)
+                        {
+                            VerificationHelper.VerifyExceptionErrorMessage(transferExceptions[i], new string[] { "The MD5 hash calculated from the downloaded data does not match the MD5 hash stored in the property of source" });
+                        }
+                    }
+                }
+                else
+                {
+                    Test.Assert(testResult.Exceptions.Count == 0, "Should no exception thrown out when disabling check md5");
+                }
             }
         }
     }

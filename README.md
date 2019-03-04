@@ -1,4 +1,4 @@
-# Microsoft Azure Storage Data Movement Library (0.9.0)
+# Microsoft Azure Storage Data Movement Library (0.10.1)
 
 The Microsoft Azure Storage Data Movement Library designed for high-performance uploading, downloading and copying Azure Storage Blob and File. This library is based on the core data movement framework that powers [AzCopy](https://azure.microsoft.com/documentation/articles/storage-use-azcopy/).
 
@@ -30,7 +30,7 @@ For the best development experience, we recommend that developers use the offici
 
 ## Target Frameworks
 
-- .NET Framework 4.5 or above
+- .NET Framework 4.5.2 or above
 - Netstandard2.0
 
 ## Requirements
@@ -60,12 +60,17 @@ within your project you can also have them installed by the .NET package manager
 
 ## Dependencies
 
-### Azure Storage Client Library
+### Azure Storage Blob Client Library
 
-This version depends on Azure Storage Client Library
+This version depends on Azure Storage Blob Client Library
 
-- [WindowsAzure.Storage](https://www.nuget.org/packages/WindowsAzure.Storage/)
+- [Microsoft.Azure.Storage.Blob](https://www.nuget.org/packages/Microsoft.Azure.Storage.Blob/)
 
+### Azure Storage File Client Library
+
+This version depends on Azure Storage File Client Library
+
+- [Microsoft.Azure.Storage.File](https://www.nuget.org/packages/Microsoft.Azure.Storage.File/)
 
 
 ## Code Samples
@@ -101,7 +106,7 @@ Once you setup the storage blob context, you can start to use `WindowsAzure.Stor
 ```csharp
 // Setup the number of the concurrent operations
 TransferManager.Configurations.ParallelOperations = 64;
-// Setup the transfer context and track the upoload progress
+// Setup the transfer context and track the upload progress
 SingleTransferContext context = new SingleTransferContext();
 context.ProgressHandler = new Progress<TransferStatus>((progress) =>
 {

@@ -13,6 +13,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.WindowsAzure.Storage.DataMovement.Extensions;
     using Microsoft.WindowsAzure.Storage.File;
 
     /// <summary>
@@ -118,7 +119,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
         }
 
-        protected override async Task<CopyState> FetchCopyStateAsync()
+        protected override async Task<StorageCopyState> FetchCopyStateAsync()
         {
             await this.destFile.FetchAttributesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
@@ -126,7 +127,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 Utils.GenerateOperationContext(this.TransferContext),
                 this.CancellationToken);
 
-            return this.destFile.CopyState;
+            return new StorageCopyState(this.destFile.CopyState);
         }
 
         protected override async Task SetAttributesAsync(SetAttributesCallbackAsync setCustomAttributes)

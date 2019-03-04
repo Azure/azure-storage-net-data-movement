@@ -449,6 +449,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if ((currentReadLength == this.SharedTransferData.TotalLength) || endofStream)
             {
                 Interlocked.Exchange(ref this.readCompleted, 1);
+
+                // Should only get into this block once.
+                if (-1 == this.SharedTransferData.TotalLength)
+                {
+                    this.SharedTransferData.UpdateTotalLength(this.readLength);
+                }
             }
 
             if (endofStream && (-1 != this.SharedTransferData.TotalLength) && (currentReadLength != this.SharedTransferData.TotalLength))
@@ -485,12 +491,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 if (0 == Interlocked.Exchange(ref this.setCompletionDone, 1))
                 {
-                    // Should only get into this block once.
-                    if (-1 == this.SharedTransferData.TotalLength)
-                    {
-                        this.SharedTransferData.TotalLength = this.readLength;
-                    }
-
                     this.state = State.Finished;
                     if (!this.md5HashStream.SucceededSeparateMd5Calculator)
                     {

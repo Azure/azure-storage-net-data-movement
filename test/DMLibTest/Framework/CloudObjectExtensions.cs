@@ -9,7 +9,6 @@ namespace DMLibTest
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
     using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using Microsoft.WindowsAzure.Storage.Table;
 
     internal static class CloudObjectExtensions
     {
@@ -64,16 +63,13 @@ namespace DMLibTest
         public static BlobRequestOptions DefaultBlobOptions = new BlobRequestOptions
         {
             RetryPolicy = new LinearRetry(TimeSpan.FromSeconds(90), 3),
+            MaximumExecutionTime = TimeSpan.FromMinutes(15)
         };
 
         public static FileRequestOptions DefaultFileOptions = new FileRequestOptions
         {
             RetryPolicy = new LinearRetry(TimeSpan.FromSeconds(90), 3),
-        };
-
-        public static TableRequestOptions DefaultTableOptions = new TableRequestOptions
-        {
-            RetryPolicy = new LinearRetry(TimeSpan.FromSeconds(90), 3),
+            MaximumExecutionTime = TimeSpan.FromMinutes(15)
         };
     }
 }

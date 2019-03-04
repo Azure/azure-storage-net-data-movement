@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata minClientVersion="2.12">
     <id>Microsoft.Azure.Storage.DataMovement</id>
-    <version>0.9.0</version>
+    <version>0.10.1</version>
     <title>Microsoft Azure Storage Data Movement Library</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
@@ -17,20 +17,22 @@
     <summary>A client library designed for high-performance and scalable uploading, downloading and copying data to and from Microsoft Azure Blob and File Storage</summary>
     <tags>Microsoft, Azure, Storage, Blob, File, DataMovement, Upload, Download, Copy, High-Performance, Scalable, Reliable, windowsazureofficial</tags>
     <dependencies>
-      <group targetFramework="net45">
+      <group targetFramework="net452">
         <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="1.8.0.0" />
-        <dependency id="WindowsAzure.Storage" version="9.3.2" />
+        <dependency id="Microsoft.Azure.Storage.File" version="9.4.2" />
+        <dependency id="Microsoft.Azure.Storage.Blob" version="9.4.2" />
       </group>
       <group targetFramework="netstandard2.0">
         <dependency id="Mono.Posix.NETStandard" version="1.0.0-beta2" />
         <dependency id="NETStandard.Library" version="2.0.1" />
-        <dependency id="WindowsAzure.Storage" version="9.3.2" />
+        <dependency id="Microsoft.Azure.Storage.File" version="9.4.2" />
+        <dependency id="Microsoft.Azure.Storage.Blob" version="9.4.2" />
         <dependency id="System.Runtime.Serialization.Xml" version="4.3.0" />
         <dependency id="System.Threading.ThreadPool" version="4.3.0" />
       </group>
     </dependencies>
     <frameworkAssemblies>
-      <frameworkAssembly assemblyName="System.Data" targetFramework="net45" />
+      <frameworkAssembly assemblyName="System.Data" targetFramework="net452" />
       <frameworkAssembly assemblyName="System.Xml" targetFramework="" />
       <frameworkAssembly assemblyName="System.Xml.Linq" targetFramework="" />
     </frameworkAssemblies>
