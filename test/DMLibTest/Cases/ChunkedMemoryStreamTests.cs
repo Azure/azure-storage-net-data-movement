@@ -9,7 +9,7 @@ namespace DMLibTest.Cases
 {
     using System.IO;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.DataMovement;
 
     [TestClass]
     public class ChunkedMemoryStreamTests

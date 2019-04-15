@@ -11,7 +11,7 @@ set TestPath=%~dp0..\test
 %TestPath%\DMLibTestCodeGen\bin\Debug\DMLibTestCodeGen.exe %TestPath%\DMLibTest\bin\Debug\DMLibTest.dll %TestPath%\DMLibTest\Generated DNetCore
 
 dotnet restore -s https://www.nuget.org/api/v2/ %~dp0\DMLibTest
-cd %~dp0\Microsoft.WindowsAzure.Storage.DataMovement
+cd %~dp0\Microsoft.Azure.Storage.DataMovement
 dotnet build -c %BuildMode%
 cd %~dp0\MsTestLib
 dotnet build -c %BuildMode%

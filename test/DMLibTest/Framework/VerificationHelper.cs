@@ -7,8 +7,8 @@ namespace DMLibTest
 {
     using System;
     using DMLibTestCodeGen;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
 
     public static class VerificationHelper

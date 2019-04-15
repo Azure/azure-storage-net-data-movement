@@ -3,7 +3,7 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //-----------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Collections.Concurrent;
@@ -12,9 +12,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
+    using Microsoft.Azure.Storage.File;
     using TransferKey = System.Tuple<TransferLocation, TransferLocation>;
 
     /// <summary>

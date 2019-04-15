@@ -4,14 +4,14 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Net;
     using System.Runtime.Serialization;
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.DataMovement.SerializationHelper;
+    using Microsoft.Azure.Storage.File;
 
 #if BINARY_SERIALIZATION
     [Serializable]

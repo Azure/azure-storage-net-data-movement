@@ -4,11 +4,11 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
+namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 {
     using System;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.File;
 
     /// <summary>
     /// AzureFileEntry class to represent a single transfer entry on Azure file service.

@@ -12,11 +12,11 @@ namespace DMLibTest
     using System.Threading.Tasks;
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
 
-    using XSCLBlobType = Microsoft.WindowsAzure.Storage.Blob.BlobType;
+    using XSCLBlobType = Microsoft.Azure.Storage.Blob.BlobType;
 
     public class DMLibTestBase : MultiDirectionTestBase<DMLibDataInfo, DMLibDataType>
     {

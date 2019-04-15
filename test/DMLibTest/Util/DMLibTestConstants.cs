@@ -6,11 +6,11 @@
 namespace DMLibTest
 {
     using System;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.RetryPolicies;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
 
     public static class Tag
     {

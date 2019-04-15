@@ -4,11 +4,11 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.IO;
-    using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
+    using Microsoft.Azure.Storage.DataMovement.Interop;
 
     internal static partial class LongPathFile
     {

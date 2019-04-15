@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
+namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 {
     using System;
     using System.Collections.Generic;
@@ -12,7 +12,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     using System.IO;
     using System.Security;
     using System.Threading;
-    using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
+    using Microsoft.Azure.Storage.DataMovement.Interop;
 #if DOTNET5_4
     using Mono.Unix;
 #else

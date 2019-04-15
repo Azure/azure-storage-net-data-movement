@@ -7,7 +7,7 @@ namespace DMLibTest
 {
     using System;
     using System.Text;
-    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.Azure.Storage.Blob;
     using BlobTypeConst = DMLibTest.BlobType;
 
     public abstract class BlobDataAdaptorBase<TDataInfo> : DataAdaptor<TDataInfo> where TDataInfo : IDataInfo

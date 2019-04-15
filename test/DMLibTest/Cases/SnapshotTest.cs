@@ -8,9 +8,9 @@ namespace DMLibTest.Cases
 {
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.File;
     using MS.Test.Common.MsTestLib;
     using System;
     using System.Collections.Generic;

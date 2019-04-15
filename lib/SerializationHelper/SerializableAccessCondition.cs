@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.SerializationHelper
+namespace Microsoft.Azure.Storage.DataMovement.SerializationHelper
 {
     using System;
     using System.Runtime.Serialization;

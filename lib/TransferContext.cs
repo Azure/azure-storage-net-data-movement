@@ -3,7 +3,7 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.IO;
@@ -87,7 +87,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// <summary>
         /// Gets or sets the logging level to be used for the related transfer operation.
         /// </summary>
-        /// <value>A value of type <see cref="Microsoft.WindowsAzure.Storage.LogLevel"/> that specifies which events are logged for the related transfer operation.</value>
+        /// <value>A value of type <see cref="Microsoft.Azure.Storage.LogLevel"/> that specifies which events are logged for the related transfer operation.</value>
         public LogLevel LogLevel
         {
             get;

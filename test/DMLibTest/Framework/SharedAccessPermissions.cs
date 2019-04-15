@@ -6,8 +6,8 @@
 namespace DMLibTest
 {
     using System;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
 
     [Flags]
     public enum SharedAccessPermissions

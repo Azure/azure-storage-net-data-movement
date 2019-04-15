@@ -6,7 +6,7 @@
 namespace DMLibTest
 {
     using DMLibTestCodeGen;
-    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.Azure.Storage.Auth;
     using System;
     using BlobTypeConst = DMLibTest.BlobType;
     internal class URIBlobDataAdaptor : CloudBlobDataAdaptor

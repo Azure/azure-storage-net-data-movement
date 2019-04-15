@@ -3,7 +3,7 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
+namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 {
     using System;
     using System.Threading.Tasks;

@@ -8,7 +8,7 @@ namespace DMLibTest
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
 
     public static class DMLibInputHelper

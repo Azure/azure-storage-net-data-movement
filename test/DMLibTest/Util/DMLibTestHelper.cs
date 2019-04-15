@@ -15,12 +15,12 @@ namespace DMLibTest
     using System.Runtime.Serialization.Formatters.Binary;
 #endif
     using System.Threading;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.File;
     using MS.Test.Common.MsTestLib;
-    using StorageBlob = Microsoft.WindowsAzure.Storage.Blob;
+    using StorageBlob = Microsoft.Azure.Storage.Blob;
 
     public enum FileSizeUnit
     {

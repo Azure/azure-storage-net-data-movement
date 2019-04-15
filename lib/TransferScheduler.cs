@@ -3,7 +3,7 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //-----------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Collections.Concurrent;
@@ -13,7 +13,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Threading;
     using System.Threading.Tasks;
 
-    using Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers;
+    using Microsoft.Azure.Storage.DataMovement.TransferControllers;
 
     /// <summary>
     /// TransferScheduler class, used for  transferring Microsoft Azure

@@ -4,15 +4,15 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
+namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
     using System.Threading;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.DataMovement;
 
     /// <summary>
     /// Transfer enumerator for Azure blob storage.
@@ -21,7 +21,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     {
         /// <summary>
         /// A blob name (excluding container name) can be at most 1024 character long based on Windows Azure documentation.
-        /// See <c>http://msdn.microsoft.com/en-us/library/windowsazure/dd135715.aspx</c> for details.
+        /// See <c>https://docs.microsoft.com/en-us/rest/api/storageservices/Naming-and-Referencing-Containers--Blobs--and-Metadata</c> for details.
         /// </summary>
         private const int MaxBlobNameLength = 1024;
 

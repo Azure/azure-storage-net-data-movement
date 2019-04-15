@@ -6,7 +6,7 @@
 namespace DMLibTest
 {
     using System;
-    using Microsoft.WindowsAzure.Storage;
+    using Microsoft.Azure.Storage;
     using MS.Test.Common.MsTestLib;
 
     public static class TestAccounts

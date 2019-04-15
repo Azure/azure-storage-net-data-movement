@@ -1,5 +1,5 @@
 ﻿using System;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.Azure.Storage.Blob;
 
 namespace DMLibTest
 {

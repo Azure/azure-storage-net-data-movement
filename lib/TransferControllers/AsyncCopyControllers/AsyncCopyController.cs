@@ -3,7 +3,7 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
+namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 {
     using System;
     using System.Collections.Generic;
@@ -12,10 +12,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
-    using Microsoft.WindowsAzure.Storage.DataMovement.Extensions;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.Blob.Protocol;
+    using Microsoft.Azure.Storage.DataMovement.Extensions;
+    using Microsoft.Azure.Storage.File;
 
     internal abstract class AsyncCopyController : TransferControllerBase
     {
@@ -231,7 +231,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         }
 
         /// <summary>
-        /// Taken from <c>Microsoft.WindowsAzure.Storage.Core.Util.HttpUtility</c>: Parse the http query string.
+        /// Taken from <c>Microsoft.Azure.Storage.Core.Util.HttpUtility</c>: Parse the http query string.
         /// </summary>
         /// <param name="query">Http query string.</param>
         /// <returns>A dictionary of query pairs.</returns>

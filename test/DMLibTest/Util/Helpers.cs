@@ -19,13 +19,13 @@ namespace DMLibTest
     using System.Threading;
     using System.Threading.Tasks;
     using DMLibTest.Framework;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.File;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
+    using Microsoft.Azure.Storage.RetryPolicies;
     using MS.Test.Common.MsTestLib;
-    using StorageBlobType = Microsoft.WindowsAzure.Storage.Blob.BlobType;
+    using StorageBlobType = Microsoft.Azure.Storage.Blob.BlobType;
 
     /// <summary>
     /// this is a static helper class
@@ -3520,7 +3520,7 @@ namespace DMLibTest
             {
                 CloudBlobContainer container = BlobClient.GetContainerReference(containerName);
                 CloudBlob blob = GetCloudBlobReference(container, blobName);
-                if (blob.Properties.BlobType == Microsoft.WindowsAzure.Storage.Blob.BlobType.BlockBlob)
+                if (blob.Properties.BlobType == Microsoft.Azure.Storage.Blob.BlobType.BlockBlob)
                 {
                     CloudBlockBlob BBlock = blob as CloudBlockBlob;
                     return BBlock.Snapshot();

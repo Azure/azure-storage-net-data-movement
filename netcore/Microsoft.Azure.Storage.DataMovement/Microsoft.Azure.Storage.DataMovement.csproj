@@ -8,7 +8,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DebugType>portable</DebugType>
     <DelaySign>true</DelaySign>
-    <AssemblyName>Microsoft.WindowsAzure.Storage.DataMovement</AssemblyName>
+    <AssemblyName>Microsoft.Azure.Storage.DataMovement</AssemblyName>
     <AssemblyOriginatorKeyFile>../../tools/strongnamekeys/fake/windows.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PackageId>Microsoft.WindowsAzure.Storage.DataMovement</PackageId>
@@ -22,6 +22,7 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
     <DefineConstants>$(DefineConstants);DOTNET5_4;GENERIC_MARSHAL_SIZEOF;RUNTIME_INFORMATION;TRANSPARENCY_V2;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;NO_FILEFORMAT_EX;TEST_HOOK</DefineConstants>
+    <RootNamespace>Microsoft.Azure.Storage.DataMovement</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,8 +37,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
-    <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="9.4.2" />
-    <PackageReference Include="Microsoft.Azure.Storage.File" Version="9.4.2" />
+    <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Azure.Storage.File" Version="10.0.1" />
     <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0-beta2" />
     <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
     <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0" />

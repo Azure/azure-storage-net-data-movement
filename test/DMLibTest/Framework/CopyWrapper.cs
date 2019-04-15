@@ -7,7 +7,7 @@ namespace DMLibTest
 {
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.DataMovement;
 
     internal class CopyWrapper : DMLibWrapper
     {
