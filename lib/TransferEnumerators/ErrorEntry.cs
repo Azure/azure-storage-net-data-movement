@@ -25,5 +25,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
         {
             this.Exception = ex;
         }
+
+        public override bool IsDirectory { get => false; }
     }
 }

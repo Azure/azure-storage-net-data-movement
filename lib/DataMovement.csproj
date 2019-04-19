@@ -85,6 +85,7 @@
     </Compile>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ChunkedMemoryStream.cs" />
+    <Compile Include="DirectoryListingScheduler.cs" />
     <Compile Include="Extensions\StorageCopyState.cs" />
     <Compile Include="FileNativeMethods.cs" />
     <Compile Include="LongPathFile.cs" />
@@ -128,6 +129,7 @@
     <Compile Include="TransferControllers\TransferWriters\RangeBasedWriter.cs" />
     <Compile Include="TransferControllers\TransferWriters\StreamedWriter.cs" />
     <Compile Include="TransferEnumerators\AzureBlobEntry.cs" />
+    <Compile Include="TransferEnumerators\AzureFileDirectoryEntry.cs" />
     <Compile Include="TransferEnumerators\AzureBlobEnumerator.cs" />
     <Compile Include="TransferEnumerators\AzureFileEntry.cs" />
     <Compile Include="TransferEnumerators\AzureFileEnumerator.cs" />
@@ -160,11 +162,13 @@
     <Compile Include="TransferJobs\DirectoryLocation.cs" />
     <Compile Include="TransferJobs\DirectoryTransfer.cs" />
     <Compile Include="TransferJobs\FileLocation.cs" />
-    <Compile Include="TransferJobs\MultipleObjectsTransfer.cs" />
+    <Compile Include="TransferJobs\FlatDirectoryTransfer.cs" />
+    <Compile Include="TransferJobs\HierarchyDirectoryTransfer.cs" />
     <Compile Include="TransferJobs\SerializableTransferLocation.cs" />
     <Compile Include="TransferJobs\SingleObjectCheckpoint.cs" />
     <Compile Include="TransferJobs\SingleObjectTransfer.cs" />
     <Compile Include="TransferJobs\StreamLocation.cs" />
+    <Compile Include="TransferJobs\SubDirectoryTransfer.cs" />
     <Compile Include="TransferJobs\Transfer.cs" />
     <Compile Include="TransferJobs\TransferJob.cs" />
     <Compile Include="Constants.cs" />

@@ -15,6 +15,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if !BINARY_SERIALIZATION
     [DataContract]
 #endif
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses")]
     internal class StreamLocation : TransferLocation
     {
         private static ConditionalWeakTable<Stream, string> StreamIdTable = new ConditionalWeakTable<Stream, string>();

@@ -1,5 +1,5 @@
 ﻿//------------------------------------------------------------------------------
-// <copyright file="AzureFileEntry.cs" company="Microsoft">
+// <copyright file="AzureFileDirectoryEntry.cs" company="Microsoft">
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
@@ -13,34 +13,34 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
     /// <summary>
     /// AzureFileEntry class to represent a single transfer entry on Azure file service.
     /// </summary>
-    internal class AzureFileEntry : TransferEntry
+    internal class AzureFileDirectoryEntry : TransferEntry
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="AzureFileEntry" /> class.
+        /// Initializes a new instance of the <see cref="AzureFileDirectoryEntry" /> class.
         /// </summary>
         /// <param name="relativePath">Relative path of the file indicated by this file entry.</param>
-        /// <param name="cloudFile">Corresponding CloudFile.</param>
+        /// <param name="cloudFileDirectory">Corresponding CloudFileDirectory instance.</param>
         /// <param name="continuationToken">Continuation token when listing to this entry.</param>
-        public AzureFileEntry(string relativePath, CloudFile cloudFile, AzureFileListContinuationToken continuationToken)
+        public AzureFileDirectoryEntry(string relativePath, CloudFileDirectory cloudFileDirectory, AzureFileListContinuationToken continuationToken)
             : base(relativePath, continuationToken)
         {
-            this.File = cloudFile;
+            this.FileDirectory = cloudFileDirectory;
         }
 
         /// <summary>
-        /// Gets the reference to the cloud file.
+        /// Gets the reference to the cloud file directory.
         /// </summary>
-        public CloudFile File
+        public CloudFileDirectory FileDirectory
         {
             get;
             private set;
         }
 
-        public override bool IsDirectory { get => false; }
+        public override bool IsDirectory { get => true; }
 
         public override string ToString()
         {
-            return File.ConvertToString();
+            return FileDirectory.ConvertToString();
         }
     }
 }

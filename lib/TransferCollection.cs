@@ -23,7 +23,6 @@ namespace Microsoft.Azure.Storage.DataMovement
     [DataContract]
     [KnownType(typeof(DirectoryTransfer))]
     [KnownType(typeof(SingleObjectTransfer))]
-    [KnownType(typeof(MultipleObjectsTransfer))]
 #endif // BINARY_SERIALIZATION
     internal class TransferCollection<T>
 #if BINARY_SERIALIZATION

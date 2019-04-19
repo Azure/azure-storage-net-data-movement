@@ -191,6 +191,20 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         /// whether the controller can be disposed.</returns>
         protected override async Task<bool> DoWorkInternalAsync()
         {
+            if (!this.CheckedShouldTransfer)
+            {
+                this.hasWork = false;
+                if (await this.CheckShouldTransfer())
+                {
+                    return true;
+                }
+                else
+                {
+                    this.hasWork = true;
+                    return false;
+                }
+            }
+
             switch (this.state)
             {
                 case State.FetchSourceAttributes:

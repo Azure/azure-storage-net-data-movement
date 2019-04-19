@@ -19,6 +19,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         /// </summary>
         private int activeTasks;
 
+        private bool checkedShouldTransfer = false;
+
+        private int checkingShouldTransfer = 0;
+
         private volatile bool isFinished = false;
 
         private object lockOnFinished = new object();
@@ -149,6 +153,60 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         /// Gets the cancellation token to control the controller's work.
         /// </summary>
         protected CancellationToken CancellationToken => this.cancellationTokenSource?.Token ?? CancellationToken.None;
+
+        protected bool CheckedShouldTransfer
+        {
+            get
+            {
+                return this.checkedShouldTransfer;
+            }
+        }
+
+        protected async Task<bool> CheckShouldTransfer()
+        {
+            if (!this.checkedShouldTransfer)
+            {
+                DirectoryTransferContext directoryTransferContext = this.TransferContext as DirectoryTransferContext;
+                if ((null != directoryTransferContext)
+                    && (null != directoryTransferContext.ShouldTransferCallbackAsync))
+                {
+                    if (Interlocked.Exchange(ref this.checkingShouldTransfer, 1) == 0)
+                    {
+                        await Task.Yield();
+                        bool shouldTransfer = true;
+
+                        try
+                        {
+                            shouldTransfer = await directoryTransferContext.ShouldTransferCallbackAsync(this.TransferJob.Source.Instance, this.TransferJob.Destination.Instance);
+                        }
+                        catch (Exception ex)
+                        {
+                            this.FinishCallbackHandler(new TransferException(TransferErrorCode.FailedCheckingShouldTransfer, string.Empty, ex));
+                            return true;
+                        }
+
+                        if (shouldTransfer)
+                        {
+                            this.checkedShouldTransfer = true;
+                            this.TransferJob.Transfer.ShouldTransferChecked = true;
+                        }
+                        else
+                        {
+                            this.TransferJob.Status = TransferJobStatus.NotTransfer;
+                            this.FinishCallbackHandler(null);
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    this.checkedShouldTransfer = true;
+                    this.TransferJob.Transfer.ShouldTransferChecked = true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Do work in the controller.

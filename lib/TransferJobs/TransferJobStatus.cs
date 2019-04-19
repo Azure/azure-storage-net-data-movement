@@ -19,6 +19,12 @@ namespace Microsoft.Azure.Storage.DataMovement
         NotStarted,
 
         /// <summary>
+        /// The transfer should not be done by customer's choice.
+        /// This is only used when the transfer instance is created from a directory transfer.
+        /// </summary>
+        NotTransfer,
+
+        /// <summary>
         /// Transfer is skipped
         /// </summary>
         Skipped,

@@ -11,8 +11,11 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.IO;
     using System.Linq;
     using System.Runtime.Serialization;
+    using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
 #if BINARY_SERIALIZATION
     using System.Runtime.Serialization.Formatters.Binary;
+    using System.Threading;
+    using System.Threading.Tasks;
 #endif
 
     internal class StreamJournal
@@ -46,6 +49,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// This is size to allocated for the transfer's ProgressTracker.
         /// </summary>
         private const int ProcessTrackerSize = 1024;
+
+        private const int SubDirectoryTransferChunkSize = 2 * 1024 + 128;
 
         /// <summary>
         /// It keeps a list of used transfer chunks and a list free transfers in the journal stream,
@@ -113,14 +118,24 @@ namespace Microsoft.Azure.Storage.DataMovement
         private DataContractSerializer stringSerializer = new DataContractSerializer(typeof(string));
         private DataContractSerializer transferSerializer = new DataContractSerializer(typeof(Transfer));
         private DataContractSerializer progressCheckerSerializer = new DataContractSerializer(typeof(TransferProgressTracker));
-#endif        
+        private DataContractSerializer continuationTokenSerializer = new DataContractSerializer(typeof(SerializableListContinuationToken));
+#endif
 
-        long usedChunkHead = 0;
-        long usedChunkTail = 0;
+        // Three lists: single transfer list, ongoing subdirectory transfer list, subdirectory transfer list.
+        long singleTransferChunkHead = 0;
+        long singleTransferChunkTail = 0;
+        long OngoingSubDirTransferChunkHead = 0;
+        long OngoingSubDirTransferChunkTail = 0;
+        long subDirTransferChunkHead = 0;
+        long subDirTransferChunkTail = 0;
+
+        long subDirTransferNextWriteOffset = 0;
+        long subDirTransferCurrentReadOffset = 0;
+
         long freeChunkHead = 0;
         long freeChunkTail = 0;
 
-        long preservedSubTransferCount = 0;
+        long preservedChunkCount = 0;
 
         /// <summary>
         /// This is the granularity to allocation memory buffer.
@@ -183,11 +198,17 @@ namespace Microsoft.Azure.Storage.DataMovement
                     }
 
                     this.stream.Position = JournalHeadOffset;
-                    this.usedChunkHead = this.ReadLong();
-                    this.usedChunkTail = this.ReadLong();
+                    this.singleTransferChunkHead = this.ReadLong();
+                    this.singleTransferChunkTail = this.ReadLong();
+                    this.OngoingSubDirTransferChunkHead = this.ReadLong();
+                    this.OngoingSubDirTransferChunkTail = this.ReadLong();
+                    this.subDirTransferChunkHead = this.ReadLong();
+                    this.subDirTransferChunkTail = this.ReadLong();
                     this.freeChunkHead = this.ReadLong();
                     this.freeChunkTail = this.ReadLong();
-                    this.preservedSubTransferCount = this.ReadLong();
+                    this.subDirTransferNextWriteOffset = this.ReadLong();
+                    this.subDirTransferCurrentReadOffset = this.ReadLong();
+                    this.preservedChunkCount = this.ReadLong();
 
                     // absolute path
                     this.stream.Position = ContentOffset;
@@ -226,6 +247,249 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        internal void AddOngoingSubDirTransfer(SubDirectoryTransfer directoryTransfer)
+        {
+            lock (this.journalLock)
+            {
+                long offset = this.SearchFreeOffset();
+
+                directoryTransfer.Journal = this;
+                directoryTransfer.StreamJournalOffset = offset + 2 * sizeof(long);
+
+                this.stream.Position = offset + 2 * sizeof(long);
+#if BINARY_SERIALIZATION
+                this.formatter.Serialize(this.stream, directoryTransfer);
+#else
+                this.WriteObject(this.transferSerializer, directoryTransfer);
+#endif
+
+                long continuationTokenOffset = offset + 2 * sizeof(long) + 4096;
+                this.stream.Position = continuationTokenOffset;
+                directoryTransfer.ListContinuationToken.Journal = this;
+                directoryTransfer.ListContinuationToken.StreamJournalOffset = continuationTokenOffset;
+#if BINARY_SERIALIZATION
+                this.formatter.Serialize(this.stream, directoryTransfer.ListContinuationToken);
+#else
+                this.WriteObject(this.continuationTokenSerializer, directoryTransfer.ListContinuationToken);
+#endif
+
+                if (this.OngoingSubDirTransferChunkHead == 0)
+                {
+                    if (this.OngoingSubDirTransferChunkTail != 0)
+                    {
+#if !NO_FILEFORMAT_EX
+                        throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                        throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                    }
+
+                    this.OngoingSubDirTransferChunkHead = offset;
+                    this.OngoingSubDirTransferChunkTail = offset;
+
+                    this.stream.Position = this.OngoingSubDirTransferChunkHead;
+                    this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+                    this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+                }
+                else
+                {
+                    this.stream.Position = this.OngoingSubDirTransferChunkTail + sizeof(long);
+                    this.stream.Write(BitConverter.GetBytes(offset), 0, sizeof(long));
+
+                    this.stream.Position = offset;
+                    this.stream.Write(BitConverter.GetBytes(this.OngoingSubDirTransferChunkTail), 0, sizeof(long));
+                    this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+
+                    this.OngoingSubDirTransferChunkTail = offset;
+                }
+
+                this.WriteJournalHead();
+                this.stream.Flush();
+            }
+        }
+
+        internal void RemoveSubDirTransfer(SubDirectoryTransfer directoryTransfer)
+        {
+            lock (this.journalLock)
+            {
+                long offset = directoryTransfer.StreamJournalOffset - 2 * sizeof(long);
+                this.FreeChunk(offset, ref this.OngoingSubDirTransferChunkHead, ref this.OngoingSubDirTransferChunkTail);
+            }
+        }
+
+        internal void RemoveFirstSubDirTransfer()
+        {
+            lock (this.journalLock)
+            {
+                if (0 == this.subDirTransferCurrentReadOffset
+                    || 0 == this.subDirTransferChunkHead
+                    || 0 == this.subDirTransferChunkTail
+                    || this.subDirTransferChunkTail > this.subDirTransferNextWriteOffset)
+                {
+#if !NO_FILEFORMAT_EX
+                        throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                    throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                }
+
+                this.stream.Position = this.subDirTransferCurrentReadOffset;
+                Array.Clear(memoryBuffer, 0, SubDirectoryTransferChunkSize);
+                this.stream.Write(memoryBuffer, 0, SubDirectoryTransferChunkSize);
+
+                this.subDirTransferCurrentReadOffset += SubDirectoryTransferChunkSize;
+
+                if ((this.subDirTransferCurrentReadOffset + SubDirectoryTransferChunkSize) > (this.subDirTransferChunkHead + TransferChunkSize))
+                {
+                    this.stream.Position = this.subDirTransferChunkHead + sizeof(long);
+                    long nextChunk = this.ReadLong();
+
+                    if (0 == this.freeChunkHead)
+                    {
+                        this.freeChunkHead = this.subDirTransferChunkHead;
+                        this.freeChunkTail = this.subDirTransferChunkHead;
+
+                        this.stream.Position = this.subDirTransferChunkHead;
+                        this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+                        this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+                    }
+                    else
+                    {
+                        this.stream.Position = this.freeChunkTail;
+                        this.stream.Write(BitConverter.GetBytes(this.subDirTransferChunkHead), 0, sizeof(long));
+                        this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+                        this.freeChunkTail = this.subDirTransferChunkHead;
+                    }
+
+                    if (0 == nextChunk && this.subDirTransferChunkHead != this.subDirTransferChunkTail)
+                    {
+#if !NO_FILEFORMAT_EX
+                        throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                        throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                    }
+
+                    if (this.subDirTransferChunkHead == this.subDirTransferChunkTail)
+                    {
+                        if (0 != nextChunk)
+                        {
+#if !NO_FILEFORMAT_EX
+                            throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                            throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                        }
+
+                        this.subDirTransferChunkHead = 0;
+                        this.subDirTransferChunkTail = 0;
+                        this.subDirTransferCurrentReadOffset = 0;
+                        this.subDirTransferNextWriteOffset = 0;
+                    }
+                    else
+                    {
+                        this.subDirTransferChunkHead = nextChunk;
+                        this.subDirTransferCurrentReadOffset = nextChunk + 2 * sizeof(long);
+                    }
+
+                    this.WriteJournalHead();
+                    this.stream.Flush();
+                }
+            }
+        }
+
+        internal string PeekSubDirTransfer()
+        {
+            if (0 == this.subDirTransferCurrentReadOffset)
+            {
+                return null;
+            }
+            else
+            {
+                lock (this.journalLock)
+                {
+                    if (this.subDirTransferCurrentReadOffset == this.subDirTransferNextWriteOffset)
+                    {
+                        return null;
+                    }
+
+
+                    this.stream.Position = this.subDirTransferCurrentReadOffset;
+#if BINARY_SERIALIZATION
+                    return this.formatter.Deserialize(this.stream) as string;
+#else
+                    return (string)this.ReadObject(this.stringSerializer);
+#endif
+                }
+            }
+        }
+
+        internal void AddSubDirTransfer(string relativePath)
+        {
+            lock (this.journalLock)
+            {
+                long writingOffset = 0;
+                if (0 == this.subDirTransferNextWriteOffset)
+                {
+                    if (this.subDirTransferChunkHead != 0 || this.subDirTransferChunkTail != 0)
+                    {
+#if !NO_FILEFORMAT_EX
+                        throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                        throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                    }
+                    else
+                    {
+                        long offset = this.SearchFreeOffset();
+                        this.subDirTransferChunkHead = offset;
+                        this.subDirTransferChunkTail = offset;
+                        this.stream.Position = offset;
+                        this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+                        this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+                        writingOffset = offset + 2 * sizeof(long);
+                        // The first sub directory transfer added.
+                        this.subDirTransferCurrentReadOffset = writingOffset;
+                    }
+
+                    this.subDirTransferNextWriteOffset = writingOffset;
+                }
+                else if (this.subDirTransferChunkHead == 0 || this.subDirTransferChunkTail == 0 || this.subDirTransferChunkTail >= this.subDirTransferNextWriteOffset)
+                {
+#if !NO_FILEFORMAT_EX
+                        throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                        throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                }
+
+                this.stream.Position = this.subDirTransferNextWriteOffset;
+#if BINARY_SERIALIZATION
+                this.formatter.Serialize(this.stream, relativePath);
+#else
+                this.WriteObject(this.stringSerializer, relativePath);
+#endif
+
+                this.subDirTransferNextWriteOffset += SubDirectoryTransferChunkSize;
+
+                if (this.subDirTransferChunkTail + TransferChunkSize < this.subDirTransferNextWriteOffset + SubDirectoryTransferChunkSize)
+                {
+                    // Current chunk is full, allocate a new one
+                    long offset = this.SearchFreeOffset();
+                    this.stream.Position = this.subDirTransferChunkTail + sizeof(long);
+                    this.stream.Write(BitConverter.GetBytes(offset), 0, sizeof(long));
+                    this.stream.Position = offset;
+                    this.stream.Write(BitConverter.GetBytes(this.subDirTransferChunkTail), 0, sizeof(long));
+                    this.subDirTransferChunkTail = offset;
+
+                    this.subDirTransferNextWriteOffset = offset + 2 * sizeof(long);
+                }
+
+                this.WriteJournalHead();
+                this.stream.Flush();
+            }
+        }
+
         internal void AddTransfer(Transfer transfer)
         {
             if (null != this.baseTransfer)
@@ -252,7 +516,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 this.stream.Position = transfer.StreamJournalOffset;
 #if BINARY_SERIALIZATION
                 this.formatter.Serialize(this.stream, transfer);
-#else               
+#else
                 transfer.IsStreamJournal = true;
                 this.WriteObject(this.transferSerializer, transfer);
 #endif
@@ -303,10 +567,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                 this.WriteObject(this.progressCheckerSerializer, transfer.ProgressTracker);
 #endif
 
-                if (0 == this.usedChunkHead)
+                if (0 == this.singleTransferChunkHead)
                 {
-                    this.usedChunkHead = offset;
-                    this.usedChunkTail = this.usedChunkHead;
+                    this.singleTransferChunkHead = offset;
+                    this.singleTransferChunkTail = this.singleTransferChunkHead;
 
                     // Set the transferEntry's previous and next trunk to 0.
                     this.stream.Position = offset;
@@ -316,22 +580,21 @@ namespace Microsoft.Azure.Storage.DataMovement
                 else
                 {
                     // Set current tail's next to the transferEntry's offset.
-                    this.stream.Position = this.usedChunkTail + sizeof(long);
+                    this.stream.Position = this.singleTransferChunkTail + sizeof(long);
                     this.stream.Write(BitConverter.GetBytes(offset), 0, sizeof(long));
 
                     // Set the transferEntry's previous trunk to current tail.
                     this.stream.Position = offset;
-                    this.stream.Write(BitConverter.GetBytes(this.usedChunkTail), 0, sizeof(long));
+                    this.stream.Write(BitConverter.GetBytes(this.singleTransferChunkTail), 0, sizeof(long));
 
                     // Set the transferEntry's next trunk to 0.
                     this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
 
-                    this.usedChunkTail = offset;
+                    this.singleTransferChunkTail = offset;
                 }
 
-                this.preservedSubTransferCount++;
-
                 this.WriteJournalHead();
+                this.stream.Flush();
             }
         }
 
@@ -357,73 +620,78 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 // Mark this entry chunk to be free...
                 long chunkOffset = transfer.StreamJournalOffset - 2 * sizeof(long);
-                this.stream.Position = chunkOffset;
 
-                long previousUsedChunk = this.ReadLong();
-                long nextUsedChunk = this.ReadLong();
-
-                // This chunk is free now, set its next free chunk to be 0.
-                this.stream.Position = chunkOffset;
-
-                if (0 == this.freeChunkHead)
-                {
-                    this.freeChunkHead = chunkOffset;
-                    this.freeChunkTail = chunkOffset;
-
-                    this.stream.Position = chunkOffset;
-                    this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
-                    this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
-                }
-                else
-                {
-                    this.stream.Position = this.freeChunkTail;
-                    this.stream.Write(BitConverter.GetBytes(chunkOffset), 0, sizeof(long));
-                    this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
-                    this.freeChunkTail = chunkOffset;
-                }
-
-                if (0 != previousUsedChunk)
-                {
-                    this.stream.Position = previousUsedChunk + sizeof(long);
-                    this.stream.Write(BitConverter.GetBytes(nextUsedChunk), 0, sizeof(long));
-                }
-                else
-                {
-                    if (this.usedChunkHead != chunkOffset)
-                    {
-#if !NO_FILEFORMAT_EX
-                        throw new FileFormatException(Resources.RestartableLogCorrupted);
-#else
-                        throw new InvalidOperationException(Resources.RestartableLogCorrupted);
-#endif
-                    }
-
-                    this.usedChunkHead = nextUsedChunk;
-                }
-
-                if (0 != nextUsedChunk)
-                {
-                    this.stream.Position = nextUsedChunk;
-                    this.stream.Write(BitConverter.GetBytes(previousUsedChunk), 0, sizeof(long));
-                }
-                else
-                {
-                    if (this.usedChunkTail != chunkOffset)
-                    {
-#if !NO_FILEFORMAT_EX
-                        throw new FileFormatException(Resources.RestartableLogCorrupted);
-#else
-                        throw new InvalidOperationException(Resources.RestartableLogCorrupted);
-#endif
-                    }
-
-                    this.usedChunkTail = previousUsedChunk;
-                }
-
-                this.preservedSubTransferCount--;
-
-                this.WriteJournalHead();
+                this.FreeChunk(chunkOffset, ref this.singleTransferChunkHead, ref this.singleTransferChunkTail);
             }
+        }
+
+        internal void FreeChunk(long chunkOffset, ref long usedChunkHead, ref long usedChunkTail)
+        {
+            // Mark this entry chunk to be free...
+            this.stream.Position = chunkOffset;
+
+            long previousUsedChunk = this.ReadLong();
+            long nextUsedChunk = this.ReadLong();
+
+            // This chunk is free now, set its next free chunk to be 0.
+            this.stream.Position = chunkOffset;
+
+            if (0 == this.freeChunkHead)
+            {
+                this.freeChunkHead = chunkOffset;
+                this.freeChunkTail = chunkOffset;
+
+                this.stream.Position = chunkOffset;
+                this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+                this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+            }
+            else
+            {
+                this.stream.Position = this.freeChunkTail;
+                this.stream.Write(BitConverter.GetBytes(chunkOffset), 0, sizeof(long));
+                this.stream.Write(BitConverter.GetBytes(0L), 0, sizeof(long));
+                this.freeChunkTail = chunkOffset;
+            }
+
+            if (0 != previousUsedChunk)
+            {
+                this.stream.Position = previousUsedChunk + sizeof(long);
+                this.stream.Write(BitConverter.GetBytes(nextUsedChunk), 0, sizeof(long));
+            }
+            else
+            {
+                if (usedChunkHead != chunkOffset)
+                {
+#if !NO_FILEFORMAT_EX
+                    throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                        throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                }
+
+                usedChunkHead = nextUsedChunk;
+            }
+
+            if (0 != nextUsedChunk)
+            {
+                this.stream.Position = nextUsedChunk;
+                this.stream.Write(BitConverter.GetBytes(previousUsedChunk), 0, sizeof(long));
+            }
+            else
+            {
+                if (usedChunkTail != chunkOffset)
+                {
+#if !NO_FILEFORMAT_EX
+                    throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                        throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                }
+
+                usedChunkTail = previousUsedChunk;
+            }
+
+            this.WriteJournalHead();
         }
 
         internal void UpdateJournalItem(JournalItem item)
@@ -439,26 +707,37 @@ namespace Microsoft.Azure.Storage.DataMovement
                 if (null != transfer)
                 {
                     this.WriteObject(this.transferSerializer, transfer);
+                    return;
                 }
-                else
+
+                var progressChecker = item as TransferProgressTracker;
+                if (null != progressChecker)
                 {
-                    this.WriteObject(this.progressCheckerSerializer, item as TransferProgressTracker);
+                    this.WriteObject(this.progressCheckerSerializer, progressChecker);
+                    return;
+                }
+
+                var serializableContinuationToken = item as SerializableListContinuationToken;
+                if (null != serializableContinuationToken)
+                {
+                    this.WriteObject(this.continuationTokenSerializer, serializableContinuationToken);
+                    return;
                 }
 #endif
             }
         }
 
-        public IEnumerable<SingleObjectTransfer> ListSubTransfers()
+        public IEnumerable<SubDirectoryTransfer> ListSubDirTransfers()
         {
-            long currentOffset = this.usedChunkHead;
+            long currentOffset = this.OngoingSubDirTransferChunkHead;
             bool shouldBreak = false;
 
             while (true)
             {
-                SingleObjectTransfer transfer = null;
+                SubDirectoryTransfer transfer = null;
                 lock (this.journalLock)
                 {
-                    if (0 == this.usedChunkHead)
+                    if (0 == this.OngoingSubDirTransferChunkHead)
                     {
                         shouldBreak = true;
                     }
@@ -471,7 +750,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                         if (0 == previousUsedChunk)
                         {
-                            if (this.usedChunkHead != currentOffset)
+                            if (this.OngoingSubDirTransferChunkHead != currentOffset)
                             {
 #if !NO_FILEFORMAT_EX
                                 throw new FileFormatException(Resources.RestartableLogCorrupted);
@@ -482,7 +761,130 @@ namespace Microsoft.Azure.Storage.DataMovement
                         }
                         else
                         {
-                            if (this.usedChunkHead == currentOffset)
+                            if (this.OngoingSubDirTransferChunkHead == currentOffset)
+                            {
+#if !NO_FILEFORMAT_EX
+                                throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                                throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                            }
+                        }
+
+                        try
+                        {
+#if BINARY_SERIALIZATION
+                            transfer = this.formatter.Deserialize(this.stream) as SubDirectoryTransfer;
+#else
+                            transfer = this.ReadObject(this.transferSerializer) as SubDirectoryTransfer;
+#endif
+                        }
+                        catch
+                        {
+#if !NO_FILEFORMAT_EX
+                            throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                            throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                        }
+
+                        if (null == transfer)
+                        {
+#if !NO_FILEFORMAT_EX
+                            throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                            throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                        }
+
+                        transfer.StreamJournalOffset = currentOffset + 2 * sizeof(long);
+                        transfer.Journal = this;
+
+                        this.stream.Position = transfer.StreamJournalOffset + 4096;
+#if BINARY_SERIALIZATION
+                        transfer.ListContinuationToken = this.formatter.Deserialize(this.stream) as SerializableListContinuationToken;
+#else
+                        transfer.ListContinuationToken = this.ReadObject(this.continuationTokenSerializer) as SerializableListContinuationToken;
+#endif
+                        transfer.ListContinuationToken.Journal = this;
+                        transfer.ListContinuationToken.StreamJournalOffset = transfer.StreamJournalOffset + 4096;
+
+                        if (0 == nextUsedChunk)
+                        {
+                            if (this.OngoingSubDirTransferChunkTail != currentOffset)
+                            {
+#if !NO_FILEFORMAT_EX
+                                throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                                throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                            }
+
+                            shouldBreak = true;
+                        }
+                        else
+                        {
+                            if (this.OngoingSubDirTransferChunkTail == currentOffset)
+                            {
+#if !NO_FILEFORMAT_EX
+                                throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                                throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                            }
+                        }
+
+                        currentOffset = nextUsedChunk;
+                    }
+                }
+
+                if (null != transfer)
+                {
+                    yield return transfer;
+                }
+
+                if (shouldBreak)
+                {
+                    yield break;
+                }
+            }
+        }
+
+        public IEnumerable<SingleObjectTransfer> ListSubTransfers()
+        {
+            long currentOffset = this.singleTransferChunkHead;
+            bool shouldBreak = false;
+
+            while (true)
+            {
+                SingleObjectTransfer transfer = null;
+                lock (this.journalLock)
+                {
+                    if (0 == this.singleTransferChunkHead)
+                    {
+                        shouldBreak = true;
+                    }
+                    else
+                    {
+                        this.stream.Position = currentOffset;
+
+                        long previousUsedChunk = this.ReadLong();
+                        long nextUsedChunk = this.ReadLong();
+
+                        if (0 == previousUsedChunk)
+                        {
+                            if (this.singleTransferChunkHead != currentOffset)
+                            {
+#if !NO_FILEFORMAT_EX
+                                throw new FileFormatException(Resources.RestartableLogCorrupted);
+#else
+                                throw new InvalidOperationException(Resources.RestartableLogCorrupted);
+#endif
+                            }
+                        }
+                        else
+                        {
+                            if (this.singleTransferChunkHead == currentOffset)
                             {
 #if !NO_FILEFORMAT_EX
                                 throw new FileFormatException(Resources.RestartableLogCorrupted);
@@ -496,7 +898,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         {
 #if BINARY_SERIALIZATION
                             transfer = this.formatter.Deserialize(this.stream) as SingleObjectTransfer;
-#else                            
+#else
                             transfer = this.ReadObject(this.transferSerializer) as SingleObjectTransfer;
 
                             if (transfer.Source is FileLocation)
@@ -566,7 +968,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                         if (0 == nextUsedChunk)
                         {
-                            if (this.usedChunkTail != currentOffset)
+                            if (this.singleTransferChunkTail != currentOffset)
                             {
 #if !NO_FILEFORMAT_EX
                                 throw new FileFormatException(Resources.RestartableLogCorrupted);
@@ -579,7 +981,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         }
                         else
                         {
-                            if (this.usedChunkTail == currentOffset)
+                            if (this.singleTransferChunkTail == currentOffset)
                             {
 #if !NO_FILEFORMAT_EX
                                 throw new FileFormatException(Resources.RestartableLogCorrupted);
@@ -608,11 +1010,17 @@ namespace Microsoft.Azure.Storage.DataMovement
         private void WriteJournalHead()
         {
             this.stream.Position = JournalHeadOffset;
-            this.stream.Write(BitConverter.GetBytes(this.usedChunkHead), 0, sizeof(long));
-            this.stream.Write(BitConverter.GetBytes(this.usedChunkTail), 0, sizeof(long));
+            this.stream.Write(BitConverter.GetBytes(this.singleTransferChunkHead), 0, sizeof(long));
+            this.stream.Write(BitConverter.GetBytes(this.singleTransferChunkTail), 0, sizeof(long));
+            this.stream.Write(BitConverter.GetBytes(this.OngoingSubDirTransferChunkHead), 0, sizeof(long));
+            this.stream.Write(BitConverter.GetBytes(this.OngoingSubDirTransferChunkTail), 0, sizeof(long));
+            this.stream.Write(BitConverter.GetBytes(this.subDirTransferChunkHead), 0, sizeof(long));
+            this.stream.Write(BitConverter.GetBytes(this.subDirTransferChunkTail), 0, sizeof(long));
             this.stream.Write(BitConverter.GetBytes(this.freeChunkHead), 0, sizeof(long));
             this.stream.Write(BitConverter.GetBytes(this.freeChunkTail), 0, sizeof(long));
-            this.stream.Write(BitConverter.GetBytes(this.preservedSubTransferCount), 0, sizeof(long));
+            this.stream.Write(BitConverter.GetBytes(this.subDirTransferNextWriteOffset), 0, sizeof(long));
+            this.stream.Write(BitConverter.GetBytes(this.subDirTransferCurrentReadOffset), 0, sizeof(long));
+            this.stream.Write(BitConverter.GetBytes(this.preservedChunkCount), 0, sizeof(long));
         }
 
         private long ReadLong()
@@ -703,7 +1111,9 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
             else
             {
-                return this.stream.Length <= SubTransferContentOffset ? SubTransferContentOffset : (this.preservedSubTransferCount * TransferChunkSize + SubTransferContentOffset);
+                long currentFreeChunkOffset = this.stream.Length <= SubTransferContentOffset ? SubTransferContentOffset : (this.preservedChunkCount * TransferChunkSize + SubTransferContentOffset);
+                this.preservedChunkCount++;
+                return currentFreeChunkOffset;
             }
         }
 

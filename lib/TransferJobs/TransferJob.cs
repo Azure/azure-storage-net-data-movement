@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Initializes a new instance of the <see cref="TransferJob"/> class.
         /// </summary>
         /// <param name="transfer">Transfer object.</param>
-        public TransferJob(Transfer transfer)
+        public TransferJob(SingleObjectTransfer transfer)
         {
             this.Transfer = transfer;
 
@@ -160,7 +160,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <summary>
         /// Gets or sets the parent transfer of this transfer job
         /// </summary>
-        public Transfer Transfer
+        public SingleObjectTransfer Transfer
         {
             get;
             set;

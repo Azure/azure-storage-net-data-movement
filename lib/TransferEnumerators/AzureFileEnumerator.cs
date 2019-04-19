@@ -17,7 +17,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
     /// <summary>
     /// Transfer enumerator for Azure file storage.
     /// </summary>
-    internal class AzureFileEnumerator : TransferEnumeratorBase, ITransferEnumerator
+    internal class AzureFileHierarchyEnumerator : TransferEnumeratorBase, ITransferEnumerator
     {
         /// <summary>
         /// Configures how many entries to request in each ListFilesSegmented call from Azure Storage.
@@ -44,20 +44,25 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
         private AzureFileDirectoryLocation location;
 
+        private CloudFileDirectory baseDirectory;
+
         private AzureFileListContinuationToken listContinuationToken;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureFileLocation" /> class.
         /// </summary>
         /// <param name="location">Azure file directory location.</param>
-        public AzureFileEnumerator(AzureFileDirectoryLocation location)
+        /// <param name="baseDirectory"></param>
+        public AzureFileHierarchyEnumerator(AzureFileDirectoryLocation location, CloudFileDirectory baseDirectory)
         {
             this.location = location;
+            this.baseDirectory = baseDirectory;
         }
 
         /// <summary>
         /// Gets or sets the enumerate continulation token.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public ListContinuationToken EnumerateContinuationToken
         {
             get
@@ -73,9 +78,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
         }
 
         /// <summary>
-        /// Enumerates the cloud files in the Azure file location referenced by this object.
+        /// Enumerates the files in the transfer location referenced by this object.
         /// </summary>
-        /// <param name="cancellationToken">CancellationToken to cancel the method.</param>
+        /// <param name="cancellationToken">CancellationToken to notify the method cancellation.</param>
         /// <returns>Enumerable list of TransferEntry objects found in the storage location referenced by this object.</returns>
         public IEnumerable<TransferEntry> EnumerateLocation(CancellationToken cancellationToken)
         {
@@ -156,7 +161,15 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
         private IEnumerable<TransferEntry> EnumerateLocationRecursive(CancellationToken cancellationToken)
         {
-            string fullPrefix = Uri.UnescapeDataString(this.location.FileDirectory.SnapshotQualifiedUri.AbsolutePath);
+            string fullPrefix = null;
+            if (null != this.baseDirectory)
+            {
+                fullPrefix = Uri.UnescapeDataString(this.baseDirectory.SnapshotQualifiedUri.AbsolutePath);
+            }
+            else
+            {
+                fullPrefix = Uri.UnescapeDataString(this.location.FileDirectory.SnapshotQualifiedUri.AbsolutePath);
+            }
 
             // Normalize full prefix to end with slash.
             if (!string.IsNullOrEmpty(fullPrefix) && !fullPrefix.EndsWith("/", StringComparison.OrdinalIgnoreCase))
@@ -164,182 +177,111 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                 fullPrefix += '/';
             }
 
-            Stack<CloudFileDirectory> directoriesToList = new Stack<CloudFileDirectory>();
-            directoriesToList.Push(this.location.FileDirectory);
+            CloudFileDirectory directory = this.location.FileDirectory;
 
-            string[] pathSegList = null;
+            Stack<CloudFileDirectory> innerDirList = new Stack<CloudFileDirectory>();
+
+            FileContinuationToken continuationToken = null;
             bool passedContinuationToken = false;
-            int pathSegListIndex = 0;
-            
-            if (null != this.listContinuationToken)
-            {
-                pathSegList = this.listContinuationToken.FilePath.Split(new char[] { UriDelimiter });
-            }
-            else
+            if (null == this.listContinuationToken)
             {
                 passedContinuationToken = true;
             }
 
-            while (0 != directoriesToList.Count)
+            do
             {
-                CloudFileDirectory directory = directoriesToList.Pop();
-                string dirAbsolutePath = Uri.UnescapeDataString(directory.SnapshotQualifiedUri.AbsolutePath);
-                if (dirAbsolutePath[dirAbsolutePath.Length - 1] != UriDelimiter)
+                FileResultSegment resultSegment = null;
+                Utils.CheckCancellation(cancellationToken);
+
+                ErrorEntry errorEntry = null;
+
+                try
                 {
-                    dirAbsolutePath = dirAbsolutePath + UriDelimiter;
+                    FileRequestOptions requestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
+                    resultSegment = directory.ListFilesAndDirectoriesSegmentedAsync(
+                        ListFilesSegmentSize,
+                        continuationToken,
+                        requestOptions,
+                        null,
+                        cancellationToken).Result;
+                }
+                catch (Exception ex)
+                {
+                    string errorMessage = string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resources.FailedToEnumerateDirectory,
+                        directory.SnapshotQualifiedUri.AbsoluteUri,
+                        string.Empty);
+
+                    TransferException exception =
+                        new TransferException(TransferErrorCode.FailToEnumerateDirectory, errorMessage, ex);
+                    errorEntry = new ErrorEntry(exception);
                 }
 
-                Stack<CloudFileDirectory> innerDirList = new Stack<CloudFileDirectory>();
-
-                FileContinuationToken continuationToken = null;
-
-                // To check whether reached continuation token by dir or file in this round.
-                bool checkFile = false;
-                bool passedSubFolder = false;
-                string continuationTokenSeg = null;
-                if (!passedContinuationToken)
+                if (null != errorEntry)
                 {
-                    if (pathSegList.Length - 1 == pathSegListIndex)
-                    {
-                        checkFile = true;
-                    }
-
-                    continuationTokenSeg = pathSegList[pathSegListIndex];
-                    pathSegListIndex++;
+                    yield return errorEntry;
+                    yield break;
                 }
 
-                do
+                continuationToken = resultSegment.ContinuationToken;
+
+                foreach (IListFileItem fileItem in resultSegment.Results)
                 {
-                    FileResultSegment resultSegment = null;
                     Utils.CheckCancellation(cancellationToken);
 
-                    ErrorEntry errorEntry = null;
-
-                    try
+                    if (fileItem is CloudFileDirectory)
                     {
-                        FileRequestOptions requestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
-                        resultSegment = directory.ListFilesAndDirectoriesSegmentedAsync(
-                            ListFilesSegmentSize,
-                            continuationToken,
-                            requestOptions,
-                            null,
-                            cancellationToken).Result;
-                    }
-                    catch (Exception ex)
-                    {
-                        string errorMessage = string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.FailedToEnumerateDirectory,
-                            directory.SnapshotQualifiedUri.AbsoluteUri,
-                            string.Empty);
+                        CloudFileDirectory cloudDir = fileItem as CloudFileDirectory;
 
-                        TransferException exception =
-                            new TransferException(TransferErrorCode.FailToEnumerateDirectory, errorMessage, ex);
-                        errorEntry = new ErrorEntry(exception);
-                    }
-
-                    if (null != errorEntry)
-                    {
-                        yield return errorEntry;
-                        yield break;
-                    }
-
-                    continuationToken = resultSegment.ContinuationToken;
-
-                    foreach (IListFileItem fileItem in resultSegment.Results)
-                    {
-                        Utils.CheckCancellation(cancellationToken);
-
-                        if (fileItem is CloudFileDirectory)
+                        if (!passedContinuationToken)
                         {
-                            if (checkFile || passedContinuationToken || passedSubFolder)
+                            if (string.Equals(cloudDir.Name, this.listContinuationToken.FilePath, StringComparison.Ordinal))
                             {
-                                innerDirList.Push(fileItem as CloudFileDirectory);
+                                passedContinuationToken = true;
+                                continue;
                             }
                             else
-                            {
-                                CloudFileDirectory cloudDir = fileItem as CloudFileDirectory;
-                                string fullPath = Uri.UnescapeDataString(cloudDir.SnapshotQualifiedUri.AbsolutePath);
-                                string segName = fullPath.Remove(0, dirAbsolutePath.Length);
-
-                                int compareResult = string.Compare(segName, continuationTokenSeg, StringComparison.OrdinalIgnoreCase);
-
-                                if (compareResult >= 0)
-                                {
-                                    passedSubFolder = true;
-                                    innerDirList.Push(cloudDir);
-
-                                    if (compareResult > 0)
-                                    {
-                                        passedContinuationToken = true;
-                                    }
-                                }
-                            }
-                        }
-                        else if (fileItem is CloudFile)
-                        {
-                            if (!checkFile && !passedContinuationToken)
                             {
                                 continue;
                             }
+                        }
+                        string fullPath = Uri.UnescapeDataString(cloudDir.SnapshotQualifiedUri.AbsolutePath);
+                        string relativePath = fullPath.Remove(0, fullPrefix.Length);
 
-                            CloudFile cloudFile = fileItem as CloudFile;
+                        yield return new AzureFileDirectoryEntry(
+                            relativePath,
+                            cloudDir,
+                            new AzureFileListContinuationToken(cloudDir.Name));
+                    }
+                    else if (fileItem is CloudFile)
+                    {
+                        CloudFile cloudFile = fileItem as CloudFile;
 
-                            string fullPath = Uri.UnescapeDataString(cloudFile.SnapshotQualifiedUri.AbsolutePath);
-                            string relativePath = fullPath.Remove(0, fullPrefix.Length);
-
-                            if (passedContinuationToken)
+                        if (!passedContinuationToken)
+                        {
+                            if (string.Equals(cloudFile.Name, this.listContinuationToken.FilePath, StringComparison.Ordinal))
                             {
-                                yield return new AzureFileEntry(
-                                    relativePath,
-                                    cloudFile,
-                                    new AzureFileListContinuationToken(relativePath));
+                                passedContinuationToken = true;
+                                continue;
                             }
                             else
                             {
-                                string segName = fullPath.Remove(0, dirAbsolutePath.Length);
-                                int compareResult = string.Compare(segName, continuationTokenSeg, StringComparison.OrdinalIgnoreCase);
-
-                                if (compareResult < 0)
-                                {
-                                    continue;
-                                }
-
-                                passedContinuationToken = true;
-
-                                if (compareResult > 0)
-                                {
-                                    yield return new AzureFileEntry(
-                                        relativePath,
-                                        cloudFile,
-                                        new AzureFileListContinuationToken(relativePath));
-                                }
+                                continue;
                             }
                         }
-                    }
-                }
-                while (continuationToken != null);
 
-                if (checkFile)
-                {
-                    passedContinuationToken = true;
-                }
+                        string fullPath = Uri.UnescapeDataString(cloudFile.SnapshotQualifiedUri.AbsolutePath);
+                        string relativePath = fullPath.Remove(0, fullPrefix.Length);
 
-                if (innerDirList.Count <= 0)
-                {
-                    if (!checkFile && !passedContinuationToken)
-                    {
-                        passedContinuationToken = true;
-                    }
-                }
-                else
-                {
-                    while (innerDirList.Count > 0)
-                    {
-                        directoriesToList.Push(innerDirList.Pop());
+                        yield return new AzureFileEntry(
+                            relativePath,
+                            cloudFile,
+                            new AzureFileListContinuationToken(cloudFile.Name));
                     }
                 }
             }
+            while (continuationToken != null);
         }
     }
 }

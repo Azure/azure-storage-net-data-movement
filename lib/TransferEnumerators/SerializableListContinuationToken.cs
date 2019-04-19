@@ -17,9 +17,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
     [KnownType(typeof(AzureFileListContinuationToken))]
     [KnownType(typeof(FileListContinuationToken))]
 #endif // BINARY_SERIALIZATION
-    internal sealed class SerializableListContinuationToken
+    internal sealed class SerializableListContinuationToken : JournalItem
 #if BINARY_SERIALIZATION
-        : ISerializable
+        , ISerializable
 #endif // BINARY_SERIALIZATION
     {
         private const string ListContinuationTokenTypeName = "TokenType";
@@ -46,13 +46,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             {
                 this.ListContinuationToken = (FileListContinuationToken)info.GetValue(ListContinuationTokenName, typeof(FileListContinuationToken));
             }
-            else if(tokenType == TokenTypeAzureBlob)
+            else if (tokenType == TokenTypeAzureBlob)
             {
                 this.ListContinuationToken = (AzureBlobListContinuationToken)info.GetValue(ListContinuationTokenName, typeof(AzureBlobListContinuationToken));
             }
-            else if(tokenType == TokenTypeAzureFile)
+            else if (tokenType == TokenTypeAzureFile)
             {
                 this.ListContinuationToken = (AzureFileListContinuationToken)info.GetValue(ListContinuationTokenName, typeof(AzureFileListContinuationToken));
+            }
+            else if (string.IsNullOrEmpty(tokenType))
+            {
+                this.ListContinuationToken = null;
             }
             else
             {
@@ -83,31 +87,36 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                 throw new ArgumentNullException("info");
             }
 
-            FileListContinuationToken fileLct = this.ListContinuationToken as FileListContinuationToken;
-            if (fileLct != null)
+            if (null != this.ListContinuationToken)
             {
-                info.AddValue(ListContinuationTokenTypeName, TokenTypeFile, typeof(string));
-                info.AddValue(ListContinuationTokenName, fileLct, typeof(FileListContinuationToken));
-                return;
-            }
+                FileListContinuationToken fileLct = this.ListContinuationToken as FileListContinuationToken;
+                if (fileLct != null)
+                {
+                    info.AddValue(ListContinuationTokenTypeName, TokenTypeFile, typeof(string));
+                    info.AddValue(ListContinuationTokenName, fileLct, typeof(FileListContinuationToken));
+                    return;
+                }
 
-            AzureBlobListContinuationToken azureBlobLct = this.ListContinuationToken as AzureBlobListContinuationToken;
-            if (azureBlobLct != null)
+                AzureBlobListContinuationToken azureBlobLct = this.ListContinuationToken as AzureBlobListContinuationToken;
+                if (azureBlobLct != null)
+                {
+                    info.AddValue(ListContinuationTokenTypeName, TokenTypeAzureBlob, typeof(string));
+                    info.AddValue(ListContinuationTokenName, azureBlobLct, typeof(AzureBlobListContinuationToken));
+                    return;
+                }
+
+                AzureFileListContinuationToken azureFileLct = this.ListContinuationToken as AzureFileListContinuationToken;
+                if (azureFileLct != null)
+                {
+                    info.AddValue(ListContinuationTokenTypeName, TokenTypeAzureFile, typeof(string));
+                    info.AddValue(ListContinuationTokenName, azureFileLct, typeof(AzureFileListContinuationToken));
+                    return;
+                }
+            }
+            else
             {
-                info.AddValue(ListContinuationTokenTypeName, TokenTypeAzureBlob, typeof(string));
-                info.AddValue(ListContinuationTokenName, azureBlobLct, typeof(AzureBlobListContinuationToken));
-                return;
+                info.AddValue(ListContinuationTokenTypeName, "", typeof(string));
             }
-
-            AzureFileListContinuationToken azureFileLct = this.ListContinuationToken as AzureFileListContinuationToken;
-            if (azureFileLct != null)
-            {
-                info.AddValue(ListContinuationTokenTypeName, TokenTypeAzureFile, typeof(string));
-                info.AddValue(ListContinuationTokenName, azureFileLct, typeof(AzureFileListContinuationToken));
-                return;
-            }
-
-            throw new ArgumentException("ListContinuationToken");
         }
 #endif // BINARY_SERIALIZATION
     }

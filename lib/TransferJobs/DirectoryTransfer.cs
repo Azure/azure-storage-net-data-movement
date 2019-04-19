@@ -24,9 +24,20 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if BINARY_SERIALIZATION
     [Serializable]
 #else
+    [KnownType(typeof(AzureBlobDirectoryLocation))]
+    [KnownType(typeof(AzureBlobLocation))]
+    [KnownType(typeof(AzureFileDirectoryLocation))]
+    [KnownType(typeof(AzureFileLocation))]
+    [KnownType(typeof(DirectoryLocation))]
+    [KnownType(typeof(FileLocation))]
+    // StreamLocation intentionally omitted because it is not serializable
+    [KnownType(typeof(UriLocation))]
+    [KnownType(typeof(SingleObjectTransfer))]
+    [KnownType(typeof(HierarchyDirectoryTransfer))]
+    [KnownType(typeof(FlatDirectoryTransfer))]
     [DataContract]
 #endif // BINARY_SERIALIZATION
-    internal class DirectoryTransfer : MultipleObjectsTransfer
+    internal abstract class DirectoryTransfer : Transfer
     {
         /// <summary>
         /// These filenames are reserved on windows, regardless of the file extension.
@@ -45,6 +56,11 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 "CLOCK$",
             };
+
+        /// <summary>
+        /// Internal directory transfer context instance.
+        /// </summary>
+        private DirectoryTransferContext dirTransferContext = null;
 
         /// <summary>
         /// Serialization field name for bool to indicate whether delimiter is set.
@@ -110,9 +126,17 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Initializes a new instance of the <see cref="DirectoryTransfer"/> class.
         /// </summary>
         /// <param name="other">Another <see cref="DirectoryTransfer"/> object.</param>
-        private DirectoryTransfer(DirectoryTransfer other)
+        protected DirectoryTransfer(DirectoryTransfer other)
             : base(other)
         {
+        }
+
+        protected INameResolver NameResolver
+        {
+            get
+            {
+                return this.nameResolver;
+            }
         }
 
         public char? Delimiter
@@ -142,6 +166,59 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
 
+        /// <summary>
+        /// Gets or sets the transfer context of this transfer.
+        /// </summary>
+        public override TransferContext Context
+        {
+            get
+            {
+                return this.dirTransferContext;
+            }
+
+            set
+            {
+                DirectoryTransferContext tempValue = value as DirectoryTransferContext;
+
+                if (tempValue == null)
+                {
+                    throw new ArgumentException("Requires a DirectoryTransferContext instance", "value");
+                }
+
+                this.dirTransferContext = tempValue;
+            }
+        }
+
+        /// <summary>
+        /// Gets the directory transfer context of this transfer.
+        /// </summary>
+        public DirectoryTransferContext DirectoryContext
+        {
+            get
+            {
+                return this.dirTransferContext;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the transfer enumerator for source location
+        /// </summary>
+        public ITransferEnumerator SourceEnumerator
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets the maximum transfer concurrency
+        /// </summary>
+        public virtual int MaxTransferConcurrency
+        {
+            get;
+            set;
+        }
+
+
 #if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
@@ -161,15 +238,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 #endif // BINARY_SERIALIZATION
-
-        /// <summary>
-        /// Creates a copy of current transfer object.
-        /// </summary>
-        /// <returns>A copy of current transfer object.</returns>
-        public override Transfer Copy()
-        {
-            return new DirectoryTransfer(this);
-        }
 
         /// <summary>
         /// Execute the transfer asynchronously.
@@ -197,10 +265,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 
             this.nameResolver = GetNameResolver(this.Source, this.Destination, this.Delimiter);
-            await base.ExecuteAsync(scheduler, cancellationToken);
+            await this.ExecuteInternalAsync(scheduler, cancellationToken);
         }
 
-        private static TransferLocation GetSourceTransferLocation(TransferLocation dirLocation, TransferEntry entry)
+        public abstract Task ExecuteInternalAsync(TransferScheduler scheduler, CancellationToken cancellationToken);
+
+        protected static TransferLocation GetSourceTransferLocation(TransferLocation dirLocation, TransferEntry entry)
         {
             switch(dirLocation.Type)
             {
@@ -229,7 +299,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        private TransferLocation GetDestinationTransferLocation(TransferLocation dirLocation, TransferEntry entry)
+        protected TransferLocation GetDestinationTransferLocation(TransferLocation dirLocation, TransferEntry entry)
         {
             string destRelativePath = this.nameResolver.ResolveName(entry);
 
@@ -293,7 +363,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        protected override void CreateParentDirectory(SingleObjectTransfer transfer)
+        protected void CreateParentDirectory(SingleObjectTransfer transfer)
         {
             switch (transfer.Destination.Type)
             {
@@ -340,7 +410,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Object will be disposed by the caller")]
-        protected override SingleObjectTransfer CreateTransfer(TransferEntry entry)
+        internal SingleObjectTransfer CreateTransfer(TransferEntry entry)
         {
             TransferLocation sourceLocation = GetSourceTransferLocation(this.Source, entry);
             sourceLocation.IsInstanceInfoFetched = true;
@@ -383,7 +453,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             return false;
         }
 
-        protected override void UpdateTransfer(Transfer transfer)
+        protected void UpdateTransfer(Transfer transfer)
         {
             DirectoryTransfer.UpdateCredentials(this.Source, transfer.Source);
             DirectoryTransfer.UpdateCredentials(this.Destination, transfer.Destination);
@@ -408,18 +478,18 @@ namespace Microsoft.Azure.Storage.DataMovement
             Debug.Assert(sourceLocation != null, "sourceLocation");
             Debug.Assert(destLocation != null, "destLocation");
 
-            switch(sourceLocation.Type)
+            switch (sourceLocation.Type)
             {
                 case TransferLocationType.AzureBlobDirectory:
                     if (destLocation.Type == TransferLocationType.AzureBlobDirectory)
                     {
                         return new AzureBlobToAzureBlobNameResolver();
                     }
-                    else if(destLocation.Type == TransferLocationType.AzureFileDirectory)
+                    else if (destLocation.Type == TransferLocationType.AzureFileDirectory)
                     {
                         return new AzureBlobToAzureFileNameResolver(delimiter);
                     }
-                    else if(destLocation.Type == TransferLocationType.LocalDirectory)
+                    else if (destLocation.Type == TransferLocationType.LocalDirectory)
                     {
                         return new AzureToFileNameResolver(delimiter);
                     }
@@ -431,7 +501,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     {
                         return new AzureFileToAzureNameResolver();
                     }
-                    else if(destLocation.Type == TransferLocationType.LocalDirectory)
+                    else if (destLocation.Type == TransferLocationType.LocalDirectory)
                     {
                         return new AzureToFileNameResolver(null);
                     }
