@@ -1,3 +1,7 @@
+Tracking Breaking Changes since 0.10.1
+   - Changed base namespace from Microsoft.WindowsAzure.Storage.DataMovement to Microsoft.Azure.Storage.DataMovement, 
+     to keep align with azure storage client libraries' namespace change from Microsoft.WindowsAzure.Storage to Microsoft.Azure.Storage
+
 Tracking Breaking Changes since 0.9.0
 
    - Changed dependency from azure storage client library 9.3.2 to azure storage blob client library 9.4.2 and azure storage file client library 9.4.2
