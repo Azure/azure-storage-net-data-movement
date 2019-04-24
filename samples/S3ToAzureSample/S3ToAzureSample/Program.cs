@@ -14,10 +14,10 @@ namespace S3ToAzureSample
     using Amazon;
     using Amazon.S3;
     using Amazon.S3.Model;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.File;
 
     /// <summary>
     /// This sample demonstrates how to copy all objects from an Amazon s3 bucket into a Microsoft Azure blob container
