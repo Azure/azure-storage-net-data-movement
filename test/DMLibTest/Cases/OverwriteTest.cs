@@ -8,8 +8,8 @@ namespace DMLibTest.Cases
 {
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
     using System;
     using System.Threading;
@@ -133,7 +133,7 @@ namespace DMLibTest.Cases
                 Test.Assert(transferException != null, "Verify the exception is a TransferException");
 
                 VerificationHelper.VerifyTransferException(transferException, TransferErrorCode.NotOverwriteExistingDestination,
-                    "Skiped file", destExistNName);
+                    "Skipped file", destExistNName);
             }
         }
 
@@ -176,7 +176,7 @@ namespace DMLibTest.Cases
                 Test.Assert(transferException != null, "Verify the exception is a TransferException");
 
                 VerificationHelper.VerifyTransferException(transferException, TransferErrorCode.NotOverwriteExistingDestination,
-                    "Skiped file", destExistNName);
+                    "Skipped file", destExistNName);
             };
 
             transferContext.FileTransferred += (object sender, TransferEventArgs args) =>

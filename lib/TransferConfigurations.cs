@@ -3,13 +3,13 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Globalization;
     using System.Reflection;
     using System.Runtime.InteropServices;
-    using ClientLibraryConstants = Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants;
+    using ClientLibraryConstants = Microsoft.Azure.Storage.Shared.Protocol.Constants;
 
     /// <summary>
     /// TransferConfigurations class.

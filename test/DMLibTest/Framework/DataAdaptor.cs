@@ -5,7 +5,7 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
-    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.Azure.Storage.Auth;
 
     public abstract class DataAdaptor<TDataInfo> where TDataInfo : IDataInfo
     {

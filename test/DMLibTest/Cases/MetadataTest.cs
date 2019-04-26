@@ -11,7 +11,7 @@ namespace DMLibTest
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using MS.Test.Common.MsTestLib;
     using System;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.DataMovement;
 
     [MultiDirectionTestClass]
     public class MetadataTest : DMLibTestBase

@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Runtime.Serialization;
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     internal static class DataContractSerializationExtensions
     {

@@ -5,9 +5,9 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.File;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.File;
+    using Microsoft.Azure.Storage.RetryPolicies;
     using MS.Test.Common.MsTestLib;
     using System;
     using System.IO;

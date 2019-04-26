@@ -5,7 +5,7 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
-    using Microsoft.WindowsAzure.Storage.Auth;
+    using Microsoft.Azure.Storage.Auth;
     using System;
 
     public class TestExecutionOptions<TDataInfo> where TDataInfo : IDataInfo

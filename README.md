@@ -1,8 +1,11 @@
-# Microsoft Azure Storage Data Movement Library (0.10.1)
+# Microsoft Azure Storage Data Movement Library (0.11.0)
 
 The Microsoft Azure Storage Data Movement Library designed for high-performance uploading, downloading and copying Azure Storage Blob and File. This library is based on the core data movement framework that powers [AzCopy](https://azure.microsoft.com/documentation/articles/storage-use-azcopy/).
 
 For more information about the Azure Storage, please visit [Microsoft Azure Storage Documentation](https://azure.microsoft.com/documentation/services/storage/).
+
+> Note:
+> As of 0.11.0, the namespace has changed to Microsoft.Azure.Storage.DataMovement from Microsoft.WindowsAzure.Storage.DataMovement. 
 
 # Features
 
@@ -84,9 +87,9 @@ First, include the classes you need, here we include Storage client library, the
 ```csharp
 using System;
 using System.Threading;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.DataMovement;
+using Microsoft.Azure.Storage;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.DataMovement;
 ```
 
 Now use the interfaces provided by Storage client lib to setup the storage context (find more details at [how to use Blob Storage from .NET](https://azure.microsoft.com/documentation/articles/storage-dotnet-how-to-use-blobs/)):
@@ -215,5 +218,5 @@ For general suggestions about Microsoft Azure please use our [UserVoice forum](h
 # Learn More
 
 - [Storage Data Movement Library API reference](https://azure.github.io/azure-storage-net-data-movement)
-- [Storage Client Library Reference for .NET - MSDN](https://msdn.microsoft.com/en-us/library/azure/dn261237.aspx?)
+- [Storage Client Library Reference for .NET - MSDN](https://docs.microsoft.com/en-us/dotnet/api/overview/azure/storage?view=azure-dotnet)
 - [Azure Storage Team Blog](http://blogs.msdn.com/b/windowsazurestorage/)

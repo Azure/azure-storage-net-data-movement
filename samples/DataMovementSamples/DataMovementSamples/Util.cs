@@ -6,9 +6,9 @@
 namespace DataMovementSamples
 {
     using System;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
     using System.Threading.Tasks;
     using System.IO;
     using Newtonsoft.Json.Linq;

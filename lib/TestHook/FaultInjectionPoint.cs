@@ -8,7 +8,7 @@
 // </summary>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
 

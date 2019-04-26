@@ -3,10 +3,10 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //-----------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
+namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 {
     using System.Globalization;
-    using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
+    using Microsoft.Azure.Storage.DataMovement.Interop;
 
     internal class FileToAzureFileNameResolver : INameResolver
     {

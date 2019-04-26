@@ -4,15 +4,15 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
+namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
     using System.Threading;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.File;
 
     /// <summary>
     /// Transfer enumerator for Azure file storage.

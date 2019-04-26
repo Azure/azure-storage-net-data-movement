@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Diagnostics;
@@ -14,9 +14,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Runtime.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
+    using Microsoft.Azure.Storage.File;
 
     /// <summary>
     /// Represents a directory object transfer operation.

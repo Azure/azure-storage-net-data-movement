@@ -11,9 +11,9 @@ namespace DMLibTest
     using System.Linq;
     using System.Text;
     using DMLibTestCodeGen;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.File;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
+    using Microsoft.Azure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
     using Framework;
 

@@ -1,7 +1,7 @@
 ﻿namespace DMLibTest
 {
     using System.Threading;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
 
     public class TransferEventChecker

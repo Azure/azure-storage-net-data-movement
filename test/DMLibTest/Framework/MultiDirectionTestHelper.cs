@@ -10,9 +10,9 @@ namespace DMLibTest
     using System.Linq;
     using System.Threading;
     using DMLibTestCodeGen;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
     using MS.Test.Common.MsTestLib;
 
     public static class MultiDirectionTestHelper

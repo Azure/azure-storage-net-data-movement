@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.Interop
+namespace Microsoft.Azure.Storage.DataMovement.Interop
 {
     using System;
     using System.Collections.Generic;

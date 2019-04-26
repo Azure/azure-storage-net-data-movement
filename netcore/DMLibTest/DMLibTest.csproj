@@ -96,8 +96,8 @@
   
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
-    <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="9.4.2" />
-    <PackageReference Include="Microsoft.Azure.Storage.File" Version="9.4.2" />
+    <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Azure.Storage.File" Version="10.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
@@ -105,7 +105,7 @@
   
   <ItemGroup>
     <ProjectReference Include="..\DMTestLib\DMTestLib.csproj" />
-    <ProjectReference Include="..\Microsoft.WindowsAzure.Storage.DataMovement\Microsoft.WindowsAzure.Storage.DataMovement.csproj" />
+    <ProjectReference Include="..\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj" />
     <ProjectReference Include="..\MsTestLib\MsTestLib.csproj" />
     <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />

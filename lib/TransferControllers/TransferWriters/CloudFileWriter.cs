@@ -4,14 +4,14 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
+namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 {
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.File;
 
     internal sealed class CloudFileWriter : RangeBasedWriter
     {

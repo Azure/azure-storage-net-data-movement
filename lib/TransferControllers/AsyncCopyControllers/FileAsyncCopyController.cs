@@ -3,18 +3,18 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
+namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 {
     using System;
     using System.Collections.Generic;
     using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
-    using Microsoft.WindowsAzure.Storage.DataMovement.Extensions;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.DataMovement.Extensions;
+    using Microsoft.Azure.Storage.File;
 
     /// <summary>
     /// Azure file asynchronous copy.

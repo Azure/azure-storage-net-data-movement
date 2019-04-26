@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
+namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 {
     using System;
     using System.Collections.Generic;
@@ -15,8 +15,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.Blob.Protocol;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.Blob.Protocol;
 
     internal sealed class AppendBlobWriter : TransferReaderWriterBase
     {

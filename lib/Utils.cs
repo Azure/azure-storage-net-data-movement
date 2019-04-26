@@ -3,7 +3,7 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Collections.Generic;
@@ -13,9 +13,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
 
     /// <summary>
     /// Class for various utils.

@@ -4,11 +4,11 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
+    using Microsoft.Azure.Storage.File;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;

@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
+namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 {
     /// <summary>
     /// Base class of dmlib internal transfer enumerators. It contains the common properties of transfer enumerators.

@@ -5,14 +5,14 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.Auth;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.RetryPolicies;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.Auth;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.RetryPolicies;
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using StorageBlob = Microsoft.WindowsAzure.Storage.Blob;
+    using StorageBlob = Microsoft.Azure.Storage.Blob;
     internal class CloudBlobDataAdaptor : BlobDataAdaptorBase<DMLibDataInfo>
     {
         public CloudBlobDataAdaptor(TestAccount testAccount, string containerName, string blobType, SourceOrDest sourceOrDest, string delimiter = "/")

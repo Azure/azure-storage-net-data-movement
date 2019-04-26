@@ -10,8 +10,8 @@ namespace DMLibTest.Cases
     using System.Net;
     using DMLibTestCodeGen;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Microsoft.WindowsAzure.Storage;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
+    using Microsoft.Azure.Storage;
+    using Microsoft.Azure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
 
     [MultiDirectionTestClass]

@@ -11,9 +11,9 @@ namespace DMLibTest
     using System.IO;
     using System.Threading;
     using DMLibTestCodeGen;
-    using Microsoft.WindowsAzure.Storage.Blob;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
-    using Microsoft.WindowsAzure.Storage.File;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.File;
 
     public class TransferItem
     {

@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26228.10
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.WindowsAzure.Storage.DataMovement", "netcore\Microsoft.WindowsAzure.Storage.DataMovement\Microsoft.WindowsAzure.Storage.DataMovement.csproj", "{FEF3205A-8724-4D88-9C01-4BEA24EC6A24}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DMLibTest", "netcore\DMLibTest\DMLibTest.csproj", "{1FBF2858-65D7-418B-92C4-75BAF207158C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DMTestLib", "netcore\DMTestLib\DMTestLib.csproj", "{AA7B6E4B-E574-4005-89CC-97A84B41E63A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MsTestLib", "netcore\MsTestLib\MsTestLib.csproj", "{0F62F89A-6DE6-4623-821B-DD6D2CAFCF99}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Azure.Storage.DataMovement", "netcore\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj", "{9CFC8F0E-85B4-43FB-AAB8-EECF9EE0F289}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FEF3205A-8724-4D88-9C01-4BEA24EC6A24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FEF3205A-8724-4D88-9C01-4BEA24EC6A24}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FEF3205A-8724-4D88-9C01-4BEA24EC6A24}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FEF3205A-8724-4D88-9C01-4BEA24EC6A24}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1FBF2858-65D7-418B-92C4-75BAF207158C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1FBF2858-65D7-418B-92C4-75BAF207158C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1FBF2858-65D7-418B-92C4-75BAF207158C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -33,8 +29,15 @@ Global
 		{0F62F89A-6DE6-4623-821B-DD6D2CAFCF99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F62F89A-6DE6-4623-821B-DD6D2CAFCF99}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F62F89A-6DE6-4623-821B-DD6D2CAFCF99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9CFC8F0E-85B4-43FB-AAB8-EECF9EE0F289}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9CFC8F0E-85B4-43FB-AAB8-EECF9EE0F289}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9CFC8F0E-85B4-43FB-AAB8-EECF9EE0F289}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9CFC8F0E-85B4-43FB-AAB8-EECF9EE0F289}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {98FDD843-F0CD-482D-9E73-75844F47C472}
 	EndGlobalSection
 EndGlobal

@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
+namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 {
     /// <summary>
     /// Name resolver class for translating Windows file names to Azure blob/file names.

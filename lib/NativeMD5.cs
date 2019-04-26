@@ -14,7 +14,7 @@
 //    limitations under the License.
 // </copyright>
 //-----------------------------------------------------------------------
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Diagnostics.CodeAnalysis;

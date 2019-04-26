@@ -16,8 +16,8 @@ namespace DMLibTest.Framework
     using System.Threading.Tasks;
     using Microsoft.Win32.SafeHandles;
     using System.Diagnostics;
-    using Microsoft.WindowsAzure.Storage.DataMovement;
-    using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
+    using Microsoft.Azure.Storage.DataMovement;
+    using Microsoft.Azure.Storage.DataMovement.Interop;
 
     public static class LongPathExtension
     {
@@ -296,7 +296,7 @@ namespace DMLibTest.Framework
 #if DOTNET5_4
             return File.GetAttributes(path);
 #else
-            return Microsoft.WindowsAzure.Storage.DataMovement.LongPathFile.GetAttributes(path);
+            return Microsoft.Azure.Storage.DataMovement.LongPathFile.GetAttributes(path);
 #endif
         }
 
@@ -315,7 +315,7 @@ namespace DMLibTest.Framework
                 {
                     NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] { 0, NativeMethods.ERROR_DIRECTORY_NOT_FOUND, NativeMethods.ERROR_FILE_NOT_FOUND });
                 }
-                var fileAttributes = Microsoft.WindowsAzure.Storage.DataMovement.LongPathFile.GetAttributes(path);
+                var fileAttributes = Microsoft.Azure.Storage.DataMovement.LongPathFile.GetAttributes(path);
                 return success && (FileAttributes.Directory != (fileAttributes & FileAttributes.Directory));
             }
             catch (ArgumentException) { }

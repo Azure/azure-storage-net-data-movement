@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.Extensions
+namespace Microsoft.Azure.Storage.DataMovement.Extensions
 {
     using System;
 
@@ -34,7 +34,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Extensions
 
     internal class StorageCopyState
     {
-        public StorageCopyState(Microsoft.WindowsAzure.Storage.Blob.CopyState blobCopyState)
+        public StorageCopyState(Microsoft.Azure.Storage.Blob.CopyState blobCopyState)
         {
             this.CopyId = blobCopyState.CopyId;
             this.SetStatus(blobCopyState.Status);
@@ -44,7 +44,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Extensions
             this.StatusDescription = blobCopyState.StatusDescription;
         }
 
-        public StorageCopyState(Microsoft.WindowsAzure.Storage.File.CopyState fileCopyState)
+        public StorageCopyState(Microsoft.Azure.Storage.File.CopyState fileCopyState)
         {
             this.CopyId = fileCopyState.CopyId;
             this.SetStatus(fileCopyState.Status);
@@ -54,7 +54,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Extensions
             this.StatusDescription = fileCopyState.StatusDescription;
         }
 
-        private void SetStatus(Microsoft.WindowsAzure.Storage.Blob.CopyStatus blobCopyStatus)
+        private void SetStatus(Microsoft.Azure.Storage.Blob.CopyStatus blobCopyStatus)
         {
             switch (blobCopyStatus)
             {
@@ -79,7 +79,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.Extensions
             }
         }
 
-        private void SetStatus(Microsoft.WindowsAzure.Storage.File.CopyStatus fileCopyStatus)
+        private void SetStatus(Microsoft.Azure.Storage.File.CopyStatus fileCopyStatus)
         {
             switch (fileCopyStatus)
             {

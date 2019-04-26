@@ -213,7 +213,7 @@ MD5 in property: {2}</value>
     <comment>{0} is the is the destination blob type.</comment>
   </data>
   <data name="OverwriteCallbackCancelTransferException" xml:space="preserve">
-    <value>Skiped file "{0}" because target "{1}" already exists.</value>
+    <value>Skipped file "{0}" because target "{1}" already exists.</value>
     <comment>{0} is source file name, {1} is destination file name.</comment>
   </data>
   <data name="ParallelCountNotPositiveException" xml:space="preserve">

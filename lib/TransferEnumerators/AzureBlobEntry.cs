@@ -4,9 +4,9 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
+namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 {
-    using Microsoft.WindowsAzure.Storage.Blob;
+    using Microsoft.Azure.Storage.Blob;
 
     /// <summary>
     /// AzureBlobEntry class to represent a single transfer entry on Azure blob service.

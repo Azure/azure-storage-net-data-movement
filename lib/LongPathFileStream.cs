@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WindowsAzure.Storage.DataMovement
+namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Collections.Generic;
@@ -18,7 +18,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using Microsoft.Win32.SafeHandles;
 #endif
     using System.Diagnostics;
-    using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
+    using Microsoft.Azure.Storage.DataMovement.Interop;
 
     internal static class LongPath
     {
