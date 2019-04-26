@@ -2,7 +2,7 @@
  * All Services on both .Net Framework and .Net Core
    - Upgraded azure storage blob client library from 9.4.2 to 10.0.1 
    - Upgraded azure storage file client library from 9.4.2 to 10.0.1
-   - Changed base namespace from Microsoft.WindowsAzure.Storage.DataMovement to Microsoft.Azure.Storage.DataMovement 
+   - Changed base namespace from Microsoft.WindowsAzure.Storage.DataMovement to Microsoft.Azure.Storage.DataMovement, assembly name is changed accordingly, nuget package name is not changed.
 
 2019.02.18 Version 0.10.1
  * All Services on both .Net Framework and .Net Core
