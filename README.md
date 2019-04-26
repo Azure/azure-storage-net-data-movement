@@ -4,6 +4,9 @@ The Microsoft Azure Storage Data Movement Library designed for high-performance 
 
 For more information about the Azure Storage, please visit [Microsoft Azure Storage Documentation](https://azure.microsoft.com/documentation/services/storage/).
 
+> Note:
+> As of 0.11.0, the namespace has changed to Microsoft.Azure.Storage.DataMovement from Microsoft.WindowsAzure.Storage.DataMovement. 
+
 # Features
 
 - Blobs
