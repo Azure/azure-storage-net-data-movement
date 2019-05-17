@@ -19,14 +19,14 @@
     <dependencies>
       <group targetFramework="net452">
         <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="1.8.0.0" />
-        <dependency id="Microsoft.Azure.Storage.File" version="10.0.1" />
-        <dependency id="Microsoft.Azure.Storage.Blob" version="10.0.1" />
+        <dependency id="Microsoft.Azure.Storage.File" version="10.0.3" />
+        <dependency id="Microsoft.Azure.Storage.Blob" version="10.0.3" />
       </group>
       <group targetFramework="netstandard2.0">
         <dependency id="Mono.Posix.NETStandard" version="1.0.0-beta2" />
         <dependency id="NETStandard.Library" version="2.0.1" />
-        <dependency id="Microsoft.Azure.Storage.File" version="10.0.1" />
-        <dependency id="Microsoft.Azure.Storage.Blob" version="10.0.1" />
+        <dependency id="Microsoft.Azure.Storage.File" version="10.0.3" />
+        <dependency id="Microsoft.Azure.Storage.Blob" version="10.0.3" />
         <dependency id="System.Runtime.Serialization.Xml" version="4.3.0" />
         <dependency id="System.Threading.ThreadPool" version="4.3.0" />
       </group>

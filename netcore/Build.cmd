@@ -6,8 +6,8 @@ if not {%1} == {} (
 
 set OriginalPath=%cd%
 set TestPath=%~dp0..\test
-"%ProgramFiles(x86)%\MSBuild\14.0\Bin\msbuild" %TestPath%\DMLibTest\DMLibTest.csproj /t:Rebuild /p:Configuration=%BuildMode%  >NUL
-"%ProgramFiles(x86)%\MSBuild\14.0\Bin\msbuild" %TestPath%\DMLibTestCodeGen\DMLibTestCodeGen.csproj /t:Rebuild /p:Configuration=%BuildMode% >NUL
+"%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild" %TestPath%\DMLibTest\DMLibTest.csproj /t:Rebuild /p:Configuration=%BuildMode%  >NUL
+"%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild" %TestPath%\DMLibTestCodeGen\DMLibTestCodeGen.csproj /t:Rebuild /p:Configuration=%BuildMode% >NUL
 %TestPath%\DMLibTestCodeGen\bin\Debug\DMLibTestCodeGen.exe %TestPath%\DMLibTest\bin\Debug\DMLibTest.dll %TestPath%\DMLibTest\Generated DNetCore
 
 dotnet restore -s https://www.nuget.org/api/v2/ %~dp0\DMLibTest

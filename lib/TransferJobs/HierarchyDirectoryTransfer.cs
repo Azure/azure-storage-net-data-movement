@@ -578,7 +578,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         -1);
             }
 
-            bool gotDirectory = false;
+            bool gotDirectory = true;
             while (true)
             {
                 Utils.CheckCancellation(this.cancellationTokenSource.Token);
