@@ -126,7 +126,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         protected override async Task<bool> DoWorkInternalAsync()
         {
-            if (!this.CheckedShouldTransfer)
+            if (!this.TransferJob.Transfer.ShouldTransferChecked)
             {
                 this.hasWork = false;
                 if (await this.CheckShouldTransfer())

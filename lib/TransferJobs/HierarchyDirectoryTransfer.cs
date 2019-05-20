@@ -522,7 +522,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
             }
             else
-            {   
+            {
                 // return all existing transfers in subTransfers
                 foreach (var transfer in this.subTransfers.GetEnumerator())
                 {
@@ -556,11 +556,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         private async Task DoEnumerationAndTransferAsync(TransferScheduler scheduler, CancellationToken cancellationToken)
         {
             await Task.Yield();
-            
+
             if (!this.Resume(scheduler, cancellationToken))
             {
                 // Got nothing from checkpoint, start directory transfer from the very beginning.
-                var subDirTransfer = new SubDirectoryTransfer(this.Source, this.Destination, this.TransferMethod, this);
+                var subDirTransfer = new SubDirectoryTransfer(this, "");
 
                 if (null != this.Journal)
                 {
@@ -619,7 +619,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     gotDirectory = true;
                     Utils.CheckCancellation(this.cancellationTokenSource.Token);
-                    SubDirectoryTransfer subDirTransfer = this.CreateDirectoryTransfer(subDirRelativePath);
+                    SubDirectoryTransfer subDirTransfer = new SubDirectoryTransfer(this, subDirRelativePath);
 
                     this.ScheduleSubDirectoryTransfer(
                             subDirTransfer,
@@ -697,10 +697,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 bool errorHappened = false;
                 try
                 {
-                    using (subDirTransfer)
-                    {
-                        await directoryListTask;
-                    }
+                    await directoryListTask;
                 }
                 catch (Exception ex)
                 {
@@ -737,16 +734,20 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Instances will be disposed in other place.")]
-        protected SubDirectoryTransfer CreateDirectoryTransfer(string relativePath)
+        internal void GetSubDirLocation(string relativePath, out TransferLocation sourceLocation, out TransferLocation destLocation)
         {
-            var transferEntry = CreateDirectoryTransferEntry(relativePath);
-            TransferLocation sourceLocation = GetSourceDirectoryTransferLocation(this.Source, relativePath);
-
-            TransferLocation destinationLocation = GetDestinationSubDirTransferLocation(this.Destination, transferEntry);
-            SubDirectoryTransfer transfer = new SubDirectoryTransfer(sourceLocation, destinationLocation, this.TransferMethod, this);
-            transfer.Context = this.Context;
-            return transfer;
+            if (string.IsNullOrEmpty(relativePath))
+            {
+                sourceLocation = this.Source;
+                destLocation = this.Destination;
+                return;
+            }
+            else
+            {
+                var transferEntry = CreateDirectoryTransferEntry(relativePath);
+                sourceLocation = GetSourceDirectoryTransferLocation(this.Source, relativePath);
+                destLocation = GetDestinationSubDirTransferLocation(this.Destination, transferEntry);
+            }
         }
 
         protected TransferEntry CreateDirectoryTransferEntry(string relativePath)

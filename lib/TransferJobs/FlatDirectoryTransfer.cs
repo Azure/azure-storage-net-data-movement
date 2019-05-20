@@ -455,6 +455,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     this.CheckAndPauseEnumeration(cancellationToken);
                     transfer.UpdateProgressLock(this.progressUpdateLock);
+                    transfer.ShouldTransferChecked = true;
                     this.DoTransfer(transfer, scheduler, cancellationToken);
                 }
             }

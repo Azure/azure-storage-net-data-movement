@@ -66,7 +66,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     throw;
                 }
 
-                Task task = directoryTransfer.ExecuteAsync(null, cancellationToken);
+                Task task = directoryTransfer.ExecuteAsync(cancellationToken);
                 task.ContinueWith((sourceTask) =>
                 {
                     this.semaphore.Release();

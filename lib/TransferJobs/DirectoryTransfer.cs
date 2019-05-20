@@ -40,24 +40,6 @@ namespace Microsoft.Azure.Storage.DataMovement
     internal abstract class DirectoryTransfer : Transfer
     {
         /// <summary>
-        /// These filenames are reserved on windows, regardless of the file extension.
-        /// </summary>
-        private static readonly string[] ReservedBaseFileNames = new string[]
-            {
-                "CON", "PRN", "AUX", "NUL",
-                "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-                "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
-            };
-
-        /// <summary>
-        /// These filenames are reserved on windows, only if the full filename matches.
-        /// </summary>
-        private static readonly string[] ReservedFileNames = new string[]
-            {
-                "CLOCK$",
-            };
-
-        /// <summary>
         /// Internal directory transfer context instance.
         /// </summary>
         private DirectoryTransferContext dirTransferContext = null;
@@ -363,14 +345,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        protected void CreateParentDirectory(SingleObjectTransfer transfer)
+        public void CreateParentDirectory(SingleObjectTransfer transfer)
         {
             switch (transfer.Destination.Type)
             {
                 case TransferLocationType.FilePath:
                     var filePath = (transfer.Destination as FileLocation).FilePath;
-                    ValidateDestinationPath(transfer.Source.Instance.ConvertToString(), filePath);
-                    CreateParentDirectoryIfNotExists(filePath);
+                    Utils.ValidateDestinationPath(transfer.Source.Instance.ConvertToString(), filePath);
+                    Utils.CreateParentDirectoryIfNotExists(filePath);
                     break;
                 case TransferLocationType.AzureFile:
                     try
@@ -525,59 +507,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             throw new ArgumentException("Unsupported destination location", "destLocation");
         }
 
-        private static void ValidateDestinationPath(string sourcePath, string destPath)
-        {
-            if (Interop.CrossPlatformHelpers.IsWindows)
-            {
-                if (!IsValidWindowsFileName(destPath))
-                {
-                    throw new TransferException(
-                        string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.SourceNameInvalidInFileSystem,
-                            sourcePath));
-                }
-            }
-        }
-
-        private static bool IsValidWindowsFileName(string fileName)
-        {
-            string fileNameNoExt = LongPath.GetFileNameWithoutExtension(fileName);
-            string fileNameWithExt = LongPath.GetFileName(fileName);
-
-            if (Array.Exists<string>(ReservedBaseFileNames, delegate (string s) { return fileNameNoExt.Equals(s, StringComparison.OrdinalIgnoreCase); }))
-            {
-                return false;
-            }
-
-            if (Array.Exists<string>(ReservedFileNames, delegate (string s) { return fileNameWithExt.Equals(s, StringComparison.OrdinalIgnoreCase); }))
-            {
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(fileNameWithExt))
-            {
-                return false;
-            }
-
-            bool allDotsOrWhiteSpace = true;
-            for (int i = 0; i < fileName.Length; ++i)
-            {
-                if (fileName[i] != '.' && !char.IsWhiteSpace(fileName[i]))
-                {
-                    allDotsOrWhiteSpace = false;
-                    break;
-                }
-            }
-
-            if (allDotsOrWhiteSpace)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
         private void CreateParentDirectoryIfNotExists(CloudFile file)
         {
             FileRequestOptions fileRequestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
@@ -586,7 +515,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 if (this.IsForceOverwrite || !parent.ExistsAsync(fileRequestOptions, null).Result)
                 {
-                    CreateCloudFileDirectoryRecursively(parent);
+                    Utils.CreateCloudFileDirectoryRecursively(parent);
                 }
 
                 this.lastAzureFileDirectory = parent;
@@ -609,69 +538,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     return true;
                 }
-            }
-
-            return false;
-        }
-
-        private static void CreateParentDirectoryIfNotExists(string path)
-        {
-            string dir = LongPath.GetDirectoryName(path);
-
-            if (!string.IsNullOrEmpty(dir) && !LongPathDirectory.Exists(dir))
-            {
-                LongPathDirectory.CreateDirectory(dir);
-            }
-        }
-
-        private void CreateCloudFileDirectoryRecursively(CloudFileDirectory dir)
-        {
-            if (null == dir)
-            {
-                return;
-            }
-
-            CloudFileDirectory parent = dir.Parent;
-
-            // null == parent means dir is root directory, 
-            // we should not call CreateIfNotExists in that case
-            if (null != parent)
-            {
-                CreateCloudFileDirectoryRecursively(parent);
-
-                try
-                {
-                    // create anyway, ignore 409 and 403
-                    dir.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
-                }
-                catch (AggregateException e)
-                {
-                    StorageException innnerException = e.Flatten().InnerExceptions[0] as StorageException;
-                    if (!IgnoreDirectoryCreationError(innnerException))
-                    {
-                        throw;
-                    }
-                }
-            }
-        }
-
-        private static bool IgnoreDirectoryCreationError(StorageException se)
-        {
-            if (null == se)
-            {
-                return false;
-            }
-
-            if (Utils.IsExpectedHttpStatusCodes(se, HttpStatusCode.Forbidden))
-            {
-                return true;
-            }
-
-            if (null != se.RequestInformation
-                && se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict
-                && string.Equals(se.RequestInformation.ErrorCode, "ResourceAlreadyExists"))
-            {
-                return true;
             }
 
             return false;

@@ -21,30 +21,44 @@ namespace Microsoft.Azure.Storage.DataMovement
 #else
     [DataContract]
 #endif // BINARY_SERIALIZATION
-    class SubDirectoryTransfer : Transfer
+    class SubDirectoryTransfer : JournalItem
+#if BINARY_SERIALIZATION
+        , ISerializable
+#endif // BINARY_SERIALIZATION
     {
         private const string SubDirListContinuationTokenName = "SubDirListContinuationToken";
+        private const string SubDirRelativePathName = "SubDirRelativePath";
 
         private HierarchyDirectoryTransfer rootDirectoryTransfer = null;
         private ITransferEnumerator transferEnumerator = null;
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
+        private string relativePath = null;
+
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
         private SerializableListContinuationToken enumerateContinuationToken = null;
 
+        private TransferLocation source;
+        private TransferLocation dest;
+
         public SubDirectoryTransfer(
-            TransferLocation subDirSourceLocation,
-            TransferLocation dest,
-            TransferMethod transferMethod,
-            HierarchyDirectoryTransfer rootDirectoryTransfer)
-            : base(subDirSourceLocation, dest, transferMethod)
+            HierarchyDirectoryTransfer rootDirectoryTransfer,
+            string relativePath)
         {
             this.enumerateContinuationToken = new SerializableListContinuationToken(null);
             this.rootDirectoryTransfer = rootDirectoryTransfer;
+            this.relativePath = relativePath;
+            this.rootDirectoryTransfer.GetSubDirLocation(this.relativePath, out this.source, out this.dest);
             this.InitializeEnumerator();
         }
 
         public SubDirectoryTransfer(SubDirectoryTransfer other)
-            : base(other)
         {
+            this.relativePath = other.relativePath;
             this.enumerateContinuationToken = other.enumerateContinuationToken;
         }
 
@@ -55,8 +69,9 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="info">Serialization information.</param>
         /// <param name="context">Streaming context.</param>
         protected SubDirectoryTransfer(SerializationInfo info, StreamingContext context)
-            : base(info, context)
         {
+            this.relativePath = info.GetString(SubDirRelativePathName);
+
             if (!(context.Context is StreamJournal))
             {
                 this.enumerateContinuationToken = (SerializableListContinuationToken)info.GetValue(SubDirListContinuationTokenName, typeof(SerializableListContinuationToken));
@@ -68,13 +83,18 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         /// <param name="info">Serialization info object.</param>
         /// <param name="context">Streaming context.</param>
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
-            base.GetObjectData(info, context);
+            if (info == null)
+            {
+                throw new ArgumentNullException("info");
+            }
+
+            info.AddValue(SubDirRelativePathName, this.relativePath, typeof(string));
 
             if (!(context.Context is StreamJournal))
             {
-                // serialize enumerator
+                // serialize continuation token
                 info.AddValue(SubDirListContinuationTokenName, this.enumerateContinuationToken, typeof(SerializableListContinuationToken));
             }
         }
@@ -93,7 +113,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        public override async Task ExecuteAsync(TransferScheduler scheduler, CancellationToken cancellationToken)
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             await Task.Yield();
 
@@ -140,6 +160,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 else
                 {
                     SingleObjectTransfer transferItem = this.rootDirectoryTransfer.CreateTransfer(entry);
+                    this.CreateParentDirectory(transferItem);
 
                     this.rootDirectoryTransfer.AddSingleObjectTransfer(transferItem, () =>
                     {
@@ -153,54 +174,58 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        // This method should never be called.
-        public override Transfer Copy()
-        {
-            throw new NotSupportedException();
-        }
-
         public void Update(HierarchyDirectoryTransfer rootDirectoryTransferInstance)
         {
             this.rootDirectoryTransfer = rootDirectoryTransferInstance;
-
-            if (this.Source.Type == TransferLocationType.AzureBlobDirectory)
-            {
-                var rootSourceLocation = this.rootDirectoryTransfer.Source as AzureBlobDirectoryLocation;
-                var subDirSourceLocation = this.Source as AzureBlobDirectoryLocation;
-
-                subDirSourceLocation.UpdateCredentials(rootSourceLocation.BlobDirectory.ServiceClient.Credentials);
-            }
-            else if (this.Source.Type == TransferLocationType.AzureFileDirectory)
-            {
-                var rootSourceLocation = this.rootDirectoryTransfer.Source as AzureFileDirectoryLocation;
-                var subDirSourceLocation = this.Source as AzureFileDirectoryLocation;
-
-                subDirSourceLocation.UpdateCredentials(rootSourceLocation.FileDirectory.ServiceClient.Credentials);
-            }
-
-            if (this.Destination.Type == TransferLocationType.AzureBlobDirectory)
-            {
-                var rootDestLocation = this.rootDirectoryTransfer.Destination as AzureBlobDirectoryLocation;
-                var subDirDestLocation = this.Destination as AzureBlobDirectoryLocation;
-
-                subDirDestLocation.UpdateCredentials(rootDestLocation.BlobDirectory.ServiceClient.Credentials);
-            }
-            else if (this.Destination.Type == TransferLocationType.AzureFileDirectory)
-            {
-                var rootDestLocation = this.rootDirectoryTransfer.Destination as AzureFileDirectoryLocation;
-                var subDirDestLocation = this.Destination as AzureFileDirectoryLocation;
-
-                subDirDestLocation.UpdateCredentials(rootDestLocation.FileDirectory.ServiceClient.Credentials);
-            }
-
+            this.rootDirectoryTransfer.GetSubDirLocation(this.relativePath, out this.source, out this.dest);
             this.InitializeEnumerator();
+        }
+
+        public void CreateParentDirectory(SingleObjectTransfer transferItem)
+        {
+            if (this.source.Type == TransferLocationType.AzureFileDirectory)
+            {
+                CloudFile sourceFile = transferItem.Source.Instance as CloudFile;
+                CloudFileDirectory sourceDirectory = this.source.Instance as CloudFileDirectory;
+
+                if (!string.Equals(sourceFile.Parent.SnapshotQualifiedUri.AbsolutePath, sourceDirectory.SnapshotQualifiedUri.AbsolutePath))
+                {
+                    this.CreateDestinationParentDirectoryRecursively(transferItem.Destination);
+                }
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+        }
+
+        public void CreateDestinationParentDirectoryRecursively(TransferLocation singleTransferDestLocation)
+        {
+            switch (singleTransferDestLocation.Type)
+            {
+                case TransferLocationType.FilePath:
+                    var filePath = (singleTransferDestLocation as FileLocation).FilePath;
+                    Utils.ValidateDestinationPath(singleTransferDestLocation.Instance.ConvertToString(), filePath);
+                    Utils.CreateParentDirectoryIfNotExists(filePath);
+                    break;
+                case TransferLocationType.AzureFile:
+                    var parent = (singleTransferDestLocation as AzureFileLocation).AzureFile.Parent;
+
+                    if (this.rootDirectoryTransfer.IsForceOverwrite || !parent.ExistsAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Result)
+                    {
+                        Utils.CreateCloudFileDirectoryRecursively(parent);
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
 
         private void InitializeEnumerator()
         {
-            if (this.Source.Type == TransferLocationType.AzureFileDirectory)
+            if (this.source.Type == TransferLocationType.AzureFileDirectory)
             {
-                var fileEnumerator = new AzureFileHierarchyEnumerator(this.Source as AzureFileDirectoryLocation, rootDirectoryTransfer.Source.Instance as CloudFileDirectory);
+                var fileEnumerator = new AzureFileHierarchyEnumerator(this.source as AzureFileDirectoryLocation, rootDirectoryTransfer.Source.Instance as CloudFileDirectory);
                 fileEnumerator.EnumerateContinuationToken = this.enumerateContinuationToken.ListContinuationToken;
                 fileEnumerator.SearchPattern = this.rootDirectoryTransfer.SearchPattern;
                 fileEnumerator.Recursive = this.rootDirectoryTransfer.Recursive;
@@ -215,17 +240,17 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private void CreateDestinationDirectory(CancellationToken cancellationToken)
         {
-            if (this.Destination.Type == TransferLocationType.LocalDirectory)
+            if (this.dest.Type == TransferLocationType.LocalDirectory)
             {
-                var localFileDestLocation = this.Destination as DirectoryLocation;
+                var localFileDestLocation = this.dest as DirectoryLocation;
                 if (!LongPathDirectory.Exists(localFileDestLocation.DirectoryPath))
                 {
                     LongPathDirectory.CreateDirectory(localFileDestLocation.DirectoryPath);
                 }
             }
-            else if (this.Destination.Type == TransferLocationType.AzureFileDirectory)
+            else if (this.dest.Type == TransferLocationType.AzureFileDirectory)
             {
-                AzureFileDirectoryLocation fileDirLocation = this.Destination as AzureFileDirectoryLocation;
+                AzureFileDirectoryLocation fileDirLocation = this.dest as AzureFileDirectoryLocation;
 
                 var fileDirectory = fileDirLocation.FileDirectory;
 

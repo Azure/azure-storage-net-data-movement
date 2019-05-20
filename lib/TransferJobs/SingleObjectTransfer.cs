@@ -213,13 +213,16 @@ namespace Microsoft.Azure.Storage.DataMovement
             try
             {
                 await scheduler.ExecuteJobAsync(this.transferJob, cancellationToken);
-                this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Finished);
 
-                eventArgs.EndTime = DateTime.UtcNow;
-
-                if (this.Context != null)
+                if (TransferJobStatus.NotTransfer != this.transferJob.Status)
                 {
-                    this.Context.OnTransferSuccess(eventArgs);
+                    eventArgs.EndTime = DateTime.UtcNow;
+                    this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Finished);
+
+                    if (this.Context != null)
+                    {
+                        this.Context.OnTransferSuccess(eventArgs);
+                    }
                 }
             }
             catch (TransferException exception)
