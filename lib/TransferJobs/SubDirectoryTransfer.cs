@@ -8,11 +8,13 @@ namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Runtime.Serialization;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Storage.Blob;
     using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
     using Microsoft.Azure.Storage.File;
 
@@ -160,7 +162,11 @@ namespace Microsoft.Azure.Storage.DataMovement
                 else
                 {
                     SingleObjectTransfer transferItem = this.rootDirectoryTransfer.CreateTransfer(entry);
-                    this.CreateParentDirectory(transferItem);
+#if DEBUG
+                    Utils.HandleFaultInjection(entry.RelativePath, transferItem);
+#endif
+
+                    this.CreateDestinationParentDirectoryRecursively(transferItem);
 
                     this.rootDirectoryTransfer.AddSingleObjectTransfer(transferItem, () =>
                     {
@@ -181,39 +187,26 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.InitializeEnumerator();
         }
 
-        public void CreateParentDirectory(SingleObjectTransfer transferItem)
+        public void CreateDestinationParentDirectoryRecursively(SingleObjectTransfer transferItem)
         {
-            if (this.source.Type == TransferLocationType.AzureFileDirectory)
-            {
-                CloudFile sourceFile = transferItem.Source.Instance as CloudFile;
-                CloudFileDirectory sourceDirectory = this.source.Instance as CloudFileDirectory;
-
-                if (!string.Equals(sourceFile.Parent.SnapshotQualifiedUri.AbsolutePath, sourceDirectory.SnapshotQualifiedUri.AbsolutePath))
-                {
-                    this.CreateDestinationParentDirectoryRecursively(transferItem.Destination);
-                }
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
-        }
-
-        public void CreateDestinationParentDirectoryRecursively(TransferLocation singleTransferDestLocation)
-        {
-            switch (singleTransferDestLocation.Type)
+            switch (transferItem.Destination.Type)
             {
                 case TransferLocationType.FilePath:
-                    var filePath = (singleTransferDestLocation as FileLocation).FilePath;
-                    Utils.ValidateDestinationPath(singleTransferDestLocation.Instance.ConvertToString(), filePath);
+                    var filePath = (transferItem.Destination as FileLocation).FilePath;
+                    var currentDir = this.dest.Instance as string;
+                    Utils.ValidateDestinationPath(transferItem.Source.Instance.ConvertToString(), filePath);
                     Utils.CreateParentDirectoryIfNotExists(filePath);
                     break;
                 case TransferLocationType.AzureFile:
-                    var parent = (singleTransferDestLocation as AzureFileLocation).AzureFile.Parent;
+                    var parent = (transferItem.Destination as AzureFileLocation).AzureFile.Parent;
+                    CloudFileDirectory destDirectory = this.dest.Instance as CloudFileDirectory;
 
-                    if (this.rootDirectoryTransfer.IsForceOverwrite || !parent.ExistsAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Result)
+                    if (!string.Equals(parent.SnapshotQualifiedUri.AbsolutePath, destDirectory.SnapshotQualifiedUri.AbsolutePath))
                     {
-                        Utils.CreateCloudFileDirectoryRecursively(parent);
+                        if (this.rootDirectoryTransfer.IsForceOverwrite || !parent.ExistsAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Result)
+                        {
+                            Utils.CreateCloudFileDirectoryRecursively(parent);
+                        }
                     }
                     break;
                 default:

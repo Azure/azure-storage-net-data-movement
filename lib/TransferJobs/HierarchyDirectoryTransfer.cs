@@ -61,7 +61,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         object continuationTokenLock = new object();
 
-        private ConcurrentBag<Exception> wholeTransferExceptions = null;
+        private Exception enumerateException = null;
         private CancellationTokenSource cancellationTokenSource = null;
 
         private ReaderWriterLockSlim progressUpdateLock = new ReaderWriterLockSlim();
@@ -335,7 +335,6 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             this.newAddSubDirResetEventSlim = new ManualResetEventSlim();
             this.cancellationTokenSource = new CancellationTokenSource();
-            this.wholeTransferExceptions = new ConcurrentBag<Exception>();
             this.transfersCompleteSource = new TaskCompletionSource<object>();
             this.subDirTransfersCompleteSource = new TaskCompletionSource<object>();
         }
@@ -360,7 +359,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
             catch (OperationCanceledException)
             {
-                if (this.wholeTransferExceptions.IsEmpty)
+                if (null == this.enumerateException)
                 {
                     throw;
                 }
@@ -378,9 +377,9 @@ namespace Microsoft.Azure.Storage.DataMovement
                 await this.transfersCompleteSource.Task;
             }
 
-            if (!this.wholeTransferExceptions.IsEmpty)
+            if (null != this.enumerateException)
             {
-                throw new AggregateException(this.wholeTransferExceptions);
+                throw this.enumerateException;
             }
             else
             {
@@ -462,7 +461,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 if (ex.ErrorCode == TransferErrorCode.FailedCheckingShouldTransfer)
                 {
                     shouldStopTransfer = true;
-                    this.wholeTransferExceptions.Add(ex.InnerException);
+                    this.enumerateException = ex.InnerException;
                 }
 
                 hasError = true;
@@ -704,7 +703,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     if (!(ex is OperationCanceledException))
                     {
                         shouldStopOthers = true;
-                        this.wholeTransferExceptions.Add(ex);
+                        this.enumerateException = ex;
                     }
 
                     errorHappened = true;

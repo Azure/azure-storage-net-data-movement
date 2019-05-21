@@ -425,20 +425,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
 
 #if DEBUG
-                FaultInjectionPoint fip = new FaultInjectionPoint(FaultInjectionPoint.FIP_ThrowExceptionAfterEnumerated);
-                string fiValue;
-                string filePath = entry.RelativePath;
-                CloudBlob sourceBlob = transfer.Source.Instance as CloudBlob;
-                if (sourceBlob != null && sourceBlob.IsSnapshot)
-                {
-                    filePath = Utils.AppendSnapShotTimeToFileName(filePath, sourceBlob.SnapshotTime);
-                }
-
-                if (fip.TryGetValue(out fiValue)
-                    && string.Equals(fiValue, filePath, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new TransferException(TransferErrorCode.Unknown, "test exception thrown because of ThrowExceptionAfterEnumerated is enabled", null);
-                }
+                Utils.HandleFaultInjection(entry.RelativePath, transfer);
 #endif
 
                 yield return transfer;

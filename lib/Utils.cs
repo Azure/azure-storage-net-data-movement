@@ -645,7 +645,27 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        private static bool IsValidWindowsFileName(string fileName)
+#if DEBUG
+        public static void HandleFaultInjection(string relativePath, SingleObjectTransfer transfer)
+        {
+            FaultInjectionPoint fip = new FaultInjectionPoint(FaultInjectionPoint.FIP_ThrowExceptionAfterEnumerated);
+            string fiValue;
+            string filePath = relativePath;
+            CloudBlob sourceBlob = transfer.Source.Instance as CloudBlob;
+            if (sourceBlob != null && sourceBlob.IsSnapshot)
+            {
+                filePath = Utils.AppendSnapShotTimeToFileName(filePath, sourceBlob.SnapshotTime);
+            }
+
+            if (fip.TryGetValue(out fiValue)
+                && string.Equals(fiValue, filePath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new TransferException(TransferErrorCode.Unknown, "test exception thrown because of ThrowExceptionAfterEnumerated is enabled", null);
+            }
+        }
+#endif
+
+private static bool IsValidWindowsFileName(string fileName)
         {
             string fileNameNoExt = LongPath.GetFileNameWithoutExtension(fileName);
             string fileNameWithExt = LongPath.GetFileName(fileName);
