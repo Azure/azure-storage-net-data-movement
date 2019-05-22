@@ -321,8 +321,11 @@ namespace DMLibTest.Cases
             executionOption.AfterAllItemAdded = () =>
             {
                 // Wait until there are data transferred
-                progressChecker.DataTransferred.WaitOne();
-                
+                if (!progressChecker.DataTransferred.WaitOne(30000))
+                {
+                    Test.Error("No progress in 30s.");
+                }
+
                 // Cancel the transfer and store the second checkpoint
                 cancellationTokenSource.Cancel();
             };
@@ -454,15 +457,26 @@ namespace DMLibTest.Cases
                 var executionOption = new TestExecutionOptions<DMLibDataInfo>();
                 executionOption.AfterAllItemAdded = () =>
                 {
-                // Wait until there are data transferred
-                progressChecker.DataTransferred.WaitOne();
+                    // Wait until there are data transferred
+                    if (!progressChecker.DataTransferred.WaitOne(30000))
+                    {
+                        Test.Error("No progress in 30s.");
+                    }
 
-                // Cancel the transfer and store the second checkpoint
-                cancellationTokenSource.Cancel();
+                    // Cancel the transfer and store the second checkpoint
+                    cancellationTokenSource.Cancel();
                 };
                 executionOption.LimitSpeed = true;
 
                 var testResult = this.RunTransferItems(new List<TransferItem>() { checkMD5Item }, executionOption);
+
+                if (null != testResult.Exceptions)
+                {
+                    foreach (var exception in testResult.Exceptions)
+                    {
+                        Test.Info("Got exception during transferring. {0}", exception);
+                    }
+                }
 
                 eventChecker = new TransferEventChecker();
                 resumeStream.Position = 0;

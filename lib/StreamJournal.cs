@@ -117,6 +117,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private DataContractSerializer stringSerializer = new DataContractSerializer(typeof(string));
         private DataContractSerializer transferSerializer = new DataContractSerializer(typeof(Transfer));
+        private DataContractSerializer subDirTransferSerializer = new DataContractSerializer(typeof(SubDirectoryTransfer));
         private DataContractSerializer progressCheckerSerializer = new DataContractSerializer(typeof(TransferProgressTracker));
         private DataContractSerializer continuationTokenSerializer = new DataContractSerializer(typeof(SerializableListContinuationToken));
 #endif
@@ -260,7 +261,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if BINARY_SERIALIZATION
                 this.formatter.Serialize(this.stream, directoryTransfer);
 #else
-                this.WriteObject(this.transferSerializer, directoryTransfer);
+                this.WriteObject(this.subDirTransferSerializer, directoryTransfer);
 #endif
 
                 long continuationTokenOffset = offset + 2 * sizeof(long) + 4096;
@@ -776,7 +777,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if BINARY_SERIALIZATION
                             transfer = this.formatter.Deserialize(this.stream) as SubDirectoryTransfer;
 #else
-                            transfer = this.ReadObject(this.transferSerializer) as SubDirectoryTransfer;
+                            transfer = this.ReadObject(this.subDirTransferSerializer) as SubDirectoryTransfer;
 #endif
                         }
                         catch (Exception ex)
