@@ -79,7 +79,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Job queue to invoke ShouldTransferCallback.
         /// </summary>
         private TaskQueue<Tuple<SingleObjectTransfer, TransferEntry>> shouldTransferQueue
-            = new TaskQueue<Tuple<SingleObjectTransfer, TransferEntry>>(TransferManager.Configurations.ParallelOperations);
+            = new TaskQueue<Tuple<SingleObjectTransfer, TransferEntry>>(TransferManager.Configurations.ParallelOperations * Constants.ListSegmentLengthMultiplier);
 
         /// <summary>
         /// Storres sub transfers.

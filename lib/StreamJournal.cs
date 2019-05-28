@@ -782,7 +782,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(ex);
 #if !NO_FILEFORMAT_EX
                             throw new FileFormatException(Resources.RestartableLogCorrupted);
 #else
