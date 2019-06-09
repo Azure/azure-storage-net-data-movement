@@ -30,10 +30,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         /// </summary>
         private CountdownEvent toUploadChunksCountdownEvent;
 
-        /// <summary>
-        /// Work token indicates whether this writer has work, could be 0(no work) or 1(has work).
-        /// </summary>
-        private volatile int workToken;
+        private volatile bool hasWork;
 
         protected RangeBasedWriter(
             TransferScheduler scheduler,
@@ -41,7 +38,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             CancellationToken cancellationToken)
             : base(scheduler, controller, cancellationToken)
         {
-            this.workToken = 1;
+            this.hasWork = true;
         }
         
         private enum State
@@ -66,7 +63,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         {
             get
             {
-                return this.workToken == 1 &&
+                return this.hasWork &&
                     (!this.PreProcessed
                     || ((State.Upload == this.state) && this.SharedTransferData.AvailableData.Any())
                     || ((State.Commit == this.state) && (null != this.SharedTransferData.Attributes)));
@@ -130,10 +127,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 "Current state is {0}",
                 this.state);
 
-            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
-            {
-                return;
-            }
+            this.hasWork = false;
 
             this.CheckInputStreamLength(this.SharedTransferData.TotalLength);
 
@@ -208,7 +202,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.state = State.Create;
             }
 
-            this.workToken = 1;
+            this.hasWork = true;
         }
 
         private async Task CreateAsync()
@@ -219,10 +213,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 "Current state is {0}",
                 this.state);
 
-            if (Interlocked.CompareExchange(ref this.workToken, 0, 1) == 0)
-            {
-                return;
-            }
+            this.hasWork = false;
 
             await Utils.ExecuteXsclApiCallAsync(
                 async () => await this.DoCreateAsync(this.SharedTransferData.TotalLength),
@@ -259,7 +250,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                 this.state = State.Upload;
                 this.PreProcessed = true;
-                this.workToken = 1;
+                this.hasWork = true;
             }
         }
 
@@ -271,10 +262,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 "Current state is {0}",
                 this.state);
 
-            if (Interlocked.CompareExchange(ref this.workToken, 0, 1) == 0)
-            {
-                return;
-            }
+            this.hasWork = false;
 
             Debug.Assert(
                 null != this.toUploadChunksCountdownEvent,
@@ -288,13 +276,15 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             TransferData transferData = this.GetFirstAvailable();
 
-            this.workToken = 1;
+            this.hasWork = true;
+
+            await Task.Yield();
 
             if (null != transferData)
             {
                 using (transferData)
                 {
-                    await this.UploadChunkAsync(transferData);
+                    await this.UploadChunkAsync(transferData).ConfigureAwait(false);
                 }
             }
         }
@@ -347,9 +337,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
                 }
 
-                await Utils.ExecuteXsclApiCallAsync(
-                    async () => await this.WriteRangeAsync(transferData),
-                    this.CancellationToken);
+                await this.WriteRangeAsync(transferData).ConfigureAwait(false);
             }
 
             this.FinishChunk(transferData);
@@ -392,7 +380,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         private void SetCommit()
         {
             this.state = State.Commit;
-            this.workToken = 1;
+            this.hasWork = true;
         }
         
         private async Task CommitAsync()
@@ -403,10 +391,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 "Current state is {0}",
                 this.state);
 
-            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
-            {
-                return;
-            }
+            this.hasWork = false;
 
             await Utils.ExecuteXsclApiCallAsync(
                 async () => await this.DoCommitAsync(),
@@ -418,7 +403,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         private void SetFinished()
         {
             this.state = State.Finished;
-            this.workToken = 0;
+            this.hasWork = false;
 
             this.NotifyFinished(null);
         }

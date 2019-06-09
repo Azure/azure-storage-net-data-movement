@@ -780,7 +780,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                             transfer = this.ReadObject(this.subDirTransferSerializer) as SubDirectoryTransfer;
 #endif
                         }
-                        catch (Exception ex)
+                        catch
                         {
 #if !NO_FILEFORMAT_EX
                             throw new FileFormatException(Resources.RestartableLogCorrupted);

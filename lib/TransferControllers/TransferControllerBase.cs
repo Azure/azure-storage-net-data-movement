@@ -313,14 +313,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         {
             if (Interlocked.CompareExchange(ref this.notifiedFinish, 1, 0) == 0)
             {
-                if (null != exception)
+                ThreadPool.QueueUserWorkItem((userData) =>
                 {
-                    this.TaskCompletionSource.SetException(exception);
-                }
-                else
-                {
-                    this.TaskCompletionSource.SetResult(null);
-                }
+                    if (null != exception)
+                    {
+                        this.TaskCompletionSource.SetException(exception);
+                    }
+                    else
+                    {
+                        this.TaskCompletionSource.SetResult(null);
+                    }
+                });
             }
         }
 

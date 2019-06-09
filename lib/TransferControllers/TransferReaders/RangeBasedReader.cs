@@ -33,10 +33,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         private long lastTransferOffset;
         private TransferDownloadBuffer currentDownloadBuffer = null;
 
-        /// <summary>
-        /// Work token indicates whether this reader has work, could be 0(no work) or 1(has work).
-        /// </summary>
-        private volatile int workToken;
+        private volatile bool hasWork;
 
         public RangeBasedReader(
             TransferScheduler scheduler,
@@ -46,7 +43,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         {
             this.transferJob = this.SharedTransferData.TransferJob;
             this.Location = this.transferJob.Source;
-            this.workToken = 1;
+            this.hasWork = true;
         }
 
         private enum State
@@ -88,7 +85,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         {
             get 
             {
-                return this.workToken == 1;
+                return this.hasWork;
             }
         }
 
@@ -132,11 +129,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.state == State.FetchAttributes,
                 "FetchAttributesAsync called, but state isn't FetchAttributes");
 
-            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
-            {
-                return;
-            }
-
+            this.hasWork = false;
             this.NotifyStarting();
 
             try
@@ -183,14 +176,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             if (!this.rangesSpanList.Any())
             {
-                // InitDownloadInfo will set workToken.
+                // InitDownloadInfo will set hasWork.
                 this.InitDownloadInfo();
                 this.PreProcessed = true;
                 return;
             }
 
             this.PreProcessed = true;
-            this.workToken = 1;
+            this.hasWork = true;
         }
 
         private async Task GetRangesAsync()
@@ -199,16 +192,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 (this.state == State.GetRanges) || (this.state == State.Error),
                 "GetRangesAsync called, but state isn't GetRanges or Error");
 
-            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
-            {
-                return;
-            }
+            this.hasWork = false;
 
             this.lastTransferOffset = this.SharedTransferData.TransferJob.CheckPoint.EntryTransferOffset;
 
             int spanIndex = Interlocked.Increment(ref this.getRangesSpanIndex);
 
-            this.workToken = (spanIndex < (this.rangesSpanList.Count - 1)) ? 1 : 0;
+            this.hasWork = spanIndex < (this.rangesSpanList.Count - 1);
 
             RangesSpan rangesSpan = this.rangesSpanList[spanIndex];
 
@@ -281,10 +271,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.state == State.Error || this.state == State.Download,
                 "DownloadRangeAsync called, but state isn't Download or Error");
 
-            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
-            {
-                return;
-            }
+            this.hasWork = false;
 
             if (State.Error == this.state)
             {
@@ -401,7 +388,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             // Check if we have ranges available to download.
             if (this.nextDownloadIndex < this.rangeList.Count)
             {
-                this.workToken = 1;
+                this.hasWork = true;
                 return;
             }
         }
@@ -790,7 +777,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             else
             {
                 this.toDownloadItemsCountdownEvent = new CountdownEvent(this.rangeList.Count);
-                this.workToken = 1;
+                this.hasWork = true;
             }
         }
 
@@ -799,7 +786,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (this.toDownloadItemsCountdownEvent.Signal())
             {
                 this.state = State.Finished;
-                this.workToken = 0;
+                this.hasWork = false;
             }
         }
         
