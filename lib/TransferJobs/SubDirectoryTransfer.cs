@@ -252,16 +252,34 @@ namespace Microsoft.Azure.Storage.DataMovement
                     return;
                 }
 
+                bool parentNotExist = false;
+
                 try
                 {
                     fileDirLocation.FileDirectory.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
                 }
                 catch (StorageException ex)
                 {
-                    if (null == ex.RequestInformation || !string.Equals("ResourceAlreadyExists", ex.RequestInformation.ErrorCode))
+                    if (null != ex.RequestInformation)
+                    {
+                        if (string.Equals("ParentNotFound", ex.RequestInformation.ErrorCode))
+                        {
+                            parentNotExist = true;
+                        }
+                        else if (!string.Equals("ResourceAlreadyExists", ex.RequestInformation.ErrorCode))
+                        {
+                            throw;
+                        }
+                    }
+                    else
                     {
                         throw;
                     }
+                }
+
+                if (parentNotExist)
+                {
+                    Utils.CreateCloudFileDirectoryRecursively(fileDirLocation.FileDirectory);
                 }
             }
         }
