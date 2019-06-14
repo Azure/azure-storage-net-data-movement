@@ -315,6 +315,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 long offset = directoryTransfer.StreamJournalOffset - 2 * sizeof(long);
                 this.FreeChunk(offset, ref this.OngoingSubDirTransferChunkHead, ref this.OngoingSubDirTransferChunkTail);
+                this.stream.Flush();
             }
         }
 
@@ -336,7 +337,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 this.stream.Position = this.subDirTransferCurrentReadOffset;
                 Array.Clear(memoryBuffer, 0, SubDirectoryTransferChunkSize);
-                this.stream.Write(memoryBuffer, 0, SubDirectoryTransferChunkSize);
+                this.stream.Write(memoryBuffer, 0, 4);
 
                 this.subDirTransferCurrentReadOffset += SubDirectoryTransferChunkSize;
 
@@ -392,10 +393,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                         this.subDirTransferChunkHead = nextChunk;
                         this.subDirTransferCurrentReadOffset = nextChunk + 2 * sizeof(long);
                     }
-
-                    this.WriteJournalHead();
-                    this.stream.Flush();
                 }
+
+                this.WriteJournalHead();
+                this.stream.Flush();
             }
         }
 
@@ -417,7 +418,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                     this.stream.Position = this.subDirTransferCurrentReadOffset;
 #if BINARY_SERIALIZATION
-                    return this.formatter.Deserialize(this.stream) as string;
+                        return this.formatter.Deserialize(this.stream) as string;
 #else
                     return (string)this.ReadObject(this.stringSerializer);
 #endif
@@ -623,6 +624,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 long chunkOffset = transfer.StreamJournalOffset - 2 * sizeof(long);
 
                 this.FreeChunk(chunkOffset, ref this.singleTransferChunkHead, ref this.singleTransferChunkTail);
+                this.stream.Flush();
             }
         }
 
