@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// <copyright file="MultipleObjectsTransfer.cs" company="Microsoft">
+// <copyright file="FlatDirectoryTransfer.cs" company="Microsoft">
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------

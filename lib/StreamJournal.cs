@@ -337,7 +337,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 this.stream.Position = this.subDirTransferCurrentReadOffset;
                 Array.Clear(memoryBuffer, 0, SubDirectoryTransferChunkSize);
-                this.stream.Write(memoryBuffer, 0, 4);
+                this.stream.Write(memoryBuffer, 0, SubDirectoryTransferChunkSize);
 
                 this.subDirTransferCurrentReadOffset += SubDirectoryTransferChunkSize;
 

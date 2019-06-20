@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         private DirectoryListingScheduler()
         {
             int parallelLevel = TransferManager.Configurations.ParallelOperations;
-            parallelLevel = (int)Math.Ceiling(((double)parallelLevel) / 8);
+            parallelLevel = 2; // (int)Math.Ceiling(((double)parallelLevel) / 8);
             semaphore = new SemaphoreSlim(parallelLevel, parallelLevel);
         }
 
