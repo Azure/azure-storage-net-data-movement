@@ -17,6 +17,12 @@ namespace Microsoft.Azure.Storage.DataMovement
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable")]
     class DirectoryListingScheduler
     {
+#if DOTNET5_4
+        private const int MaxParallelListingThreads = 4;
+#else
+        private const int MaxParallelListingThreads = 2;
+#endif
+
         SemaphoreSlim semaphore = null;
         private static DirectoryListingScheduler SchedulerInstance = null;
         private static object SingletonLock = new object();
@@ -24,7 +30,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         private DirectoryListingScheduler()
         {
             int parallelLevel = TransferManager.Configurations.ParallelOperations;
-            parallelLevel = 2; // (int)Math.Ceiling(((double)parallelLevel) / 8);
+            parallelLevel = MaxParallelListingThreads;
             semaphore = new SemaphoreSlim(parallelLevel, parallelLevel);
         }
 
