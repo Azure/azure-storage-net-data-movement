@@ -35,6 +35,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         private const string OngoingSubDirectoryName = "OngoingSubDirectory";
         private const string SubDirectoriesCountName = "SubDirectoriesCount";
         private const string SubDirectoryName = "SubDirectory";
+        private const string EnumerationstartedName = "Enumerationstarted";
 
         /// <summary>
         /// Serialization field name for sub transfers.
@@ -74,6 +75,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         // This is notify the main execute thread for directory that there's new directory item listed.
         private ManualResetEventSlim newAddSubDirResetEventSlim = new ManualResetEventSlim();
 
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
+        private int enumerationStarted = 0;
+
         public HierarchyDirectoryTransfer(TransferLocation source, TransferLocation dest, TransferMethod transferMethod)
             : base(source, dest, transferMethod)
         {
@@ -102,6 +108,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 // copy transfers
                 this.subTransfers = other.subTransfers.Copy();
+                this.enumerationStarted = other.enumerationStarted;
             }
             this.subTransfers.OverallProgressTracker.Parent = this.ProgressTracker;
             other.progressUpdateLock?.ExitWriteLock();
@@ -116,6 +123,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         protected HierarchyDirectoryTransfer(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
+            this.enumerationStarted = info.GetInt32(EnumerationstartedName);
+
             if (context.Context is StreamJournal)
             {
                 this.subTransfers = new TransferCollection<SingleObjectTransfer>();
@@ -151,6 +160,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
+
+            info.AddValue(EnumerationstartedName, this.enumerationStarted);
 
             if (!(context.Context is StreamJournal))
             {
@@ -486,7 +497,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (shouldStopTransfer)
             {
-                this.cancellationTokenSource.Cancel();
+                this.cancellationTokenSource?.Cancel();
             }
         }
 
@@ -512,6 +523,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     isResume = true;
                     Utils.CheckCancellation(this.cancellationTokenSource.Token);
                     subDirTransfer.Update(this);
+
                     this.ScheduleSubDirectoryTransfer(
                           subDirTransfer,
                           this.cancellationTokenSource.Token,
@@ -556,7 +568,9 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             await Task.Yield();
 
-            if (!this.Resume(scheduler, cancellationToken))
+            this.Resume(scheduler, cancellationToken);
+
+            if (0 == this.enumerationStarted)
             {
                 // Got nothing from checkpoint, start directory transfer from the very beginning.
                 var subDirTransfer = new SubDirectoryTransfer(this, "");
@@ -569,6 +583,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     this.ongoingSubDirTransfers.TryAdd(subDirTransfer, new object());
                 }
+
+                this.enumerationStarted = 1;
+
+                this.Journal.UpdateJournalItem(this);
 
                 this.ScheduleSubDirectoryTransfer(
                         subDirTransfer,
