@@ -175,7 +175,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
                 else
                 {
-                    this.TransferJob.Status = TransferJobStatus.NotTransfer;
+                    this.TransferJob.Status = TransferJobStatus.SkippedDueToShouldNotTransfer;
                     this.FinishCallbackHandler(null);
                     return true;
                 }

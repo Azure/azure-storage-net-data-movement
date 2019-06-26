@@ -21,7 +21,11 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Represents a directory object transfer operation which is used to transfer files under the directory.
+    /// Represents a flat directory transfer operation.
+    /// In a flat directory transfer, the enumeration only returns file entries and it only transfers files under the directory.
+    /// 
+    /// In a hierarchy directory transfer, the enumeration also returns directory entries, 
+    /// it transfers files under the directory and also handles opertions on directories.
     /// </summary>
 #if BINARY_SERIALIZATION
     [Serializable]

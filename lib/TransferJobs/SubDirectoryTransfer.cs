@@ -19,6 +19,9 @@ namespace Microsoft.Azure.Storage.DataMovement
     using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
     using Microsoft.Azure.Storage.File;
 
+    /// <summary>
+    /// Represents a sub-directory transfer under a hierarchy directory transfer.
+    /// </summary>
 #if BINARY_SERIALIZATION
     [Serializable]
 #else
@@ -32,7 +35,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         private const string SubDirListContinuationTokenName = "SubDirListContinuationToken";
         private const string SubDirRelativePathName = "SubDirRelativePath";
 
-        private HierarchyDirectoryTransfer rootDirectoryTransfer = null;
+        /// <summary>
+        /// Base <see cref="HierarchyDirectoryTransfer"/> instance which this <see cref="SubDirectoryTransfer"/> instance belongs to.
+        /// <see cref="SubDirectoryTransfer"/> instance returns its listed directories and files to <see cref="HierarchyDirectoryTransfer"/> with callbacks.
+        /// </summary>
+        private HierarchyDirectoryTransfer baseDirectoryTransfer = null;
         private ITransferEnumerator transferEnumerator = null;
 
 #if !BINARY_SERIALIZATION
@@ -49,13 +56,13 @@ namespace Microsoft.Azure.Storage.DataMovement
         private TransferLocation dest;
 
         public SubDirectoryTransfer(
-            HierarchyDirectoryTransfer rootDirectoryTransfer,
+            HierarchyDirectoryTransfer baseDirectoryTransfer,
             string relativePath)
         {
             this.enumerateContinuationToken = new SerializableListContinuationToken(null);
-            this.rootDirectoryTransfer = rootDirectoryTransfer;
+            this.baseDirectoryTransfer = baseDirectoryTransfer;
             this.relativePath = relativePath;
-            this.rootDirectoryTransfer.GetSubDirLocation(this.relativePath, out this.source, out this.dest);
+            this.baseDirectoryTransfer.GetSubDirLocation(this.relativePath, out this.source, out this.dest);
             this.InitializeEnumerator();
         }
 
@@ -151,7 +158,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 if (entry.IsDirectory)
                 {
-                    this.rootDirectoryTransfer.AddSubDir(entry.RelativePath, () =>
+                    this.baseDirectoryTransfer.AddSubDir(entry.RelativePath, () =>
                     {
                         var currentContinuationToken = new SerializableListContinuationToken(entry.ContinuationToken);
                         currentContinuationToken.Journal = this.enumerateContinuationToken.Journal;
@@ -162,14 +169,14 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
                 else
                 {
-                    SingleObjectTransfer transferItem = this.rootDirectoryTransfer.CreateTransfer(entry);
+                    SingleObjectTransfer transferItem = this.baseDirectoryTransfer.CreateTransfer(entry);
 #if DEBUG
                     Utils.HandleFaultInjection(entry.RelativePath, transferItem);
 #endif
 
                     this.CreateDestinationParentDirectoryRecursively(transferItem);
 
-                    this.rootDirectoryTransfer.AddSingleObjectTransfer(transferItem, () =>
+                    this.baseDirectoryTransfer.AddSingleObjectTransfer(transferItem, () =>
                     {
                         var currentContinuationToken = new SerializableListContinuationToken(entry.ContinuationToken);
                         currentContinuationToken.Journal = this.enumerateContinuationToken.Journal;
@@ -181,10 +188,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        public void Update(HierarchyDirectoryTransfer rootDirectoryTransferInstance)
+        public void Update(HierarchyDirectoryTransfer baseDirectoryTransferInstance)
         {
-            this.rootDirectoryTransfer = rootDirectoryTransferInstance;
-            this.rootDirectoryTransfer.GetSubDirLocation(this.relativePath, out this.source, out this.dest);
+            this.baseDirectoryTransfer = baseDirectoryTransferInstance;
+            this.baseDirectoryTransfer.GetSubDirLocation(this.relativePath, out this.source, out this.dest);
             this.InitializeEnumerator();
         }
 
@@ -204,7 +211,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                     if (!string.Equals(parent.SnapshotQualifiedUri.AbsolutePath, destDirectory.SnapshotQualifiedUri.AbsolutePath))
                     {
-                        if (this.rootDirectoryTransfer.IsForceOverwrite || !parent.ExistsAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Result)
+                        if (this.baseDirectoryTransfer.IsForceOverwrite || !parent.ExistsAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Result)
                         {
                             Utils.CreateCloudFileDirectoryRecursively(parent);
                         }
@@ -219,10 +226,10 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             if (this.source.Type == TransferLocationType.AzureFileDirectory)
             {
-                var fileEnumerator = new AzureFileHierarchyEnumerator(this.source as AzureFileDirectoryLocation, rootDirectoryTransfer.Source.Instance as CloudFileDirectory);
+                var fileEnumerator = new AzureFileHierarchyEnumerator(this.source as AzureFileDirectoryLocation, this.baseDirectoryTransfer.Source.Instance as CloudFileDirectory);
                 fileEnumerator.EnumerateContinuationToken = this.enumerateContinuationToken.ListContinuationToken;
-                fileEnumerator.SearchPattern = this.rootDirectoryTransfer.SearchPattern;
-                fileEnumerator.Recursive = this.rootDirectoryTransfer.Recursive;
+                fileEnumerator.SearchPattern = this.baseDirectoryTransfer.SearchPattern;
+                fileEnumerator.Recursive = this.baseDirectoryTransfer.Recursive;
 
                 this.transferEnumerator = fileEnumerator;
             }

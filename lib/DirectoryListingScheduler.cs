@@ -14,9 +14,11 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Threading;
     using System.Threading.Tasks;
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable")]
-    class DirectoryListingScheduler
+    class DirectoryListingScheduler : IDisposable
     {
+        // Value to control concurrent of directory listing.
+        // By testing result with downloading from Azure File Directory on 16 core machines on .Net on Windows and on .Net Core on Linux
+        // it has best downloading speed with 2 listing threads on .Net on Windows and with 4 listing threads on .Net Core on Linux.
 #if DOTNET5_4
         private const int MaxParallelListingThreads = 4;
 #else
@@ -29,9 +31,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private DirectoryListingScheduler()
         {
-            int parallelLevel = TransferManager.Configurations.ParallelOperations;
-            parallelLevel = MaxParallelListingThreads;
-            semaphore = new SemaphoreSlim(parallelLevel, parallelLevel);
+            semaphore = new SemaphoreSlim(MaxParallelListingThreads, MaxParallelListingThreads);
         }
 
         public static DirectoryListingScheduler Instance()
@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         public Task Schedule(
-            SubDirectoryTransfer directoryTransfer,
+            SubDirectoryTransfer subDirectoryTransfer,
             CancellationToken cancellationToken,
             Action persistDirTransfer,
             int timeOut)
@@ -72,7 +72,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     throw;
                 }
 
-                Task task = directoryTransfer.ExecuteAsync(cancellationToken);
+                Task task = subDirectoryTransfer.ExecuteAsync(cancellationToken);
                 task.ContinueWith((sourceTask) =>
                 {
                     this.semaphore.Release();
@@ -84,6 +84,27 @@ namespace Microsoft.Azure.Storage.DataMovement
             else
             {
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Public dispose method to release all resources owned.
+        /// </summary>
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (null != this.semaphore)
+                {
+                    this.semaphore.Dispose();
+                    this.semaphore = null;
+                }
             }
         }
     }

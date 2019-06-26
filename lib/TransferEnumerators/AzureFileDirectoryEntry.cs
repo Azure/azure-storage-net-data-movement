@@ -11,14 +11,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
     using Microsoft.Azure.Storage.File;
 
     /// <summary>
-    /// AzureFileEntry class to represent a single transfer entry on Azure file service.
+    /// AzureFileEntry class to represent an azure file directory entry on Azure file service.
     /// </summary>
     internal class AzureFileDirectoryEntry : TransferEntry
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureFileDirectoryEntry" /> class.
         /// </summary>
-        /// <param name="relativePath">Relative path of the file indicated by this file entry.</param>
+        /// <param name="relativePath">Relative path of the directory indicated by this directory entry.</param>
         /// <param name="cloudFileDirectory">Corresponding CloudFileDirectory instance.</param>
         /// <param name="continuationToken">Continuation token when listing to this entry.</param>
         public AzureFileDirectoryEntry(string relativePath, CloudFileDirectory cloudFileDirectory, AzureFileListContinuationToken continuationToken)

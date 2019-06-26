@@ -198,11 +198,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             Debug.Assert(
                 job.Status == TransferJobStatus.NotStarted ||
-                job.Status == TransferJobStatus.NotTransfer ||
+                job.Status == TransferJobStatus.SkippedDueToShouldNotTransfer ||
                 job.Status == TransferJobStatus.Monitor ||
                 job.Status == TransferJobStatus.Transfer);
 
-            if (job.Status == TransferJobStatus.NotTransfer)
+            if (job.Status == TransferJobStatus.SkippedDueToShouldNotTransfer)
             {
                 return;
             }

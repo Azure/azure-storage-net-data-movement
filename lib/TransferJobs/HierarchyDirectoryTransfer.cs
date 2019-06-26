@@ -22,7 +22,11 @@ namespace Microsoft.Azure.Storage.DataMovement
     using Microsoft.Azure.Storage.File;
 
     /// <summary>
-    /// Represents directory transfer which has physical subdirctories.
+    /// Represents a hierarchy directory transfer operation.
+    /// In a flat directory transfer, the enumeration only returns file entries and it only transfers files under the directory.
+    /// 
+    /// In a hierarchy directory transfer, the enumeration also returns directory entries, 
+    /// it transfers files under the directory and also handles opertions on directories.
     /// </summary>
 #if BINARY_SERIALIZATION
     [Serializable]
@@ -263,6 +267,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             set
             {
                 Debug.Assert((value > 1), "MaxTransferConcurrency cannot be smaller than 1");
+                Debug.Assert(null == this.maxConcurrencyControl, "MaxTransferConcurrency can only be set once");
 
                 base.MaxTransferConcurrency = value;
                 if (null == this.maxConcurrencyControl)
@@ -354,6 +359,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             try
             {
+                await Task.Yield();
                 this.ResetExecutionStatus();
 
                 cancellationToken.Register(() =>
@@ -580,18 +586,20 @@ namespace Microsoft.Azure.Storage.DataMovement
                 // Got nothing from checkpoint, start directory transfer from the very beginning.
                 var subDirTransfer = new SubDirectoryTransfer(this, "");
 
+                lock (this.continuationTokenLock)
+                {
+                    if (null == this.Journal)
+                    {
+                        this.ongoingSubDirTransfers.TryAdd(subDirTransfer, new object());
+                    }
+                    this.enumerationStarted = 1;
+                }
+
                 if (null != this.Journal)
                 {
                     this.Journal.AddOngoingSubDirTransfer(subDirTransfer);
+                    this.Journal?.UpdateJournalItem(this);
                 }
-                else
-                {
-                    this.ongoingSubDirTransfers.TryAdd(subDirTransfer, new object());
-                }
-
-                this.enumerationStarted = 1;
-
-                this.Journal.UpdateJournalItem(this);
 
                 this.ScheduleSubDirectoryTransfer(
                         subDirTransfer,
@@ -679,7 +687,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
         private bool ScheduleSubDirectoryTransfer(
-            SubDirectoryTransfer directoryTransfer,
+            SubDirectoryTransfer subDirectoryTransfer,
             CancellationToken cancellationToken,
             Action persistDirTransfer,
             int timeOut)
@@ -689,7 +697,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             try
             {
                 directoryListTask = DirectoryListingScheduler.Instance().Schedule(
-                    directoryTransfer,
+                    subDirectoryTransfer,
                     cancellationToken,
                     persistDirTransfer,
                     timeOut);
@@ -703,7 +711,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 // Ignore exception
             }
 
-            this.WaitOnSubDirectoryListTask(directoryListTask, directoryTransfer);
+            this.WaitOnSubDirectoryListTask(directoryListTask, subDirectoryTransfer);
             return null != directoryListTask;
         }
 

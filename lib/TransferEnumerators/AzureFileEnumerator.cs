@@ -16,6 +16,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
     /// <summary>
     /// Transfer enumerator for Azure file storage.
+    /// A hierarchy enumerator will return files and directories which are directly under current directory.
     /// </summary>
     internal class AzureFileHierarchyEnumerator : TransferEnumeratorBase, ITransferEnumerator
     {

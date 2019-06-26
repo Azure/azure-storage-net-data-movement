@@ -50,7 +50,13 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         private const int ProcessTrackerSize = 1024;
 
-        private const int SubDirectoryTransferChunkSize = 2 * 1024 + 128;
+        /// <summary>
+        /// For a subdirectory pending on listing, only write its relative path into journal.
+        /// An Azure File name path can be no longer than 2048 characters.
+        /// It occupies 40 bytes on .Net and 93 bytes on .Net Core to write a string with 16 characters.
+        /// Here set the size to the maximum Azure File path length plus a fixed reserved length to make sure it won't mess up two neighboring strings.
+        /// </summary>
+        private const int SubDirectoryTransferChunkSize = 2048 + 128;
 
         /// <summary>
         /// It keeps a list of used transfer chunks and a list free transfers in the journal stream,
