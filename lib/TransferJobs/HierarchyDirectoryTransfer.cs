@@ -472,7 +472,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                 if (ex.ErrorCode == TransferErrorCode.FailedCheckingShouldTransfer)
                 {
                     shouldStopTransfer = true;
-                    this.enumerateException = ex.InnerException;
+                    this.enumerateException = new TransferException(
+                        TransferErrorCode.FailToEnumerateDirectory,
+                        string.Format(CultureInfo.CurrentCulture,
+                            Resources.EnumerateDirectoryException,
+                            this.Destination.Instance.ConvertToString()), 
+                        ex.InnerException);
                 }
 
                 hasError = true;
@@ -716,12 +721,25 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     await directoryListTask;
                 }
+                catch (OperationCanceledException)
+                {
+                    // Ingore this exception, there's other place reporting such kind of exception when cancellation is triggered.
+                }
                 catch (Exception ex)
                 {
-                    if (!(ex is OperationCanceledException))
+                    shouldStopOthers = true;
+                    if (ex is TransferException)
                     {
-                        shouldStopOthers = true;
                         this.enumerateException = ex;
+                    }
+                    else
+                    {
+                        this.enumerateException = new TransferException(
+                            TransferErrorCode.FailToEnumerateDirectory,
+                            string.Format(CultureInfo.CurrentCulture,
+                                Resources.EnumerateDirectoryException,
+                                this.Destination.Instance.ConvertToString()), 
+                            ex);
                     }
 
                     errorHappened = true;

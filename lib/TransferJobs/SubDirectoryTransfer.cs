@@ -8,6 +8,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Runtime.Serialization;
@@ -252,35 +253,51 @@ namespace Microsoft.Azure.Storage.DataMovement
                     return;
                 }
 
-                bool parentNotExist = false;
-
                 try
                 {
-                    fileDirLocation.FileDirectory.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
+                    CreateCloudFileDestinationDirectory(fileDirectory, cancellationToken);
                 }
-                catch (StorageException ex)
+                catch (StorageException storageException)
                 {
-                    if (null != ex.RequestInformation)
+                    throw new TransferException(TransferErrorCode.FailToVadlidateDestination,
+                        string.Format(CultureInfo.CurrentCulture,
+                            Resources.FailedToValidateDestinationException,
+                            storageException.ToErrorDetail()),
+                        storageException);
+                }
+            }
+        }
+
+        private static void CreateCloudFileDestinationDirectory(CloudFileDirectory fileDirectory, CancellationToken cancellationToken)
+        {
+            bool parentNotExist = false;
+
+            try
+            {
+                fileDirectory.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
+            }
+            catch (StorageException ex)
+            {
+                if (null != ex.RequestInformation)
+                {
+                    if (string.Equals("ParentNotFound", ex.RequestInformation.ErrorCode))
                     {
-                        if (string.Equals("ParentNotFound", ex.RequestInformation.ErrorCode))
-                        {
-                            parentNotExist = true;
-                        }
-                        else if (!string.Equals("ResourceAlreadyExists", ex.RequestInformation.ErrorCode))
-                        {
-                            throw;
-                        }
+                        parentNotExist = true;
                     }
-                    else
+                    else if (!string.Equals("ResourceAlreadyExists", ex.RequestInformation.ErrorCode))
                     {
                         throw;
                     }
                 }
-
-                if (parentNotExist)
+                else
                 {
-                    Utils.CreateCloudFileDirectoryRecursively(fileDirLocation.FileDirectory);
+                    throw;
                 }
+            }
+
+            if (parentNotExist)
+            {
+                Utils.CreateCloudFileDirectoryRecursively(fileDirectory);
             }
         }
     }
