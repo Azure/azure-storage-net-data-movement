@@ -201,7 +201,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 case TransferLocationType.FilePath:
                     var filePath = (transferItem.Destination as FileLocation).FilePath;
-                    var currentDir = this.dest.Instance as string;
                     Utils.ValidateDestinationPath(transferItem.Source.Instance.ConvertToString(), filePath);
                     Utils.CreateParentDirectoryIfNotExists(filePath);
                     break;

@@ -424,7 +424,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                     this.stream.Position = this.subDirTransferCurrentReadOffset;
 #if BINARY_SERIALIZATION
-                        return this.formatter.Deserialize(this.stream) as string;
+                    return this.formatter.Deserialize(this.stream) as string;
 #else
                     return (string)this.ReadObject(this.stringSerializer);
 #endif

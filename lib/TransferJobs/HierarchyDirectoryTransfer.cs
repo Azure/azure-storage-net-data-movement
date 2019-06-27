@@ -206,7 +206,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         private string[] serializedSubDirectories;
 
         /// <summary>
-        /// Initializes a deserialized TransferCollection (by rebuilding the the transfer
+        /// Initializes a deserialized HierarchyDirectoryTransfer (by rebuilding the the transfer
         /// dictionary and progress tracker)
         /// </summary>
         /// <param name="context"></param>
@@ -732,6 +732,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 catch (OperationCanceledException)
                 {
                     // Ingore this exception, there's other place reporting such kind of exception when cancellation is triggered.
+                    errorHappened = true;
                 }
                 catch (Exception ex)
                 {
