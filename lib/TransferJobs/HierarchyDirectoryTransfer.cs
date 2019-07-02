@@ -466,6 +466,8 @@ namespace Microsoft.Azure.Storage.DataMovement
             bool hasError = false;
             bool shouldStopTransfer = false;
 
+            transferItem.UpdateProgressLock(this.progressUpdateLock);
+
             try
             {
                 using (transferItem)
