@@ -103,6 +103,7 @@
   <HelpKINode Title="EndTime property" Url="html/2dc97723-e5c3-7e2b-6d42-fa12b9b87f38.htm" />
   <HelpKINode Title="ErrorCode property" Url="html/e4b3dac5-be05-215e-cb3a-59d6b1543b3a.htm" />
   <HelpKINode Title="Exception property" Url="html/026eeff8-40cf-4496-03c3-957aa4145d3e.htm" />
+  <HelpKINode Title="FailedCheckingShouldTransfer enumeration member" Url="html/3bbc9946-4798-8bc4-3139-aa703cda9544.htm" />
   <HelpKINode Title="FailedToCreateDirectory enumeration member" Url="html/3bbc9946-4798-8bc4-3139-aa703cda9544.htm" />
   <HelpKINode Title="FailToAllocateMemory enumeration member" Url="html/3bbc9946-4798-8bc4-3139-aa703cda9544.htm" />
   <HelpKINode Title="FailToEnumerateDirectory enumeration member" Url="html/3bbc9946-4798-8bc4-3139-aa703cda9544.htm" />
