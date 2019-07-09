@@ -28,8 +28,8 @@ namespace Microsoft.Azure.Storage.DataMovement
     // StreamLocation intentionally omitted because it is not serializable
     [KnownType(typeof(UriLocation))]
     [KnownType(typeof(SingleObjectTransfer))]
-    [KnownType(typeof(MultipleObjectsTransfer))]
     [KnownType(typeof(DirectoryTransfer))]
+    [KnownType(typeof(SubDirectoryTransfer))]
 #endif
     internal abstract class Transfer : JournalItem, IDisposable
 #if BINARY_SERIALIZATION

@@ -47,8 +47,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.reader = this.GetReader(transferJob.Source);
             this.writer = this.GetWriter(transferJob.Destination);
-            
-            this.CheckAndEnableSmallFileOptimization();
+
+            this.reader.EnableSmallFileOptimization = (this.reader.EnableSmallFileOptimization && this.writer.EnableSmallFileOptimization);
+            this.writer.EnableSmallFileOptimization = (this.reader.EnableSmallFileOptimization && this.writer.EnableSmallFileOptimization);
 
             this.SharedTransferData.OnTotalLengthChanged += (sender, args) =>
             {
@@ -108,20 +109,38 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             private set;
         }
 
+        public bool hasWork = true;
+
         public override bool HasWork
         {
             get
             {
-                var hasWork = (!this.reader.PreProcessed && this.reader.HasWork)
+                if (!this.hasWork) return false;
+
+                var hasWorkInternal = (!this.reader.PreProcessed && this.reader.HasWork)
                     || (this.reader.PreProcessed && this.writer.HasWork)
                     || (this.writer.PreProcessed && this.reader.HasWork);
 
-                return !this.ErrorOccurred && hasWork;
+                return !this.ErrorOccurred && hasWorkInternal;
             }
         }
 
         protected override async Task<bool> DoWorkInternalAsync()
         {
+            if (!this.TransferJob.Transfer.ShouldTransferChecked)
+            {
+                this.hasWork = false;
+                if (await this.CheckShouldTransfer())
+                {
+                    return true;
+                }
+                else
+                {
+                    this.hasWork = true;
+                    return false;
+                }
+            }
+
             if (!this.reader.PreProcessed && this.reader.HasWork)
             {
                 await this.reader.DoWorkInternalAsync();
@@ -143,14 +162,19 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.ErrorOccurred = true;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         private TransferReaderWriterBase GetReader(TransferLocation sourceLocation)
         {
             switch (sourceLocation.Type)
             {
                 case TransferLocationType.Stream:
-                    return new StreamedReader(this.Scheduler, this, this.CancellationToken);
+                    var streamedReader = new StreamedReader(this.Scheduler, this, this.CancellationToken);
+                    streamedReader.EnableSmallFileOptimization = true;
+                    return streamedReader;
                 case TransferLocationType.FilePath:
-                    return new StreamedReader(this.Scheduler, this, this.CancellationToken);
+                    var fileReader = new StreamedReader(this.Scheduler, this, this.CancellationToken);
+                    fileReader.EnableSmallFileOptimization = true;
+                    return fileReader;
                 case TransferLocationType.AzureBlob:
                     CloudBlob sourceBlob = (sourceLocation as AzureBlobLocation).Blob;
                     if (sourceBlob is CloudPageBlob)
@@ -159,7 +183,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
                     else if (sourceBlob is CloudBlockBlob)
                     {
-                        return new BlockBasedBlobReader(this.Scheduler, this, this.CancellationToken);
+                        var blobReader = new BlockBasedBlobReader(this.Scheduler, this, this.CancellationToken);
+                        blobReader.EnableSmallFileOptimization = true;
+                        return blobReader;
                     }
                     else if (sourceBlob is CloudAppendBlob)
                     {
@@ -184,14 +210,19 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
         private TransferReaderWriterBase GetWriter(TransferLocation destLocation)
         {
             switch (destLocation.Type)
             {
                 case TransferLocationType.Stream:
-                    return new StreamedWriter(this.Scheduler, this, this.CancellationToken);
+                    var streamWriter = new StreamedWriter(this.Scheduler, this, this.CancellationToken);
+                    streamWriter.EnableSmallFileOptimization = true;
+                    return streamWriter;
                 case TransferLocationType.FilePath:
-                    return new StreamedWriter(this.Scheduler, this, this.CancellationToken);
+                    var fileWriter = new StreamedWriter(this.Scheduler, this, this.CancellationToken);
+                    fileWriter.EnableSmallFileOptimization = true;
+                    return fileWriter;
                 case TransferLocationType.AzureBlob:
                     CloudBlob destBlob = (destLocation as AzureBlobLocation).Blob;
                     if (destBlob is CloudPageBlob)
@@ -200,7 +231,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
                     else if (destBlob is CloudBlockBlob)
                     {
-                        return new BlockBlobWriter(this.Scheduler, this, this.CancellationToken);
+                        var blobWriter = new BlockBlobWriter(this.Scheduler, this, this.CancellationToken);
+                        blobWriter.EnableSmallFileOptimization = true;
+                        return blobWriter;
                     }
                     else if (destBlob is CloudAppendBlob)
                     {
@@ -222,20 +255,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         CultureInfo.CurrentCulture,
                         Resources.UnsupportedTransferLocationException,
                         destLocation.Type));
-            }
-        }
-
-        /// <summary>
-        /// Currently only do small file optimization for block/append blob download, and block blob upload.
-        /// Further small file optimization would be done according to feedbacks.
-        /// </summary>
-        private void CheckAndEnableSmallFileOptimization()
-        {
-            if ((this.reader is BlockBasedBlobReader && this.writer is StreamedWriter) ||
-                (this.reader is StreamedReader && this.writer is BlockBlobWriter))
-            {
-                this.reader.EnableSmallFileOptimization = true;
-                this.writer.EnableSmallFileOptimization = true;
             }
         }
 

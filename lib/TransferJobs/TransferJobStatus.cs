@@ -19,7 +19,13 @@ namespace Microsoft.Azure.Storage.DataMovement
         NotStarted,
 
         /// <summary>
-        /// Transfer is skipped
+        /// The transfer should not be done because ShouldTransferCallbackAsync returned false on the transfer job.
+        /// This is only used when the transfer instance is created from a directory transfer.
+        /// </summary>
+        SkippedDueToShouldNotTransfer,
+
+        /// <summary>
+        /// Transfer is skipped because ShouldOverwriteCallbackAsync returned false on the transfer job.
         /// </summary>
         Skipped,
 

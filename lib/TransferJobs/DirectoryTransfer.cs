@@ -24,27 +24,25 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if BINARY_SERIALIZATION
     [Serializable]
 #else
+    [KnownType(typeof(AzureBlobDirectoryLocation))]
+    [KnownType(typeof(AzureBlobLocation))]
+    [KnownType(typeof(AzureFileDirectoryLocation))]
+    [KnownType(typeof(AzureFileLocation))]
+    [KnownType(typeof(DirectoryLocation))]
+    [KnownType(typeof(FileLocation))]
+    // StreamLocation intentionally omitted because it is not serializable
+    [KnownType(typeof(UriLocation))]
+    [KnownType(typeof(SingleObjectTransfer))]
+    [KnownType(typeof(HierarchyDirectoryTransfer))]
+    [KnownType(typeof(FlatDirectoryTransfer))]
     [DataContract]
 #endif // BINARY_SERIALIZATION
-    internal class DirectoryTransfer : MultipleObjectsTransfer
+    internal abstract class DirectoryTransfer : Transfer
     {
         /// <summary>
-        /// These filenames are reserved on windows, regardless of the file extension.
+        /// Internal directory transfer context instance.
         /// </summary>
-        private static readonly string[] ReservedBaseFileNames = new string[]
-            {
-                "CON", "PRN", "AUX", "NUL",
-                "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
-                "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
-            };
-
-        /// <summary>
-        /// These filenames are reserved on windows, only if the full filename matches.
-        /// </summary>
-        private static readonly string[] ReservedFileNames = new string[]
-            {
-                "CLOCK$",
-            };
+        private DirectoryTransferContext dirTransferContext = null;
 
         /// <summary>
         /// Serialization field name for bool to indicate whether delimiter is set.
@@ -110,9 +108,17 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Initializes a new instance of the <see cref="DirectoryTransfer"/> class.
         /// </summary>
         /// <param name="other">Another <see cref="DirectoryTransfer"/> object.</param>
-        private DirectoryTransfer(DirectoryTransfer other)
+        protected DirectoryTransfer(DirectoryTransfer other)
             : base(other)
         {
+        }
+
+        protected INameResolver NameResolver
+        {
+            get
+            {
+                return this.nameResolver;
+            }
         }
 
         public char? Delimiter
@@ -142,6 +148,59 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
 
+        /// <summary>
+        /// Gets or sets the transfer context of this transfer.
+        /// </summary>
+        public override TransferContext Context
+        {
+            get
+            {
+                return this.dirTransferContext;
+            }
+
+            set
+            {
+                DirectoryTransferContext tempValue = value as DirectoryTransferContext;
+
+                if (tempValue == null)
+                {
+                    throw new ArgumentException("Requires a DirectoryTransferContext instance", "value");
+                }
+
+                this.dirTransferContext = tempValue;
+            }
+        }
+
+        /// <summary>
+        /// Gets the directory transfer context of this transfer.
+        /// </summary>
+        public DirectoryTransferContext DirectoryContext
+        {
+            get
+            {
+                return this.dirTransferContext;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the transfer enumerator for source location
+        /// </summary>
+        public ITransferEnumerator SourceEnumerator
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets the maximum transfer concurrency
+        /// </summary>
+        public virtual int MaxTransferConcurrency
+        {
+            get;
+            set;
+        }
+
+
 #if BINARY_SERIALIZATION
         /// <summary>
         /// Serializes the object.
@@ -161,15 +220,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 #endif // BINARY_SERIALIZATION
-
-        /// <summary>
-        /// Creates a copy of current transfer object.
-        /// </summary>
-        /// <returns>A copy of current transfer object.</returns>
-        public override Transfer Copy()
-        {
-            return new DirectoryTransfer(this);
-        }
 
         /// <summary>
         /// Execute the transfer asynchronously.
@@ -197,10 +247,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 
             this.nameResolver = GetNameResolver(this.Source, this.Destination, this.Delimiter);
-            await base.ExecuteAsync(scheduler, cancellationToken);
+            await this.ExecuteInternalAsync(scheduler, cancellationToken);
         }
 
-        private static TransferLocation GetSourceTransferLocation(TransferLocation dirLocation, TransferEntry entry)
+        public abstract Task ExecuteInternalAsync(TransferScheduler scheduler, CancellationToken cancellationToken);
+
+        protected static TransferLocation GetSourceTransferLocation(TransferLocation dirLocation, TransferEntry entry)
         {
             switch(dirLocation.Type)
             {
@@ -229,7 +281,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        private TransferLocation GetDestinationTransferLocation(TransferLocation dirLocation, TransferEntry entry)
+        protected TransferLocation GetDestinationTransferLocation(TransferLocation dirLocation, TransferEntry entry)
         {
             string destRelativePath = this.nameResolver.ResolveName(entry);
 
@@ -293,14 +345,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        protected override void CreateParentDirectory(SingleObjectTransfer transfer)
+        public void CreateParentDirectory(SingleObjectTransfer transfer)
         {
             switch (transfer.Destination.Type)
             {
                 case TransferLocationType.FilePath:
                     var filePath = (transfer.Destination as FileLocation).FilePath;
-                    ValidateDestinationPath(transfer.Source.Instance.ConvertToString(), filePath);
-                    CreateParentDirectoryIfNotExists(filePath);
+                    Utils.ValidateDestinationPath(transfer.Source.Instance.ConvertToString(), filePath);
+                    Utils.CreateParentDirectoryIfNotExists(filePath);
                     break;
                 case TransferLocationType.AzureFile:
                     try
@@ -340,7 +392,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "Object will be disposed by the caller")]
-        protected override SingleObjectTransfer CreateTransfer(TransferEntry entry)
+        internal SingleObjectTransfer CreateTransfer(TransferEntry entry)
         {
             TransferLocation sourceLocation = GetSourceTransferLocation(this.Source, entry);
             sourceLocation.IsInstanceInfoFetched = true;
@@ -383,7 +435,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             return false;
         }
 
-        protected override void UpdateTransfer(Transfer transfer)
+        protected void UpdateTransfer(Transfer transfer)
         {
             DirectoryTransfer.UpdateCredentials(this.Source, transfer.Source);
             DirectoryTransfer.UpdateCredentials(this.Destination, transfer.Destination);
@@ -408,18 +460,18 @@ namespace Microsoft.Azure.Storage.DataMovement
             Debug.Assert(sourceLocation != null, "sourceLocation");
             Debug.Assert(destLocation != null, "destLocation");
 
-            switch(sourceLocation.Type)
+            switch (sourceLocation.Type)
             {
                 case TransferLocationType.AzureBlobDirectory:
                     if (destLocation.Type == TransferLocationType.AzureBlobDirectory)
                     {
                         return new AzureBlobToAzureBlobNameResolver();
                     }
-                    else if(destLocation.Type == TransferLocationType.AzureFileDirectory)
+                    else if (destLocation.Type == TransferLocationType.AzureFileDirectory)
                     {
                         return new AzureBlobToAzureFileNameResolver(delimiter);
                     }
-                    else if(destLocation.Type == TransferLocationType.LocalDirectory)
+                    else if (destLocation.Type == TransferLocationType.LocalDirectory)
                     {
                         return new AzureToFileNameResolver(delimiter);
                     }
@@ -431,7 +483,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     {
                         return new AzureFileToAzureNameResolver();
                     }
-                    else if(destLocation.Type == TransferLocationType.LocalDirectory)
+                    else if (destLocation.Type == TransferLocationType.LocalDirectory)
                     {
                         return new AzureToFileNameResolver(null);
                     }
@@ -455,59 +507,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             throw new ArgumentException("Unsupported destination location", "destLocation");
         }
 
-        private static void ValidateDestinationPath(string sourcePath, string destPath)
-        {
-            if (Interop.CrossPlatformHelpers.IsWindows)
-            {
-                if (!IsValidWindowsFileName(destPath))
-                {
-                    throw new TransferException(
-                        string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.SourceNameInvalidInFileSystem,
-                            sourcePath));
-                }
-            }
-        }
-
-        private static bool IsValidWindowsFileName(string fileName)
-        {
-            string fileNameNoExt = LongPath.GetFileNameWithoutExtension(fileName);
-            string fileNameWithExt = LongPath.GetFileName(fileName);
-
-            if (Array.Exists<string>(ReservedBaseFileNames, delegate (string s) { return fileNameNoExt.Equals(s, StringComparison.OrdinalIgnoreCase); }))
-            {
-                return false;
-            }
-
-            if (Array.Exists<string>(ReservedFileNames, delegate (string s) { return fileNameWithExt.Equals(s, StringComparison.OrdinalIgnoreCase); }))
-            {
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(fileNameWithExt))
-            {
-                return false;
-            }
-
-            bool allDotsOrWhiteSpace = true;
-            for (int i = 0; i < fileName.Length; ++i)
-            {
-                if (fileName[i] != '.' && !char.IsWhiteSpace(fileName[i]))
-                {
-                    allDotsOrWhiteSpace = false;
-                    break;
-                }
-            }
-
-            if (allDotsOrWhiteSpace)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
         private void CreateParentDirectoryIfNotExists(CloudFile file)
         {
             FileRequestOptions fileRequestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
@@ -516,7 +515,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 if (this.IsForceOverwrite || !parent.ExistsAsync(fileRequestOptions, null).Result)
                 {
-                    CreateCloudFileDirectoryRecursively(parent);
+                    Utils.CreateCloudFileDirectoryRecursively(parent);
                 }
 
                 this.lastAzureFileDirectory = parent;
@@ -539,69 +538,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     return true;
                 }
-            }
-
-            return false;
-        }
-
-        private static void CreateParentDirectoryIfNotExists(string path)
-        {
-            string dir = LongPath.GetDirectoryName(path);
-
-            if (!string.IsNullOrEmpty(dir) && !LongPathDirectory.Exists(dir))
-            {
-                LongPathDirectory.CreateDirectory(dir);
-            }
-        }
-
-        private void CreateCloudFileDirectoryRecursively(CloudFileDirectory dir)
-        {
-            if (null == dir)
-            {
-                return;
-            }
-
-            CloudFileDirectory parent = dir.Parent;
-
-            // null == parent means dir is root directory, 
-            // we should not call CreateIfNotExists in that case
-            if (null != parent)
-            {
-                CreateCloudFileDirectoryRecursively(parent);
-
-                try
-                {
-                    // create anyway, ignore 409 and 403
-                    dir.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
-                }
-                catch (AggregateException e)
-                {
-                    StorageException innnerException = e.Flatten().InnerExceptions[0] as StorageException;
-                    if (!IgnoreDirectoryCreationError(innnerException))
-                    {
-                        throw;
-                    }
-                }
-            }
-        }
-
-        private static bool IgnoreDirectoryCreationError(StorageException se)
-        {
-            if (null == se)
-            {
-                return false;
-            }
-
-            if (Utils.IsExpectedHttpStatusCodes(se, HttpStatusCode.Forbidden))
-            {
-                return true;
-            }
-
-            if (null != se.RequestInformation
-                && se.RequestInformation.HttpStatusCode == (int)HttpStatusCode.Conflict
-                && string.Equals(se.RequestInformation.ErrorCode, "ResourceAlreadyExists"))
-            {
-                return true;
             }
 
             return false;

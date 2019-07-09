@@ -144,6 +144,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return file.SnapshotQualifiedUri.AbsoluteUri;
             }
 
+            CloudFileDirectory cloudFileDirectory = instance as CloudFileDirectory;
+            if (null != cloudFileDirectory)
+            {
+                return cloudFileDirectory.SnapshotQualifiedUri.AbsoluteUri;
+            }
+
             return instance.ToString();
         }
 

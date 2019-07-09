@@ -198,8 +198,14 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             Debug.Assert(
                 job.Status == TransferJobStatus.NotStarted ||
+                job.Status == TransferJobStatus.SkippedDueToShouldNotTransfer ||
                 job.Status == TransferJobStatus.Monitor ||
                 job.Status == TransferJobStatus.Transfer);
+
+            if (job.Status == TransferJobStatus.SkippedDueToShouldNotTransfer)
+            {
+                return;
+            }
 
             TransferControllerBase controller = null;
             switch (job.Transfer.TransferMethod)
@@ -243,8 +249,8 @@ namespace Microsoft.Azure.Storage.DataMovement
             catch (StorageException se)
             {
                 throw new TransferException(
-                    TransferErrorCode.Unknown, 
-                    Resources.UncategorizedException, 
+                    TransferErrorCode.Unknown,
+                    Resources.UncategorizedException,
                     se);
             }
 

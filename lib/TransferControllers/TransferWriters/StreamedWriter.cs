@@ -23,9 +23,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         private long expectOffset = 0;
 
         /// <summary>
-        /// Work token indicates whether this writer has work, could be 0(no work) or 1(has work).
+        /// Value to indicate whether there's work to do in the writer.
         /// </summary>
-        private volatile int workToken;
+        private volatile bool hasWork;
 
         /// <summary>
         /// Stream to calculation destination's content MD5.
@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             CancellationToken cancellationToken)
             : base(scheduler, controller, cancellationToken)
         {
-            this.workToken = 1;
+            this.hasWork = true;
             this.state = State.OpenOutputStream;
         }
 
@@ -75,7 +75,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         {
             get
             {
-                return this.workToken == 1 &&
+                return this.hasWork &&
                     ((State.OpenOutputStream == this.state)
                     || (State.CalculateMD5 == this.state)
                     || ((State.Write == this.state)
@@ -120,10 +120,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private async Task HandleOutputStreamAsync()
         {
-            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
-            {
-                return;
-            }
+            this.hasWork = false;
 
             await Task.Run(async () =>
             {
@@ -248,7 +245,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
                 else
                 {
-                    this.workToken = 1;
+                    this.hasWork = true;
                 }
             });
         }
@@ -262,7 +259,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.state);
 
             this.state = State.Write;
-            this.workToken = 1;
+            this.hasWork = true;
 
             return Task.Run(
                 delegate
@@ -279,9 +276,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 "Current state is {0}",
                 this.state);
             
-            if (!this.isStateSwitchedInternal && Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            if (!this.isStateSwitchedInternal)
             {
-                return;
+                this.hasWork = false;
             }
             
             long currentWriteOffset = this.expectOffset;
@@ -385,7 +382,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                this.workToken = 1;
+                this.hasWork = true;
             }
         }
 

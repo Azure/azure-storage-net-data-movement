@@ -627,22 +627,17 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             AzureFileDirectoryLocation sourceLocation = new AzureFileDirectoryLocation(sourceFileDir);
             DirectoryLocation destLocation = new DirectoryLocation(destPath);
-            AzureFileEnumerator sourceEnumerator = new AzureFileEnumerator(sourceLocation);
 
             // Set default request options
             SetDefaultRequestOptions(sourceLocation);
 
             if (options != null)
             {
-                TransferManager.CheckSearchPatternOfAzureFileSource(options);
-
-                sourceEnumerator.SearchPattern = options.SearchPattern;
-                sourceEnumerator.Recursive = options.Recursive;
-                
+                TransferManager.CheckSearchPatternOfAzureFileSource(options);                                
                 sourceLocation.FileRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
             }
 
-            return DownloadDirectoryInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context, cancellationToken);
+            return DownloadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -1152,21 +1147,17 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             AzureFileDirectoryLocation sourceLocation = new AzureFileDirectoryLocation(sourceFileDir);
             AzureFileDirectoryLocation destLocation = new AzureFileDirectoryLocation(destFileDir);
-            AzureFileEnumerator sourceEnumerator = new AzureFileEnumerator(sourceLocation);
 
             // Set default request options for source and destination
             SetDefaultRequestOptions(sourceLocation);
             SetDefaultRequestOptions(destLocation);
 
-            if (options != null)
+            if (null != options)
             {
                 TransferManager.CheckSearchPatternOfAzureFileSource(options);
-
-                sourceEnumerator.SearchPattern = options.SearchPattern;
-                sourceEnumerator.Recursive = options.Recursive;
             }
 
-            return CopyDirectoryInternalAsync(sourceLocation, destLocation, isServiceCopy, sourceEnumerator, options, context, cancellationToken);
+            return CopyDirectoryInternalAsync(sourceLocation, destLocation, isServiceCopy, null, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -1206,16 +1197,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             SetDefaultRequestOptions(sourceLocation);
             SetDefaultRequestOptions(destLocation);
 
-            AzureFileEnumerator sourceEnumerator = new AzureFileEnumerator(sourceLocation);
-            if (options != null)
-            {
-                TransferManager.CheckSearchPatternOfAzureFileSource(options);
-
-                sourceEnumerator.SearchPattern = options.SearchPattern;
-                sourceEnumerator.Recursive = options.Recursive;
-            }
-
-            return CopyDirectoryInternalAsync(sourceLocation, destLocation, isServiceCopy, sourceEnumerator, options, context, cancellationToken);
+            return CopyDirectoryInternalAsync(sourceLocation, destLocation, isServiceCopy, null, options, context, cancellationToken);
         }
 
         internal static void SetMemoryLimitation(long memoryLimitation)
@@ -1267,6 +1249,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (null != options)
             {
                 transfer.Delimiter = options.Delimiter;
+
+                HierarchyDirectoryTransfer hierarchyDirectoryTransfer = transfer as HierarchyDirectoryTransfer;
+
+                if (null != hierarchyDirectoryTransfer)
+                {
+                    hierarchyDirectoryTransfer.SearchPattern = options.SearchPattern;
+                    hierarchyDirectoryTransfer.Recursive = options.Recursive;
+                }
             }
             
             if (transfer.SourceEnumerator == null || !AreSameTransferEnumerators(transfer.SourceEnumerator, sourceEnumerator))
@@ -1290,6 +1280,14 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (options != null)
             {
+                HierarchyDirectoryTransfer hierarchyDirectoryTransfer = transfer as HierarchyDirectoryTransfer;
+
+                if (null != hierarchyDirectoryTransfer)
+                {
+                    TransferManager.CheckSearchPatternOfAzureFileSource(options);
+                    hierarchyDirectoryTransfer.SearchPattern = options.SearchPattern;
+                    hierarchyDirectoryTransfer.Recursive = options.Recursive;
+                }
                 transfer.BlobType = options.BlobType;
                 transfer.Delimiter = options.Delimiter;
             }
@@ -1298,6 +1296,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             return TransferManager.CreateTransferSummary(transfer.ProgressTracker);
         }
+
 
         private static async Task DoTransfer(Transfer transfer, TransferContext transferContext, CancellationToken cancellationToken)
         {
@@ -1358,7 +1357,15 @@ namespace Microsoft.Azure.Storage.DataMovement
             Transfer transfer = GetTransfer(sourceLocation, destLocation, transferMethod, transferContext);
             if (transfer == null)
             {
-                directoryTransfer = new DirectoryTransfer(sourceLocation, destLocation, transferMethod);
+                var azureFileDirectoryLocation = sourceLocation as AzureFileDirectoryLocation;
+                if (null != azureFileDirectoryLocation)
+                {
+                    directoryTransfer = new HierarchyDirectoryTransfer(azureFileDirectoryLocation, destLocation, transferMethod);
+                }
+                else
+                {
+                    directoryTransfer = new FlatDirectoryTransfer(sourceLocation, destLocation, transferMethod);
+                }
 
                 if (transferContext != null)
                 {

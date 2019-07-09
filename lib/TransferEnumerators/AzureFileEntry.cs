@@ -36,6 +36,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             private set;
         }
 
+        public override bool IsDirectory { get => false; }
+
         public override string ToString()
         {
             return File.ConvertToString();

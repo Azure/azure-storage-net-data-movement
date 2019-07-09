@@ -120,7 +120,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
-                this.CancellationToken);
+                this.CancellationToken).ConfigureAwait(false);
         }
 
         protected override async Task DoCommitAsync()

@@ -385,7 +385,11 @@ namespace DMLibTest
 
             options.AfterAllItemAdded = () =>
             {
-                progressChecker.DataTransferred.WaitOne();
+                if (!progressChecker.DataTransferred.WaitOne(30000))
+                {
+                    Test.Error("No progress in 30s.");
+                }
+
                 checkpoints.Add(AllStarted, transferContext.LastCheckpoint);
                 Thread.Sleep(1000);
                 checkpoints.Add(AllStartedAndWait, transferContext.LastCheckpoint);

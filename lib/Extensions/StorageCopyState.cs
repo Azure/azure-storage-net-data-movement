@@ -7,6 +7,7 @@
 namespace Microsoft.Azure.Storage.DataMovement.Extensions
 {
     using System;
+    using Microsoft.Azure.Storage.Blob;
 
     internal enum StorageCopyStatus
     {

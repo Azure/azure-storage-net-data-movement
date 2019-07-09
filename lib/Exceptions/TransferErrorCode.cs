@@ -117,6 +117,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         UnsupportedDummyTransfer = 21,
 
         /// <summary>
+        /// Failed when trying in ShouldTransferCallbackAsync.
+        /// </summary>
+        FailedCheckingShouldTransfer = 22,
+
+        /// <summary>
         /// Uncategorized transfer error.
         /// </summary>
         Unknown = 32,

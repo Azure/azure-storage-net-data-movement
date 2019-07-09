@@ -22,7 +22,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;$(DefineConstants)</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;TEST_HOOK;$(DefineConstants)</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
@@ -54,14 +54,14 @@
     <Reference Include="Microsoft.Azure.KeyVault.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Azure.KeyVault.Core.1.0.0\lib\net40\Microsoft.Azure.KeyVault.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Storage.Blob, Version=10.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.Storage.Blob.10.0.1\lib\net452\Microsoft.Azure.Storage.Blob.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.Blob, Version=10.0.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.Storage.Blob.10.0.3\lib\net452\Microsoft.Azure.Storage.Blob.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Storage.Common, Version=10.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.Storage.Common.10.0.1\lib\net452\Microsoft.Azure.Storage.Common.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.Common, Version=10.0.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.Storage.Common.10.0.3\lib\net452\Microsoft.Azure.Storage.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Storage.File, Version=10.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.Storage.File.10.0.1\lib\net452\Microsoft.Azure.Storage.File.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.File, Version=10.0.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.Storage.File.10.0.3\lib\net452\Microsoft.Azure.Storage.File.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Configuration, Version=1.8.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.1.8.0.0\lib\net35-full\Microsoft.WindowsAzure.Configuration.dll</HintPath>
@@ -85,6 +85,7 @@
     </Compile>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ChunkedMemoryStream.cs" />
+    <Compile Include="DirectoryListingScheduler.cs" />
     <Compile Include="Extensions\StorageCopyState.cs" />
     <Compile Include="FileNativeMethods.cs" />
     <Compile Include="LongPathFile.cs" />
@@ -128,6 +129,7 @@
     <Compile Include="TransferControllers\TransferWriters\RangeBasedWriter.cs" />
     <Compile Include="TransferControllers\TransferWriters\StreamedWriter.cs" />
     <Compile Include="TransferEnumerators\AzureBlobEntry.cs" />
+    <Compile Include="TransferEnumerators\AzureFileDirectoryEntry.cs" />
     <Compile Include="TransferEnumerators\AzureBlobEnumerator.cs" />
     <Compile Include="TransferEnumerators\AzureFileEntry.cs" />
     <Compile Include="TransferEnumerators\AzureFileEnumerator.cs" />
@@ -160,11 +162,13 @@
     <Compile Include="TransferJobs\DirectoryLocation.cs" />
     <Compile Include="TransferJobs\DirectoryTransfer.cs" />
     <Compile Include="TransferJobs\FileLocation.cs" />
-    <Compile Include="TransferJobs\MultipleObjectsTransfer.cs" />
+    <Compile Include="TransferJobs\FlatDirectoryTransfer.cs" />
+    <Compile Include="TransferJobs\HierarchyDirectoryTransfer.cs" />
     <Compile Include="TransferJobs\SerializableTransferLocation.cs" />
     <Compile Include="TransferJobs\SingleObjectCheckpoint.cs" />
     <Compile Include="TransferJobs\SingleObjectTransfer.cs" />
     <Compile Include="TransferJobs\StreamLocation.cs" />
+    <Compile Include="TransferJobs\SubDirectoryTransfer.cs" />
     <Compile Include="TransferJobs\Transfer.cs" />
     <Compile Include="TransferJobs\TransferJob.cs" />
     <Compile Include="Constants.cs" />

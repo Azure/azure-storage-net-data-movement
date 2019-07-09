@@ -35,6 +35,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     internal class SingleObjectTransfer : Transfer
     {
         private const string TransferJobName = "TransferJob";
+        private const string ShouldTransferCheckedName = "ShouldTransferChecked";
 
         /// <summary>
         /// Internal transfer job.
@@ -43,6 +44,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         [DataMember]
 #endif
         private TransferJob transferJob;
+
+        private bool shouldTransferChecked = false;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SingleObjectTransfer"/> class.
@@ -119,6 +122,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             : base(info, context)
         {
             this.transferJob = (TransferJob)info.GetValue(TransferJobName, typeof(TransferJob));
+            this.shouldTransferChecked = info.GetBoolean(ShouldTransferCheckedName);
             this.transferJob.Transfer = this;
         }
 #endif // BINARY_SERIALIZATION
@@ -145,8 +149,22 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             base.GetObjectData(info, context);
             info.AddValue(TransferJobName, this.transferJob, typeof(TransferJob));
+            info.AddValue(ShouldTransferCheckedName, this.shouldTransferChecked);
         }
 #endif // BINARY_SERIALIZATION
+
+        public bool ShouldTransferChecked
+        {
+            get
+            {
+                return this.shouldTransferChecked;
+            }
+
+            set
+            {
+                this.shouldTransferChecked = value;
+            }
+        }
 
         /// <summary>
         /// Creates a copy of current transfer object.
@@ -195,13 +213,16 @@ namespace Microsoft.Azure.Storage.DataMovement
             try
             {
                 await scheduler.ExecuteJobAsync(this.transferJob, cancellationToken);
-                this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Finished);
 
-                eventArgs.EndTime = DateTime.UtcNow;
-
-                if (this.Context != null)
+                if (TransferJobStatus.SkippedDueToShouldNotTransfer != this.transferJob.Status)
                 {
-                    this.Context.OnTransferSuccess(eventArgs);
+                    eventArgs.EndTime = DateTime.UtcNow;
+                    this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Finished);
+
+                    if (this.Context != null)
+                    {
+                        this.Context.OnTransferSuccess(eventArgs);
+                    }
                 }
             }
             catch (TransferException exception)
@@ -218,6 +239,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                         this.Context.OnTransferSkipped(eventArgs);
                     }
 
+                    throw;
+                }
+                else if (exception.ErrorCode == TransferErrorCode.FailedCheckingShouldTransfer)
+                {
                     throw;
                 }
                 else

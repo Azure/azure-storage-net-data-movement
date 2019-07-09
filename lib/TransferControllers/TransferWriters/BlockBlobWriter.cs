@@ -315,6 +315,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.state);
             TransferData transferData = this.GetFirstAvailable();
 
+            await Task.Yield();
+
             if (null != transferData)
             {
                 using (transferData)
@@ -330,16 +332,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
                         }
 
-                        await Utils.ExecuteXsclApiCallAsync(
-                            async () => await this.blockBlob.PutBlockAsync(
+                        await this.blockBlob.PutBlockAsync(
                                 this.GetBlockId(transferData.StartOffset),
                                 transferData.Stream,
                                 null,
                                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                                 Utils.GenerateOperationContext(this.Controller.TransferContext),
-                                this.CancellationToken),
-                            this.CancellationToken);
+                                this.CancellationToken);
 
                     }
                 }

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// <copyright file="MultipleObjectsTransfer.cs" company="Microsoft">
+// <copyright file="FlatDirectoryTransfer.cs" company="Microsoft">
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
@@ -19,24 +19,20 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Runtime.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
+
     /// <summary>
-    /// Represents a multiple objects transfer operation.
+    /// Represents a flat directory transfer operation.
+    /// In a flat directory transfer, the enumeration only returns file entries and it only transfers files under the directory.
+    /// 
+    /// In a hierarchy directory transfer, the enumeration also returns directory entries, 
+    /// it transfers files under the directory and also handles opertions on directories.
     /// </summary>
 #if BINARY_SERIALIZATION
     [Serializable]
 #else
-    [KnownType(typeof(AzureBlobDirectoryLocation))]
-    [KnownType(typeof(AzureBlobLocation))]
-    [KnownType(typeof(AzureFileDirectoryLocation))]
-    [KnownType(typeof(AzureFileLocation))]
-    [KnownType(typeof(DirectoryLocation))]
-    [KnownType(typeof(FileLocation))]
-    // StreamLocation intentionally omitted because it is not serializable
-    [KnownType(typeof(UriLocation))]
-    [KnownType(typeof(SingleObjectTransfer))]
     [DataContract]
-#endif // BINARY_SERIALIZATION
-    internal abstract class MultipleObjectsTransfer : Transfer
+#endif
+    internal class FlatDirectoryTransfer : DirectoryTransfer
     {
         /// <summary>
         /// Serialization field name for transfer enumerator list continuation token.
@@ -49,17 +45,12 @@ namespace Microsoft.Azure.Storage.DataMovement
         private const string SubTransfersName = "SubTransfers";
 
         /// <summary>
-        /// Internal directory transfer context instance.
-        /// </summary>
-        private DirectoryTransferContext dirTransferContext = null;
-
-        /// <summary>
         /// List continuation token from which enumeration begins.
         /// </summary>
 #if !BINARY_SERIALIZATION
         [DataMember]
 #endif
-        private SerializableListContinuationToken enumerateContinuationToken;
+        protected SerializableListContinuationToken enumerateContinuationToken;
 
         /// <summary>
         /// Lock object for enumeration continuation token.
@@ -91,7 +82,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <summary>
         /// Job queue to invoke ShouldTransferCallback.
         /// </summary>
-        private TaskQueue<Tuple<SingleObjectTransfer, TransferEntry>> shouldTransferQueue 
+        private TaskQueue<Tuple<SingleObjectTransfer, TransferEntry>> shouldTransferQueue
             = new TaskQueue<Tuple<SingleObjectTransfer, TransferEntry>>(TransferManager.Configurations.ParallelOperations * Constants.ListSegmentLengthMultiplier);
 
         /// <summary>
@@ -106,12 +97,12 @@ namespace Microsoft.Azure.Storage.DataMovement
         private TaskCompletionSource<object> allTransfersCompleteSource;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MultipleObjectsTransfer"/> class.
+        /// Initializes a new instance of the <see cref="FlatDirectoryTransfer"/> class.
         /// </summary>
         /// <param name="source">Transfer source.</param>
         /// <param name="dest">Transfer destination.</param>
         /// <param name="transferMethod">Transfer method, see <see cref="TransferMethod"/> for detail available methods.</param>
-        public MultipleObjectsTransfer(TransferLocation source, TransferLocation dest, TransferMethod transferMethod)
+        public FlatDirectoryTransfer(TransferLocation source, TransferLocation dest, TransferMethod transferMethod)
             : base(source, dest, transferMethod)
         {
             this.subTransfers = new TransferCollection<SingleObjectTransfer>();
@@ -120,11 +111,11 @@ namespace Microsoft.Azure.Storage.DataMovement
 
 #if BINARY_SERIALIZATION
         /// <summary>
-        /// Initializes a new instance of the <see cref="MultipleObjectsTransfer"/> class.
+        /// Initializes a new instance of the <see cref="FlatDirectoryTransfer"/> class.
         /// </summary>
         /// <param name="info">Serialization information.</param>
         /// <param name="context">Streaming context.</param>
-        protected MultipleObjectsTransfer(SerializationInfo info, StreamingContext context)
+        protected FlatDirectoryTransfer(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             this.enumerateContinuationToken = (SerializableListContinuationToken)info.GetValue(ListContinuationTokenName, typeof(SerializableListContinuationToken));
@@ -176,13 +167,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                 = new TaskQueue<Tuple<SingleObjectTransfer, TransferEntry>>(TransferManager.Configurations.ParallelOperations * Constants.ListSegmentLengthMultiplier);
         }
 #endif
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="MultipleObjectsTransfer"/> class.
+        /// Initializes a new instance of the <see cref="FlatDirectoryTransfer"/> class.
         /// </summary>
-        /// <param name="other">Another <see cref="MultipleObjectsTransfer"/> object.</param>
-        protected MultipleObjectsTransfer(MultipleObjectsTransfer other)
-            : base(other)
+        /// <param name="other">Another <see cref="FlatDirectoryTransfer"/> object.</param>
+        private FlatDirectoryTransfer(FlatDirectoryTransfer other)
+            :base(other)
         {
             other.progressUpdateLock?.EnterWriteLock();
             this.ProgressTracker = other.ProgressTracker.Copy();
@@ -198,57 +188,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             other.progressUpdateLock?.ExitWriteLock();
         }
 
-        /// <summary>
-        /// Gets or sets the transfer context of this transfer.
-        /// </summary>
-        public override TransferContext Context
-        {
-            get
-            {
-                return this.dirTransferContext;
-            }
-
-            set
-            {
-                DirectoryTransferContext tempValue = value as DirectoryTransferContext;
-
-                if (tempValue == null)
-                {
-                    throw new ArgumentException("Requires a DirectoryTransferContext instance", "value");
-                }
-
-                this.dirTransferContext = tempValue;
-            }
-        }
-
-        /// <summary>
-        /// Gets the directory transfer context of this transfer.
-        /// </summary>
-        public DirectoryTransferContext DirectoryContext
-        {
-            get
-            {
-                return this.dirTransferContext;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the transfer enumerator for source location
-        /// </summary>
-        public ITransferEnumerator SourceEnumerator
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Gets or sets the maximum transfer concurrency
-        /// </summary>
-        public int MaxTransferConcurrency
-        {
-            get;
-            set;
-        }
 
 #if BINARY_SERIALIZATION
         /// <summary>
@@ -271,17 +210,14 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 #endif // BINARY_SERIALIZATION
 
-        /// <summary>
-        /// Execute the transfer asynchronously.
-        /// </summary>
-        /// <param name="scheduler">Transfer scheduler</param>
-        /// <param name="cancellationToken">Token that can be used to cancel the transfer.</param>
-        /// <returns>A task representing the transfer operation.</returns>
-        public override async Task ExecuteAsync(TransferScheduler scheduler, CancellationToken cancellationToken)
+        public override Transfer Copy()
+        {
+            return new FlatDirectoryTransfer(this);
+        }
+
+        public override async Task ExecuteInternalAsync(TransferScheduler scheduler, CancellationToken cancellationToken)
         {
             this.ResetExecutionStatus();
-
-            this.Destination.Validate();
 
             try
             {
@@ -296,7 +232,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 // wait for outstanding transfers to complete
                 await allTransfersCompleteSource.Task;
             }
-            
+
             if (this.enumerateException != null)
             {
                 throw this.enumerateException;
@@ -304,12 +240,6 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             this.ProgressTracker.AddBytesTransferred(0);
         }
-
-        protected abstract SingleObjectTransfer CreateTransfer(TransferEntry entry);
-
-        protected abstract void UpdateTransfer(Transfer transfer);
-
-        protected abstract void CreateParentDirectory(SingleObjectTransfer transfer);
 
         protected override void Dispose(bool disposing)
         {
@@ -499,27 +429,13 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
 
 #if DEBUG
-                FaultInjectionPoint fip = new FaultInjectionPoint(FaultInjectionPoint.FIP_ThrowExceptionAfterEnumerated);
-                string fiValue;
-                string filePath = entry.RelativePath;
-                CloudBlob sourceBlob = transfer.Source.Instance as CloudBlob;
-                if (sourceBlob != null && sourceBlob.IsSnapshot)
-                {
-                    filePath = Utils.AppendSnapShotTimeToFileName(filePath, sourceBlob.SnapshotTime);
-                }
-
-                if (fip.TryGetValue(out fiValue)
-                    && string.Equals(fiValue, filePath, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new TransferException(TransferErrorCode.Unknown, "test exception thrown because of ThrowExceptionAfterEnumerated is enabled", null);
-                }
+                Utils.HandleFaultInjection(entry.RelativePath, transfer);
 #endif
 
                 yield return transfer;
             }
         }
 
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Needed to ensure exceptions are not thrown on threadpool threads.")]
         private void EnumerateAndTransfer(TransferScheduler scheduler, CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref this.outstandingTasks);
@@ -529,11 +445,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                 foreach (var transfer in this.AllTransfers(cancellationToken))
                 {
                     this.CheckAndPauseEnumeration(cancellationToken);
-                    transfer.UpdateProgressLock(this.progressUpdateLock);                    
+                    transfer.UpdateProgressLock(this.progressUpdateLock);
+                    transfer.ShouldTransferChecked = true;
                     this.DoTransfer(transfer, scheduler, cancellationToken);
                 }
             }
-            catch(StorageException e)
+            catch (StorageException e)
             {
                 throw new TransferException(TransferErrorCode.FailToEnumerateDirectory, e.GetExceptionMessage(), e);
             }

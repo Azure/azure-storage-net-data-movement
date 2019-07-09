@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         /// Count of active tasks in this controller.
         /// </summary>
         private int activeTasks;
-
+        
         private volatile bool isFinished = false;
 
         private object lockOnFinished = new object();
@@ -150,6 +150,44 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         /// </summary>
         protected CancellationToken CancellationToken => this.cancellationTokenSource?.Token ?? CancellationToken.None;
 
+        protected async Task<bool> CheckShouldTransfer()
+        {
+            DirectoryTransferContext directoryTransferContext = this.TransferContext as DirectoryTransferContext;
+            if ((null != directoryTransferContext)
+                && (null != directoryTransferContext.ShouldTransferCallbackAsync))
+            {
+                await Task.Yield();
+                bool shouldTransfer = true;
+
+                try
+                {
+                    shouldTransfer = await directoryTransferContext.ShouldTransferCallbackAsync(this.TransferJob.Source.Instance, this.TransferJob.Destination.Instance);
+                }
+                catch (Exception ex)
+                {
+                    this.FinishCallbackHandler(new TransferException(TransferErrorCode.FailedCheckingShouldTransfer, string.Empty, ex));
+                    return true;
+                }
+
+                if (shouldTransfer)
+                {
+                    this.TransferJob.Transfer.ShouldTransferChecked = true;
+                }
+                else
+                {
+                    this.TransferJob.Status = TransferJobStatus.SkippedDueToShouldNotTransfer;
+                    this.FinishCallbackHandler(null);
+                    return true;
+                }
+            }
+            else
+            {
+                this.TransferJob.Transfer.ShouldTransferChecked = true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Do work in the controller.
         /// A controller controls the whole transfer from source to destination, 
@@ -275,14 +313,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         {
             if (Interlocked.CompareExchange(ref this.notifiedFinish, 1, 0) == 0)
             {
-                if (null != exception)
+                ThreadPool.QueueUserWorkItem((userData) =>
                 {
-                    this.TaskCompletionSource.SetException(exception);
-                }
-                else
-                {
-                    this.TaskCompletionSource.SetResult(null);
-                }
+                    if (null != exception)
+                    {
+                        this.TaskCompletionSource.SetException(exception);
+                    }
+                    else
+                    {
+                        this.TaskCompletionSource.SetResult(null);
+                    }
+                });
             }
         }
 
