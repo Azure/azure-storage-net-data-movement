@@ -207,21 +207,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return;
             }
 
-            TransferControllerBase controller = null;
-            switch (job.Transfer.TransferMethod)
-            {
-                case TransferMethod.SyncCopy:
-                    controller = new SyncTransferController(this, job, cancellationToken);
-                    break;
-
-                case TransferMethod.AsyncCopy:
-                    controller = AsyncCopyController.CreateAsyncCopyController(this, job, cancellationToken);
-                    break;
-
-                case TransferMethod.DummyCopy:
-                    controller = new DummyTransferController(this, job, cancellationToken);
-                    break;
-            }
+            TransferControllerBase controller = TransferControllerBase.GenerateTransferConstroller(this, job, cancellationToken);
 
             Utils.CheckCancellation(this.cancellationTokenSource.Token);
             this.controllerQueue.Add(controller, this.cancellationTokenSource.Token);

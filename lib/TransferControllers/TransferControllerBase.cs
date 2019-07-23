@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Storage.Blob;
     using Microsoft.Azure.Storage.DataMovement;
 
     internal abstract class TransferControllerBase : ITransferController, IDisposable
@@ -125,6 +126,48 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         {
             get;
             set;
+        }
+
+        public static TransferControllerBase GenerateTransferConstroller(
+            TransferScheduler transferScheduler,
+            TransferJob transferJob,
+            CancellationToken cancellationToken)
+        {
+            TransferControllerBase controller = null;
+            switch (transferJob.Transfer.TransferMethod)
+            {
+                case TransferMethod.SyncCopy:
+                        controller = new SyncTransferController(transferScheduler, transferJob, cancellationToken);
+                    break;
+
+                case TransferMethod.ServiceSideAsyncCopy:
+                    controller = AsyncCopyController.CreateAsyncCopyController(transferScheduler, transferJob, cancellationToken);
+                    break;
+
+                case TransferMethod.ServiceSideSyncCopy:
+                    if (transferJob.Destination.Instance is CloudBlockBlob)
+                    {
+                        controller = new BlockBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+                    }
+                    else if (transferJob.Destination.Instance is CloudAppendBlob)
+                    {
+                        controller = new AppendBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+                    }
+                    else if (transferJob.Destination.Instance is CloudPageBlob)
+                    {
+                        controller = new PageBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+                    }
+                    else
+                    {
+                        //TODO throw out exception
+                    }
+                    break;
+                case TransferMethod.DummyCopy:
+                    controller = new DummyTransferController(transferScheduler, transferJob, cancellationToken);
+                    break;
+            }
+
+            return controller;
         }
 
         /// <summary>
