@@ -265,13 +265,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             throw new InvalidOperationException(Resources.DestinationBlobTypeNotMatch, se);
                         }
                     }
-                    //else
-                    //{
-                    //    if (this.sourceBlob.Properties.BlobType != this.destBlob.Properties.BlobType)
-                    //    {
-                    //        throw new InvalidOperationException(Resources.SourceAndDestinationBlobTypeDifferent);
-                    //    }
-                    //}
                     return false;
                 }
             }
@@ -344,6 +337,20 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.state = State.Error;
             this.hasWork = false;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            base.Dispose(disposing);
+
+            if (disposing)
+            {
+                if (null != this.countdownEvent)
+                {
+                    this.countdownEvent.Dispose();
+                    this.countdownEvent = null;
+                }
+            }
         }
 
         private async Task CopyBlockAsync()
@@ -430,10 +437,16 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.destLocation.CheckedAccessCondition = true;
 
-            lock (checkpoint.TransferWindowLock)
+            this.UpdateProgress(() =>
             {
-                checkpoint.TransferWindow.Remove(startOffset);
-            }
+                lock (checkpoint.TransferWindowLock)
+                {
+                    checkpoint.TransferWindow.Remove(startOffset);
+                }
+                this.TransferJob.Transfer.UpdateJournal();
+
+                this.UpdateProgressAddBytesTransferred(length);
+            });
 
             this.FinishBlock();
         }

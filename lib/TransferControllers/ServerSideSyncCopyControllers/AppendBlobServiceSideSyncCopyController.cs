@@ -150,7 +150,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
 
             this.totalLength = this.sourceBlob.Properties.Length;
-
+            this.sourceLocation.ETag = this.sourceBlob.Properties.ETag;
+            this.sourceLocation.CheckedAccessCondition = true;
+            // No actual data change has made yet, no need for journal updating.
+            
             if (0 == this.TransferJob.CheckPoint.EntryTransferOffset)
             {
                 this.state = State.GetDestination;
@@ -202,6 +205,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                         needCreateDestination = false;
                         this.destLocation.CheckedAccessCondition = true;
+                        this.TransferJob.Transfer.UpdateJournal();
                     }
                     catch (StorageException se)
                     {
@@ -228,6 +232,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext));
+
+                this.destLocation.CheckedAccessCondition = true;
+                this.TransferJob.Transfer.UpdateJournal();
             }
 
             this.state = State.Copy;
@@ -249,7 +256,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             if (this.sourceLocation.CheckedAccessCondition)
             {
-                sourceAccessCondition = AccessCondition.GenerateIfMatchCondition(this.sourceBlob.Properties.ETag);
+                sourceAccessCondition = AccessCondition.GenerateIfMatchCondition(this.sourceLocation.ETag);
             }
             else
             {
@@ -297,7 +304,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.sourceLocation.CheckedAccessCondition = true;
 
-            this.TransferJob.CheckPoint.EntryTransferOffset += length;
+            this.UpdateProgress(() =>
+            {
+                this.TransferJob.CheckPoint.EntryTransferOffset += length;
+                this.TransferJob.Transfer.UpdateJournal();
+                this.UpdateProgressAddBytesTransferred(length);
+            });
+
             if (this.TransferJob.CheckPoint.EntryTransferOffset == this.totalLength)
             {
                 this.state = State.Commit;
