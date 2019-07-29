@@ -246,7 +246,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
                     catch (StorageException se)
                     {
-                        if ((null != se.RequestInformation) && ((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode))
+                        if ((null != se.RequestInformation) && 
+                            (((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode)
+                            || (((int)HttpStatusCode.Conflict == se.RequestInformation.HttpStatusCode)
+                                    && string.Equals(se.RequestInformation.ErrorCode, "BlobAlreadyExists"))))
                         {
                             await this.CheckOverwriteAsync(
                                 true,
