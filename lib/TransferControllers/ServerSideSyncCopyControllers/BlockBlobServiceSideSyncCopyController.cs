@@ -41,7 +41,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private string BlockIdPrefix;
 
-        private object blockIdsLock = new object();
         private AzureBlobLocation sourceLocation;
         private AzureBlobLocation destLocation;
 
@@ -188,10 +187,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             if (this.IsForceOverwrite)
             {
-                this.PrepareForCopy();
-
-                // Handle record overwrite here.
-                this.state = State.Copy;
+                PrepareForCopy();
             }
             else
             {
@@ -277,7 +273,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.sourceBlob.Uri.ToString(),
                 this.destBlob.Uri.ToString());
 
-            this.state = State.Copy;
+            PrepareForCopy();
 
             this.hasWork = true;
             return true;
@@ -286,7 +282,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         private void PrepareForCopy()
         {
             this.blockSize = TransferManager.Configurations.BlockSize;
-
             SingleObjectCheckpoint checkpoint = this.TransferJob.CheckPoint;
 
             if (null != checkpoint.TransferWindow)
@@ -294,12 +289,21 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.lastTransferWindow = new Queue<long>(checkpoint.TransferWindow);
             }
 
-            int blockCount = null == this.lastTransferWindow ? 0 : this.lastTransferWindow.Count + (int)Math.Ceiling((double)(totalLength - checkpoint.EntryTransferOffset) / this.blockSize);
-            this.countdownEvent = new CountdownEvent(blockCount);
-
             this.blockIds = new SortedDictionary<int, string>();
             this.BlockIdPrefix = GenerateBlockIdPrefix();
             this.InitializeBlockIds();
+            int blockCount = null == this.lastTransferWindow ? 0 : this.lastTransferWindow.Count + (int)Math.Ceiling((double)(totalLength - checkpoint.EntryTransferOffset) / this.blockSize);
+
+            if (0 == blockCount)
+            {
+                this.state = State.Commit;
+            }
+            else
+            {
+                this.countdownEvent = new CountdownEvent(blockCount);
+                // Handle record overwrite here.
+                this.state = State.Copy;
+            }
         }
 
         private void InitializeBlockIds()

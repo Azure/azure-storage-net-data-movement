@@ -199,54 +199,18 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.sourcePageBlob = this.sourceBlob as CloudPageBlob;
                 this.pagesToCopy = new List<long>();
                 this.pageListBag = new ConcurrentBag<List<long>>();
+            }
 
-                if (0 == this.TransferJob.CheckPoint.EntryTransferOffset)
-                {
-                    this.state = State.GetDestination;
-                }
-                else
-                {
-                    this.nextRangesSpanOffset = this.TransferJob.CheckPoint.EntryTransferOffset;
-                    if (this.nextRangesSpanOffset == this.totalLength)
-                    {
-                        this.PrepareForCopy();
-
-                        if (null == this.lastTransferWindow)
-                        {
-                            this.state = State.Commit;
-                        }
-                        else
-                        {
-                            this.state = State.Copy;
-                        }
-                    }
-                    else
-                    {
-                        this.PrepareForGetRanges();
-                        this.state = State.GetRanges;
-                    }
-                }
+            if (0 == this.TransferJob.CheckPoint.EntryTransferOffset)
+            {
+                this.state = State.GetDestination;
             }
             else
             {
                 this.PrepareForCopy();
-                if (0 == this.TransferJob.CheckPoint.EntryTransferOffset)
-                {
-                    this.state = State.GetDestination;
-                }
-                else
-                {
-                    this.state = State.Copy;
-                }
             }
 
             this.hasWork = true;
-        }
-
-        private void PrepareForGetRanges()
-        {
-            int rangeSpanCount = (int)Math.Ceiling(((double)(this.totalLength - this.nextRangesSpanOffset)) / Constants.PageRangesSpanSize);
-            this.getRangesCountdownEvent = new CountdownEvent(rangeSpanCount);
         }
 
         private async Task GetDestinationAsync()
@@ -310,23 +274,48 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.TransferJob.Transfer.UpdateJournal();
             }
 
-            await this.destBlob.ClearPagesAsync(0, this.totalLength,
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
-                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                    Utils.GenerateOperationContext(this.TransferContext),
-                    this.CancellationToken);
+            if (0 != this.totalLength)
+            {
+                await this.destBlob.ClearPagesAsync(0, this.totalLength,
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
+                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                        Utils.GenerateOperationContext(this.TransferContext),
+                        this.CancellationToken);
+            }
 
+            PrepareForCopy();
+            this.hasWork = true;
+        }
+
+        private void PrepareForCopy()
+        {
             if (null != this.sourcePageBlob)
             {
-                this.PrepareForGetRanges();
-                this.state = State.GetRanges;
+                this.nextRangesSpanOffset = this.TransferJob.CheckPoint.EntryTransferOffset;
+                if (this.nextRangesSpanOffset == this.totalLength)
+                {
+                    this.InitializeCopyStatus();
+                    if (null == this.lastTransferWindow)
+                    {
+                        this.state = State.Commit;
+                    }
+                    else
+                    {
+                        this.state = State.Copy;
+                    }
+                }
+                else
+                {
+                    int rangeSpanCount = (int)Math.Ceiling(((double)(this.totalLength - this.nextRangesSpanOffset)) / Constants.PageRangesSpanSize);
+                    this.getRangesCountdownEvent = new CountdownEvent(rangeSpanCount);
+                    this.state = State.GetRanges;
+                }
             }
             else
             {
+                this.InitializeCopyStatus();
                 this.state = State.Copy;
             }
-
-            this.hasWork = true;
         }
 
         private async Task GetRangesAsync()
@@ -408,7 +397,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
         }
 
-        private void PrepareForCopy()
+        private void InitializeCopyStatus()
         {
             int pageLength = TransferManager.Configurations.BlockSize;
 
@@ -603,17 +592,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             var sourceProperties = this.sourceBlob.Properties;
 
             Utils.SetAttributes(this.destBlob,
-                new Attributes()
-                {
-                    CacheControl = sourceProperties.CacheControl,
-                    ContentDisposition = sourceProperties.ContentDisposition,
-                    ContentEncoding = sourceProperties.ContentEncoding,
-                    ContentLanguage = sourceProperties.ContentLanguage,
-                    ContentMD5 = sourceProperties.ContentMD5,
-                    ContentType = sourceProperties.ContentType,
-                    Metadata = this.sourceBlob.Metadata,
-                    OverWriteAll = true
-                });
+                this.sourceAttributes);
 
             await this.SetCustomAttributesAsync(this.destBlob);
 

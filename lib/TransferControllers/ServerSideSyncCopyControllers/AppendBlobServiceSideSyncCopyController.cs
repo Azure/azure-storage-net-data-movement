@@ -160,7 +160,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                this.state = State.Copy;
+                if (this.TransferJob.CheckPoint.EntryTransferOffset == this.totalLength)
+                {
+                    this.state = State.Commit;
+                }
+                else
+                {
+                    this.state = State.Copy;
+                }
             }
 
             this.hasWork = true;
@@ -209,7 +216,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
                     catch (StorageException se)
                     {
-                        if ((null != se.RequestInformation) && ((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode))
+                        if ((null != se.RequestInformation) 
+                            && (((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode))
+                                || (((int)HttpStatusCode.Conflict == se.RequestInformation.HttpStatusCode)
+                                    &&string.Equals(se.RequestInformation.ErrorCode, "BlobAlreadyExists")))
                         {
                             await this.CheckOverwriteAsync(
                                 true,
@@ -237,7 +247,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.TransferJob.Transfer.UpdateJournal();
             }
 
-            this.state = State.Copy;
+            if (this.TransferJob.CheckPoint.EntryTransferOffset == this.totalLength)
+            {
+                this.state = State.Commit;
+            }
+            else
+            {
+                this.state = State.Copy;
+            }
             this.hasWork = true;
         }
 
