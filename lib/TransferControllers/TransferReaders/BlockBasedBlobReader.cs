@@ -358,7 +358,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                var blockSize = Constants.DefaultBlockSize; // 4MB
+                var blockSize = Constants.DefaultChunkSize; // 4MB
 
                 var startOffset = asyncState.StartOffset;
                 var remainingLength = asyncState.Length;

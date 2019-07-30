@@ -58,17 +58,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 // new block size will be mutiple of DefaultBlockSize(aka MemoryManager's chunk size)
                 if (this.writer is BlockBlobWriter)
                 {
-                    var normalMaxBlockBlobSize = (long)50000 * Constants.DefaultBlockSize;
+                    var normalMaxBlockBlobSize = (long)50000 * Constants.DefaultChunkSize;
 
                     // Calculate the min block size according to the blob total length
                     var memoryChunksRequiredEachTime = (int)Math.Ceiling((double)this.SharedTransferData.TotalLength / normalMaxBlockBlobSize);
-                    var blockSize = memoryChunksRequiredEachTime * Constants.DefaultBlockSize;
+                    var blockSize = memoryChunksRequiredEachTime * Constants.DefaultChunkSize;
 
                     // Take the block size user specified when it's greater than the calculated value
                     if (TransferManager.Configurations.BlockSize > blockSize)
                     {
                         blockSize = TransferManager.Configurations.BlockSize;
-                        memoryChunksRequiredEachTime = (int)Math.Ceiling((double)blockSize / Constants.DefaultBlockSize);
+                        memoryChunksRequiredEachTime = (int)Math.Ceiling((double)blockSize / Constants.DefaultMemoryChunkSize);
                     }
                     else
                     {
@@ -82,8 +82,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     {
                         // Note total length could be 0, in this case, use default block size.
                         memoryChunksRequiredEachTime = Math.Max(1,
-                            (int)Math.Ceiling((double)this.SharedTransferData.TotalLength / Constants.DefaultBlockSize));
-                        blockSize = memoryChunksRequiredEachTime * Constants.DefaultBlockSize;
+                            (int)Math.Ceiling((double)this.SharedTransferData.TotalLength / Constants.DefaultMemoryChunkSize));
+                        blockSize = memoryChunksRequiredEachTime * Constants.DefaultMemoryChunkSize;
                     }
                     this.SharedTransferData.BlockSize = blockSize;
                     this.SharedTransferData.MemoryChunksRequiredEachTime = memoryChunksRequiredEachTime;
@@ -91,7 +91,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 else
                 {
                     // For normal directions, we'll use default block size 4MB for transfer.
-                    this.SharedTransferData.BlockSize = Constants.DefaultBlockSize;
+                    this.SharedTransferData.BlockSize = Constants.DefaultChunkSize;
                     this.SharedTransferData.MemoryChunksRequiredEachTime = 1;
                 }
             };

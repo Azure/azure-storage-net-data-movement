@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         public TransferConfigurations()
         {
             // setup default values.
-            this.blockSize = Constants.DefaultBlockSize;
+            this.blockSize = Constants.DefaultBlockBlobBlockSize;
             this.parallelOperations = Environment.ProcessorCount * 8;
             this.MemoryChunkSize = Constants.DefaultMemoryChunkSize;
 
@@ -107,7 +107,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     throw new ArgumentOutOfRangeException("value", value, errorMessage);
                 }
 
-                if (value % Constants.DefaultBlockSize != 0)
+                if (value % Constants.DefaultChunkSize != 0)
                 {
                     throw new ArgumentException(Resources.BlockSizeMustBeMultipleOf4MB, "value");
                 }
@@ -140,12 +140,12 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             set
             {
-                if (value < Constants.DefaultBlockSize)
+                if (value < Constants.DefaultChunkSize)
                 {
                     throw new ArgumentException(string.Format(
                         CultureInfo.CurrentCulture,
                         Resources.SmallMemoryCacheSizeLimitationException,
-                        Utils.BytesToHumanReadableSize(Constants.DefaultBlockSize)));
+                        Utils.BytesToHumanReadableSize(Constants.DefaultChunkSize)));
                 }
 
                 if (0 == this.memStatus.AvailablePhysicalMemory)

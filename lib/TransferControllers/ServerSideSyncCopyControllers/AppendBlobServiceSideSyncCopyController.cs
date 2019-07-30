@@ -46,7 +46,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private State state;
 
-        private long blockSize = Constants.DefaultBlockSize;
+        private long blockSize = Constants.DefaultChunkSize;
 
         private long totalLength;
 
