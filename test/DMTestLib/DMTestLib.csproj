@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DMLibCopyMethod.cs" />
     <Compile Include="DirectionFilter.cs" />
     <Compile Include="DMLibDataType.cs" />
     <Compile Include="DMLibDirectionFilter.cs" />

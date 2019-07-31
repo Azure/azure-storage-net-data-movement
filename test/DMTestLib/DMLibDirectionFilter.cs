@@ -9,7 +9,7 @@ namespace DMLibTestCodeGen
 
     internal class DMLibDirectionFilter : DirectionFilter
     {
-        public bool? IsAsync
+        public DMLibCopyMethod? CopyMethod
         {
             get;
             set;
@@ -29,7 +29,7 @@ namespace DMLibTestCodeGen
 
         public DMLibDirectionFilter(string queryString = null)
         {
-            this.IsAsync = null;
+            this.CopyMethod = null;
             this.SourceType = DMLibDataType.Unspecified;
             this.DestType = DMLibDataType.Unspecified;
 
@@ -64,7 +64,7 @@ namespace DMLibTestCodeGen
                 throw new ArgumentException("DMLibDirectionFilter is only applicable to DMLibTransferDirection.", "direction");
             }
 
-            if (this.IsAsync != null && this.IsAsync != DMLibDirection.IsAsync)
+            if (this.CopyMethod != null && this.CopyMethod != DMLibDirection.CopyMethod)
             {
                 return false;
             }

@@ -11,7 +11,7 @@ namespace DMLibTestCodeGen
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
     public class DMLibTestMethodAttribute : MultiDirectionTestMethodAttribute, ITestDirection<DMLibDataType>
     {
-        public bool IsAsync
+        public DMLibCopyMethod CopyMethod
         {
             get;
             private set;
@@ -30,27 +30,27 @@ namespace DMLibTestCodeGen
         }
 
         public DMLibTestMethodAttribute(
-            DMLibDataType dataType,
-            bool isAsync = false,
-            string[] tags = null)
-            : this(
-            dataType,
-            DMLibDataType.Unspecified,
-            isAsync,
-            tags)
+           DMLibDataType dataType,
+           DMLibCopyMethod copymethod = DMLibCopyMethod.SyncCopy,
+           string[] tags = null)
+           : this(
+           dataType,
+           DMLibDataType.Unspecified,
+           copymethod,
+           tags)
         {
         }
 
         public DMLibTestMethodAttribute(
             DMLibDataType sourceType,
             DMLibDataType destType,
-            bool isAsync = false,
+            DMLibCopyMethod copymethod = DMLibCopyMethod.SyncCopy,
             string[] tags = null)
             : base(tags)
         {
             this.SourceType = sourceType;
             this.DestType = destType;
-            this.IsAsync = isAsync;
+            this.CopyMethod = copymethod;
         }
 
         internal override IEnumerable<TestMethodDirection> ExtractDirections()
@@ -63,7 +63,7 @@ namespace DMLibTestCodeGen
                         new DMLibTransferDirection(
                             sourceType,
                             sourceType,
-                            this.IsAsync,
+                            this.CopyMethod,
                             new List<string>(this.Tags));
                     yield return transferDirection;
                 }
@@ -78,7 +78,7 @@ namespace DMLibTestCodeGen
                             new DMLibTransferDirection(
                                 sourceType,
                                 destType,
-                                this.IsAsync,
+                                this.CopyMethod,
                                 new List<string>(this.Tags));
                         yield return transferDirection;
                     }

@@ -174,7 +174,7 @@ namespace DMLibTest.Cases
                 IsDirectoryTransfer = true,
                 SourceType = DMLibTestContext.SourceType,
                 DestType = DMLibTestContext.DestType,
-                IsServiceCopy = DMLibTestContext.IsAsync,
+                CopyMethod = DMLibTestContext.CopyMethod.ToCopyMethod(),
                 TransferContext = context,
                 Options = new DownloadDirectoryOptions()
                 {
@@ -190,7 +190,7 @@ namespace DMLibTest.Cases
                 IsDirectoryTransfer = true,
                 SourceType = DMLibTestContext.SourceType,
                 DestType = DMLibTestContext.DestType,
-                IsServiceCopy = DMLibTestContext.IsAsync,
+                CopyMethod = DMLibTestContext.CopyMethod.ToCopyMethod(),
                 TransferContext = context,
                 Options = new DownloadDirectoryOptions()
                 {
@@ -290,7 +290,7 @@ namespace DMLibTest.Cases
                 IsDirectoryTransfer = true,
                 SourceType = DMLibTestContext.SourceType,
                 DestType = DMLibTestContext.DestType,
-                IsServiceCopy = DMLibTestContext.IsAsync,
+                CopyMethod = DMLibTestContext.CopyMethod.ToCopyMethod(),
                 TransferContext = context,
                 Options = new DownloadDirectoryOptions()
                 {
@@ -307,7 +307,7 @@ namespace DMLibTest.Cases
                 IsDirectoryTransfer = true,
                 SourceType = DMLibTestContext.SourceType,
                 DestType = DMLibTestContext.DestType,
-                IsServiceCopy = DMLibTestContext.IsAsync,
+                CopyMethod = DMLibTestContext.CopyMethod.ToCopyMethod(),
                 TransferContext = context,
                 Options = new DownloadDirectoryOptions()
                 {
@@ -444,7 +444,7 @@ namespace DMLibTest.Cases
                     IsDirectoryTransfer = true,
                     SourceType = DMLibTestContext.SourceType,
                     DestType = DMLibTestContext.DestType,
-                    IsServiceCopy = DMLibTestContext.IsAsync,
+                    CopyMethod = DMLibTestContext.CopyMethod.ToCopyMethod(),
                     TransferContext = context,
                     Options = new DownloadDirectoryOptions()
                     {

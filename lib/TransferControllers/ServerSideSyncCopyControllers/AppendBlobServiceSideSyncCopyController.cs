@@ -50,6 +50,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private long totalLength;
 
+        private bool gotDestAttributes = false;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="AppendBlobServiceSideSyncCopyController"/> class.
         /// </summary>
@@ -133,9 +135,16 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
             this.StartCallbackHandler();
 
+            AccessCondition accessCondition = null == this.sourceLocation.ETag ?
+                Utils.GenerateConditionWithCustomerCondition(this.sourceLocation.AccessCondition, this.sourceLocation.CheckedAccessCondition) : 
+                Utils.GenerateIfMatchConditionWithCustomerCondition(this.sourceLocation.ETag, this.sourceLocation.AccessCondition, this.destLocation.CheckedAccessCondition);
+
             try
             {
-                await this.sourceBlob.FetchAttributesAsync();
+                await this.sourceBlob.FetchAttributesAsync(
+                    accessCondition,
+                    Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
+                    Utils.GenerateOperationContext(this.TransferContext));
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
@@ -200,9 +209,38 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             this.destBlob.Uri.ToString());
                     }
                 }
+                else if (!this.destLocation.CheckedAccessCondition && null != this.destLocation.AccessCondition)
+                {
+                    try
+                    {
+                        await this.destBlob.FetchAttributesAsync(
+                            Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, false),
+                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                            Utils.GenerateOperationContext(this.TransferContext),
+                            this.CancellationToken);
+
+                        this.destLocation.CheckedAccessCondition = true;
+
+                        await this.CheckOverwriteAsync(
+                            true,
+                            this.sourceBlob.Uri.ToString(),
+                            this.destBlob.Uri.ToString());
+
+                        this.gotDestAttributes = true;
+                    }
+                    catch (StorageException se)
+                    {
+                        if ((null == se.RequestInformation) || ((int)HttpStatusCode.NotFound != se.RequestInformation.HttpStatusCode))
+                        {
+                            throw;
+                        }
+                    }
+                }
                 else
                 {
-                    AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+                    AccessCondition accessCondition = new AccessCondition();
+                    accessCondition.IfNoneMatchETag = "*";
+
                     try
                     {
                         await this.destBlob.CreateOrReplaceAsync(
@@ -216,10 +254,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
                     catch (StorageException se)
                     {
-                        if ((null != se.RequestInformation) 
+                        if ((null != se.RequestInformation)
                             && (((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode))
                                 || (((int)HttpStatusCode.Conflict == se.RequestInformation.HttpStatusCode)
-                                    &&string.Equals(se.RequestInformation.ErrorCode, "BlobAlreadyExists")))
+                                    && string.Equals(se.RequestInformation.ErrorCode, "BlobAlreadyExists")))
                         {
                             await this.CheckOverwriteAsync(
                                 true,
@@ -232,6 +270,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         }
                     }
                 }
+            }
+            else
+            {
+                this.gotDestAttributes = true;
             }
 
             Utils.CheckCancellation(this.CancellationToken);
@@ -269,16 +311,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             Uri sourceUri = this.sourceBlob.GenerateCopySourceUri();
 
-            AccessCondition sourceAccessCondition = null;
-
-            if (this.sourceLocation.CheckedAccessCondition)
-            {
-                sourceAccessCondition = AccessCondition.GenerateIfMatchCondition(this.sourceLocation.ETag);
-            }
-            else
-            {
-                sourceAccessCondition = Utils.GenerateConditionWithCustomerCondition(this.sourceLocation.AccessCondition, false);
-            }
+            AccessCondition sourceAccessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
+                this.sourceLocation.ETag, this.sourceLocation.AccessCondition, true);
 
             AccessCondition destAccessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true) ?? new AccessCondition();
             destAccessCondition.IfAppendPositionEqual = startOffset;
@@ -400,7 +434,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
 
-            if (!this.IsForceOverwrite)// && !this.destExist)
+            if (this.gotDestAttributes)
             {
                 await Utils.ExecuteXsclApiCallAsync(
                     async () => await this.destBlob.FetchAttributesAsync(
@@ -412,7 +446,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
 
             var originalMetadata = new Dictionary<string, string>(this.destBlob.Metadata);
-
             var sourceProperties = this.sourceBlob.Properties;
 
             Utils.SetAttributes(this.destBlob,

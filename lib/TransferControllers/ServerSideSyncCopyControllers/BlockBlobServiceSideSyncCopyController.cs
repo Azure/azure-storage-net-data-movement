@@ -56,6 +56,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         private Queue<long> lastTransferWindow;
         private Attributes sourceAttributes = null;
 
+        private bool gotDestinationAttributes = false;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="BlockBlobServiceSideSyncCopyController"/> class.
         /// </summary>
@@ -185,7 +187,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.totalLength = this.sourceBlob.Properties.Length;
 
-            if (this.IsForceOverwrite)
+            if (this.IsForceOverwrite && null == this.destLocation.AccessCondition)
             {
                 PrepareForCopy();
             }
@@ -233,7 +235,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private async Task<bool> HandleGetDestinationResultAsync(Exception e)
         {
-            bool destExist = false;
+            bool destExist = true;
 
             if (null != e)
             {
@@ -266,13 +268,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
 
             this.destLocation.CheckedAccessCondition = true;
-            
-            // If destination file exists, query user whether to overwrite it.
-            await this.CheckOverwriteAsync(
-                destExist,
-                this.sourceBlob.Uri.ToString(),
-                this.destBlob.Uri.ToString());
 
+            if (!this.IsForceOverwrite)
+            {
+                // If destination file exists, query user whether to overwrite it.
+                await this.CheckOverwriteAsync(
+                    destExist,
+                    this.sourceBlob.Uri.ToString(),
+                    this.destBlob.Uri.ToString());
+            }
+
+            this.gotDestinationAttributes = true;
             PrepareForCopy();
 
             this.hasWork = true;
@@ -420,9 +426,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             Uri sourceUri = this.sourceBlob.GenerateCopySourceUri();
             long length = Math.Min(this.totalLength - startOffset, this.blockSize);
             
-            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
-                this.destLocation.AccessCondition,
-                this.destLocation.CheckedAccessCondition);
+            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true);
 
             var operationContext = Utils.GenerateOperationContext(this.TransferContext);
             operationContext.UserHeaders = new Dictionary<string, string>(capacity: 1);
@@ -440,8 +444,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 operationContext,
                 this.CancellationToken);
-
-            this.destLocation.CheckedAccessCondition = true;
 
             this.UpdateProgress(() =>
             {
@@ -497,8 +499,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             // Content-Type, REST API SetBlobProperties must be called explicitly:
             // 1. The attributes are inherited from others and Content-Type is null or empty.
             // 2. User specifies Content-Type to string.Empty while uploading.
-            if ((this.IsForceOverwrite && string.IsNullOrEmpty(this.sourceAttributes.ContentType))
-                || (!this.IsForceOverwrite && this.sourceAttributes.ContentType == string.Empty))
+            if ((this.gotDestinationAttributes && string.IsNullOrEmpty(this.sourceAttributes.ContentType))
+                || (!this.gotDestinationAttributes && this.sourceAttributes.ContentType == string.Empty))
             {
                 await this.destBlob.SetPropertiesAsync(
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),

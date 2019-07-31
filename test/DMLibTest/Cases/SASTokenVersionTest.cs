@@ -83,7 +83,11 @@ namespace DMLibTest.Cases
         {
             foreach (var targetSASVersion in SASVersions)
             {
-                this.TestSASTokenOfEachVersion(targetSASVersion, false);
+                if ((DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideSyncCopy)
+                    || (string.Compare("2014", targetSASVersion) <= 0))
+                {
+                    this.TestSASTokenOfEachVersion(targetSASVersion, false);
+                }
             }
         }
 
@@ -93,7 +97,11 @@ namespace DMLibTest.Cases
         {
             foreach (var targetSASVersion in SASVersions)
             {
-                this.TestSASTokenOfEachVersion(targetSASVersion, true);
+                if ((DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideSyncCopy)
+                    || (string.Compare("2014", targetSASVersion) <= 0))
+                {
+                    this.TestSASTokenOfEachVersion(targetSASVersion, true);
+                }
             }
         }
 
@@ -185,7 +193,7 @@ namespace DMLibTest.Cases
                     break;
             }
 
-            if (!DMLibTestContext.IsAsync
+            if ((DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy)
                 || (string.CompareOrdinal(targetSASVersion, "2014-02-14") >= 0))
             {
                 switch (DMLibTestContext.DestType)
@@ -205,7 +213,7 @@ namespace DMLibTest.Cases
                         destSAS = Util.SASGenerator.GetSharedAccessSignature(blobAdaptor.GetBaseContainer(),
                             new SharedAccessBlobPolicy
                             {
-                                Permissions = DMLibTestContext.IsAsync ? SharedAccessBlobPermissions.Write | SharedAccessBlobPermissions.Read : SharedAccessBlobPermissions.Write,
+                                Permissions = (DMLibTestContext.CopyMethod == DMLibCopyMethod.ServiceSideAsyncCopy) ? SharedAccessBlobPermissions.Write | SharedAccessBlobPermissions.Read : SharedAccessBlobPermissions.Write,
                                 SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddHours(1)
                             },
                             null,
@@ -225,7 +233,7 @@ namespace DMLibTest.Cases
                             fileAdaptor.GetBaseShare(),
                             new SharedAccessFilePolicy
                             {
-                                Permissions = DMLibTestContext.IsAsync ? SharedAccessFilePermissions.Write | SharedAccessFilePermissions.Read : SharedAccessFilePermissions.Write,
+                                Permissions = (DMLibTestContext.CopyMethod == DMLibCopyMethod.ServiceSideAsyncCopy) ? SharedAccessFilePermissions.Write | SharedAccessFilePermissions.Read : SharedAccessFilePermissions.Write,
                                 SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddHours(1)
                             },
                             null,

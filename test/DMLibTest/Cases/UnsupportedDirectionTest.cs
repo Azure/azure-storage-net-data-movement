@@ -64,13 +64,14 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.CloudBlob & ~DMLibDataType.BlockBlob)]
         [DMLibTestMethod(DMLibDataType.AppendBlob, DMLibDataType.CloudBlob & ~DMLibDataType.AppendBlob)]
         [DMLibTestMethod(DMLibDataType.PageBlob, DMLibDataType.CloudBlob & ~DMLibDataType.PageBlob)]
-        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.CloudBlob & ~DMLibDataType.BlockBlob, isAsync: true)]
-        [DMLibTestMethod(DMLibDataType.AppendBlob, DMLibDataType.CloudBlob & ~DMLibDataType.AppendBlob, isAsync: true)]
-        [DMLibTestMethod(DMLibDataType.PageBlob, DMLibDataType.CloudBlob & ~DMLibDataType.PageBlob, isAsync: true)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.PageBlob, isAsync: true)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.AppendBlob, isAsync: true)]
+        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.CloudBlob & ~DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        [DMLibTestMethod(DMLibDataType.AppendBlob, DMLibDataType.CloudBlob & ~DMLibDataType.AppendBlob, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        [DMLibTestMethod(DMLibDataType.PageBlob, DMLibDataType.CloudBlob & ~DMLibDataType.PageBlob, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.PageBlob, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.AppendBlob, DMLibCopyMethod.ServiceSideAsyncCopy)]
         [DMLibTestMethod(DMLibDataType.URI, DMLibDataType.CloudFile)]
         [DMLibTestMethod(DMLibDataType.URI, DMLibDataType.CloudBlob)]
+        // TODO: add more test cases
         public void TestUnsupportedDirection()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);

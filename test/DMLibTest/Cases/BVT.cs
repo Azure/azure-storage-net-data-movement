@@ -92,8 +92,8 @@ namespace DMLibTest
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
-            // For sync copy, recalculate md5 of destination by downloading the file to local.
-            if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+            // For sync copy and service side sync copy, recalculate md5 of destination by downloading the file to local.
+            if (IsCloudService(DMLibTestContext.DestType) && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
             {
                 DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
             }
@@ -113,7 +113,7 @@ namespace DMLibTest
             options.AfterDataPrepared = () =>
                 {
                     if ((DMLibTestContext.SourceType == DMLibDataType.CloudFile || DMLibTestContext.SourceType == DMLibDataType.PageBlob) &&
-                        !DMLibTestContext.IsAsync)
+                        (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
                     {
                         string sparseFileName = "SparseFile";
 
@@ -142,7 +142,7 @@ namespace DMLibTest
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
              // For sync copy, recalculate md5 of destination by downloading the file to local.
-             if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+             if (IsCloudService(DMLibTestContext.DestType) && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
              {
                  DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
              }

@@ -63,6 +63,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.Local | DMLibDataType.BlockBlob | DMLibDataType.CloudFile | DMLibDataType.Stream, DMLibDataType.BlockBlob)]
+        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void ToLbb_8MBBlockSizeAndSmallFiles()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
@@ -86,6 +87,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.Local | DMLibDataType.BlockBlob | DMLibDataType.CloudFile | DMLibDataType.Stream, DMLibDataType.BlockBlob)]
+        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void ToLbb_16MBBlockSizeAndSmallFiles()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
@@ -112,6 +114,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.Local | DMLibDataType.BlockBlob | DMLibDataType.CloudFile | DMLibDataType.Stream, DMLibDataType.BlockBlob)]
+        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void ToLbb_100MBBlockSizeAndSmallFiles()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
@@ -135,6 +138,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob)]
+        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void LbbToLbb_From100MBBlockSizeTo100MBBlockSizeAndSmallFiles()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
@@ -158,6 +162,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob)]
+        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void LbbToLbb_From100MBBlockSizeTo8MBBlockSizeAndSmallFiles()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
@@ -181,6 +186,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.Local | DMLibDataType.BlockBlob | DMLibDataType.CloudFile | DMLibDataType.Stream, DMLibDataType.BlockBlob)]
+        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void ToLbb_MultiFiles_40MBBlockSizeAndSmallFiles()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
@@ -206,6 +212,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob)]
+        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void LbbToLbb_MultiFiles_60MBBlockSizeAndSmallFiles()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);

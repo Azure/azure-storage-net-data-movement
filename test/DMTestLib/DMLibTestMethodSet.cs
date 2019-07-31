@@ -14,6 +14,7 @@ namespace DMLibTestCodeGen
         Cloud2Cloud,
         AllAsync,
         AllSync,
+        AllServiceSideSync,
         CloudSource,
         CloudBlobSource,
         CloudFileSource,
@@ -27,6 +28,7 @@ namespace DMLibTestCodeGen
         DirCloud2Cloud,
         DirAllAsync,
         DirAllSync,
+        DirAllServiceSideSync,
         DirCloudSource,
         DirCloudBlobSource,
         DirCloudFileSource,
@@ -57,10 +59,12 @@ namespace DMLibTestCodeGen
             AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob));
             
             // Async copy
-            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.URI, DMLibDataType.Cloud, isAsync: true));
-            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, isAsync: true));
-            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile, isAsync: true));
-            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.BlockBlob, isAsync: true));
+            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.URI, DMLibDataType.Cloud, DMLibCopyMethod.ServiceSideAsyncCopy));
+            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideAsyncCopy));
+            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy));
+            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideAsyncCopy));
+
+            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy));
 
             // All valid directory transfer directions
             DirAllValidDirectionSet = new DMLibTestMethodSetAttribute();
@@ -72,9 +76,10 @@ namespace DMLibTestCodeGen
             DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob));
 
             // Async copy
-            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, isAsync: true));
-            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile, isAsync: true));
-            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.BlockBlob, isAsync: true));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideAsyncCopy));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideAsyncCopy));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy));
         }
 
         public DMLibTestMethodSetAttribute()
@@ -117,14 +122,21 @@ namespace DMLibTestCodeGen
                     this.AddTestMethodAttribute(AllValidDirectionSet);
                     this.AddDirectionFilter(new DMLibDirectionFilter()
                     {
-                        IsAsync = true,
+                        CopyMethod = DMLibCopyMethod.ServiceSideAsyncCopy,
                     });
                     break;
                 case DMLibTestMethodSet.AllSync:
                     this.AddTestMethodAttribute(AllValidDirectionSet);
                     this.AddDirectionFilter(new DMLibDirectionFilter()
                     {
-                        IsAsync = false,
+                        CopyMethod = DMLibCopyMethod.SyncCopy,
+                    });
+                    break;
+                case DMLibTestMethodSet.AllServiceSideSync:
+                    this.AddTestMethodAttribute(AllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        CopyMethod = DMLibCopyMethod.ServiceSideSyncCopy,
                     });
                     break;
                 case DMLibTestMethodSet.CloudSource:
@@ -198,14 +210,21 @@ namespace DMLibTestCodeGen
                     this.AddTestMethodAttribute(DirAllValidDirectionSet);
                     this.AddDirectionFilter(new DMLibDirectionFilter()
                     {
-                        IsAsync = true,
+                        CopyMethod = DMLibCopyMethod.ServiceSideAsyncCopy
                     });
                     break;
                 case DMLibTestMethodSet.DirAllSync:
                     this.AddTestMethodAttribute(DirAllValidDirectionSet);
                     this.AddDirectionFilter(new DMLibDirectionFilter()
                     {
-                        IsAsync = false,
+                        CopyMethod = DMLibCopyMethod.SyncCopy
+                    });
+                    break;
+                case DMLibTestMethodSet.DirAllServiceSideSync:
+                    this.AddTestMethodAttribute(DirAllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        CopyMethod = DMLibCopyMethod.ServiceSideSyncCopy
                     });
                     break;
                 case DMLibTestMethodSet.DirCloudSource:

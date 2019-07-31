@@ -7,7 +7,7 @@ namespace DMLibTestCodeGen
 {
     public class DMLibTestContext : MultiDirectionTestContext<DMLibDataType>
     {
-        public static bool IsAsync
+        public static DMLibCopyMethod CopyMethod
         {
             get;
             set;

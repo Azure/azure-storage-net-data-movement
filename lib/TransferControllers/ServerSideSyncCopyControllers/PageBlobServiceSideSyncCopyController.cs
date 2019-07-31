@@ -47,6 +47,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         private CloudPageBlob sourcePageBlob;
         private CloudPageBlob destBlob;
 
+        private bool gotDestAttribute = false;
+
         private long totalLength;
 
         CountdownEvent countdownEvent;
@@ -229,9 +231,38 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             this.destBlob.Uri.ToString());
                     }
                 }
+                else if (!this.destLocation.CheckedAccessCondition && null != this.destLocation.AccessCondition)
+                {
+                    try
+                    {
+                        await this.destBlob.FetchAttributesAsync(
+                            Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, false),
+                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                            Utils.GenerateOperationContext(this.TransferContext),
+                            this.CancellationToken);
+
+                        // Only try to send the blob creating request, when blob length is not as expected. Otherwise, only need to clear all pages.
+                        needCreateDestination = (this.destBlob.Properties.Length != this.totalLength);
+                        this.destLocation.CheckedAccessCondition = true;
+                        this.gotDestAttribute = true;
+
+                        await this.CheckOverwriteAsync(
+                            true,
+                            this.sourceBlob.Uri.ToString(),
+                            this.destBlob.Uri.ToString());
+                    }
+                    catch (StorageException se)
+                    {
+                        if ((null == se.RequestInformation) || ((int)HttpStatusCode.NotFound != se.RequestInformation.HttpStatusCode))
+                        {
+                            throw;
+                        }
+                    }
+                }
                 else
                 {
                     AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
+
                     try
                     {
                         await this.destBlob.CreateAsync(
@@ -246,10 +277,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
                     catch (StorageException se)
                     {
-                        if ((null != se.RequestInformation) && 
-                            (((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode)
-                            || (((int)HttpStatusCode.Conflict == se.RequestInformation.HttpStatusCode)
-                                    && string.Equals(se.RequestInformation.ErrorCode, "BlobAlreadyExists"))))
+                        if ((null != se.RequestInformation) &&
+                            (((int)HttpStatusCode.Conflict == se.RequestInformation.HttpStatusCode)
+                                    && string.Equals(se.RequestInformation.ErrorCode, "BlobAlreadyExists")))
                         {
                             await this.CheckOverwriteAsync(
                                 true,
@@ -263,6 +293,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
                 }
             }
+            else
+            {
+                this.gotDestAttribute = true;
+            }
 
             Utils.CheckCancellation(this.CancellationToken);
 
@@ -270,7 +304,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             {
                 await this.destBlob.CreateAsync(
                     this.totalLength,
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
                     this.CancellationToken);
@@ -280,7 +314,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (0 != this.totalLength)
             {
                 await this.destBlob.ClearPagesAsync(0, this.totalLength,
-                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                         Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                         Utils.GenerateOperationContext(this.TransferContext),
                         this.CancellationToken);
@@ -550,23 +584,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             Uri sourceUri = this.sourceBlob.GenerateCopySourceUri();
             long length = Math.Min(this.totalLength - startOffset, Constants.DefaultChunkSize);
 
-            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
-                this.destLocation.AccessCondition,
-                this.destLocation.CheckedAccessCondition);
-
             await this.destBlob.WritePagesAsync(
                 sourceUri,
                 startOffset,
                 length,
                 startOffset,
                 null,
-                null,
-                accessCondition,
+                Utils.GenerateIfMatchConditionWithCustomerCondition(this.sourceLocation.ETag, this.sourceLocation.AccessCondition, true),
+                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
                 this.CancellationToken);
-
-            this.destLocation.CheckedAccessCondition = true;
 
             this.UpdateProgress(() =>
             {
@@ -591,22 +619,39 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.state);
 
             this.hasWork = false;
-
-            var sourceProperties = this.sourceBlob.Properties;
-
-            Utils.SetAttributes(this.destBlob,
-                this.sourceAttributes);
-
-            await this.SetCustomAttributesAsync(this.destBlob);
-
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
 
+            if (!this.gotDestAttribute)
+            {
+                await this.destBlob.FetchAttributesAsync(
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                    blobRequestOptions,
+                    operationContext,
+                    this.CancellationToken);
+            }
+
+            var originalMetadata = new Dictionary<string, string>(this.destBlob.Metadata);
+
+            var sourceProperties = this.sourceBlob.Properties;
+            Utils.SetAttributes(this.destBlob, this.sourceAttributes);
+
+            await this.SetCustomAttributesAsync(this.destBlob);
+            
             await this.destBlob.SetPropertiesAsync(
-                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                         blobRequestOptions,
                         operationContext,
                         this.CancellationToken);
+
+            if (!originalMetadata.DictionaryEquals(this.destBlob.Metadata))
+            {
+                await this.destBlob.SetMetadataAsync(
+                             Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                             blobRequestOptions,
+                             operationContext,
+                             this.CancellationToken);
+            }
 
             this.SetFinish();
         }

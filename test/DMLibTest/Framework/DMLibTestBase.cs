@@ -149,7 +149,7 @@ namespace DMLibTest
                     DestObject = DestAdaptor.GetTransferObject(destRootPath, sourceRootNode, options.DestCredentials),
                     SourceType = DMLibTestContext.SourceType,
                     DestType = DMLibTestContext.DestType,
-                    IsServiceCopy = DMLibTestContext.IsAsync,
+                    CopyMethod = DMLibTestContext.CopyMethod.ToCopyMethod(),
                     IsDirectoryTransfer = true,
                 };
 
@@ -170,7 +170,7 @@ namespace DMLibTest
                         DestObject = DestAdaptor.GetTransferObject(destRootPath, fileNode, options.DestCredentials),
                         SourceType = DMLibTestContext.SourceType,
                         DestType = DMLibTestContext.DestType,
-                        IsServiceCopy = DMLibTestContext.IsAsync,
+                        CopyMethod = DMLibTestContext.CopyMethod.ToCopyMethod(),
                     };
 
                     if (options.TransferItemModifier != null)
@@ -195,7 +195,7 @@ namespace DMLibTest
             {
                 foreach (TransferItem item in items)
                 {
-                    DMLibWrapper wrapper = GetDMLibWrapper(item.SourceType, item.DestType, DMLibTestContext.IsAsync);
+                    DMLibWrapper wrapper = GetDMLibWrapper(item.SourceType, item.DestType);
 
                     if (item.BeforeStarted != null)
                     {
@@ -307,7 +307,7 @@ namespace DMLibTest
             }
         }
 
-        public DMLibWrapper GetDMLibWrapper(DMLibDataType sourceType, DMLibDataType destType, bool isServiceCopy)
+        public DMLibWrapper GetDMLibWrapper(DMLibDataType sourceType, DMLibDataType destType)
         {
             if (DMLibTestBase.IsLocal(sourceType))
             {

@@ -419,6 +419,7 @@ namespace DMLibTest
 #region source is cloud blob
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobSource)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void FilePattern_CloudBlob_Prefix_1()
         {
             HashSet<FileNode> nodesToKeep = new HashSet<FileNode>();
@@ -433,6 +434,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobSource)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void FilePattern_CloudBlob_Prefix_2()
         {
             HashSet<FileNode> nodesToKeep = new HashSet<FileNode>();
@@ -445,6 +447,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobSource)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void FilePattern_CloudBlob_Prefix_3()
         {
             HashSet<FileNode> nodesToKeep = new HashSet<FileNode>();
@@ -462,6 +465,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobSource)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void FilePattern_CloudBlob_Prefix_4()
         {
             HashSet<FileNode> nodesToKeep = new HashSet<FileNode>();
@@ -474,7 +478,8 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudBlob)]
-        [DMLibTestMethod(DMLibDataType.CloudBlob, isAsync: true)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void FilePattern_CloudBlob_NoPattern_1()
         {
             HashSet<FileNode> nodesToKeep = new HashSet<FileNode>();
@@ -508,6 +513,7 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobSource)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void FilePattern_CloudBlob_NoPattern_2()
         {
             HashSet<FileNode> nodesToKeep = new HashSet<FileNode>();

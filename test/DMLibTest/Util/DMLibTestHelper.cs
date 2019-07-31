@@ -15,6 +15,7 @@ namespace DMLibTest
     using System.Runtime.Serialization.Formatters.Binary;
 #endif
     using System.Threading;
+    using DMLibTestCodeGen;
     using Microsoft.Azure.Storage;
     using Microsoft.Azure.Storage.Blob;
     using Microsoft.Azure.Storage.DataMovement;
@@ -79,6 +80,19 @@ namespace DMLibTest
 
     public static class DMLibTestHelper
     {
+        public static CopyMethod ToCopyMethod(this DMLibCopyMethod copyMethod)
+        {
+            switch (copyMethod)
+            {
+                case DMLibCopyMethod.ServiceSideAsyncCopy:
+                    return CopyMethod.ServiceSideAsyncCopy;
+                case DMLibCopyMethod.ServiceSideSyncCopy:
+                    return CopyMethod.ServiceSideSyncCopy;
+                default:
+                    return CopyMethod.SyncCopy;
+            }
+        }
+
         private static char[] InvalidFileNameChars = new char[] {
         '"', '<', '>', '|', '\0', '\u0001', '\u0002', '\u0003', '\u0004', '\u0005', '\u0006',
         '\a', '\b', '\t', '\n', '\v', '\f', '\r', '\u000e', '\u000f', '\u0010', '\u0011', '\u0012', '\u0013', '\u0014', '\u0015',

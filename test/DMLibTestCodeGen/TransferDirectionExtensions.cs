@@ -17,6 +17,9 @@ namespace DMLibTestCodeGen
             CodeFieldReferenceExpression destType = new CodeFieldReferenceExpression(
                 new CodeTypeReferenceExpression(typeof(DMLibDataType)),
                 transferDirection.DestType.ToString());
+            CodeFieldReferenceExpression copyMethod = new CodeFieldReferenceExpression(
+                new CodeTypeReferenceExpression(typeof(DMLibCopyMethod)),
+                transferDirection.CopyMethod.ToString());
 
             CodePropertyReferenceExpression sourceTypeProperty = new CodePropertyReferenceExpression(
                 new CodeTypeReferenceExpression(typeof(DMLibTestContext)),
@@ -26,15 +29,15 @@ namespace DMLibTestCodeGen
                 new CodeTypeReferenceExpression(typeof(DMLibTestContext)),
                 "DestType");
 
-            CodePropertyReferenceExpression isAsyncProperty = new CodePropertyReferenceExpression(
+            CodePropertyReferenceExpression copyMethodProperty = new CodePropertyReferenceExpression(
                 new CodeTypeReferenceExpression(typeof(DMLibTestContext)),
-                "IsAsync");
+                "CopyMethod");
 
             yield return new CodeAssignStatement(sourceTypeProperty, sourceType);
 
             yield return new CodeAssignStatement(destTypeProperty, destType);
 
-            yield return new CodeAssignStatement(isAsyncProperty, new CodePrimitiveExpression(transferDirection.IsAsync));
+            yield return new CodeAssignStatement(copyMethodProperty, copyMethod);
         }
     }
 }

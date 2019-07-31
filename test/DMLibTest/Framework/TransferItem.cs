@@ -41,7 +41,7 @@ namespace DMLibTest
             set;
         }
 
-        public bool IsServiceCopy
+        public CopyMethod CopyMethod
         {
             get;
             set;
@@ -137,7 +137,7 @@ namespace DMLibTest
                 SourceType = this.SourceType,
                 DestType = this.DestType,
                 IsDirectoryTransfer = this.IsDirectoryTransfer,
-                IsServiceCopy = this.IsServiceCopy,
+                CopyMethod = this.CopyMethod,
                 Options = this.Options,
             };
 
