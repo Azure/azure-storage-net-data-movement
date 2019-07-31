@@ -148,7 +148,7 @@ namespace DMLibTest
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             // For sync copy, recalculate md5 of destination by downloading the file to local.
-            if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+            if (IsCloudService(DMLibTestContext.DestType) && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
             {
                 DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
             }
@@ -194,7 +194,7 @@ namespace DMLibTest
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             // For sync copy, recalculate md5 of destination by downloading the file to local.
-            if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+            if (IsCloudService(DMLibTestContext.DestType) && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
             {
                 DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
             }
@@ -244,7 +244,7 @@ namespace DMLibTest
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             // For sync copy, recalculate md5 of destination by downloading the file to local.
-            if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+            if (IsCloudService(DMLibTestContext.DestType) && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
             {
                 DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
             }
@@ -295,7 +295,7 @@ namespace DMLibTest
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             // For sync copy, recalculate md5 of destination by downloading the file to local.
-            if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+            if (IsCloudService(DMLibTestContext.DestType) && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
             {
                 DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
             }
@@ -484,7 +484,7 @@ namespace DMLibTest
                 IsDirectoryTransfer = true,
                 SourceType = DMLibTestContext.SourceType,
                 DestType = DMLibTestContext.DestType,
-                IsServiceCopy = DMLibTestContext.IsAsync,
+                CopyMethod = DMLibTestContext.CopyMethod.ToCopyMethod(),
                 TransferContext = new DirectoryTransferContext(),
                 Options = DefaultTransferDirectoryOptions
             };
