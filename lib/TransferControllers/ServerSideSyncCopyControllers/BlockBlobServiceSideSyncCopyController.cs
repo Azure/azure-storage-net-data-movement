@@ -337,17 +337,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
         }
 
-        private static void HandleFetchSourceAttributesException(StorageException e)
-        {
-            // Getting a storage exception is expected if the source doesn't
-            // exist. For those cases that indicate the source doesn't exist
-            // we will set a specific error state.
-            if (e?.RequestInformation?.HttpStatusCode == (int)HttpStatusCode.NotFound)
-            {
-                throw new InvalidOperationException(Resources.SourceDoesNotExistException, e);
-            }
-        }
-
         /// <summary>
         /// Sets the state of the controller to Error, while recording
         /// the last occurred exception and setting the HasWork and 
