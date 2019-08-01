@@ -269,6 +269,9 @@ MD5 in property: {2}</value>
   <data name="RestartableInfoCorruptedException" xml:space="preserve">
     <value>Failed to read restartable info from file.</value>
   </data>
+  <data name="ServiceSideSyncCopyNotSupportException" xml:space="preserve">
+    <value>Service side synchronous copying is only supported when destination is Azure Blob Storage.</value>
+  </data>
   <data name="SmallMemoryCacheSizeLimitationException" xml:space="preserve">
     <value>MaximumCacheSize cannot be less than {0}.</value>
     <comment>{0} is minimum memory cache size limitation</comment>

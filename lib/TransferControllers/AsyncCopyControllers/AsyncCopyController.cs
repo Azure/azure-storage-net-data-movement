@@ -166,21 +166,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             get;
         }
 
-        public static AsyncCopyController CreateAsyncCopyController(TransferScheduler transferScheduler, TransferJob transferJob, CancellationToken cancellationToken)
-        {
-            if (transferJob.Destination.Type == TransferLocationType.AzureFile)
-            {
-                return new FileAsyncCopyController(transferScheduler, transferJob, cancellationToken);
-            }
-
-            if (transferJob.Destination.Type == TransferLocationType.AzureBlob)
-            {
-                return new BlobAsyncCopyController(transferScheduler, transferJob, cancellationToken);
-            }
-
-            throw new InvalidOperationException(Resources.CanOnlyCopyToFileOrBlobException);
-        }
-
         /// <summary>
         /// Do work in the controller.
         /// A controller controls the whole transfer from source to destination, 

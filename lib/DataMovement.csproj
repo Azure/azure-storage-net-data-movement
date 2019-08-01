@@ -119,6 +119,7 @@
     <Compile Include="TransferControllers\ServerSideSyncCopyControllers\AppendBlobServiceSideSyncCopyController.cs" />
     <Compile Include="TransferControllers\ServerSideSyncCopyControllers\BlockBlobServiceSideSyncCopyController.cs" />
     <Compile Include="TransferControllers\ServerSideSyncCopyControllers\PageBlobServiceSideSyncCopyController.cs" />
+    <Compile Include="TransferControllers\ServerSideSyncCopyControllers\ServiceSideSyncCopyController.cs" />
     <Compile Include="TransferControllers\TransferReaders\CloudFileReader.cs" />
     <Compile Include="TransferControllers\TransferReaders\PageBlobReader.cs" />
     <Compile Include="TransferControllers\TransferReaders\RangeBasedReader.cs" />

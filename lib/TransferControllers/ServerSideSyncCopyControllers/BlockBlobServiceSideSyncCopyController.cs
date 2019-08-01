@@ -20,42 +20,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     /// <summary>
     /// Transfer controller to copy to block blob with PutBlockFromURL.
     /// </summary>
-    class BlockBlobServiceSideSyncCopyController : TransferControllerBase
+    class BlockBlobServiceSideSyncCopyController : ServiceSideSyncCopyController
     {
-        /// <summary>
-        /// Internal state values.
-        /// </summary>
-        private enum State
-        {
-            FetchSourceAttributes,
-            GetDestination,
-            Copy,
-            Commit,
-            Finished,
-            Error,
-        }
-
-        private State state;
-
-        private bool hasWork;
-
         private string BlockIdPrefix;
 
-        private AzureBlobLocation sourceLocation;
-        private AzureBlobLocation destLocation;
-
-        private CloudBlob sourceBlob;
-        private CloudBlockBlob destBlob;
-
-        private long totalLength;
+        private CloudBlockBlob destBlockBlob;
         private long blockSize;
 
         CountdownEvent countdownEvent;
         private SortedDictionary<int, string> blockIds;
 
         private Queue<long> lastTransferWindow;
-        private Attributes sourceAttributes = null;
-
         private bool gotDestinationAttributes = false;
 
         /// <summary>
@@ -70,122 +45,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             CancellationToken userCancellationToken)
             : base(scheduler, transferJob, userCancellationToken)
         {
-            if (null == transferJob.Destination)
-            {
-                throw new ArgumentException(
-                    string.Format(
-                        CultureInfo.CurrentCulture,
-                        Resources.ParameterCannotBeNullException,
-                        "Dest"),
-                    "transferJob");
-            }
-
-            this.sourceLocation = this.TransferJob.Source as AzureBlobLocation;
-            this.destLocation = this.TransferJob.Destination as AzureBlobLocation;
-
-            this.sourceBlob = sourceLocation.Blob;
-            this.destBlob = destLocation.Blob as CloudBlockBlob;
-
-            this.state = State.FetchSourceAttributes;
+            this.destBlockBlob = this.destLocation.Blob as CloudBlockBlob;
             this.hasWork = true;
         }
 
-        public override bool HasWork => this.hasWork;
-
-        protected override async Task<bool> DoWorkInternalAsync()
+        protected override void PostFetchSourceAttributes()
         {
-            if (!this.TransferJob.Transfer.ShouldTransferChecked)
-            {
-                this.hasWork = false;
-                if (await this.CheckShouldTransfer())
-                {
-                    return true;
-                }
-                else
-                {
-                    this.hasWork = true;
-                    return false;
-                }
-            }
-
-            switch (this.state)
-            {
-                case State.FetchSourceAttributes:
-                    await this.FetchSourceAttributesAsync();
-                    break;
-                case State.GetDestination:
-                    await this.GetDestinationAsync();
-                    break;
-                case State.Copy:
-                    await this.CopyBlockAsync();
-                    break;
-                case State.Commit:
-                    await this.CommitAsync();
-                    break;
-                case State.Finished:
-                case State.Error:
-                default:
-                    break;
-            }
-
-            return (State.Error == this.state || State.Finished == this.state);
-        }
-
-        private async Task FetchSourceAttributesAsync()
-        {
-            Debug.Assert(
-                this.state == State.FetchSourceAttributes,
-                "FetchSourceAttributesAsync called, but state isn't FetchSourceAttributes");
-
-            this.hasWork = false;
-            this.StartCallbackHandler();
-            if (this.sourceLocation.IsInstanceInfoFetched != true)
-            {
-                AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                     this.sourceLocation.ETag,
-                     this.sourceLocation.AccessCondition,
-                     this.sourceLocation.CheckedAccessCondition);
-                try
-                {
-                    await this.sourceBlob.FetchAttributesAsync(
-                        accessCondition,
-                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                        Utils.GenerateOperationContext(this.TransferContext),
-                        this.CancellationToken);
-                }
-#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
-            {
-                var e = ex as StorageException ?? ex.InnerException as StorageException;
-#else
-                catch (StorageException e)
-                {
-#endif
-                    HandleFetchSourceAttributesException(e);
-                    throw;
-                }
-
-                this.sourceLocation.CheckedAccessCondition = true;
-            }
-
-            if (string.IsNullOrEmpty(this.sourceLocation.ETag))
-            {
-                if (0 != this.TransferJob.CheckPoint.EntryTransferOffset)
-                {
-                    throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
-                }
-
-                this.sourceLocation.ETag = this.sourceBlob.Properties.ETag;
-            }
-            else if ((this.TransferJob.CheckPoint.EntryTransferOffset > this.sourceBlob.Properties.Length)
-                 || (this.TransferJob.CheckPoint.EntryTransferOffset < 0))
-            {
-                throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
-            }
-
-            this.sourceAttributes = Utils.GenerateAttributes(this.sourceBlob);
-
-            this.totalLength = this.sourceBlob.Properties.Length;
 
             if (this.IsForceOverwrite && null == this.destLocation.AccessCondition)
             {
@@ -199,7 +64,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.hasWork = true;
         }
 
-        private async Task GetDestinationAsync()
+        protected override async Task GetDestinationAsync()
         {
             this.hasWork = false;
 
@@ -231,6 +96,154 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
 
             await this.HandleGetDestinationResultAsync(null);
+        }
+
+        protected override async Task CopyChunkAsync()
+        {
+            long startOffset = -1;
+            bool needGenerateBlockId = true;
+
+            if (null != this.lastTransferWindow)
+            {
+                try
+                {
+                    startOffset = this.lastTransferWindow.Dequeue();
+                    needGenerateBlockId = false;
+                }
+                catch (InvalidOperationException)
+                {
+                    this.lastTransferWindow = null;
+                }
+            }
+
+            var checkpoint = this.TransferJob.CheckPoint;
+
+            if (-1 == startOffset)
+            {
+                bool canUpload = false;
+
+                lock (checkpoint.TransferWindowLock)
+                {
+                    if (checkpoint.TransferWindow.Count < Constants.MaxCountInTransferWindow)
+                    {
+                        startOffset = checkpoint.EntryTransferOffset;
+
+                        if (checkpoint.EntryTransferOffset < this.totalLength)
+                        {
+                            checkpoint.TransferWindow.Add(startOffset);
+                            checkpoint.EntryTransferOffset = Math.Min(
+                                checkpoint.EntryTransferOffset + this.blockSize,
+                                this.totalLength);
+
+                            canUpload = true;
+                        }
+                    }
+                }
+
+                if (!canUpload)
+                {
+                    return;
+                }
+            }
+
+            hasWork = ((null != this.lastTransferWindow) || (this.TransferJob.CheckPoint.EntryTransferOffset < this.totalLength));
+            string blockId = this.GetBlockIdByIndex((int)(startOffset / this.blockSize));
+
+            if (needGenerateBlockId)
+            {
+                this.blockIds.Add((int)(startOffset / this.blockSize), blockId);
+            }
+
+            await Task.Yield();
+
+            Uri sourceUri = this.sourceBlob.GenerateCopySourceUri();
+            long length = Math.Min(this.totalLength - startOffset, this.blockSize);
+
+            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true);
+
+            var operationContext = Utils.GenerateOperationContext(this.TransferContext);
+            operationContext.UserHeaders = new Dictionary<string, string>(capacity: 1);
+            operationContext.UserHeaders.Add(
+                Shared.Protocol.Constants.HeaderConstants.SourceIfMatchHeader,
+                this.sourceLocation.ETag);
+
+            await this.destBlockBlob.PutBlockAsync(
+                blockId,
+                sourceUri,
+                startOffset,
+                length,
+                null,
+                accessCondition,
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                operationContext,
+                this.CancellationToken);
+
+            this.UpdateProgress(() =>
+            {
+                lock (checkpoint.TransferWindowLock)
+                {
+                    checkpoint.TransferWindow.Remove(startOffset);
+                }
+                this.TransferJob.Transfer.UpdateJournal();
+
+                this.UpdateProgressAddBytesTransferred(length);
+            });
+
+            this.FinishBlock();
+        }
+
+        protected override async Task CommitAsync()
+        {
+            Debug.Assert(
+                this.state == State.Commit,
+                "CommitAsync called, but state isn't Commit",
+                "Current state is {0}",
+                this.state);
+
+            this.hasWork = false;
+
+            var sourceProperties = this.sourceBlob.Properties;
+
+            Utils.SetAttributes(this.destBlob,
+                new Attributes()
+                {
+                    CacheControl = sourceProperties.CacheControl,
+                    ContentDisposition = sourceProperties.ContentDisposition,
+                    ContentEncoding = sourceProperties.ContentEncoding,
+                    ContentLanguage = sourceProperties.ContentLanguage,
+                    ContentMD5 = sourceProperties.ContentMD5,
+                    ContentType = sourceProperties.ContentType,
+                    Metadata = this.sourceBlob.Metadata,
+                    OverWriteAll = true
+                });
+
+            await this.SetCustomAttributesAsync(this.destBlob);
+
+            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
+            OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
+
+            await this.destBlockBlob.PutBlockListAsync(
+                        this.blockIds.Values,
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
+                        blobRequestOptions,
+                        operationContext,
+                        this.CancellationToken);
+
+            // REST API PutBlockList cannot clear existing Content-Type of block blob, so if it's needed to clear existing
+            // Content-Type, REST API SetBlobProperties must be called explicitly:
+            // 1. The attributes are inherited from others and Content-Type is null or empty.
+            // 2. User specifies Content-Type to string.Empty while uploading.
+            if ((this.gotDestinationAttributes && string.IsNullOrEmpty(this.sourceAttributes.ContentType))
+                || (!this.gotDestinationAttributes && this.sourceAttributes.ContentType == string.Empty))
+            {
+                await this.destBlob.SetPropertiesAsync(
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
+                    blobRequestOptions,
+                    operationContext,
+                    this.CancellationToken);
+            }
+
+            this.SetFinish();
         }
 
         private async Task<bool> HandleGetDestinationResultAsync(Exception e)
@@ -365,151 +378,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
         }
 
-        private async Task CopyBlockAsync()
+        protected override Task CreateDestinationAsync(AccessCondition accessCondition, CancellationToken cancellationToken)
         {
-            long startOffset = -1;
-            bool needGenerateBlockId = true;
-
-            if (null != this.lastTransferWindow)
-            {
-                try
-                {
-                    startOffset = this.lastTransferWindow.Dequeue();
-                    needGenerateBlockId = false;
-                }
-                catch (InvalidOperationException)
-                {
-                    this.lastTransferWindow = null;
-                }
-            }
-
-            var checkpoint = this.TransferJob.CheckPoint;
-
-            if (-1 == startOffset)
-            {
-                bool canUpload = false;
-
-                lock (checkpoint.TransferWindowLock)
-                {
-                    if (checkpoint.TransferWindow.Count < Constants.MaxCountInTransferWindow)
-                    {
-                        startOffset = checkpoint.EntryTransferOffset;
-
-                        if (checkpoint.EntryTransferOffset < this.totalLength)
-                        {
-                            checkpoint.TransferWindow.Add(startOffset);
-                            checkpoint.EntryTransferOffset = Math.Min(
-                                checkpoint.EntryTransferOffset + this.blockSize,
-                                this.totalLength);
-
-                            canUpload = true;
-                        }
-                    }
-                }
-
-                if (!canUpload)
-                {
-                    return;
-                }
-            }
-
-            hasWork = ((null != this.lastTransferWindow) || (this.TransferJob.CheckPoint.EntryTransferOffset < this.totalLength));
-            string blockId = this.GetBlockIdByIndex((int)(startOffset / this.blockSize));
-
-            if (needGenerateBlockId)
-            {
-                this.blockIds.Add((int)(startOffset / this.blockSize), blockId);
-            }
-
-            await Task.Yield();
-
-            Uri sourceUri = this.sourceBlob.GenerateCopySourceUri();
-            long length = Math.Min(this.totalLength - startOffset, this.blockSize);
-            
-            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true);
-
-            var operationContext = Utils.GenerateOperationContext(this.TransferContext);
-            operationContext.UserHeaders = new Dictionary<string, string>(capacity: 1);
-            operationContext.UserHeaders.Add(
-                Shared.Protocol.Constants.HeaderConstants.SourceIfMatchHeader,
-                this.sourceLocation.ETag);
-
-            await this.destBlob.PutBlockAsync(
-                blockId, 
-                sourceUri, 
-                startOffset, 
-                length, 
-                null,
-                accessCondition,
-                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                operationContext,
-                this.CancellationToken);
-
-            this.UpdateProgress(() =>
-            {
-                lock (checkpoint.TransferWindowLock)
-                {
-                    checkpoint.TransferWindow.Remove(startOffset);
-                }
-                this.TransferJob.Transfer.UpdateJournal();
-
-                this.UpdateProgressAddBytesTransferred(length);
-            });
-
-            this.FinishBlock();
+            throw new NotImplementedException();
         }
 
-        private async Task CommitAsync()
+        protected override Task DoPreCopyAsync()
         {
-            Debug.Assert(
-                this.state == State.Commit,
-                "CommitAsync called, but state isn't Commit",
-                "Current state is {0}",
-                this.state);
-
-            this.hasWork = false;
-
-            var sourceProperties = this.sourceBlob.Properties;
-
-            Utils.SetAttributes(this.destBlob, 
-                new Attributes()
-                {
-                    CacheControl = sourceProperties.CacheControl,
-                    ContentDisposition = sourceProperties.ContentDisposition,
-                    ContentEncoding = sourceProperties.ContentEncoding,
-                    ContentLanguage = sourceProperties.ContentLanguage,
-                    ContentMD5 = sourceProperties.ContentMD5,
-                    ContentType = sourceProperties.ContentType,
-                    Metadata = this.sourceBlob.Metadata,
-                    OverWriteAll = true
-                });
-            await this.SetCustomAttributesAsync(this.destBlob);
-
-            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
-            OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
-
-            await this.destBlob.PutBlockListAsync(
-                        this.blockIds.Values,
-                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
-                        blobRequestOptions,
-                        operationContext,
-                        this.CancellationToken);
-
-            // REST API PutBlockList cannot clear existing Content-Type of block blob, so if it's needed to clear existing
-            // Content-Type, REST API SetBlobProperties must be called explicitly:
-            // 1. The attributes are inherited from others and Content-Type is null or empty.
-            // 2. User specifies Content-Type to string.Empty while uploading.
-            if ((this.gotDestinationAttributes && string.IsNullOrEmpty(this.sourceAttributes.ContentType))
-                || (!this.gotDestinationAttributes && this.sourceAttributes.ContentType == string.Empty))
-            {
-                await this.destBlob.SetPropertiesAsync(
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
-                    blobRequestOptions,
-                    operationContext,
-                    this.CancellationToken);
-            }
-
-            this.SetFinish();
+            throw new NotImplementedException();
         }
 
         private void SetFinish()

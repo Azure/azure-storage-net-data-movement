@@ -549,6 +549,15 @@ namespace Microsoft.Azure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Service side synchronous copying is only supported when destination is Azure Blob Storage..
+        /// </summary>
+        internal static string ServiceSideSyncCopyNotSupportException {
+            get {
+                return ResourceManager.GetString("ServiceSideSyncCopyNotSupportException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Copying to Azure File Storage with service side synchronous copying is not supported..
         /// </summary>
         internal static string ServiceSideSyncCopyToFileNotSupportedException {

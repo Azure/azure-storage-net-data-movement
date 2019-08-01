@@ -12,7 +12,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-
+    using Microsoft.Azure.Storage.Blob;
     using Microsoft.Azure.Storage.DataMovement.TransferControllers;
 
     /// <summary>
@@ -207,7 +207,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return;
             }
 
-            TransferControllerBase controller = TransferControllerBase.GenerateTransferConstroller(this, job, cancellationToken);
+            TransferControllerBase controller = GenerateTransferConstroller(this, job, cancellationToken);
 
             Utils.CheckCancellation(this.cancellationTokenSource.Token);
             this.controllerQueue.Add(controller, this.cancellationTokenSource.Token);
@@ -487,6 +487,76 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 this.FinishedWorkItem(controller);
             }
+        }
+
+        private static TransferControllerBase GenerateTransferConstroller(
+            TransferScheduler transferScheduler,
+            TransferJob transferJob,
+            CancellationToken cancellationToken)
+        {
+            TransferControllerBase controller = null;
+
+            switch (transferJob.Transfer.TransferMethod)
+            {
+                case TransferMethod.SyncCopy:
+                    controller = new SyncTransferController(transferScheduler, transferJob, cancellationToken);
+                    break;
+
+                case TransferMethod.ServiceSideAsyncCopy:
+                    controller = CreateAsyncCopyController(transferScheduler, transferJob, cancellationToken);
+                    break;
+
+                case TransferMethod.ServiceSideSyncCopy:
+                    controller = CreateServiceSideSyncCopyConstroller(transferScheduler, transferJob, cancellationToken);
+                    break;
+
+                case TransferMethod.DummyCopy:
+                    controller = new DummyTransferController(transferScheduler, transferJob, cancellationToken);
+                    break;
+            }
+
+            return controller;
+        }
+
+        private static ServiceSideSyncCopyController CreateServiceSideSyncCopyConstroller(
+            TransferScheduler transferScheduler,
+            TransferJob transferJob,
+            CancellationToken cancellationToken)
+        {
+            CloudBlob destinationBlob = transferJob.Destination.Instance as CloudBlob;
+
+            if (null == destinationBlob)
+            {
+                throw new TransferException(Resources.ServiceSideSyncCopyNotSupportException);
+            }
+
+            if (BlobType.PageBlob == destinationBlob.BlobType)
+            {
+                return new PageBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+            }
+            else if (transferJob.Destination.Instance is CloudAppendBlob)
+            {
+                return new AppendBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+            }
+            else
+            {
+                return new BlockBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+            }
+        }
+
+        private static AsyncCopyController CreateAsyncCopyController(TransferScheduler transferScheduler, TransferJob transferJob, CancellationToken cancellationToken)
+        {
+            if (transferJob.Destination.Type == TransferLocationType.AzureFile)
+            {
+                return new FileAsyncCopyController(transferScheduler, transferJob, cancellationToken);
+            }
+
+            if (transferJob.Destination.Type == TransferLocationType.AzureBlob)
+            {
+                return new BlobAsyncCopyController(transferScheduler, transferJob, cancellationToken);
+            }
+
+            throw new InvalidOperationException(Resources.CanOnlyCopyToFileOrBlobException);
         }
     }
 }

@@ -20,41 +20,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     /// <summary>
     /// Transfer controller to copy to page blob with PutPageFromURL.
     /// </summary>
-    class PageBlobServiceSideSyncCopyController :  TransferControllerBase
+    class PageBlobServiceSideSyncCopyController : ServiceSideSyncCopyController
     {
-        /// <summary>
-        /// Internal state values.
-        /// </summary>
-        private enum State
-        {
-            FetchSourceAttributes,
-            GetDestination,
-            GetRanges,
-            Copy,
-            Commit,
-            Finished,
-            Error,
-        }
-
-        private State state;
-
-        private bool hasWork;
-        
-        private AzureBlobLocation sourceLocation;
-        private AzureBlobLocation destLocation;
-
-        private CloudBlob sourceBlob;
         private CloudPageBlob sourcePageBlob;
-        private CloudPageBlob destBlob;
-
-        private bool gotDestAttribute = false;
-
-        private long totalLength;
-
+        private CloudPageBlob destPageBlob;
         CountdownEvent countdownEvent;
 
         private Queue<long> lastTransferWindow;
-        private Attributes sourceAttributes = null;
 
         private long nextRangesSpanOffset = 0;
         private CountdownEvent getRangesCountdownEvent = null;
@@ -76,126 +48,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             CancellationToken userCancellationToken)
             : base(scheduler, transferJob, userCancellationToken)
         {
-            if (null == transferJob.Destination)
-            {
-                throw new ArgumentException(
-                    string.Format(
-                        CultureInfo.CurrentCulture,
-                        Resources.ParameterCannotBeNullException,
-                        "Dest"),
-                    "transferJob");
-            }
-
-            this.sourceLocation = this.TransferJob.Source as AzureBlobLocation;
-            this.destLocation = this.TransferJob.Destination as AzureBlobLocation;
-
-            this.sourceBlob = sourceLocation.Blob;
-            this.destBlob = destLocation.Blob as CloudPageBlob;
-
-            this.state = State.FetchSourceAttributes;
+            this.destPageBlob = destLocation.Blob as CloudPageBlob;
             this.hasWork = true;
         }
 
-        public override bool HasWork => this.hasWork;
-
-        protected override async Task<bool> DoWorkInternalAsync()
+        override protected void PostFetchSourceAttributes()
         {
-            if (!this.TransferJob.Transfer.ShouldTransferChecked)
-            {
-                this.hasWork = false;
-                if (await this.CheckShouldTransfer())
-                {
-                    return true;
-                }
-                else
-                {
-                    this.hasWork = true;
-                    return false;
-                }
-            }
-
-            switch (this.state)
-            {
-                case State.FetchSourceAttributes:
-                    await this.FetchSourceAttributesAsync();
-                    break;
-                case State.GetDestination:
-                    await this.GetDestinationAsync();
-                    break;
-                case State.GetRanges:
-                    await this.GetRangesAsync();
-                    break;
-                case State.Copy:
-                    await this.CopyPageAsync();
-                    break;
-                case State.Commit:
-                    await this.CommitAsync();
-                    break;
-                case State.Finished:
-                case State.Error:
-                default:
-                    break;
-            }
-
-            return (State.Error == this.state || State.Finished == this.state);
-        }
-
-        private async Task FetchSourceAttributesAsync()
-        {
-            Debug.Assert(
-                this.state == State.FetchSourceAttributes,
-                "FetchSourceAttributesAsync called, but state isn't FetchSourceAttributes");
-
-            this.hasWork = false;
-            this.StartCallbackHandler();
-            if (this.sourceLocation.IsInstanceInfoFetched != true)
-            {
-                AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                     this.sourceLocation.ETag,
-                     this.sourceLocation.AccessCondition,
-                     this.sourceLocation.CheckedAccessCondition);
-                try
-                {
-                    await this.sourceBlob.FetchAttributesAsync(
-                        accessCondition,
-                        Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
-                        Utils.GenerateOperationContext(this.TransferContext),
-                        this.CancellationToken);
-                }
-#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-            catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
-            {
-                var e = ex as StorageException ?? ex.InnerException as StorageException;
-#else
-                catch (StorageException e)
-                {
-#endif
-                    HandleFetchSourceAttributesException(e);
-                    throw;
-                }
-
-                this.sourceLocation.CheckedAccessCondition = true;
-            }
-
-            if (string.IsNullOrEmpty(this.sourceLocation.ETag))
-            {
-                if (0 != this.TransferJob.CheckPoint.EntryTransferOffset)
-                {
-                    throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
-                }
-
-                this.sourceLocation.ETag = this.sourceBlob.Properties.ETag;
-            }
-            else if ((this.TransferJob.CheckPoint.EntryTransferOffset > this.sourceBlob.Properties.Length)
-                 || (this.TransferJob.CheckPoint.EntryTransferOffset < 0))
-            {
-                throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
-            }
-
-            this.sourceAttributes = Utils.GenerateAttributes(this.sourceBlob);
-
-            this.totalLength = this.sourceBlob.Properties.Length;
-
             if (this.sourceBlob.BlobType == BlobType.PageBlob)
             {
                 this.sourcePageBlob = this.sourceBlob as CloudPageBlob;
@@ -215,107 +73,25 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.hasWork = true;
         }
 
-        private async Task GetDestinationAsync()
+        protected override async Task CreateDestinationAsync(AccessCondition accessCondition, CancellationToken cancellationToken)
+        {
+            await this.destPageBlob.CreateAsync(
+                this.totalLength,
+                accessCondition,
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                Utils.GenerateOperationContext(this.TransferContext),
+                cancellationToken);
+        }
+
+        override protected async Task GetDestinationAsync()
         {
             this.hasWork = false;
-            bool needCreateDestination = true;
-            if (!this.IsForceOverwrite)
-            {
-                if (this.TransferJob.Overwrite.HasValue)
-                {
-                    if (!this.TransferJob.Overwrite.Value)
-                    {
-                        string exceptionMessage = string.Format(CultureInfo.InvariantCulture, Resources.OverwriteCallbackCancelTransferException, this.sourceBlob.Uri.ToString(), this.destBlob.Uri.ToString());
-                        throw new TransferSkippedException(exceptionMessage);
-                    }
-                }
-                else if (!this.destLocation.CheckedAccessCondition && null != this.destLocation.AccessCondition)
-                {
-                    try
-                    {
-                        await this.destBlob.FetchAttributesAsync(
-                            Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, false),
-                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                            Utils.GenerateOperationContext(this.TransferContext),
-                            this.CancellationToken);
 
-                        // Only try to send the blob creating request, when blob length is not as expected. Otherwise, only need to clear all pages.
-                        needCreateDestination = (this.destBlob.Properties.Length != this.totalLength);
-                        this.destLocation.CheckedAccessCondition = true;
-                        this.gotDestAttribute = true;
-
-                        await this.CheckOverwriteAsync(
-                            true,
-                            this.sourceBlob.Uri.ToString(),
-                            this.destBlob.Uri.ToString());
-                    }
-                    catch (StorageException se)
-                    {
-                        if ((null == se.RequestInformation) || ((int)HttpStatusCode.NotFound != se.RequestInformation.HttpStatusCode))
-                        {
-                            throw;
-                        }
-                    }
-                }
-                else
-                {
-                    AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
-
-                    try
-                    {
-                        await this.destBlob.CreateAsync(
-                            this.totalLength,
-                            accessCondition,
-                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                            Utils.GenerateOperationContext(this.TransferContext));
-
-                        needCreateDestination = false;
-                        this.destLocation.CheckedAccessCondition = true;
-                        this.TransferJob.Overwrite = true;
-                        this.TransferJob.Transfer.UpdateJournal();
-                    }
-                    catch (StorageException se)
-                    {
-                        if ((null != se.RequestInformation) &&
-                            (((int)HttpStatusCode.Conflict == se.RequestInformation.HttpStatusCode)
-                                    && string.Equals(se.RequestInformation.ErrorCode, "BlobAlreadyExists")))
-                        {
-                            await this.CheckOverwriteAsync(
-                                true,
-                                this.sourceBlob.Uri.ToString(),
-                                this.destBlob.Uri.ToString());
-                        }
-                        else
-                        {
-                            throw;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                this.gotDestAttribute = true;
-            }
-
-            Utils.CheckCancellation(this.CancellationToken);
-
-            if (needCreateDestination)
-            {
-                await this.destBlob.CreateAsync(
-                    this.totalLength,
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
-                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                    Utils.GenerateOperationContext(this.TransferContext),
-                    this.CancellationToken);
-
-                this.TransferJob.Overwrite = true;
-                this.destLocation.CheckedAccessCondition = true;
-                this.TransferJob.Transfer.UpdateJournal();
-            }
+            await this.CheckAndCreateDestinationAsync();
 
             if (0 != this.totalLength)
             {
-                await this.destBlob.ClearPagesAsync(0, this.totalLength,
+                await this.destPageBlob.ClearPagesAsync(0, this.totalLength,
                         Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                         Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                         Utils.GenerateOperationContext(this.TransferContext),
@@ -347,7 +123,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 {
                     int rangeSpanCount = (int)Math.Ceiling(((double)(this.totalLength - this.nextRangesSpanOffset)) / Constants.PageRangesSpanSize);
                     this.getRangesCountdownEvent = new CountdownEvent(rangeSpanCount);
-                    this.state = State.GetRanges;
+                    this.state = State.PreCopy;
                 }
             }
             else
@@ -357,7 +133,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
         }
 
-        private async Task GetRangesAsync()
+        protected override async Task DoPreCopyAsync()
         {
             this.hasWork = false;
             long rangeSpanOffset = this.nextRangesSpanOffset;
@@ -500,7 +276,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
         }
 
-        private async Task CopyPageAsync()
+        protected override async Task CopyChunkAsync()
         {
             long startOffset = -1;
 
@@ -586,7 +362,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             Uri sourceUri = this.sourceBlob.GenerateCopySourceUri();
             long length = Math.Min(this.totalLength - startOffset, Constants.DefaultChunkSize);
 
-            await this.destBlob.WritePagesAsync(
+            await this.destPageBlob.WritePagesAsync(
                 sourceUri,
                 startOffset,
                 length,
@@ -612,7 +388,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.FinishBlock();
         }
 
-        private async Task CommitAsync()
+        protected override async Task CommitAsync()
         {
             Debug.Assert(
                 this.state == State.Commit,
@@ -621,39 +397,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.state);
 
             this.hasWork = false;
-            BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
-            OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
 
-            if (!this.gotDestAttribute)
-            {
-                await this.destBlob.FetchAttributesAsync(
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                    blobRequestOptions,
-                    operationContext,
-                    this.CancellationToken);
-            }
-
-            var originalMetadata = new Dictionary<string, string>(this.destBlob.Metadata);
-
-            var sourceProperties = this.sourceBlob.Properties;
-            Utils.SetAttributes(this.destBlob, this.sourceAttributes);
-
-            await this.SetCustomAttributesAsync(this.destBlob);
-            
-            await this.destBlob.SetPropertiesAsync(
-                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
-                        blobRequestOptions,
-                        operationContext,
-                        this.CancellationToken);
-
-            if (!originalMetadata.DictionaryEquals(this.destBlob.Metadata))
-            {
-                await this.destBlob.SetMetadataAsync(
-                             Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                             blobRequestOptions,
-                             operationContext,
-                             this.CancellationToken);
-            }
+            await this.CommonCommitAsync();
 
             this.SetFinish();
         }
