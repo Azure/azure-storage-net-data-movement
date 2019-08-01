@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             CancellationToken userCancellationToken)
             : base(scheduler, transferJob, userCancellationToken)
         {
-            this.destBlob = this.destLocation.Blob as CloudAppendBlob;
+            this.destAppendBlob = this.destLocation.Blob as CloudAppendBlob;
             this.hasWork = true;
         }
 
