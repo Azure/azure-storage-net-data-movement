@@ -273,6 +273,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                         needCreateDestination = false;
                         this.destLocation.CheckedAccessCondition = true;
+                        this.TransferJob.Overwrite = true;
                         this.TransferJob.Transfer.UpdateJournal();
                     }
                     catch (StorageException se)
@@ -304,10 +305,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             {
                 await this.destBlob.CreateAsync(
                     this.totalLength,
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
                     this.CancellationToken);
+
+                this.TransferJob.Overwrite = true;
+                this.destLocation.CheckedAccessCondition = true;
                 this.TransferJob.Transfer.UpdateJournal();
             }
 

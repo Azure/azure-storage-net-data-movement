@@ -250,6 +250,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                         needCreateDestination = false;
                         this.destLocation.CheckedAccessCondition = true;
+                        this.TransferJob.Overwrite = true;
                         this.TransferJob.Transfer.UpdateJournal();
                     }
                     catch (StorageException se)
@@ -286,6 +287,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateOperationContext(this.TransferContext));
 
                 this.destLocation.CheckedAccessCondition = true;
+
+                this.TransferJob.Overwrite = true;
                 this.TransferJob.Transfer.UpdateJournal();
             }
 
@@ -371,6 +374,19 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private async Task<bool> ValidateAppendedChunkAsync(long startOffset, long length)
         {
+            await this.destBlob.FetchAttributesAsync(
+                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
+                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                Utils.GenerateOperationContext(this.TransferContext),
+                this.CancellationToken);
+
+            this.gotDestAttributes = true;
+
+            if (this.destBlob.Properties.Length != (startOffset + length))
+            {
+                return false;
+            }
+
             try
             {
                 string sourceConentMD5 = null;
@@ -434,15 +450,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
 
-            if (this.gotDestAttributes)
+            if (!this.gotDestAttributes)
             {
-                await Utils.ExecuteXsclApiCallAsync(
-                    async () => await this.destBlob.FetchAttributesAsync(
-                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                        blobRequestOptions,
-                        operationContext,
-                        this.CancellationToken),
-                    this.CancellationToken);
+                await this.destBlob.FetchAttributesAsync(
+                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                     blobRequestOptions,
+                     operationContext,
+                     this.CancellationToken);
             }
 
             var originalMetadata = new Dictionary<string, string>(this.destBlob.Metadata);
