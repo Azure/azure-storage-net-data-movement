@@ -847,6 +847,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         [SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters", Justification = "With TransferContext, it also accepts DirectoryTransferContext. Here forbid this behavior.")]
         public static Task CopyAsync(CloudBlob sourceBlob, CloudFile destFile, CopyMethod copyMethod, CopyOptions options, SingleTransferContext context, CancellationToken cancellationToken)
         {
+            if (CopyMethod.ServiceSideSyncCopy == copyMethod)
+            {
+                throw new NotSupportedException(Resources.ServiceSideSyncCopyToFileNotSupportedException);
+            }
+
             AzureBlobLocation sourceLocation = new AzureBlobLocation(sourceBlob);
             AzureFileLocation destLocation = new AzureFileLocation(destFile);
 
@@ -956,6 +961,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         [SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters", Justification = "With TransferContext, it also accepts DirectoryTransferContext. Here forbid this behavior.")]
         public static Task CopyAsync(CloudFile sourceFile, CloudBlob destBlob, CopyMethod copyMethod, CopyOptions options, SingleTransferContext context, CancellationToken cancellationToken)
         {
+            if (CopyMethod.ServiceSideSyncCopy == copyMethod)
+            {
+                throw new NotSupportedException(Resources.ServiceSideSyncCopyFromFileNotSupportedException);
+            }
+
             AzureFileLocation sourceLocation = new AzureFileLocation(sourceFile);
             AzureBlobLocation destLocation = new AzureBlobLocation(destBlob);
 
@@ -1065,6 +1075,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         [SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters", Justification = "With TransferContext, it also accepts DirectoryTransferContext. Here forbid this behavior.")]
         public static Task CopyAsync(CloudFile sourceFile, CloudFile destFile, CopyMethod copyMethod, CopyOptions options, SingleTransferContext context, CancellationToken cancellationToken)
         {
+            if (CopyMethod.ServiceSideSyncCopy == copyMethod)
+            {
+                throw new NotSupportedException(Resources.ServiceSideSyncCopyToFileNotSupportedException);
+            }
+
             AzureFileLocation sourceLocation = new AzureFileLocation(sourceFile);
             AzureFileLocation destLocation = new AzureFileLocation(destFile);
 
@@ -1371,6 +1386,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         public static Task<TransferStatus> CopyDirectoryAsync(CloudBlobDirectory sourceBlobDir, CloudFileDirectory destFileDir, CopyMethod copyMethod, CopyDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
+            if (CopyMethod.ServiceSideSyncCopy == copyMethod)
+            {
+                throw new NotSupportedException(Resources.ServiceSideSyncCopyToFileNotSupportedException);
+            }
+
             AzureBlobDirectoryLocation sourceLocation = new AzureBlobDirectoryLocation(sourceBlobDir);
             AzureFileDirectoryLocation destLocation = new AzureFileDirectoryLocation(destFileDir);
             AzureBlobEnumerator sourceEnumerator = new AzureBlobEnumerator(sourceLocation);
@@ -1452,6 +1472,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         public static Task<TransferStatus> CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudFileDirectory destFileDir, CopyMethod copyMethod, CopyDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
+            if (CopyMethod.ServiceSideSyncCopy == copyMethod)
+            {
+                throw new NotSupportedException(Resources.ServiceSideSyncCopyToFileNotSupportedException);
+            }
+
             AzureFileDirectoryLocation sourceLocation = new AzureFileDirectoryLocation(sourceFileDir);
             AzureFileDirectoryLocation destLocation = new AzureFileDirectoryLocation(destFileDir);
 
@@ -1530,6 +1555,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         public static Task<TransferStatus> CopyDirectoryAsync(CloudFileDirectory sourceFileDir, CloudBlobDirectory destBlobDir, CopyMethod copyMethod, CopyDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
+            if (CopyMethod.ServiceSideSyncCopy == copyMethod)
+            {
+                throw new NotSupportedException(Resources.ServiceSideSyncCopyFromFileNotSupportedException);
+            }
+
             AzureFileDirectoryLocation sourceLocation = new AzureFileDirectoryLocation(sourceFileDir);
             AzureBlobDirectoryLocation destLocation = new AzureBlobDirectoryLocation(destBlobDir);
 

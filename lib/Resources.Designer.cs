@@ -19,7 +19,7 @@ namespace Microsoft.Azure.Storage.DataMovement {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -536,6 +536,24 @@ namespace Microsoft.Azure.Storage.DataMovement {
         internal static string SearchPatternInRecursiveModeFromAzureFileNotSupportedException {
             get {
                 return ResourceManager.GetString("SearchPatternInRecursiveModeFromAzureFileNotSupportedException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copying from Azure File Storage with service side synchronous copying is not supported..
+        /// </summary>
+        internal static string ServiceSideSyncCopyFromFileNotSupportedException {
+            get {
+                return ResourceManager.GetString("ServiceSideSyncCopyFromFileNotSupportedException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Copying to Azure File Storage with service side synchronous copying is not supported..
+        /// </summary>
+        internal static string ServiceSideSyncCopyToFileNotSupportedException {
+            get {
+                return ResourceManager.GetString("ServiceSideSyncCopyToFileNotSupportedException", resourceCulture);
             }
         }
         

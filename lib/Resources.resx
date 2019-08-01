@@ -336,6 +336,12 @@ MD5 in property: {2}</value>
   <data name="AzureFile" xml:space="preserve">
     <value>AzureFile</value>
   </data>
+  <data name="ServiceSideSyncCopyFromFileNotSupportedException" xml:space="preserve">
+    <value>Copying from Azure File Storage with service side synchronous copying is not supported.</value>
+  </data>
+  <data name="ServiceSideSyncCopyToFileNotSupportedException" xml:space="preserve">
+    <value>Copying to Azure File Storage with service side synchronous copying is not supported.</value>
+  </data>
   <data name="SyncCopyFromUriToAzureBlobNotSupportedException" xml:space="preserve">
     <value>Copying from uri to Azure Blob Storage synchronously is not supported.</value>
   </data>

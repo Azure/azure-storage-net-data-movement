@@ -203,10 +203,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 {
                     if (!this.TransferJob.Overwrite.Value)
                     {
-                        await this.CheckOverwriteAsync(
-                            true,
-                            this.sourceBlob.Uri.ToString(),
-                            this.destBlob.Uri.ToString());
+                        string exceptionMessage = string.Format(CultureInfo.InvariantCulture, Resources.OverwriteCallbackCancelTransferException, this.sourceBlob.Uri.ToString(), this.destBlob.Uri.ToString());
+                        throw new TransferSkippedException(exceptionMessage);
                     }
                 }
                 else if (!this.destLocation.CheckedAccessCondition && null != this.destLocation.AccessCondition)

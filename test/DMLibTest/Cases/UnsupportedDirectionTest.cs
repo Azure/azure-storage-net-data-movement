@@ -71,6 +71,8 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.AppendBlob, DMLibCopyMethod.ServiceSideAsyncCopy)]
         [DMLibTestMethod(DMLibDataType.URI, DMLibDataType.CloudFile)]
         [DMLibTestMethod(DMLibDataType.URI, DMLibDataType.CloudBlob)]
+        [DMLibTestMethod(DMLibDataType.Cloud, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         // TODO: add more test cases
         public void TestUnsupportedDirection()
         {
@@ -79,11 +81,23 @@ namespace DMLibTest.Cases
 
             var result = this.ExecuteTestCase(sourceDataInfo, new TestExecutionOptions<DMLibDataInfo>());
 
-            Test.Assert(result.Exceptions.Count == 1, "Verify no exception is thrown.");
+            Test.Assert(result.Exceptions.Count == 1, "Verify exception is thrown.");
 
             Exception exception = result.Exceptions[0];
 
-            if (DMLibTestContext.SourceType == DMLibDataType.URI)
+            if (DMLibCopyMethod.ServiceSideSyncCopy == DMLibTestContext.CopyMethod)
+            {
+                Test.Assert(exception is NotSupportedException, "Verify exception is NotSupportedException.");
+                if (DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                {
+                    VerificationHelper.VerifyExceptionErrorMessage(exception, "Copying to Azure File Storage with service side synchronous copying is not supported.");
+                }
+                else
+                {
+                    VerificationHelper.VerifyExceptionErrorMessage(exception, "Copying from Azure File Storage with service side synchronous copying is not supported.");
+                }
+            }
+            else if (DMLibTestContext.SourceType == DMLibDataType.URI)
             {
                 Test.Assert(exception is NotSupportedException, "Verify exception is NotSupportedException.");
                 if (DMLibTestContext.DestType == DMLibDataType.CloudFile)
@@ -103,7 +117,7 @@ namespace DMLibTest.Cases
             else
             {
                 Test.Assert(exception is InvalidOperationException, "Verify exception is InvalidOperationException.");
-                VerificationHelper.VerifyExceptionErrorMessage(exception, 
+                VerificationHelper.VerifyExceptionErrorMessage(exception,
                     string.Format("Copying from File Storage to {0} Blob Storage asynchronously is not supported.", MapBlobDataTypeToBlobType(DMLibTestContext.DestType)));
             }
 
