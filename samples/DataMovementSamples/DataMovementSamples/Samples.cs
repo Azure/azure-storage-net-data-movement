@@ -154,7 +154,16 @@ namespace DataMovementSamples
             // Start the transfer
             try
             {
-                Task task = TransferManager.CopyAsync(sourceBlob, destinationBlob, false /* isServiceCopy */, null /* options */, context, cancellationSource.Token);
+                // With the CopyMethod parameter, you can indicate how the content would be copied to destination blob.
+                // SyncCopy is to download source blob content to local memory and then upload to destination blob.
+                // ServiceSideAsyncCopy is to send a start-copy request to Azure Storage Sever, and Azure Storage Server will do the actual copy.
+                // ServiceSideSyncCopy will leverage REST API of Put Block From URL, Append Block From URL and Put Page From URL in Azure Storage Server.
+                // Please see <c>https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-from-url</c> for Put Block From URL,
+                // <c>https://docs.microsoft.com/en-us/rest/api/storageservices/append-block-from-url</c> for Append Block From URL,
+                // <c>https://docs.microsoft.com/en-us/rest/api/storageservices/put-page-from-url</c> for Put Page From URL.
+
+                // Following will use ServiceSideSyncCopy to copy a blob.
+                Task task = TransferManager.CopyAsync(sourceBlob, destinationBlob, CopyMethod.ServiceSideSyncCopy, null /* options */, context, cancellationSource.Token);
 
                 // Sleep for 1 seconds and cancel the transfer. 
                 // It may fail to cancel the transfer if transfer is done in 1 second. If so, no file will tranferred after resume.
@@ -177,7 +186,7 @@ namespace DataMovementSamples
 
             // Resume transfer from the stored checkpoint
             Console.WriteLine("Resume the cancelled transfer.");
-            await TransferManager.CopyAsync(sourceBlob, destinationBlob, false /* isServiceCopy */, null /* options */, resumeContext);
+            await TransferManager.CopyAsync(sourceBlob, destinationBlob, CopyMethod.ServiceSideSyncCopy, null /* options */, resumeContext);
             Console.WriteLine("CloudBlob {0} is copied to {1} successfully.", sourceBlob.Uri.ToString(), destinationBlob.Uri.ToString());
         }
 
