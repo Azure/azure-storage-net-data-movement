@@ -28,3 +28,5 @@ Function UpdateVersionInFile
 UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\nupkg\Microsoft.Azure.Storage.DataMovement.nuspec') '    <version>' '</version>' 4
 
 UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\AssemblyInfo\SharedAssemblyInfo.cs') '[assembly: AssemblyFileVersion("' '")]' 4
+
+UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\..\netcore\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj') '    <Version>' '</Version>' 4
