@@ -156,20 +156,20 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             {
                 if (pageOffset <= pageRange.StartOffset)
                 {
-                    while (pageOffset + Constants.DefaultChunkSize < pageRange.StartOffset)
+                    while (pageOffset + Constants.DefaultTransferChunkSize < pageRange.StartOffset)
                     {
-                        pageOffset += Constants.DefaultChunkSize;
+                        pageOffset += Constants.DefaultTransferChunkSize;
                     }
 
                     pageList.Add(pageOffset);
-                    pageOffset += Constants.DefaultChunkSize;
+                    pageOffset += Constants.DefaultTransferChunkSize;
                 }
 
                 // pageOffset > pageRange.StartOffset
                 while (pageOffset < pageRange.EndOffset)
                 {
                     pageList.Add(pageOffset);
-                    pageOffset += Constants.DefaultChunkSize;
+                    pageOffset += Constants.DefaultTransferChunkSize;
                 }
             }
 
@@ -300,7 +300,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             {
                                 checkpoint.TransferWindow.Add(startOffset);
                                 checkpoint.EntryTransferOffset = Math.Min(
-                                    checkpoint.EntryTransferOffset + Constants.DefaultChunkSize,
+                                    checkpoint.EntryTransferOffset + Constants.DefaultTransferChunkSize,
                                     this.totalLength);
 
                                 canUpload = true;
@@ -321,7 +321,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             {
                                 checkpoint.TransferWindow.Add(startOffset);
                                 checkpoint.EntryTransferOffset = Math.Min(
-                                    checkpoint.EntryTransferOffset + Constants.DefaultChunkSize,
+                                    checkpoint.EntryTransferOffset + Constants.DefaultTransferChunkSize,
                                     this.totalLength);
 
                                 canUpload = true;
@@ -349,7 +349,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             await Task.Yield();
 
             Uri sourceUri = this.sourceBlob.GenerateCopySourceUri();
-            long length = Math.Min(this.totalLength - startOffset, Constants.DefaultChunkSize);
+            long length = Math.Min(this.totalLength - startOffset, Constants.DefaultTransferChunkSize);
 
             await this.destPageBlob.WritePagesAsync(
                 sourceUri,

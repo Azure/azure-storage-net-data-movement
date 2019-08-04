@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Globalization;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -534,13 +535,17 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 return new PageBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
             }
-            else if (transferJob.Destination.Instance is CloudAppendBlob)
+            else if (BlobType.AppendBlob == destinationBlob.BlobType)
             {
                 return new AppendBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
             }
-            else
+            else if (BlobType.BlockBlob == destinationBlob.BlobType)
             {
                 return new BlockBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+            }
+            else
+            {
+                throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.NotSupportedBlobType, destinationBlob.BlobType));
             }
         }
 

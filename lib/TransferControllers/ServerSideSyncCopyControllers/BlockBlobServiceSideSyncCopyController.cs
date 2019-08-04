@@ -300,7 +300,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private void PrepareForCopy()
         {
-            var calculatedBlockSize =  ((long)Math.Ceiling((double)this.totalLength / 50000 / Constants.DefaultChunkSize)) * Constants.DefaultChunkSize;
+            var calculatedBlockSize =  ((long)Math.Ceiling((double)this.totalLength / 50000 / Constants.DefaultTransferChunkSize)) * Constants.DefaultTransferChunkSize;
             this.blockSize = Math.Max(TransferManager.Configurations.BlockSize, calculatedBlockSize);
 
             SingleObjectCheckpoint checkpoint = this.TransferJob.CheckPoint;

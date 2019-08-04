@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <summary>
         /// Default size for a chunk transferring, 4MB.
         /// </summary>
-        public const int DefaultChunkSize = 4 * 1024 * 1024;
+        public const int DefaultTransferChunkSize = 4 * 1024 * 1024;
 
         /// <summary>
         /// Default memory chunk size of memory pool, 4MB.

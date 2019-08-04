@@ -25,7 +25,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     {
         private CloudAppendBlob destAppendBlob = null;
 
-        private long blockSize = Constants.DefaultChunkSize;
+        private long blockSize = Constants.DefaultTransferChunkSize;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppendBlobServiceSideSyncCopyController"/> class.
