@@ -73,6 +73,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
                     else
                     {
+                        memoryChunksRequiredEachTime = (int)Math.Ceiling((double)blockSize / Constants.DefaultTransferChunkSize);
+
                         // Try to increase the memory pool size
                         this.Scheduler.TransferOptions.UpdateMaximumCacheSize(blockSize);
                     }
