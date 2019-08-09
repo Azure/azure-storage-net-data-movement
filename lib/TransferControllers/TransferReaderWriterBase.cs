@@ -44,6 +44,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             get;
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether to enable small file optimization.
+        /// </summary>
+        internal bool EnableSmallFileOptimization
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether to enable optimization for small file with only one chunk.
+        /// </summary>
+        protected bool EnableOneChunkFileOptimization
+        {
+            get
+            {
+                if (this.EnableSmallFileOptimization && 
+                    this.SharedTransferData.TotalLength > 0 &&
+                    this.SharedTransferData.TotalLength <= Constants.MinBlockSize)
+                {
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
         protected TransferScheduler Scheduler
         {
             get;
@@ -94,18 +121,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         public TransferData GetFirstAvailable()
         {
-            TransferData transferData = null;
-            var transferDatas = this.SharedTransferData.AvailableData.Values;
+            var transferEntry = this.SharedTransferData.AvailableData.FirstOrDefault();
 
-            if (transferDatas.Any())
+            if (transferEntry.Value != null)
             {
-                transferData = transferDatas.First();
-                TransferData tempData;
-                this.SharedTransferData.AvailableData.TryRemove(transferData.StartOffset, out tempData);
-                return transferData;
+                TransferData tempData = null;
+                this.SharedTransferData.AvailableData.TryRemove(transferEntry.Value.StartOffset, out tempData);
             }
 
-            return null;
+            return transferEntry.Value;
         }
     }
 }

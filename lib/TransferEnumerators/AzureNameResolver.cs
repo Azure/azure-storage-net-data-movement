@@ -75,12 +75,28 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             get;
         }
 
+#if DOTNET5_4
+        protected char Delimiter
+        {
+            get
+            {
+                return this.delimiter;
+            }
+        }
+#endif
+        
         public string ResolveName(TransferEntry sourceEntry)
         {
             // 1) Unescape original string, original string is UrlEncoded.
             // 2) Replace Azure directory separator with Windows File System directory separator.
             // 3) Trim spaces at the end of the file name.
-            string destinationRelativePath = EscapeInvalidCharacters(this.TranslateDelimiters(sourceEntry.RelativePath).TrimEnd(new char[] { ' ' }));
+            string destinationRelativePath = this.TranslateDelimiters(sourceEntry.RelativePath);
+            if (Interop.CrossPlatformHelpers.IsWindows)
+            {
+                destinationRelativePath = destinationRelativePath.TrimEnd(new char[] { ' ' });
+            }
+
+            destinationRelativePath = EscapeInvalidCharacters(destinationRelativePath);
 
             // Split into path + filename parts.
             int lastSlash = destinationRelativePath.LastIndexOf(this.DirSeparator, StringComparison.Ordinal);

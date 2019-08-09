@@ -15,8 +15,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
     internal class SyncTransferController : TransferControllerBase
     {
-        private TransferReaderWriterBase reader;
-        private TransferReaderWriterBase writer;
+        private readonly TransferReaderWriterBase reader;
+        private readonly TransferReaderWriterBase writer;
 
         public SyncTransferController(
             TransferScheduler transferScheduler,
@@ -26,12 +26,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             if (null == transferScheduler)
             {
-                throw new ArgumentNullException("transferScheduler");
+                throw new ArgumentNullException(nameof(transferScheduler));
             }
 
             if (null == transferJob)
             {
-                throw new ArgumentNullException("transferJob");
+                throw new ArgumentNullException(nameof(transferJob));
             }
 
             this.SharedTransferData = new SharedTransferData()
@@ -44,9 +44,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             {
                 transferJob.CheckPoint = new SingleObjectCheckpoint();
             }
+
+            this.reader = this.GetReader(transferJob.Source);
+            this.writer = this.GetWriter(transferJob.Destination);
             
-            reader = this.GetReader(transferJob.Source);
-            writer = this.GetWriter(transferJob.Destination);
+            this.CheckAndEnableSmallFileOptimization();
 
             this.SharedTransferData.OnTotalLengthChanged += (sender, args) =>
             {
@@ -55,17 +57,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 // new block size will be mutiple of DefaultBlockSize(aka MemoryManager's chunk size)
                 if (this.writer is BlockBlobWriter)
                 {
-                    var normalMaxBlockBlobSize = (long)50000* Constants.DefaultBlockSize;
+                    var normalMaxBlockBlobSize = (long)50000 * Constants.DefaultBlockSize;
 
                     // Calculate the min block size according to the blob total length
                     var memoryChunksRequiredEachTime = (int)Math.Ceiling((double)this.SharedTransferData.TotalLength / normalMaxBlockBlobSize);
-                    var blockSize = memoryChunksRequiredEachTime*Constants.DefaultBlockSize;
+                    var blockSize = memoryChunksRequiredEachTime * Constants.DefaultBlockSize;
 
+                    // Take the block size user specified when it's greater than the calculated value
                     if (TransferManager.Configurations.BlockSize > blockSize)
                     {
-                        // Take the block size user specified when it's greater than the calculated value
                         blockSize = TransferManager.Configurations.BlockSize;
-                        memoryChunksRequiredEachTime = (int) Math.Ceiling((double) blockSize/Constants.DefaultBlockSize);
+                        memoryChunksRequiredEachTime = (int)Math.Ceiling((double)blockSize / Constants.DefaultBlockSize);
                     }
                     else
                     {
@@ -73,12 +75,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                         this.Scheduler.TransferOptions.UpdateMaximumCacheSize(blockSize);
                     }
 
+                    // If data size is smaller than block size, fit block size according to total length, in order to minimize buffer allocation,
+                    // and save space and time.
+                    if (this.SharedTransferData.TotalLength < blockSize)
+                    {
+                        // Note total length could be 0, in this case, use default block size.
+                        memoryChunksRequiredEachTime = Math.Max(1,
+                            (int)Math.Ceiling((double)this.SharedTransferData.TotalLength / Constants.DefaultBlockSize));
+                        blockSize = memoryChunksRequiredEachTime * Constants.DefaultBlockSize;
+                    }
                     this.SharedTransferData.BlockSize = blockSize;
                     this.SharedTransferData.MemoryChunksRequiredEachTime = memoryChunksRequiredEachTime;
                 }
                 else
                 {
-                    // For normal directions, we'll use default block size 4MB for transfer
+                    // For normal directions, we'll use default block size 4MB for transfer.
                     this.SharedTransferData.BlockSize = Constants.DefaultBlockSize;
                     this.SharedTransferData.MemoryChunksRequiredEachTime = 1;
                 }
@@ -101,7 +112,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             get
             {
-                var hasWork = (!this.reader.PreProcessed && this.reader.HasWork) || (this.reader.PreProcessed && this.writer.HasWork) || (this.writer.PreProcessed && this.reader.HasWork);
+                var hasWork = (!this.reader.PreProcessed && this.reader.HasWork)
+                    || (this.reader.PreProcessed && this.writer.HasWork)
+                    || (this.writer.PreProcessed && this.reader.HasWork);
+
                 return !this.ErrorOccurred && hasWork;
             }
         }
@@ -151,7 +165,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     {
                         return new BlockBasedBlobReader(this.Scheduler, this, this.CancellationToken);
                     }
-                    else 
+                    else
                     {
                         throw new InvalidOperationException(
                             string.Format(
@@ -211,23 +225,31 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
         }
 
+        /// <summary>
+        /// Currently only do small file optimization for block/append blob download, and block blob upload.
+        /// Further small file optimization would be done according to feedbacks.
+        /// </summary>
+        private void CheckAndEnableSmallFileOptimization()
+        {
+            if ((this.reader is BlockBasedBlobReader && this.writer is StreamedWriter) ||
+                (this.reader is StreamedReader && this.writer is BlockBlobWriter))
+            {
+                this.reader.EnableSmallFileOptimization = true;
+                this.writer.EnableSmallFileOptimization = true;
+            }
+        }
+
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
 
             if (disposing)
             {
-                if (null != this.reader)
-                {
-                    this.reader.Dispose();
-                }
+                this.reader?.Dispose();
 
-                if (null != this.writer)
-                {
-                    this.writer.Dispose();
-                }
+                this.writer?.Dispose();
 
-                foreach(var transferData in this.SharedTransferData.AvailableData.Values)
+                foreach (var transferData in this.SharedTransferData.AvailableData.Values)
                 {
                     transferData.Dispose();
                 }

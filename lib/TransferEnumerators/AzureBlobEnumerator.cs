@@ -108,7 +108,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     resultSegment = container.ListBlobsSegmentedAsync(
                         patternPrefix,
                         true,
-                        BlobListingDetails.Snapshots,
+                        BlobListingDetails.Snapshots | BlobListingDetails.Metadata,
                         ListBlobsSegmentSize,
                         continuationToken,
                         requestOptions,

@@ -9,6 +9,7 @@
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <AssetTargetFallback>$(AssetTargetFallback);dnxcore50;portable-net45+win8</AssetTargetFallback>
     <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
+    <DebugType>portable</DebugType>
     <DefineConstants>$(DefineConstants);DOTNET5_4;DNXCORE50;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;RUNTIME_INFORMATION</DefineConstants>
   </PropertyGroup>
 
@@ -22,8 +23,11 @@
     <Compile Include="..\..\test\DMLibTest\Cases\CheckContentMD5Test.cs" Link="Cases\CheckContentMD5Test.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ChunkedMemoryStreamTests.cs" Link="Cases\ChunkedMemoryStreamTests.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\DelimiterTest.cs" Link="Cases\DelimiterTest.cs" />
+    <Compile Include="..\..\test\DMLibTest\Cases\DummyTransferTest.cs" Link="Cases\DummyTransferTest.cs" />
+    <Compile Include="..\..\test\DMLibTest\Cases\FollowSymlinkTest.cs" Link="Cases\FollowSymlinkTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\LongFilePathTest.cs" Link="Cases\LongFilePathTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\MetadataTest.cs" Link="Cases\MetadataTest.cs" />
+    <Compile Include="..\..\test\DMLibTest\Cases\NonseekableStreamTest.cs" Link="Cases\NonseekableStreamTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\OverwriteTest.cs" Link="Cases\OverwriteTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ProgressHandlerTest.cs" Link="Cases\ProgressHandlerTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ResumeTest.cs" Link="Cases\ResumeTest.cs" />
@@ -70,6 +74,7 @@
     <Compile Include="..\..\test\DMLibTest\Generated\BVT_Generated.cs" Link="Generated\BVT_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\CheckContentMD5Test_Generated.cs" Link="Generated\CheckContentMD5Test_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\DelimiterTest_Generated.cs" Link="Generated\DelimiterTest_Generated.cs" />
+    <Compile Include="..\..\test\DMLibTest\Generated\FollowSymlinkTest_Generated.cs" Link="Generated\FollowSymlinkTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\LongFilePathTest_Generated.cs" Link="Generated\LongFilePathTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\MetadataTest_Generated.cs" Link="Generated\MetadataTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\OverwriteTest_Generated.cs" Link="Generated\OverwriteTest_Generated.cs" />
@@ -83,6 +88,7 @@
     <Compile Include="..\..\test\DMLibTest\Generated\UnsupportedDirectionTest_Generated.cs" Link="Generated\UnsupportedDirectionTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\DMLibTestConstants.cs" Link="Util\DMLibTestConstants.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\DMLibTestHelper.cs" Link="Util\DMLibTestHelper.cs" />
+    <Compile Include="..\..\test\DMLibTest\Util\DMLibTestStream.cs" Link="Util\DMLibTestStream.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\Helpers.cs" Link="Util\Helpers.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\SASGenerator.cs" Link="Util\SASGenerator.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\TestAccounts.cs" Link="Util\TestAccounts.cs" />
@@ -100,7 +106,7 @@
     <ProjectReference Include="..\MsTestLib\MsTestLib.csproj" />
     <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
-    <PackageReference Include="WindowsAzure.Storage" Version="8.5.0" />
+    <PackageReference Include="WindowsAzure.Storage" Version="9.3.0" />
   </ItemGroup>
 
   <ItemGroup>

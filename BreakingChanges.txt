@@ -1,4 +1,16 @@
+Tracking Breaking Changes since 0.7.1
+
+  - Changed following callbacks to asynchronized methods:
+    ShouldOverwriteCallback --> ShouldOverwriteCallbackAsync
+    ShouldTransferCallback --> ShouldTransferCallbackAsync
+    SetAttributesCallback --> SetAttributesCallbackAsync
+
+Tracking Breaking Changes since 0.6.6
+
+  - Changed to throwing out exception instead of starting a new transfer when resuming a transfer from or to a stream.
+
 Tracking Breaking Changes since 0.6.1
+
   - Changed the TransferException format, the TransferException with following 2 error codes won't expose inner exception details (e.g. RequestId) in TransferException message any more
     - UncategorizedException
     - FailToVadlidateDestination

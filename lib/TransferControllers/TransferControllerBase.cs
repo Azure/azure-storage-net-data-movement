@@ -90,7 +90,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     return false;
                 }
 
-                return this.TransferJob.Transfer.Context.ShouldOverwriteCallback == TransferContext.ForceOverwrite;
+                return this.TransferJob.Transfer.Context.ShouldOverwriteCallbackAsync == TransferContext.ForceOverwrite;
             }
         }
 
@@ -145,13 +145,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             private set;
         }
 
-        protected CancellationToken CancellationToken
-        {
-            get
-            {
-                return cancellationTokenSource.Token;
-            }
-        }
+        /// <summary>
+        /// Gets the cancellation token to control the controller's work.
+        /// </summary>
+        protected CancellationToken CancellationToken => this.cancellationTokenSource?.Token ?? CancellationToken.None;
 
         /// <summary>
         /// Do work in the controller.
@@ -221,7 +218,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             // within this controller.
             // Trigger the CancellationTokenSource asynchronously. Otherwise, all controllers sharing the same
             // userCancellationToken will keep running until this.cancellationTokenSource.Cancel() returns.
-            Task.Run(() => 
+            Task.Run(() =>
                 {
                     lock (this.cancelLock)
                     {
@@ -278,17 +275,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             if (Interlocked.CompareExchange(ref this.notifiedFinish, 1, 0) == 0)
             {
-                ThreadPool.QueueUserWorkItem((userData) =>
+                if (null != exception)
                 {
-                    if (null != exception)
-                    {
-                        this.TaskCompletionSource.SetException(exception);
-                    }
-                    else
-                    {
-                        this.TaskCompletionSource.SetResult(null);
-                    }
-                });
+                    this.TaskCompletionSource.SetException(exception);
+                }
+                else
+                {
+                    this.TaskCompletionSource.SetResult(null);
+                }
             }
         }
 
@@ -371,16 +365,16 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         /// <param name="ex">Exception to record.</param>
         protected abstract void SetErrorState(Exception ex);
 
-        public void CheckOverwrite(
+        public async Task CheckOverwriteAsync(
             bool exist,
-            object source, 
+            object source,
             object dest)
         {
             if (null == this.TransferJob.Overwrite)
             {
                 if (exist)
                 {
-                    if (null == this.TransferContext || null == this.TransferContext.ShouldOverwriteCallback || !this.TransferContext.ShouldOverwriteCallback(source, dest))
+                    if (null == this.TransferContext || null == this.TransferContext.ShouldOverwriteCallbackAsync || !await this.TransferContext.ShouldOverwriteCallbackAsync(source, dest))
                     {
                         this.TransferJob.Overwrite = false;
                     }
@@ -406,12 +400,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         public async Task SetCustomAttributesAsync(object dest)
         {
-            if (null != this.TransferContext && null != this.TransferContext.SetAttributesCallback)
+            if (null != this.TransferContext && null != this.TransferContext.SetAttributesCallbackAsync)
             {
-                await Task.Run(() =>
-                {
-                    this.TransferContext.SetAttributesCallback(dest);
-                });
+                await this.TransferContext.SetAttributesCallbackAsync(dest);
             }
         }
     }

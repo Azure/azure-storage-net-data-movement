@@ -220,12 +220,23 @@ namespace DMLibTest
     {
         private Dictionary<string, DirNode> dirNodeMap;
         private Dictionary<string, FileNode> fileNodeMap;
+        private string content = null;
+        private DirNode symlinkTargetDirNode = null;
 
         public DirNode(string name)
         {
             this.Name = name;
             this.dirNodeMap = new Dictionary<string, DirNode>();
             this.fileNodeMap = new Dictionary<string, FileNode>();
+        }
+
+        public static DirNode SymlinkedDir(string name, string content, DirNode targetDir)
+        {
+            DirNode symlinkNode = targetDir.Clone();
+            symlinkNode.content = content;
+            symlinkNode.Name = name;
+            symlinkNode.symlinkTargetDirNode = targetDir;
+            return symlinkNode;
         }
 
         public int FileNodeCountRecursive
@@ -241,6 +252,8 @@ namespace DMLibTest
                 return totalCount;
             }
         }
+
+        public string Content => this.content;
 
         public int FileNodeCount
         {
@@ -296,6 +309,34 @@ namespace DMLibTest
             }
         }
 
+        public IEnumerable<DirNode> NormalDirNodes
+        {
+            get
+            {
+                foreach (var dirNode in this.DirNodes)
+                {
+                    if (string.IsNullOrEmpty(dirNode.Content))
+                    {
+                        yield return dirNode;
+                    }
+                }
+            }
+        }
+
+        public IEnumerable<DirNode> SymlinkedDirNodes
+        {
+            get
+            {
+                foreach (var dirNode in this.DirNodes)
+                {
+                    if (!string.IsNullOrEmpty(dirNode.Content))
+                    {
+                        yield return dirNode;
+                    }
+                }
+            }
+        }
+
         public IEnumerable<DirNode> DirNodes
         {
             get
@@ -341,18 +382,33 @@ namespace DMLibTest
 
         public void AddDirNode(DirNode dirNode)
         {
+            if (!string.IsNullOrEmpty(this.content))
+            {
+                throw new Exception("Symlinked dir, cannot add child to it. Please add child to its target");
+            }
+
             dirNode.Parent = this;
             this.dirNodeMap.Add(dirNode.Name, dirNode);
         }
 
         public void AddFileNode(FileNode fileNode)
         {
+            if (!string.IsNullOrEmpty(this.content))
+            {
+                throw new Exception("Symlinked dir, cannot add child to it. Please add child to its target");
+            }
+
             fileNode.Parent = this;
             this.fileNodeMap.Add(fileNode.Name, fileNode);
         }
 
         public FileNode DeleteFileNode(string name)
         {
+            if (!string.IsNullOrEmpty(this.content))
+            {
+                throw new Exception("Symlinked dir, cannot be modified. Please modify its target");
+            }
+
             FileNode fn = null;
             if (this.fileNodeMap.ContainsKey(name))
             {
@@ -366,6 +422,11 @@ namespace DMLibTest
 
         public DirNode DeleteDirNode(string name)
         {
+            if (!string.IsNullOrEmpty(this.content))
+            {
+                throw new Exception("Symlinked dir, cannot be modified. Please modify its target");
+            }
+
             DirNode dn = null;
             if (this.dirNodeMap.ContainsKey(name))
             {
@@ -390,6 +451,7 @@ namespace DMLibTest
                 newDirNode.AddDirNode(dirNode.Clone());
             }
 
+            newDirNode.content = this.content;
             return newDirNode;
         }
         
@@ -419,6 +481,33 @@ namespace DMLibTest
                 }
 
                 yield return subDirNode;
+            }
+        }
+
+        public void BuildSymlinkedDirNode()
+        {
+            if (string.IsNullOrEmpty(this.content) || null == this.symlinkTargetDirNode)
+            {
+                throw new Exception("It's not a symlinked DirNode");
+            }
+
+            BuildSymlinkedDirNode(this, this.symlinkTargetDirNode);
+        }
+
+        private void BuildSymlinkedDirNode(DirNode symlinkSubDir, DirNode targetSubDir)
+        {
+            foreach (var fileNode in symlinkSubDir.FileNodes)
+            {
+                var targetFileNode = targetSubDir.GetFileNode(fileNode.Name);
+                fileNode.MD5 = targetFileNode.MD5;
+                fileNode.LastModifiedTime = targetFileNode.LastModifiedTime;
+                fileNode.SizeInByte = targetFileNode.SizeInByte;
+                fileNode.Metadata = new Dictionary<string, string>();
+            }
+
+            foreach (var subDir in symlinkSubDir.DirNodes)
+            {
+                BuildSymlinkedDirNode(subDir, targetSubDir.GetDirNode(subDir.Name));
             }
         }
 

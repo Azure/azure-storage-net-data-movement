@@ -22,11 +22,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Get source/destination instance in transfer.
+        /// Gets source/destination instance in transfer.
         /// </summary>
         public abstract object Instance
         {
             get;
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether detailed information(ETag, LMT, Length, Properties and metadata) 
+        /// of the instance contained in the current transfer location has been fetched.
+        /// </summary>
+        public bool? IsInstanceInfoFetched
+        {
+            get;
+            set;
         }
 
         /// <summary>

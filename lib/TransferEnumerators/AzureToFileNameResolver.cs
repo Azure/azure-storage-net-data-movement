@@ -9,6 +9,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     using System.Collections.Generic;
     using System.IO;
     using Interop;
+    using System.Globalization;
+    using System.Text.RegularExpressions;
 
     /// <summary>
     /// Name resolver class for translating Azure file/blob names to Windows file names.
@@ -24,6 +26,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         /// Chars invalid for path name.
         /// </summary>
         private static char[] invalidPathChars = AzureToFileNameResolver.GetInvalidPathChars();
+
+#if DOTNET5_4
+        /// <summary>
+        /// This is used to escape the first "/" or "/" following a "/".
+        /// Like to escape "/abc///ac" to "%2Fabc/%2F%2Fac"
+        /// </summary>
+        private static Regex escapeDirSeparators = new Regex("^/|(?<=/)/|/$");
+#endif
 
         public AzureToFileNameResolver(char? delimiter)
             : base(delimiter)
@@ -57,6 +67,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         {
             return Path.Combine(folder, name);
         }
+
+#if DOTNET5_4
+        protected override string TranslateDelimiters(string source)
+        {
+            if (!CrossPlatformHelpers.IsWindows
+                && this.Delimiter != '/')
+            {
+                source = source.Replace("/", "%2F");
+            }
+
+            return base.TranslateDelimiters(source);
+        }
+
+        protected override string EscapeInvalidCharacters(string fileName)
+        {
+            fileName = base.EscapeInvalidCharacters(fileName);
+
+            if (!CrossPlatformHelpers.IsWindows)
+            {
+                return escapeDirSeparators.Replace(fileName, "%2F");
+            }
+            else
+            {
+                return fileName;
+            }
+        }
+#endif
 
         private static char[] GetInvalidPathChars()
         {

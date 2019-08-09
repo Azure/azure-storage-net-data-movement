@@ -102,6 +102,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         SubTransferFails = 18,
 
         /// <summary>
+        /// The source file size is invalid for azure file.
+        /// </summary>
+        UploadFileSourceFileSizeInvalid = 19,
+
+        /// <summary>
+        /// Failed to create directory because a file already exists with the same name.
+        /// </summary>
+        FailedToCreateDirectory = 20,
+
+        /// <summary>
+        /// The transfer type didn't support dummy transfer.
+        /// </summary>
+        UnsupportedDummyTransfer = 21,
+
+        /// <summary>
         /// Uncategorized transfer error.
         /// </summary>
         Unknown = 32,

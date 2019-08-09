@@ -9,8 +9,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     using System;
     using System.Diagnostics;
     using System.Globalization;
-    using System.Linq;
     using System.IO;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -23,9 +23,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         private long expectOffset = 0;
 
         /// <summary>
-        /// Value to indicate whether there's work to do in the writer.
+        /// Work token indicates whether this writer has work, could be 0(no work) or 1(has work).
         /// </summary>
-        private volatile bool hasWork;
+        private volatile int workToken;
 
         /// <summary>
         /// Stream to calculation destination's content MD5.
@@ -42,13 +42,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private volatile State state;
 
+        private volatile bool isStateSwitchedInternal;
+
         public StreamedWriter(
             TransferScheduler scheduler,
             SyncTransferController controller,
             CancellationToken cancellationToken)
             : base(scheduler, controller, cancellationToken)
         {
-            this.hasWork = true;
+            this.workToken = 1;
             this.state = State.OpenOutputStream;
         }
 
@@ -73,7 +75,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             get
             {
-                return this.hasWork &&
+                return this.workToken == 1 &&
                     ((State.OpenOutputStream == this.state)
                     || (State.CalculateMD5 == this.state)
                     || ((State.Write == this.state)
@@ -94,10 +96,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             switch (this.state)
             {
                 case State.OpenOutputStream:
-                    await HandleOutputStreamAsync();
+                    await this.HandleOutputStreamAsync();
                     break;
                 case State.CalculateMD5:
-                    await CalculateMD5Async();
+                    await this.CalculateMD5Async();
                     break;
                 case State.Write:
                     await this.WriteChunkDataAsync();
@@ -118,20 +120,27 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
         private async Task HandleOutputStreamAsync()
         {
-            this.hasWork = false;
-
-            await Task.Run(() =>
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
             {
-                // We do check point consistancy validation in reader, and directly use it in writer.
-                if ((null != this.TransferJob.CheckPoint.TransferWindow)
-                    && (this.TransferJob.CheckPoint.TransferWindow.Any()))
+                return;
+            }
+
+            await Task.Run(async () =>
+            {
+                // Only do calculation related to transfer window when the file contains multiple chunks.
+                if (!this.EnableOneChunkFileOptimization)
                 {
-                    this.TransferJob.CheckPoint.TransferWindow.Sort();
-                    this.expectOffset = this.TransferJob.CheckPoint.TransferWindow[0];
-                }
-                else
-                {
-                    this.expectOffset = this.TransferJob.CheckPoint.EntryTransferOffset;
+                    // We do check point consistancy validation in reader, and directly use it in writer.
+                    if ((null != this.TransferJob.CheckPoint.TransferWindow)
+                        && this.TransferJob.CheckPoint.TransferWindow.Any())
+                    {
+                        this.TransferJob.CheckPoint.TransferWindow.Sort();
+                        this.expectOffset = this.TransferJob.CheckPoint.TransferWindow[0];
+                    }
+                    else
+                    {
+                        this.expectOffset = this.TransferJob.CheckPoint.EntryTransferOffset;
+                    }
                 }
 
                 if (TransferLocationType.Stream == this.TransferJob.Destination.Type)
@@ -161,13 +170,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     if (!this.Controller.IsForceOverwrite)
                     {
-                        this.Controller.CheckOverwrite(
+                        await this.Controller.CheckOverwriteAsync(
                             LongPathFile.Exists(filePath),
                             this.TransferJob.Source.Instance,
                             filePath);
                     }
-
-                    this.Controller.UpdateProgressAddBytesTransferred(0);
 
                     this.Controller.CheckCancellation();
 
@@ -177,10 +184,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
 #if DOTNET5_4
                         string longFilePath = filePath;
-                        if(Interop.CrossPlatformHelpers.IsWindows)
+                        if (Interop.CrossPlatformHelpers.IsWindows)
                         {
                             longFilePath = LongPath.ToUncPath(longFilePath);
                         }
+
                         // Attempt to open the file first so that we throw an exception before getting into the async work
                         this.outputStream = new FileStream(
                             longFilePath,
@@ -189,9 +197,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                             FileShare.None);
 #else
                         this.outputStream = LongPathFile.Open(
-                            filePath,
-                            fileMode,
-                            FileAccess.ReadWrite,
+                            filePath, 
+                            fileMode, 
+                            FileAccess.ReadWrite, 
                             FileShare.None);
 #endif
 
@@ -214,8 +222,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 this.outputStream.SetLength(this.SharedTransferData.TotalLength);
 
-                this.Controller.UpdateProgressAddBytesTransferred(0);
-
                 this.md5HashStream = new MD5HashStream(
                     this.outputStream,
                     this.expectOffset,
@@ -231,7 +237,19 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
 
                 this.PreProcessed = true;
-                this.hasWork = true;
+
+                // Switch state internal for one chunk small file.
+                if (this.EnableOneChunkFileOptimization &&
+                    State.Write == this.state &&
+                    ((this.SharedTransferData.TotalLength == this.expectOffset) || this.SharedTransferData.AvailableData.ContainsKey(this.expectOffset)))
+                {
+                    this.isStateSwitchedInternal = true;
+                    await this.WriteChunkDataAsync().ConfigureAwait(false);
+                }
+                else
+                {
+                    this.workToken = 1;
+                }
             });
         }
 
@@ -244,7 +262,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.state);
 
             this.state = State.Write;
-            this.hasWork = true;
+            this.workToken = 1;
 
             return Task.Run(
                 delegate
@@ -260,8 +278,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 "WriteChunkDataAsync called, but state isn't Write or Error",
                 "Current state is {0}",
                 this.state);
-
-            this.hasWork = false;
+            
+            if (!this.isStateSwitchedInternal && Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
+            
             long currentWriteOffset = this.expectOffset;
             TransferData transferData;
             if (this.SharedTransferData.AvailableData.TryRemove(this.expectOffset, out transferData))
@@ -284,7 +306,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                     transferData.MemoryBuffer,
                     0,
                     transferData.Length,
-                    this.CancellationToken);
+                    this.CancellationToken).ConfigureAwait(false);
 
                 // If MD5HashTransformBlock returns false, it means some error happened in md5HashStream to calculate MD5.
                 // then exception was already thrown out there, don't do anything more here.
@@ -302,22 +324,34 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.Scheduler.MemoryManager.ReleaseBuffers(transferData.MemoryBuffer);
             }
 
-            int blockSize = this.SharedTransferData.BlockSize;
-            long chunkStartOffset = (currentWriteOffset / blockSize) * blockSize;
-
-            this.Controller.UpdateProgress(() =>
+            // Skip transfer window calculation and related journal recording operations when it's file with only one chunk.
+            if (this.EnableOneChunkFileOptimization)
             {
-                if ((currentWriteOffset + transferData.Length) >= Math.Min(chunkStartOffset + blockSize, this.SharedTransferData.TotalLength))
-                {
-                    lock (this.TransferJob.CheckPoint.TransferWindowLock)
-                    {
-                        this.TransferJob.CheckPoint.TransferWindow.Remove(chunkStartOffset);
-                    }
-                    this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
-                }
-
                 this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
-            });
+            }
+            else
+            {
+                int blockSize = this.SharedTransferData.BlockSize;
+                long chunkStartOffset = (currentWriteOffset / blockSize) * blockSize;
+
+                this.Controller.UpdateProgress(() =>
+                {
+                    if ((currentWriteOffset + transferData.Length) >= Math.Min(chunkStartOffset + blockSize, this.SharedTransferData.TotalLength))
+                    {
+                        lock (this.TransferJob.CheckPoint.TransferWindowLock)
+                        {
+                            if ((currentWriteOffset + transferData.Length) >= Math.Min(chunkStartOffset + blockSize, this.SharedTransferData.TotalLength))
+                            {
+                                this.TransferJob.CheckPoint.TransferWindow.Remove(chunkStartOffset);
+                            }
+                        }
+
+                        this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
+                    }
+
+                    this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
+                });
+            }
 
             this.SetHasWorkOrFinished();
         }
@@ -330,7 +364,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 if (this.md5HashStream.CheckMd5Hash && this.md5HashStream.SucceededSeparateMd5Calculator)
                 {
                     string calculatedMd5 = this.md5HashStream.MD5HashTransformFinalBlock();
-                    
+
                     string storedMd5 = this.SharedTransferData.Attributes.ContentMD5;
 
                     if (!calculatedMd5.Equals(storedMd5))
@@ -351,7 +385,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                this.hasWork = true;
+                this.workToken = 1;
             }
         }
 

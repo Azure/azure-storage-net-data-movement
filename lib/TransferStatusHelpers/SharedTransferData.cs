@@ -37,7 +37,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public TransferJob TransferJob { get; set; }
 
         /// <summary>
-        /// Gest or sets list of available transfer data from source.
+        /// Gets or sets list of available transfer data from source.
         /// </summary>
         public ConcurrentDictionary<long, TransferData> AvailableData { get; set; }
 
@@ -47,7 +47,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// the writer should do or not do validation on content md5 according to this value.
         /// </summary>
         public bool DisableContentMD5Validation { get; set; }
-
+        
         /// <summary>
         /// Gets or sets attribute for blob/azure file.
         /// </summary>

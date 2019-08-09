@@ -389,7 +389,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 catch (StorageException se)
                 {
 #endif
-                    if (!this.HandleGetDestinationResult(se))
+                    if (!await this.HandleGetDestinationResultAsync(se))
                     {
                         throw se;
                     }
@@ -397,10 +397,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            this.HandleGetDestinationResult(null);
+            await this.HandleGetDestinationResultAsync(null);
         }
 
-        private bool HandleGetDestinationResult(Exception e)
+        private async Task<bool> HandleGetDestinationResultAsync(Exception e)
         {
             bool destExist = !this.IsForceOverwrite;
 
@@ -445,7 +445,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 Uri sourceUri = this.GetSourceUri();
 
                 // If destination file exists, query user whether to overwrite it.
-                this.CheckOverwrite(
+                await this.CheckOverwriteAsync(
                     destExist,
                     sourceUri.ToString(),
                     this.DestUri.ToString());
@@ -495,8 +495,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             if (null != se)
             {
                 if (null != se.RequestInformation
-                && null != se.RequestInformation.ExtendedErrorInformation
-                && BlobErrorCodeStrings.PendingCopyOperation == se.RequestInformation.ExtendedErrorInformation.ErrorCode)
+                && BlobErrorCodeStrings.PendingCopyOperation == se.RequestInformation.ErrorCode)
                 {
                     CopyState copyState = this.FetchCopyStateAsync().Result;
 
@@ -624,11 +623,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                     this.DisposeStatusRefreshTimer();
 
-                    if (null != this.TransferContext && null != this.TransferContext.SetAttributesCallback)
+                    if (null != this.TransferContext && null != this.TransferContext.SetAttributesCallbackAsync)
                     {
                         // If got here, we've done FetchAttributes on destination after copying completed on server,
                         // no need to one more round of FetchAttributes anymore.
-                        await this.SetAttributesAsync(this.TransferContext.SetAttributesCallback);
+                        await this.SetAttributesAsync(this.TransferContext.SetAttributesCallbackAsync);
                     }
 
                     this.SetFinished();
@@ -784,6 +783,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         protected abstract Task<string> DoStartCopyAsync();
         protected abstract void DoHandleGetDestinationException(StorageException se);
         protected abstract Task<CopyState> FetchCopyStateAsync();
-        protected abstract Task SetAttributesAsync(SetAttributesCallback setAttributes);
+        protected abstract Task SetAttributesAsync(SetAttributesCallbackAsync setAttributes);
     }
 }

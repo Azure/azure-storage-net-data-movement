@@ -10,6 +10,8 @@ namespace DMLibTest
     using System.Collections.Generic;
     using System.IO;
     using DMLibTest.Framework;
+    using MS.Test.Common.MsTestLib;
+    using System.Threading;
 
     internal class LocalDataAdaptor : LocalDataAdaptorBase<DMLibDataInfo>
     {
@@ -100,16 +102,46 @@ namespace DMLibTest
         private void GenerateDir(DirNode dirNode, string parentPath)
         {
             string dirPath = Path.Combine(parentPath, dirNode.Name);
-            DMLibDataHelper.CreateLocalDirIfNotExists(dirPath);
 
-            foreach (var subDir in dirNode.DirNodes)
+            if (!string.IsNullOrEmpty(dirNode.Content))
             {
-                GenerateDir(subDir, dirPath);
+                CreateSymlink(dirPath, dirNode.Content);
+
+                Test.Info("Building symlinked dir info of {0}", dirPath);
+                dirNode.BuildSymlinkedDirNode();
+                return;
             }
+            
+            DMLibDataHelper.CreateLocalDirIfNotExists(dirPath);
 
             foreach (var file in dirNode.FileNodes)
             {
                 GenerateFile(file, dirPath);
+            }
+
+            foreach (var subDir in dirNode.NormalDirNodes)
+            {
+                GenerateDir(subDir, dirPath);
+            }
+
+            foreach (var subDir in dirNode.SymlinkedDirNodes)
+            {
+                CreateSymlink(Path.Combine(dirPath, subDir.Name), subDir.Content);
+
+                Test.Info("Building symlinked dir info of {0}", Path.Combine(dirPath, subDir.Name));
+                subDir.BuildSymlinkedDirNode();
+            }
+        }
+        
+        private static void CreateSymlink(string path, string target)
+        {
+            if (CrossPlatformHelpers.IsLinux)
+            {
+                TestHelper.RunCmd("ln", $@"-s {target} {path}");
+            }
+            else
+            {
+                //throw new PlatformNotSupportedException();
             }
         }
 
@@ -166,7 +198,27 @@ namespace DMLibTest
 #endif
         }
 
-        private void BuildDirNode(DirectoryInfo dirInfo, DirNode parent)
+        private void BuildSymlinkedDirNode(DirNode parent, string parentPath)
+        {
+            if (!CrossPlatformHelpers.IsLinux)
+            {
+                throw new PlatformNotSupportedException();
+            }
+
+            foreach (FileNode fileNode in parent.FileNodes)
+            {
+                Test.Info("Building file info of {0}", Path.Combine(parentPath, fileNode.Name));
+                FileInfo fileInfo = new FileInfo(Path.Combine(parentPath, fileNode.Name));
+                this.BuildFileNode(fileInfo, fileNode);
+            }
+
+            foreach (DirNode dirNode in parent.DirNodes)
+            {
+                BuildSymlinkedDirNode(dirNode, Path.Combine(parentPath, dirNode.Name));
+            }
+        }
+
+    private void BuildDirNode(DirectoryInfo dirInfo, DirNode parent)
         {
             foreach (FileInfo fileInfo in dirInfo.GetFiles())
             {

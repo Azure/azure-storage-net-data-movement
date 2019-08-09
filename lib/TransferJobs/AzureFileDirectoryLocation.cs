@@ -123,7 +123,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             try
             {
-                this.FileDirectory.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
+                this.FileDirectory.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, Utils.GenerateOperationContext(null)).Wait();
             }
             catch(AggregateException e)
             {

@@ -94,7 +94,7 @@ namespace DataMovementSamples
             UploadOptions options = new UploadOptions();
 
             SingleTransferContext context = new SingleTransferContext();
-            context.SetAttributesCallback = (destination) =>
+            context.SetAttributesCallbackAsync = async (destination) =>
             {
                 CloudBlob destBlob = destination as CloudBlob;
                 destBlob.Properties.ContentType = "image/png";
@@ -197,7 +197,7 @@ namespace DataMovementSamples
             SingleTransferContext sharedTransferContext = new SingleTransferContext();
 
             // Show overwrite prompt in console when OverwriteCallback is triggered
-            sharedTransferContext.ShouldOverwriteCallback = (source, destination) =>
+            sharedTransferContext.ShouldOverwriteCallbackAsync = async (source, destination) =>
                 {
                     Console.WriteLine("{0} already exists. Do you want to overwrite it with {1}? (Y/N)", destination, source);
 
@@ -297,13 +297,13 @@ namespace DataMovementSamples
                 context.FileFailed += FileFailedCallback;
                 context.FileSkipped += FileSkippedCallback;
 
-                context.SetAttributesCallback = (destination) =>
+                context.SetAttributesCallbackAsync = async (destination) =>
                 {
                     CloudBlob destBlob = destination as CloudBlob;
                     destBlob.Properties.ContentType = "image/png";
                 };
 
-                context.ShouldTransferCallback = (source, destination) =>
+                context.ShouldTransferCallbackAsync = async (source, destination) =>
                 {
                     // Can add more logic here to evaluate whether really need to transfer the target.
                     return true;
@@ -340,13 +340,13 @@ namespace DataMovementSamples
                 resumeContext.FileFailed += FileFailedCallback;
                 resumeContext.FileSkipped += FileSkippedCallback;
 
-                resumeContext.SetAttributesCallback = (destination) =>
+                resumeContext.SetAttributesCallbackAsync = async (destination) =>
                 {
                     CloudBlob destBlob = destination as CloudBlob;
                     destBlob.Properties.ContentType = "image/png";
                 };
 
-                resumeContext.ShouldTransferCallback = (source, destination) =>
+                resumeContext.ShouldTransferCallbackAsync = async (source, destination) =>
                 {
                     // Can add more logic here to evaluate whether really need to transfer the target.
                     return true;

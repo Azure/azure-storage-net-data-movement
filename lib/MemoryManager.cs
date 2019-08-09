@@ -22,13 +22,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
 
         private readonly int BufferSize;
 
-        private readonly  object memoryCapacityLockObject = new object();
+        private readonly object memoryCapacityLockObject = new object();
 
         public MemoryManager(
             long capacity, int bufferSize)
         {
             BufferSize = bufferSize;
-            long currentCapacity = capacity;
+            this.currentCapacity = capacity;
             long availableCells = capacity / bufferSize;
 
             int cellNumber = (int)Math.Min((long)Constants.MemoryManagerCellsMaximum, availableCells);

@@ -21,10 +21,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
     internal sealed class AppendBlobWriter : TransferReaderWriterBase
     {
         private volatile State state;
-        private volatile bool hasWork;
         private AzureBlobLocation destLocation;
         private CloudAppendBlob appendBlob;
         private long expectedOffset = 0;
+
+        /// <summary>
+        /// Work token indicates whether this writer has work, could be 0(no work) or 1(has work).
+        /// </summary>
+        private volatile int workToken;
 
         /// <summary>
         /// To indicate whether the destination already exist before this writing.
@@ -44,14 +48,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             Debug.Assert(null != this.appendBlob, "The destination is not an append blob while initializing a AppendBlobWriter instance.");
 
             this.state = State.FetchAttributes;
-            this.hasWork = true;
+            this.workToken = 1;
         }
 
         public override bool HasWork
         {
             get 
             {
-                return this.hasWork &&
+                return this.workToken == 1 &&
                     ((State.FetchAttributes == this.state) ||
                     (State.Create == this.state) ||
                     (State.UploadBlob == this.state && this.SharedTransferData.AvailableData.ContainsKey(this.expectedOffset)) ||
@@ -107,7 +111,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 "Current state is {0}",
                 this.state);
 
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
 
             if (this.SharedTransferData.TotalLength > Constants.MaxAppendBlobFileSize)
             {
@@ -133,10 +140,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
 
                 try
                 {
-                    await this.appendBlob.FetchAttributesAsync(
-                        accessCondition,
-                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                    await Utils.ExecuteXsclApiCallAsync(
+                        async () => await this.appendBlob.FetchAttributesAsync(
+                            accessCondition,
+                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                            Utils.GenerateOperationContext(this.Controller.TransferContext),
+                            this.CancellationToken),
                         this.CancellationToken);
 
                     this.destExist = true;
@@ -170,17 +179,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            this.HandleFetchAttributesResult(existingBlob);
+            await this.HandleFetchAttributesResultAsync(existingBlob);
         }
 
-        private void HandleFetchAttributesResult(bool existingBlob)
+        private async Task HandleFetchAttributesResultAsync(bool existingBlob)
         {
             this.destLocation.CheckedAccessCondition = true;
 
             if (!this.Controller.IsForceOverwrite)
             {
                 // If destination file exists, query user whether to overwrite it.
-                this.Controller.CheckOverwrite(
+                await this.Controller.CheckOverwriteAsync(
                     existingBlob,
                     this.SharedTransferData.TransferJob.Source.Instance,
                     this.appendBlob);
@@ -238,23 +247,33 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            this.hasWork = true;
+            this.workToken = 1;
         }
 
         private async Task CreateAsync()
         {
             Debug.Assert(State.Create == this.state, "Calling CreateAsync, state should be Create");
 
-            this.hasWork = false; 
-            
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
+
             AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(
                  this.destLocation.AccessCondition,
                  true);
 
-            await this.appendBlob.CreateOrReplaceAsync(
-                accessCondition,
-                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions, true),
-                Utils.GenerateOperationContext(this.Controller.TransferContext),
+            if (this.destExist)
+            { 
+                this.CleanupPropertyForCanonicalization();
+            }
+
+            await Utils.ExecuteXsclApiCallAsync(
+                async () => await this.appendBlob.CreateOrReplaceAsync(
+                    accessCondition,
+                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions, true),
+                    Utils.GenerateOperationContext(this.Controller.TransferContext),
+                    this.CancellationToken),
                 this.CancellationToken);
 
             this.PreProcessed = true;
@@ -268,19 +287,22 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 this.state = State.UploadBlob;
             }
 
-            this.hasWork = true;
+            this.workToken = 1;
         }
 
         private async Task UploadBlobAsync()
         {
             Debug.Assert(State.UploadBlob == this.state, "Calling UploadBlobAsync, state should be UploadBlob");
 
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
 
             TransferData transferData = null;
             if (!this.SharedTransferData.AvailableData.TryRemove(this.expectedOffset, out transferData))
             {
-                this.hasWork = true;
+                this.workToken = 1;
                 return;
             }
 
@@ -289,97 +311,117 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
                 using (transferData)
                 {
                     long currentOffset = this.expectedOffset;
-                    this.expectedOffset += transferData.Length;
+                    if (0 != transferData.Length)
+                    {
+                        this.expectedOffset += transferData.Length;
 
-                    if (transferData.MemoryBuffer.Length == 1)
-                    {
-                        transferData.Stream = new MemoryStream(transferData.MemoryBuffer[0], 0, transferData.Length);
-                    }
-                    else
-                    {
-                        transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
-                    }
-
-                    AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true) ?? new AccessCondition();
-                    accessCondition.IfAppendPositionEqual = currentOffset;
-
-                    bool needToCheckContent = false;
-                    StorageException catchedStorageException = null;
-
-                    try
-                    {
-                        await this.appendBlob.AppendBlockAsync(transferData.Stream,
-                            null,
-                            accessCondition,
-                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                            Utils.GenerateOperationContext(this.Controller.TransferContext),
-                            this.CancellationToken);
-                    }
-#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
-                    catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
-                    {
-                        var se = e as StorageException ?? e.InnerException as StorageException;
-#else
-                    catch (StorageException se)
-                    {
-#endif
-                        if ((null != se.RequestInformation) &&
-                            ((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode) &&
-                            (null != se.RequestInformation.ExtendedErrorInformation) &&
-                            (se.RequestInformation.ExtendedErrorInformation.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition))
+                        if (transferData.MemoryBuffer.Length == 1)
                         {
-                            needToCheckContent = true;
-                            catchedStorageException = se;
+                            transferData.Stream = new MemoryStream(transferData.MemoryBuffer[0], 0, transferData.Length);
                         }
                         else
                         {
-                            throw;
+                            transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
                         }
-                    }
 
-                    if (needToCheckContent &&
-                        (!await this.ValidateUploadedChunkAsync(transferData.MemoryBuffer, currentOffset, (long)transferData.Length)))
-                    {
-                        throw new InvalidOperationException(Resources.DestinationChangedException, catchedStorageException);
+                        AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true) ?? new AccessCondition();
+                        accessCondition.IfAppendPositionEqual = currentOffset;
+
+                        bool needToCheckContent = false;
+                        StorageException catchedStorageException = null;
+
+
+                        try
+                        {
+                            await Utils.ExecuteXsclApiCallAsync(
+                                async () => await this.appendBlob.AppendBlockAsync(
+                                    transferData.Stream,
+                                    null,
+                                    accessCondition,
+                                    Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                                    Utils.GenerateOperationContext(this.Controller.TransferContext),
+                                    this.CancellationToken),
+                                this.CancellationToken);
+                        }
+#if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
+                        catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
+                        {
+                            var se = e as StorageException ?? e.InnerException as StorageException;
+#else
+                        catch (StorageException se)
+                        {
+#endif
+                            if ((null != se.RequestInformation) &&
+                                ((int)HttpStatusCode.PreconditionFailed == se.RequestInformation.HttpStatusCode) &&
+                                (se.RequestInformation.ErrorCode == BlobErrorCodeStrings.InvalidAppendCondition))
+                            {
+                                needToCheckContent = true;
+                                catchedStorageException = se;
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
+
+                        if (needToCheckContent &&
+                            (!await this.ValidateUploadedChunkAsync(transferData.MemoryBuffer, currentOffset, (long)transferData.Length)))
+                        {
+                            throw new InvalidOperationException(Resources.DestinationChangedException, catchedStorageException);
+                        }
                     }
 
                     this.Controller.UpdateProgress(() =>
-                    {
-                        lock (this.SharedTransferData.TransferJob.CheckPoint.TransferWindowLock)
                         {
-                            this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(currentOffset);
-                        }
-                        this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
+                            lock (this.SharedTransferData.TransferJob.CheckPoint.TransferWindowLock)
+                            {
+                                this.SharedTransferData.TransferJob.CheckPoint.TransferWindow.Remove(currentOffset);
+                            }
+                            this.SharedTransferData.TransferJob.Transfer.UpdateJournal();
 
                         // update progress
                         this.Controller.UpdateProgressAddBytesTransferred(transferData.Length);
-                    });
+                        });
 
                     if (this.expectedOffset == this.SharedTransferData.TotalLength)
                     {
                         this.state = State.Commit;
                     }
 
-                    this.hasWork = true;
+                    this.workToken = 1;
                 }
             }
+        }
+
+        /// <summary>
+        /// Cleanup properties that might cause request canonicalization check failure.
+        /// </summary>
+        private void CleanupPropertyForCanonicalization()
+        {
+            this.appendBlob.Properties.ContentLanguage = null;
+            this.appendBlob.Properties.ContentEncoding = null;
         }
 
         private async Task CommitAsync()
         {
             Debug.Assert(State.Commit == this.state, "Calling CommitAsync, state should be Commit");
 
-            this.hasWork = false;
+            if (Interlocked.CompareExchange(ref workToken, 0, 1) == 0)
+            {
+                return;
+            }
 
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
 
             if (!this.Controller.IsForceOverwrite && !this.destExist)
             {
-                await this.appendBlob.FetchAttributesAsync(
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                    blobRequestOptions,
-                    operationContext,
+                await Utils.ExecuteXsclApiCallAsync(
+                    async () => await this.appendBlob.FetchAttributesAsync(
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                        blobRequestOptions,
+                        operationContext,
+                        this.CancellationToken),
                     this.CancellationToken);
             }
 
@@ -466,7 +508,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
         {
             this.state = State.Finished;
             this.NotifyFinished(null);
-            this.hasWork = false;
+            this.workToken = 0;
         }
     }
 }

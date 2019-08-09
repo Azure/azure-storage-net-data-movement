@@ -162,6 +162,10 @@ MD5 calculated: {1}
 MD5 in property: {2}</value>
     <comment>{0} is the uri of source, {1} is the calculated MD5, {2} is the MD5 stored in the source property</comment>
   </data>
+  <data name="DeadLoop" xml:space="preserve">
+    <value>Potential dead loop in directory structure due to symbolic link {0} with target to {1}</value>
+    <comment>{0} is path of symbolic link, {1} is target of the symbolic link.</comment>
+  </data>
   <data name="DestinationBlobTypeNotMatch" xml:space="preserve">
     <value>User specified blob type does not match the blob type of the existing destination blob.</value>
   </data>
@@ -203,6 +207,10 @@ MD5 in property: {2}</value>
   <data name="NotSupportedBlobType" xml:space="preserve">
     <value>Blob type '{0}' is not supported.</value>
     <comment>{0} is the blob type name.</comment>
+  </data>
+  <data name="SourceMustBeFixedSize" xml:space="preserve">
+    <value>Source must be fixed size when destination is {0}</value>
+    <comment>{0} is the is the destination blob type.</comment>
   </data>
   <data name="OverwriteCallbackCancelTransferException" xml:space="preserve">
     <value>Skiped file "{0}" because target "{1}" already exists.</value>
@@ -271,6 +279,9 @@ MD5 in property: {2}</value>
   <data name="SourceAndDestinationLocationCannotBeEqualException" xml:space="preserve">
     <value>Source and destination cannot be the same.</value>
   </data>
+  <data name="SourceChangedException" xml:space="preserve">
+    <value>Source might be changed by other process or application.</value>
+  </data>
   <data name="SourceDoesNotExistException" xml:space="preserve">
     <value>Source does not exist.</value>
   </data>
@@ -299,6 +310,9 @@ MD5 in property: {2}</value>
   <data name="TransferEntryCopyIdCannotBeNullOrEmptyException" xml:space="preserve">
     <value>TransferEntry.CopyId cannot be null or empty because we need it to verify we are monitoring the right blob copying process.</value>
   </data>
+  <data name="UnableToLoadDLL" xml:space="preserve">
+    <value>Unable to load a dll, this might because the target dll is located on a disk without exec permission.</value>
+  </data>
   <data name="UnsupportedBlobTypeException" xml:space="preserve">
     <value>The given blob type {0} is not supported.</value>
     <comment>{0} is the given blob type.</comment>
@@ -319,6 +333,9 @@ MD5 in property: {2}</value>
   <data name="PageBlob" xml:space="preserve">
     <value>PageBlob</value>
   </data>
+  <data name="AzureFile" xml:space="preserve">
+    <value>AzureFile</value>
+  </data>
   <data name="SyncCopyFromUriToAzureBlobNotSupportedException" xml:space="preserve">
     <value>Copying from uri to Azure Blob Storage synchronously is not supported.</value>
   </data>
@@ -335,8 +352,16 @@ MD5 in property: {2}</value>
     <value>Failed to enumerate directory {0} with file pattern {1}.</value>
     <comment>{0} is the directory path, {1} is file pattern.</comment>
   </data>
+  <data name="EnumerateDirectoryException" xml:space="preserve">
+    <value>Failed to enumerate directory {0}.</value>
+    <comment>{0} is the directory path.</comment>
+  </data>
   <data name="FailedToValidateDestinationException" xml:space="preserve">
     <value>Failed to validate destination.</value>
+  </data>
+  <data name="FailedToGetFileInfoException" xml:space="preserve">
+    <value>Failed to get information for file {0}.</value>
+    <comment>{0} is the file path.</comment>
   </data>
   <data name="SearchPatternInRecursiveModeFromAzureFileNotSupportedException" xml:space="preserve">
     <value>Search pattern is not supported in recursive mode when the source is an Azure file directory.</value>
@@ -357,5 +382,15 @@ MD5 in property: {2}</value>
   <data name="RelativePathTooLong" xml:space="preserve">
     <value>File {0} is too long, relative path must not exceed 1024 characters. </value>
     <comment>{0} is the relative path of the file which exceed the 1024 characters limit.</comment>
+  </data>
+  <data name="ResumeStreamTransferNotSupported" xml:space="preserve">
+    <value>Resuming transfer from or to a stream is not supported. </value>
+  </data>
+  <data name="FailedToCreateDirectoryException" xml:space="preserve">
+    <value>Failed to create directory {0} because a file already exists with the same name.</value>
+    <comment>{0} is the destination folder name.</comment>
+  </data>
+  <data name="UnsupportedDummyTransferException" xml:space="preserve">
+    <value>Unsupported dummy transfer type.</value>
   </data>
 </root>

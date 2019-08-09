@@ -124,12 +124,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             return this.destFile.CopyState;
         }
 
-        protected override async Task SetAttributesAsync(SetAttributesCallback setCustomAttributes)
+        protected override async Task SetAttributesAsync(SetAttributesCallbackAsync setCustomAttributes)
         {
             var originalAttributes = Utils.GenerateAttributes(this.destFile);
             var originalMetadata = new Dictionary<string, string>(this.destFile.Metadata);
 
-            setCustomAttributes(this.destFile);
+            await setCustomAttributes(this.destFile);
 
             if (!Utils.CompareProperties(originalAttributes, Utils.GenerateAttributes(this.destFile)))
             {

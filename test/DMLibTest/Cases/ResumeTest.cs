@@ -232,11 +232,11 @@ namespace DMLibTest
 
                 result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
 
-                if (DMLibTestContext.SourceType == DMLibDataType.Stream && DMLibTestContext.DestType != DMLibDataType.BlockBlob)
+                if (DMLibTestContext.SourceType == DMLibDataType.Stream || DMLibTestContext.DestType == DMLibDataType.Stream)
                 {
-                    Test.Assert(result.Exceptions.Count == 1, "Verify transfer is skipped when source is stream.");
+                    Test.Assert(result.Exceptions.Count == 1, "Verify error reported when source/destination is stream.");
                     exception = result.Exceptions[0];
-                    VerificationHelper.VerifyTransferException(result.Exceptions[0], TransferErrorCode.NotOverwriteExistingDestination, "Skiped file");
+                    VerificationHelper.VerifyExceptionErrorMessage(result.Exceptions[0], "Resuming transfer from or to a stream is not supported");
                 }
                 else
                 {
@@ -262,11 +262,11 @@ namespace DMLibTest
 
                     result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
 
-                    if (DMLibTestContext.SourceType == DMLibDataType.Stream)
+                    if (DMLibTestContext.SourceType == DMLibDataType.Stream || DMLibTestContext.DestType == DMLibDataType.Stream)
                     {
-                        Test.Assert(result.Exceptions.Count == 1, "Verify transfer is skipped when source is stream.");
+                        Test.Assert(result.Exceptions.Count == 1, "Verify error reported when source/destination is stream.");
                         exception = result.Exceptions[0];
-                        VerificationHelper.VerifyTransferException(result.Exceptions[0], TransferErrorCode.NotOverwriteExistingDestination, "Skiped file");
+                        VerificationHelper.VerifyExceptionErrorMessage(result.Exceptions[0], "Resuming transfer from or to a stream is not supported");
                     }
                     else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && !DMLibTestContext.IsAsync)
                     {
@@ -422,7 +422,7 @@ namespace DMLibTest
                         ProgressHandler = progressChecker.GetProgressHandler(),
 
                         // Need this overwrite callback since some files is already transferred to destination
-                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY(),
+                        ShouldOverwriteCallbackAsync = DMLibInputHelper.GetDefaultOverwiteCallbackY(),
                     };
 
                     eventChecker.Reset();

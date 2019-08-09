@@ -16,8 +16,10 @@ namespace DMLibTest
     using MS.Test.Common.MsTestLib;
     using Microsoft.WindowsAzure.Storage.Blob;
     using Microsoft.WindowsAzure.Storage.File;
+    using System.Threading.Tasks;
 #if DNXCORE50
     using Xunit;
+    using System.Threading.Tasks;
 
     [Collection(Collections.Global)]
     public class AllTransferDirectionTest : DMLibTestBase, IClassFixture<AllTransferDirectionFixture>, IDisposable
@@ -229,7 +231,7 @@ namespace DMLibTest
                     IsServiceCopy = direction.IsAsync,
                     TransferContext = new SingleTransferContext()
                     {
-                        SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback
+                        SetAttributesCallbackAsync = AllTransferDirectionTest.SetAttributesCallbackMethodAsync
                     }
                 };
                 allItems.Add(item);
@@ -263,7 +265,7 @@ namespace DMLibTest
                     Options = options,
                     TransferContext = new DirectoryTransferContext()
                     {
-                        SetAttributesCallback = AllTransferDirectionTest.SetAttributesCallback
+                        SetAttributesCallbackAsync = AllTransferDirectionTest.SetAttributesCallbackMethodAsync
                     }
                 };
 
@@ -417,7 +419,7 @@ namespace DMLibTest
                         // The checkpoint can be stored when DMLib doesn't check overwrite callback yet.
                         // So it will case an skip file error if the desination file already exists and 
                         // We don't have overwrite callback here.
-                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY()
+                        ShouldOverwriteCallbackAsync = DMLibInputHelper.GetDefaultOverwiteCallbackY()
                     };
                 }
                 else
@@ -429,7 +431,7 @@ namespace DMLibTest
                         // The checkpoint can be stored when DMLib doesn't check overwrite callback yet.
                         // So it will case an skip file error if the desination file already exists and 
                         // We don't have overwrite callback here.
-                        ShouldOverwriteCallback = DMLibInputHelper.GetDefaultOverwiteCallbackY()
+                        ShouldOverwriteCallbackAsync = DMLibInputHelper.GetDefaultOverwiteCallbackY()
                     };
                 }
 
@@ -487,18 +489,21 @@ namespace DMLibTest
             }
         }
 
-        private static void SetAttributesCallback(object destObj)
+        private static async Task SetAttributesCallbackMethodAsync(object destObj)
         {
-            if (destObj is CloudBlob || destObj is CloudFile)
+            await Task.Run(() =>
             {
-                dynamic destCloudObj = destObj;
-                destCloudObj.Properties.ContentLanguage = "EN";
-
-                if (!destCloudObj.Metadata.ContainsKey("aa"))
+                if (destObj is CloudBlob || destObj is CloudFile)
                 {
-                    destCloudObj.Metadata.Add("aa", "bb");
+                    dynamic destCloudObj = destObj;
+                    destCloudObj.Properties.ContentLanguage = "EN";
+
+                    if (!destCloudObj.Metadata.ContainsKey("aa"))
+                    {
+                        destCloudObj.Metadata.Add("aa", "bb");
+                    }
                 }
-            }
+            });
         }
 
         private static string GetTransferFileName(DMLibTransferDirection direction)

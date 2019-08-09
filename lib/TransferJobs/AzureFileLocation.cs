@@ -177,7 +177,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             try
             {
-                this.AzureFile.Parent.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, null).Wait();
+                this.AzureFile.Parent.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, Utils.GenerateOperationContext(null)).Wait();
             }
             catch (AggregateException e)
             {

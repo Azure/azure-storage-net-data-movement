@@ -30,6 +30,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         public const int DefaultMemoryChunkSize = 4 * 1024 * 1024;
 
         /// <summary>
+        /// The metadata key for empty blobs which represent directories in file system.
+        /// </summary>
+        public const string DirectoryBlobMetadataKey = "hdi_isfolder";
+
+        /// <summary>
         /// Maximum windows file path is 260 characters, including a terminating NULL characters.
         /// This leaves 259 useable characters.
         /// </summary>
@@ -144,6 +149,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         internal const int ListSegmentLengthMultiplier = 8;
 
         internal const string BlobTypeMismatch = "Blob type of the blob reference doesn't match blob type of the blob.";
+        
+        /// <summary>
+        /// The maximum size of a block blob that can be uploaded with a single Put Blob request.
+        /// </summary>
+        internal const long MaxSinglePutBlobSize = 256 * 1024 * 1024;
 
         /// <summary>
         /// The product name used in UserAgent header.

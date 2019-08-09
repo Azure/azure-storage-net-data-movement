@@ -1,3 +1,47 @@
+2018.07.31 Version 0.8.1
+ * All Services on both .Net Framework and .Net Core
+   - Upgrade azure storage client library to 9.3.0
+   - Enhance exception handling during enumeration to avoid throwing out unexpected exceptions
+ * Blob Service
+   - Optimize on block blob uploading and downloading
+
+2018.06.14 Version 0.8.0
+ * All Services on both .Net Framework and .Net Core
+   - Changed following callbacks to asynchronized methods:
+     ShouldOverwriteCallback --> ShouldOverwriteCallbackAsync
+     ShouldTransferCallback --> ShouldTransferCallbackAsync
+     SetAttributesCallback --> SetAttributesCallbackAsync
+ * Blob Service
+   - Added support for directory markers (hdi_isfolder=true) produced by Hadoop file system drivers for Blob storage
+   - Use the value set in TransferConfigurations.BlockSize as threshold to upload block blob with a single put blob request, the default value is 4MB 
+
+2018.02.10 Version 0.7.1
+ * All Services on both .Net Framework and .Net Core
+   - Upgraded azure storage client library to 9.0.0 
+
+2017.12.22 Version 0.7.0
+ * All Services on both .Net Framework and .Net Core
+   - Added support of uploading from non-seekable, non-fixed sized stream to block blob or append blob
+   - Added support of uploading from non-seekable stream to page blob, azure file
+   - Added error reporting about DataMovement Library doesn't support resuming of transferring from or to a stream 
+ * All Services on .Net Core
+   - Added support of transferring directory with symlinked subdirectories on Unix/Linux platforms
+ * Blob Service on .Net Core
+   - Fixed issue of not escaping '/' correctly when using character other than '/' as delimiter when downloading from a blob directory
+   - Fixed issue of not escaping continuous '/' in destination name correctly when downloading from a blob directory 
+
+2017.12.15 Version 0.6.6
+ * Blob Service
+   - Small file transfer optimization. Use put blob to upload block blob when blob size is small than 4MB to save request and optimize performance.
+
+2017.11.15 Version 0.6.5
+ * All Services
+   - Upgraded azure storage client library to 8.6.0
+   
+2017.10.25 Version 0.6.4
+ * All Services
+   - Add DataMovement library assembly information to UserAgent
+
 2017.10.11 Version 0.6.3
  * All Services
    - Upgraded azure storage client library to 8.5.0   

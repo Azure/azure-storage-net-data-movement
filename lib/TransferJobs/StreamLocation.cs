@@ -107,30 +107,5 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             return this.Stream.ToString();
         }
-
-        // Summary:
-        //     Determines whether the specified object is equal to the current stream location.
-        //
-        // Parameters:
-        //   obj:
-        //     The object to compare with the current stream location.
-        //
-        // Returns:
-        //     true if the specified object is equal to the current stream location; otherwise, false.
-        public override bool Equals(object obj)
-        {
-            return Object.ReferenceEquals(this, obj);
-        }
-
-        //
-        // Summary:
-        //     Returns the hash code for the transfer location.
-        //
-        // Returns:
-        //     A 32-bit signed integer hash code.
-        public override int GetHashCode()
-        {
-            return this.ToString().GetHashCode();
-        }
     }
 }

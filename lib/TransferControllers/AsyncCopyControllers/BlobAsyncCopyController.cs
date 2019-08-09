@@ -174,12 +174,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers
             return this.destBlob.CopyState;
         }
 
-        protected override async Task SetAttributesAsync(SetAttributesCallback setCustomAttributes)
+        protected override async Task SetAttributesAsync(SetAttributesCallbackAsync setCustomAttributes)
         {
             var originalAttributes = Utils.GenerateAttributes(this.destBlob);
             var originalMetadata = new Dictionary<string, string>(this.destBlob.Metadata);
 
-            setCustomAttributes(this.destBlob);
+            await setCustomAttributes(this.destBlob);
 
             if (!Utils.CompareProperties(originalAttributes, Utils.GenerateAttributes(this.destBlob)))
             {

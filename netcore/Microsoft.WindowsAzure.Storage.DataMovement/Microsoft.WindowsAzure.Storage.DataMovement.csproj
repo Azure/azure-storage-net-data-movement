@@ -2,10 +2,11 @@
 
   <PropertyGroup>
     <Description>Microsoft.WindowsAzure.Storage.DataMovement Class Library</Description>
-    <Version>0.6.3.0</Version>
+    <Version>0.8.1.0</Version>
     <Authors>Microsoft</Authors>
     <TargetFramework>netstandard2.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <DebugType>portable</DebugType>
     <DelaySign>true</DelaySign>
     <AssemblyName>Microsoft.WindowsAzure.Storage.DataMovement</AssemblyName>
     <AssemblyOriginatorKeyFile>../../tools/strongnamekeys/fake/windows.snk</AssemblyOriginatorKeyFile>
@@ -20,18 +21,24 @@
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateNeutralResourcesLanguageAttribute>false</GenerateNeutralResourcesLanguageAttribute>
-    <DefineConstants>$(DefineConstants);DOTNET5_4;GENERIC_MARSHAL_SIZEOF;RUNTIME_INFORMATION;TRANSPARENCY_V2;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;NO_FILEFORMAT_EX</DefineConstants>
+    <DefineConstants>$(DefineConstants);DOTNET5_4;GENERIC_MARSHAL_SIZEOF;RUNTIME_INFORMATION;TRANSPARENCY_V2;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;NO_FILEFORMAT_EX;TEST_HOOK</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="..\..\lib\**\*.cs;..\..\tools\AssemblyInfo\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
-    <EmbeddedResource Include="..\..\lib\Resources.resx" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="..\..\lib\Resources.resx" Link="Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0-beta2" />
     <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
     <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0" />
-    <PackageReference Include="WindowsAzure.Storage" Version="8.5.0" />
+    <PackageReference Include="WindowsAzure.Storage" Version="9.3.0" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

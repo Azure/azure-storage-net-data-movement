@@ -9,10 +9,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Globalization;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+
     using Microsoft.WindowsAzure.Storage.DataMovement.TransferControllers;
 
     /// <summary>
@@ -39,6 +39,37 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// </summary>
         private ConcurrentDictionary<ITransferController, object> activeControllerItems =
             new ConcurrentDictionary<ITransferController, object>();
+
+        /// <summary>
+        /// Active controller item count used to help activeControllerItems statistics.
+        /// </summary>
+        private long activeControllerItemCount = 0;
+
+        /// <summary>
+        /// Active controller item prefetch ratio, used to set how much controller item could be prefetched during scheduling controllers.
+        /// </summary>
+        private const double ActiveControllerItemPrefetchRatio = 1.2; // TODO: further tune the prefetch ratio.
+
+        /// <summary>
+        /// Max active controller item count used to limit candidate controller items to be scheduled in parallel.
+        /// Note: ParallelOperations could be changing.
+        /// </summary>
+        private static int MaxActiveControllerItemCount => (int)(TransferManager.Configurations.ParallelOperations * ActiveControllerItemPrefetchRatio);
+
+        /// <summary>
+        /// Ongoing task used to control ongoing tasks dispatching.
+        /// </summary>
+        private int ongoingTasks;
+
+        /// <summary>
+        /// Ongoing task sempahore used to help ongoing task dispatching.
+        /// </summary>
+        private ManualResetEventSlim ongoingTaskEvent;
+
+        /// <summary>
+        /// Max controller work items count to schedule per scheduling round.
+        /// </summary>
+        private const int MaxControllerItemCountToScheduleEachRound = 100;
 
         /// <summary>
         /// CancellationToken source.
@@ -71,8 +102,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Used to lock disposing to avoid race condition between different disposing and other method calls.
         /// </summary>
         private object disposeLock = new object();
-
-        private volatile int ongoingTasks;
 
         /// <summary>
         /// Indicate whether the instance has been disposed.
@@ -110,6 +139,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             this.ongoingTasks = 0;
 
             this.queueAddedEvent = new AutoResetEvent(false);
+            this.ongoingTaskEvent = new ManualResetEventSlim(false);
 
             this.StartSchedule();
         }
@@ -127,29 +157,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         /// Gets the transfer options that this manager will pass to
         /// transfer controllers.
         /// </summary>
-        internal TransferConfigurations TransferOptions
-        {
-            get
-            {
-                return this.transferOptions;
-            }
-        }
+        internal TransferConfigurations TransferOptions => this.transferOptions;
 
-        internal CancellationTokenSource CancellationTokenSource
-        {
-            get
-            {
-                return this.cancellationTokenSource;
-            }
-        }
+        internal CancellationTokenSource CancellationTokenSource => this.cancellationTokenSource;
 
-        internal MemoryManager MemoryManager
-        {
-            get
-            {
-                return this.memoryManager;
-            }
-        }
+        internal MemoryManager MemoryManager => this.memoryManager;
 
         /// <summary>
         /// Public dispose method to release all resources owned.
@@ -171,14 +183,14 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
         {
             if (null == job)
             {
-                throw new ArgumentNullException("job");
+                throw new ArgumentNullException(nameof(job));
             }
 
             lock (this.disposeLock)
             {
                 this.CheckDisposed();
 
-                return ExecuteJobInternalAsync(job, cancellationToken);
+                return this.ExecuteJobInternalAsync(job, cancellationToken);
             }
         }
 
@@ -202,6 +214,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                 case TransferMethod.AsyncCopy:
                     controller = AsyncCopyController.CreateAsyncCopyController(this, job, cancellationToken);
                     break;
+
+                case TransferMethod.DummyCopy:
+                    controller = new DummyTransferController(this, job, cancellationToken);
+                    break;
             }
 
             Utils.CheckCancellation(this.cancellationTokenSource.Token);
@@ -213,10 +229,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             {
                 await controller.TaskCompletionSource.Task;
             }
+
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
             {
                 var storageException = ex as StorageException ?? ex.InnerException as StorageException;
+
+                if (storageException.InnerException is OperationCanceledException)
+                {
+                    throw storageException.InnerException;
+                }
+
                 throw new TransferException(TransferErrorCode.Unknown,
                     Resources.UncategorizedException,
                     storageException);
@@ -229,6 +252,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     Resources.UncategorizedException, 
                     se);
             }
+
 #endif
             finally
             {
@@ -242,13 +266,8 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             CancellationToken token)
         {
             while (!token.IsCancellationRequested
-                && activeItems.Count < this.transferOptions.ParallelOperations)
+                && Interlocked.Read(ref this.activeControllerItemCount) < MaxActiveControllerItemCount)
             {
-                if (activeItems.Count >= this.transferOptions.ParallelOperations)
-                {
-                    return;
-                }
-
                 ITransferController transferItem = null;
 
                 try
@@ -264,7 +283,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                     return;
                 }
 
-                activeItems.TryAdd(transferItem, null);
+                if (activeItems.TryAdd(transferItem, null))
+                {
+                    Interlocked.Increment(ref this.activeControllerItemCount);
+                }
             }
         }
 
@@ -347,6 +369,12 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                             this.queueAddedEvent.Dispose();
                             this.queueAddedEvent = null;
                         }
+                        
+                        if (null != this.ongoingTaskEvent)
+                        {
+                            this.ongoingTaskEvent.Dispose();
+                            this.ongoingTaskEvent = null;
+                        }
 
                         this.memoryManager = null;
                     }
@@ -371,12 +399,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             Task.Run(() =>
                 {
                     var sw = new SpinWait();
-
-                    while (!this.cancellationTokenSource.Token.IsCancellationRequested && !this.controllerQueue.IsCompleted)
+                    while (!this.cancellationTokenSource.Token.IsCancellationRequested &&
+                        (!this.controllerQueue.IsCompleted || Interlocked.Read(ref this.activeControllerItemCount) != 0))
                     {
-                        // While there's work queuing or work that's been dequeue
-                        while (this.activeControllerItems.Any() || this.controllerQueue.Count > 0)
-                        {
                             FillInQueue(
                                 this.activeControllerItems,
                                 this.controllerQueue,
@@ -396,7 +421,6 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
                                     sw.Reset();
                                 }
                             }
-                        }
 
                         WaitHandle.WaitAny(new[] { queueAddedEvent, this.CancellationTokenSource.Token.WaitHandle });
                     }
@@ -407,36 +431,63 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             ITransferController transferController)
         {
             object dummy;
-            this.activeControllerItems.TryRemove(transferController, out dummy);
+
+            if (this.activeControllerItems.TryRemove(transferController, out dummy))
+            {
+                Interlocked.Decrement(ref this.activeControllerItemCount);
+            }
         }
 
         private bool DoWorkFrom(
             ConcurrentDictionary<ITransferController, object> activeItems)
         {
             // Filter items with work only.
+            // TODO: Optimize scheduling efficiency, get active items with LINQ cost a lot of time.
             List<KeyValuePair<ITransferController, object>> activeItemsWithWork =
-                new List<KeyValuePair<ITransferController, object>>(
-                    activeItems.Where(item => item.Key.HasWork && !item.Key.IsFinished));
+            new List<KeyValuePair<ITransferController, object>>(
+                activeItems.Where(item => item.Key.HasWork && !item.Key.IsFinished));
 
-            if (0 != activeItemsWithWork.Count)
+            int scheduledItemsCount = 0;
+
+            // In order to save time used to lock/search/addItem ConcurrentDictionary, try to schedule multipe items per DoWorkFrom round. 
+            while (0 != activeItemsWithWork.Count
+                && scheduledItemsCount < MaxControllerItemCountToScheduleEachRound)
             {
                 // Select random item and get work delegate.
                 int idx = this.randomGenerator.Next(activeItemsWithWork.Count);
                 ITransferController transferController = activeItemsWithWork[idx].Key;
 
-                if (Interlocked.Increment(ref this.ongoingTasks) <= TransferManager.Configurations.ParallelOperations)
+                var scheduledOneItem = false;
+                while (!scheduledOneItem)
                 {
-                    DoControllerWork(transferController);
-                    return true;
-                }
-                else
-                {
-                    Interlocked.Decrement(ref this.ongoingTasks);
-                    return false;
+                    // Note: TransferManager.Configurations.ParallelOperations could be a changing value.
+                    if (Interlocked.Increment(ref this.ongoingTasks) <= TransferManager.Configurations.ParallelOperations)
+                    {
+                        // Note: This is the only place where ongoing task could be scheduled.
+                        this.DoControllerWork(transferController);
+
+                        scheduledItemsCount++;
+                        activeItemsWithWork.RemoveAt(idx);
+
+                        scheduledOneItem = true;
+                    }
+                    else
+                    {
+                        Interlocked.Decrement(ref this.ongoingTasks);
+                        this.ongoingTaskEvent.Wait();
+                        this.ongoingTaskEvent.Reset();
+                    }
                 }
             }
 
-            return false;
+            if (scheduledItemsCount > 0)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private async void DoControllerWork(ITransferController controller)
@@ -449,6 +500,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement
             finally
             {
                 Interlocked.Decrement(ref this.ongoingTasks);
+                this.ongoingTaskEvent.Set();
             }
 
             if (finished)

@@ -110,8 +110,8 @@ namespace DMLibTest
         public static void BaseClassCleanup()
         {
             Test.Info("ClassCleanup");
-            DeleteAllLocations(sourceAdaptors);
-            DeleteAllLocations(destAdaptors);
+            //DeleteAllLocations(sourceAdaptors);
+            //DeleteAllLocations(destAdaptors);
             Test.Info("ClassCleanup done.");
         }
 

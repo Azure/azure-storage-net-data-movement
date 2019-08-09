@@ -10,7 +10,7 @@
 
 namespace Microsoft.WindowsAzure.Storage.DataMovement {
     using System;
-    using System.Reflection;
+    
     
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.
@@ -39,7 +39,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.WindowsAzure.Storage.DataMovement.Resources", typeof(Resources).GetTypeInfo().Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.WindowsAzure.Storage.DataMovement.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -84,6 +84,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         internal static string AsyncCopyFromFileToPageBlobNotSupportException {
             get {
                 return ResourceManager.GetString("AsyncCopyFromFileToPageBlobNotSupportException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to AzureFile.
+        /// </summary>
+        internal static string AzureFile {
+            get {
+                return ResourceManager.GetString("AzureFile", resourceCulture);
             }
         }
         
@@ -169,6 +178,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Potential dead loop in directory structure due to symbolic link {0} with target to {1}.
+        /// </summary>
+        internal static string DeadLoop {
+            get {
+                return ResourceManager.GetString("DeadLoop", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to {0} Deserialization failed: Version number doesn&apos;t match. Version number:{1}, expect:{2}..
         /// </summary>
         internal static string DeserializationVersionNotMatchException {
@@ -216,6 +234,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to enumerate directory {0}..
+        /// </summary>
+        internal static string EnumerateDirectoryException {
+            get {
+                return ResourceManager.GetString("EnumerateDirectoryException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to allocate required memory..
         /// </summary>
         internal static string FailedToAllocateMemoryException {
@@ -234,6 +261,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to create directory {0} because a file already exists with the same name..
+        /// </summary>
+        internal static string FailedToCreateDirectoryException {
+            get {
+                return ResourceManager.GetString("FailedToCreateDirectoryException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to enumerate directory {0} with file pattern {1}..
         /// </summary>
         internal static string FailedToEnumerateDirectory {
@@ -248,6 +284,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         internal static string FailedToGetBlobTypeException {
             get {
                 return ResourceManager.GetString("FailedToGetBlobTypeException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to get information for file {0}..
+        /// </summary>
+        internal static string FailedToGetFileInfoException {
+            get {
+                return ResourceManager.GetString("FailedToGetFileInfoException", resourceCulture);
             }
         }
         
@@ -477,6 +522,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Resuming transfer from or to a stream is not supported. .
+        /// </summary>
+        internal static string ResumeStreamTransferNotSupported {
+            get {
+                return ResourceManager.GetString("ResumeStreamTransferNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Search pattern is not supported in recursive mode when the source is an Azure file directory..
         /// </summary>
         internal static string SearchPatternInRecursiveModeFromAzureFileNotSupportedException {
@@ -531,11 +585,29 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Source might be changed by other process or application..
+        /// </summary>
+        internal static string SourceChangedException {
+            get {
+                return ResourceManager.GetString("SourceChangedException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Source does not exist..
         /// </summary>
         internal static string SourceDoesNotExistException {
             get {
                 return ResourceManager.GetString("SourceDoesNotExistException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Source must be fixed size when destination is {0}.
+        /// </summary>
+        internal static string SourceMustBeFixedSize {
+            get {
+                return ResourceManager.GetString("SourceMustBeFixedSize", resourceCulture);
             }
         }
         
@@ -639,6 +711,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Unable to load a dll, this might because the target dll is located on a disk without exec permission..
+        /// </summary>
+        internal static string UnableToLoadDLL {
+            get {
+                return ResourceManager.GetString("UnableToLoadDLL", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The transfer failed..
         /// </summary>
         internal static string UncategorizedException {
@@ -653,6 +734,15 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement {
         internal static string UnsupportedBlobTypeException {
             get {
                 return ResourceManager.GetString("UnsupportedBlobTypeException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unsupported dummy transfer type..
+        /// </summary>
+        internal static string UnsupportedDummyTransferException {
+            get {
+                return ResourceManager.GetString("UnsupportedDummyTransferException", resourceCulture);
             }
         }
         

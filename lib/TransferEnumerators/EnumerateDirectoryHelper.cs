@@ -13,8 +13,9 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     using System.Security;
     using System.Threading;
     using Microsoft.WindowsAzure.Storage.DataMovement.Interop;
-
-#if !DOTNET5_4
+#if DOTNET5_4
+    using Mono.Unix;
+#else
     using System.Runtime.InteropServices;
 #endif
 
@@ -27,6 +28,13 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
     /// </summary>
     internal static class EnumerateDirectoryHelper
     {
+        internal class EnumerateFileEntryInfo
+        {
+            public string FileName { get; set; }
+            public FileAttributes FileAttributes { get; set; }
+            public string SymlinkTarget { get; set; }
+        };
+
         /// <summary>
         /// Returns the names of files (including their paths) in the specified directory that match the specified 
         /// search pattern, using a value to determine whether to search subdirectories.
@@ -42,6 +50,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
         /// <param name="searchOption">One of the values of the SearchOption enumeration that specifies whether 
         /// the search operation should include only the current directory or should include all subdirectories.
         /// The default value is TopDirectoryOnly.</param>
+        /// <param name="followsymlink">indicating whether to enumerate symlinked subdirectories.</param>
         /// <param name="cancellationToken">CancellationToken to cancel the method.</param>
         /// <returns>An enumerable collection of file names in the directory specified by path and that match 
         /// searchPattern and searchOption.</returns>
@@ -55,6 +64,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             string searchPattern,
             string fromFilePath,
             SearchOption searchOption,
+            bool followsymlink,
             CancellationToken cancellationToken)
         {
             Utils.CheckCancellation(cancellationToken);
@@ -140,7 +150,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             }
 
             Utils.CheckCancellation(cancellationToken);
-            return InternalEnumerateFiles(directoryName, filePattern, fromFilePath, searchOption, cancellationToken);
+            return InternalEnumerateFiles(directoryName, filePattern, fromFilePath, searchOption, followsymlink, cancellationToken);
         }
 
 #if TRANSPARENCY_V2
@@ -151,6 +161,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
             string filePattern,
             string fromFilePath,
             SearchOption searchOption,
+            bool followsymlink,
             CancellationToken cancellationToken)
         {
             Stack<string> folders = new Stack<string>();
@@ -179,7 +190,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 // Skip non-existent folders
                 if (!LongPathDirectory.Exists(folder))
                 {
+#if DOTNET5_4
+                    if (CrossPlatformHelpers.IsLinux)
+                    {
+                        if (!SymlinkedDirExists(folder))
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        continue;
+                    }
+#else
                     continue;
+#endif
                 }
 
 #if CODE_ACCESS_SECURITY // Only accessible to fully trusted code in non-CAS models
@@ -188,6 +213,11 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     CheckPathDiscoveryPermission(folder);
                 }
                 catch (SecurityException)
+                {
+                    // Ignore this folder if we have no right to discovery it.
+                    continue;
+                }
+                catch (UnauthorizedAccessException)
                 {
                     // Ignore this folder if we have no right to discovery it.
                     continue;
@@ -211,6 +241,10 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     // Ignore this folder if we have no right to discovery it.
                     continue;
                 }
+                catch (Exception ex)
+                {
+                    throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.EnumerateDirectoryException, folder), ex);
+                }
 #endif // CODE_ACCESS_SECURITY
 
                 // Return all files contained directly in this folder (which occur after the continuationTokenFile)
@@ -227,34 +261,62 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     }
 
                     // Load files directly under this folder.
-                    foreach (var filePath in LongPathDirectory.EnumerateFileSystemEntries(folder, filePattern, SearchOption.TopDirectoryOnly))
+                    foreach (var filePath in Utils.CatchException(() =>
+                        {
+                            return LongPathDirectory.EnumerateFileSystemEntries(folder, filePattern, SearchOption.TopDirectoryOnly);
+                        },
+                        (ex) =>
+                        {
+                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.EnumerateDirectoryException, folder), ex);
+                        }))
                     {
                         Utils.CheckCancellation(cancellationToken);
 
-                        FileAttributes fileAttributes = FileAttributes.Normal;
-                        string fileName = null;
+                        EnumerateFileEntryInfo fileEntryInfo = null;
 
                         try
                         {
-                            fileName = LongPath.GetFileName(filePath);
-                            fileAttributes = LongPathFile.GetAttributes(filePath);
+#if DOTNET5_4
+                            if (CrossPlatformHelpers.IsLinux)
+                            {
+                                fileEntryInfo = GetFileEntryInfo(filePath);
+                            }
+                            else
+                            {
+                                fileEntryInfo = new EnumerateFileEntryInfo()
+                                {
+                                    FileName = LongPath.GetFileName(filePath),
+                                    FileAttributes = LongPathFile.GetAttributes(filePath)
+                                };
+                            }
+#else
+                            fileEntryInfo = new EnumerateFileEntryInfo()
+                            {
+                                FileName = LongPath.GetFileName(filePath),
+                                FileAttributes = LongPathFile.GetAttributes(filePath)
+                            };
+#endif
                         }
                         // Cross-plat file system accessibility settings may cause exceptions while
                         // retrieving attributes from inaccessible paths. These paths shold be skipped.
                         catch (FileNotFoundException) { }
                         catch (IOException) { }
                         catch (UnauthorizedAccessException) { }
+                        catch (Exception ex)
+                        {
+                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.FailedToGetFileInfoException, filePath), ex);
+                        }
 
-                        if (fileName == null)
+                        if (null == fileEntryInfo)
                         {
                             continue;
                         }
 
-                        if (FileAttributes.Directory != (fileAttributes & FileAttributes.Directory))
+                        if (FileAttributes.Directory != (fileEntryInfo.FileAttributes & FileAttributes.Directory))
                         {
                             if (passedContinuationToken)
                             {
-                                yield return LongPath.Combine(folder, fileName);
+                                yield return LongPath.Combine(folder, fileEntryInfo.FileName);
                             }
                             else
                             {
@@ -262,21 +324,21 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                                 {
                                     if (!passedContinuationToken)
                                     {
-                                        if (string.Equals(fileName, continuationTokenFile, StringComparison.Ordinal))
+                                        if (string.Equals(fileEntryInfo.FileName, continuationTokenFile, StringComparison.Ordinal))
                                         {
                                             passedContinuationToken = true;
                                         }
                                     }
                                     else
                                     {
-                                        yield return LongPath.Combine(folder, fileName);
+                                        yield return LongPath.Combine(folder, fileEntryInfo.FileName);
                                     }
                                 }
                                 else
                                 {
                                     // Windows file system is case-insensitive; OSX and Linux are case-sensitive
                                     var comparison = CrossPlatformHelpers.IsWindows ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-                                    int compareResult = string.Compare(fileName, continuationTokenFile, comparison);
+                                    int compareResult = string.Compare(fileEntryInfo.FileName, continuationTokenFile, comparison);
                                     if (compareResult < 0)
                                     {
                                         // Skip files prior to the continuation token file
@@ -287,7 +349,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
                                     if (compareResult > 0)
                                     {
-                                        yield return LongPath.Combine(folder, fileName);
+                                        yield return LongPath.Combine(folder, fileEntryInfo.FileName);
                                     }
                                 }
                             }
@@ -311,60 +373,90 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     }
 
                     // Add sub-folders.
-                    foreach (var filePath in LongPathDirectory.EnumerateFileSystemEntries(folder, "*", SearchOption.TopDirectoryOnly))
+                    foreach (var filePath in Utils.CatchException(() =>
+                        {
+                            return LongPathDirectory.EnumerateFileSystemEntries(folder, "*", SearchOption.TopDirectoryOnly);
+                        },
+                        (ex) =>
+                        {
+                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.EnumerateDirectoryException, folder), ex);
+                        }))
                     {
                         Utils.CheckCancellation(cancellationToken);
 
-                        FileAttributes fileAttributes = FileAttributes.Normal;
-                        string fileName = null;
+                        EnumerateFileEntryInfo fileEntryInfo = null;
 
                         try
                         {
-                            fileName = LongPath.GetFileName(filePath);
-                            fileAttributes = LongPathFile.GetAttributes(filePath);
+                            if (CrossPlatformHelpers.IsLinux)
+                            {
+                                fileEntryInfo = GetFileEntryInfo(filePath);
+                            }
+                            else
+                            {
+                                fileEntryInfo = new EnumerateFileEntryInfo()
+                                {
+                                    FileName = LongPath.GetFileName(filePath),
+                                    FileAttributes = LongPathFile.GetAttributes(filePath)
+                                };
+                            }
                         }
                         // Cross-plat file system accessibility settings may cause exceptions while
                         // retrieving attributes from inaccessible paths. These paths shold be skipped.
                         catch (FileNotFoundException) { }
                         catch (IOException) { }
                         catch (UnauthorizedAccessException) { }
+                        catch (Exception ex)
+                        {
+                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.FailedToGetFileInfoException, filePath), ex);
+                        }
 
-                        if (fileName == null)
+                        if (null == fileEntryInfo)
                         {
                             continue;
                         }
 
-                        if (FileAttributes.Directory == (fileAttributes & FileAttributes.Directory) &&
-                            !fileName.Equals(@".") &&
-                            !fileName.Equals(@".."))
+                        if (FileAttributes.Directory == (fileEntryInfo.FileAttributes & FileAttributes.Directory) &&
+                            !fileEntryInfo.FileName.Equals(@".") &&
+                            !fileEntryInfo.FileName.Equals(@".."))
                         {
+                            bool toBeEnumerated = false;
+                            if (CrossPlatformHelpers.IsLinux)
+                            {
+                                toBeEnumerated = ToEnumerateTheSubDir(LongPath.Combine(folder, fileEntryInfo.FileName), fileEntryInfo, followsymlink);
+                            }
                             // TODO: Ignore junction point or not. Make it configurable.
-                            if (FileAttributes.ReparsePoint != (fileAttributes & FileAttributes.ReparsePoint))
+                            else if (FileAttributes.ReparsePoint != (fileEntryInfo.FileAttributes & FileAttributes.ReparsePoint))
+                            {
+                                toBeEnumerated = true;
+                            }
+
+                            if (toBeEnumerated)
                             {
                                 if (passedSubfoler)
                                 {
-                                    currentFolderSubFolders.Push(LongPath.Combine(folder, fileName));
+                                    currentFolderSubFolders.Push(LongPath.Combine(folder, fileEntryInfo.FileName));
                                 }
                                 else
                                 {
                                     if (CrossPlatformHelpers.IsLinux)
                                     {
-                                        if (string.Equals(fileName, fromSubfolder, StringComparison.Ordinal))
+                                        if (string.Equals(fileEntryInfo.FileName, fromSubfolder, StringComparison.Ordinal))
                                         {
                                             passedSubfoler = true;
-                                            currentFolderSubFolders.Push(LongPath.Combine(folder, fileName));
+                                            currentFolderSubFolders.Push(LongPath.Combine(folder, fileEntryInfo.FileName));
                                         }
                                     }
                                     else
                                     {
                                         // Windows file system is case-insensitive; OSX and Linux are case-sensitive
                                         var comparison = CrossPlatformHelpers.IsWindows ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-                                        int compareResult = string.Compare(fileName, fromSubfolder, comparison);
+                                        int compareResult = string.Compare(fileEntryInfo.FileName, fromSubfolder, comparison);
 
                                         if (compareResult >= 0)
                                         {
                                             passedSubfoler = true;
-                                            currentFolderSubFolders.Push(LongPath.Combine(folder, fileName));
+                                            currentFolderSubFolders.Push(LongPath.Combine(folder, fileEntryInfo.FileName));
 
                                             if (compareResult > 0)
                                             {
@@ -391,6 +483,114 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                 }
             }
         }
+
+        private static EnumerateFileEntryInfo GetFileEntryInfo(string filePath)
+        {
+            EnumerateFileEntryInfo fileEntryInfo = new EnumerateFileEntryInfo()
+            {
+                FileName = LongPath.GetFileName(filePath),
+                FileAttributes = FileAttributes.Normal,
+                SymlinkTarget = null
+            };
+
+#if DOTNET5_4
+            try
+            {
+                UnixFileSystemInfo fileSystemInfo = UnixFileSystemInfo.GetFileSystemEntry(filePath);
+                if (fileSystemInfo.IsSymbolicLink)
+                {
+                    fileEntryInfo.FileAttributes |= FileAttributes.ReparsePoint;
+                    fileEntryInfo.SymlinkTarget = Path.GetFullPath(Path.Combine(GetParentPath(filePath), (fileSystemInfo as UnixSymbolicLinkInfo).ContentsPath));
+
+                    UnixSymbolicLinkInfo symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
+
+                    try
+                    {
+                        if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
+                        {
+                            fileEntryInfo.FileAttributes |= FileAttributes.Directory;
+                        }
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Just ignore exception thrown here. 
+                        // later there will be "FileNotFoundException" thrown out when trying to open the file before transferring.
+                    }
+                }
+
+                if (fileSystemInfo.IsDirectory)
+                {
+                    fileEntryInfo.FileAttributes |= FileAttributes.Directory;
+                }
+            }
+            catch (DllNotFoundException ex)
+            {
+                throw new TransferException(TransferErrorCode.FailToEnumerateDirectory,
+                    Resources.UnableToLoadDLL,
+                    ex);
+            }
+#endif
+            return fileEntryInfo;
+        }
+
+        private static bool ToEnumerateTheSubDir(string dirPath, EnumerateFileEntryInfo fileEntryInfo, bool followSymlink)
+        {
+            if (FileAttributes.ReparsePoint != (fileEntryInfo.FileAttributes & FileAttributes.ReparsePoint))
+            {
+                return true;
+            }
+            else if (followSymlink)
+            {
+                string fullPath = Path.GetFullPath(dirPath);
+
+                if (fullPath.StartsWith(AppendDirectorySeparator(fileEntryInfo.SymlinkTarget), StringComparison.Ordinal))
+                {
+                    throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.DeadLoop, fullPath, fileEntryInfo.SymlinkTarget));
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+#if DOTNET5_4
+        private static bool SymlinkedDirExists(string dirPath)
+        {
+            dirPath = dirPath.TrimEnd(Path.DirectorySeparatorChar);
+            try
+            {
+                UnixFileSystemInfo fileSystemInfo = UnixFileSystemInfo.GetFileSystemEntry(dirPath);
+                if (!fileSystemInfo.IsSymbolicLink)
+                {
+                    return false;
+                }
+
+                UnixSymbolicLinkInfo symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
+                if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
+                {
+                    return true;
+                }
+            }
+            catch (DllNotFoundException ex)
+            {
+                throw new TransferException(TransferErrorCode.FailToEnumerateDirectory,
+                    Resources.UnableToLoadDLL,
+                    ex);
+            }
+
+            return false;
+        }
+        
+        private static string GetParentPath(string filePath)
+        {
+            if (filePath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+            {
+                filePath = filePath.Substring(0, filePath.Length - 1);
+            }
+            return Path.GetDirectoryName(filePath);
+        }
+#endif
 
         private static string AppendDirectorySeparator(string dir)
         {

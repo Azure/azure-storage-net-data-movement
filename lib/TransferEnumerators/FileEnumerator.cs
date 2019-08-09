@@ -24,13 +24,17 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
 
         private FileListContinuationToken listContinuationToken;
 
+        private bool followSymlink;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="FileEnumerator" /> class.
         /// </summary>
         /// <param name="location">Directory location.</param>
-        public FileEnumerator(DirectoryLocation location)
+        /// <param name="followSymlink">Indicating whether to enumerate symlinked subdirectories.</param>
+        public FileEnumerator(DirectoryLocation location, bool followSymlink)
         {
             this.location = location;
+            this.followSymlink = followSymlink;
         }
 
         /// <summary>
@@ -92,6 +96,7 @@ namespace Microsoft.WindowsAzure.Storage.DataMovement.TransferEnumerators
                     filePattern,
                     this.listContinuationToken == null ? null : this.listContinuationToken.FilePath,
                     searchOption,
+                    followSymlink,
                     cancellationToken);
             }
             catch (Exception ex)
