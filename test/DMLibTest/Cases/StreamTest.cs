@@ -245,7 +245,7 @@ namespace DMLibTest.Cases
                 DestObject = destAdaptor.GetTransferObject(string.Empty, fileNode),
                 SourceType = DMLibDataType.Stream,
                 DestType = DMLibDataType.PageBlob,
-                IsServiceCopy = false
+                CopyMethod = CopyMethod.SyncCopy
             });
 
             // Execution
@@ -298,7 +298,7 @@ namespace DMLibTest.Cases
                     DestObject = destAdaptor.GetTransferObject(string.Empty, fileNode),
                     SourceType = DMLibDataType.Stream,
                     DestType = destType,
-                    IsServiceCopy = false
+                    CopyMethod = CopyMethod.SyncCopy
                 });
             }
 
@@ -366,7 +366,7 @@ namespace DMLibTest.Cases
                     DestObject = (destAdaptor1 as LocalDataAdaptor).GetTransferObject(string.Empty, $"{FileName}_{i}"),
                     SourceType = sourceType,
                     DestType = DMLibDataType.Stream,
-                    IsServiceCopy = false
+                    CopyMethod = CopyMethod.SyncCopy
                 });
             }
 

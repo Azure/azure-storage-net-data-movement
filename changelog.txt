@@ -1,3 +1,8 @@
+2019.08.08 Version 1.0.0
+ * Blob Service on both .Net Framework and .Net Core
+   - Added a copy method to leverage Service Side Synchronous Copy when copying blobs.
+   - Changed default block size in uploading block blob from 8MB to 4MB.
+
 2019.07.05 Version 0.12.0
  * All Services on both .Net Framework and .Net Core
    - Upgraded Microsoft.Azure.Storage.Blob from 10.0.1 to 10.0.3 

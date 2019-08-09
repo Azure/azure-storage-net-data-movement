@@ -210,7 +210,7 @@ namespace DMLibTest.Cases
                 {
                     // DMLib doesn't support to resume transfer from a checkpoint which is inconsistent with
                     // the actual transfer progress when the destination is an append blob.
-                    if (Helper.RandomBoolean() && (DMLibTestContext.DestType != DMLibDataType.AppendBlob || DMLibTestContext.IsAsync))
+                    if (Helper.RandomBoolean() && (DMLibTestContext.DestType != DMLibDataType.AppendBlob || (DMLibTestContext.CopyMethod == DMLibCopyMethod.ServiceSideAsyncCopy)))
                     {
                         Test.Info("Resume with the first checkpoint first.");
                         firstResumeCheckpoint = firstCheckpoint;
@@ -249,7 +249,7 @@ namespace DMLibTest.Cases
                 {
                     secondProgressChecker = new ProgressChecker(2, 2 * fileSizeInKB * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInKB * 1024);
                 }
-                else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && !DMLibTestContext.IsAsync)
+                else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
                 {
                     secondProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 0, 1 /* failed */, 0, fileSizeInKB * 1024);
                 }
@@ -304,7 +304,7 @@ namespace DMLibTest.Cases
                 else
                 {
                     // For sync copy, recalculate md5 of destination by downloading the file to local.
-                    if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+                    if (IsCloudService(DMLibTestContext.DestType) && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
                     {
                         DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
                     }
@@ -331,7 +331,7 @@ namespace DMLibTest.Cases
                         exception = result.Exceptions[0];
                         VerificationHelper.VerifyTransferException(result.Exceptions[0], TransferErrorCode.NotOverwriteExistingDestination, "Skipped file");
                     }
-                    else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && !DMLibTestContext.IsAsync)
+                    else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
                     {
                         Test.Assert(result.Exceptions.Count == 1, "Verify reumse fails when checkpoint is inconsistent with the actual progress when destination is append blob.");
                         exception = result.Exceptions[0];
@@ -341,7 +341,7 @@ namespace DMLibTest.Cases
                     else
                     {
                         // For sync copy, recalculate md5 of destination by downloading the file to local.
-                        if (IsCloudService(DMLibTestContext.DestType) && !DMLibTestContext.IsAsync)
+                        if (IsCloudService(DMLibTestContext.DestType) && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
                         {
                             DMLibDataHelper.SetCalculatedFileMD5(result.DataInfo, DestAdaptor);
                         }
@@ -437,7 +437,7 @@ namespace DMLibTest.Cases
                 {
                     // DMLib doesn't support to resume transfer from a checkpoint which is inconsistent with
                     // the actual transfer progress when the destination is an append blob.
-                    if (Helper.RandomBoolean() && (DMLibTestContext.DestType != DMLibDataType.AppendBlob || DMLibTestContext.IsAsync))
+                    if (Helper.RandomBoolean() && (DMLibTestContext.DestType != DMLibDataType.AppendBlob || (DMLibTestContext.CopyMethod == DMLibCopyMethod.ServiceSideAsyncCopy)))
                     {
                         Test.Info("Resume with the first checkpoint first.");
                         firstResumeCheckpoint = firstCheckpoint;
@@ -476,7 +476,7 @@ namespace DMLibTest.Cases
                 {
                     secondProgressChecker = new ProgressChecker(2, 2 * fileSizeInKB * 1024, 1 /* transferred */, 1 /* failed */, 0, 2 * fileSizeInKB * 1024);
                 }
-                else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && !DMLibTestContext.IsAsync)
+                else if (DMLibTestContext.DestType == DMLibDataType.AppendBlob && (DMLibTestContext.CopyMethod != DMLibCopyMethod.ServiceSideAsyncCopy))
                 {
                     secondProgressChecker = new ProgressChecker(1, fileSizeInKB * 1024, 0, 1 /* failed */, 0, fileSizeInKB * 1024);
                 }

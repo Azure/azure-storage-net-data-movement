@@ -156,6 +156,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudDest)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestSetAttributes()
         {
             Dictionary<string, string> metadata = new Dictionary<string, string>();
@@ -205,6 +206,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudDest)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectorySetAttributes()
         {
             Dictionary<string, string> metadata = new Dictionary<string, string>();
@@ -267,6 +269,7 @@ namespace DMLibTest.Cases
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile)]
         [DMLibTestMethod(DMLibDataType.CloudBlob)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectorySetAttribute_Restart_Copy()
         {
             int bigFileSizeInKB = 5 * 1024; // 5 MB

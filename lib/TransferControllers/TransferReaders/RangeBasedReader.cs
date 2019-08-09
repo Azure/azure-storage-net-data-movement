@@ -687,7 +687,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         StartOffset = startOffset,
                         EndOffset = endOffset,
                         HasData = hasData,
-                    }.SplitRanges(Constants.DefaultBlockSize));
+                    }.SplitRanges(Constants.DefaultTransferChunkSize));
             }
             else
             {
@@ -715,7 +715,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             if (range.EndOffset != lastTransferWindowStart - 1)
                             {
                                 // Store the previous range and create a new one
-                                this.rangeList.AddRange(range.SplitRanges(Constants.DefaultBlockSize));
+                                this.rangeList.AddRange(range.SplitRanges(Constants.DefaultTransferChunkSize));
                                 range = new Range()
                                 {
                                     StartOffset = Math.Max(lastTransferWindowStart, startOffset),
@@ -739,7 +739,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                 if (-1 != range.StartOffset)
                 {
-                    this.rangeList.AddRange(range.SplitRanges(Constants.DefaultBlockSize));
+                    this.rangeList.AddRange(range.SplitRanges(Constants.DefaultTransferChunkSize));
                 }
 
                 if (checkpoint.EntryTransferOffset <= endOffset + 1)
@@ -753,7 +753,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             StartOffset = checkpoint.EntryTransferOffset,
                             EndOffset = endOffset,
                             HasData = hasData,
-                        }.SplitRanges(Constants.DefaultBlockSize));
+                        }.SplitRanges(Constants.DefaultTransferChunkSize));
                     }
                 }
             }

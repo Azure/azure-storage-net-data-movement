@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------
 namespace DMLibTest
 {
+    using System;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Storage.DataMovement;
@@ -36,15 +37,36 @@ namespace DMLibTest
 
             if (cancellationToken != null && cancellationToken != CancellationToken.None)
             {
-                return TransferManager.CopyAsync(sourceObject, destObject, item.IsServiceCopy, copyOptions, transferContext, cancellationToken);
+                if (sourceObject is Uri)
+                {
+                    return TransferManager.CopyAsync(sourceObject, destObject, item.CopyMethod == CopyMethod.ServiceSideAsyncCopy, copyOptions, transferContext, cancellationToken);
+                }
+                else
+                {
+                    return TransferManager.CopyAsync(sourceObject, destObject, item.CopyMethod, copyOptions, transferContext, cancellationToken);
+                }
             }
             else if (transferContext != null || copyOptions != null)
             {
-                return TransferManager.CopyAsync(sourceObject, destObject, item.IsServiceCopy, copyOptions, transferContext);
+                if (sourceObject is Uri)
+                {
+                    return TransferManager.CopyAsync(sourceObject, destObject, item.CopyMethod == CopyMethod.ServiceSideAsyncCopy, copyOptions, transferContext);
+                }
+                else
+                {
+                    return TransferManager.CopyAsync(sourceObject, destObject, item.CopyMethod, copyOptions, transferContext);
+                }
             }
             else
             {
-                return TransferManager.CopyAsync(sourceObject, destObject, item.IsServiceCopy);
+                if (sourceObject is Uri)
+                {
+                    return TransferManager.CopyAsync(sourceObject, destObject, item.CopyMethod == CopyMethod.ServiceSideAsyncCopy);
+                }
+                else
+                {
+                    return TransferManager.CopyAsync(sourceObject, destObject, item.CopyMethod);
+                }
             }
         }
 
@@ -56,11 +78,11 @@ namespace DMLibTest
 
             if (cancellationToken == null || cancellationToken == CancellationToken.None)
             {
-                return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.IsServiceCopy, copyDirectoryOptions, transferContext);
+                return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.CopyMethod, copyDirectoryOptions, transferContext);
             }
             else
             {
-                return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.IsServiceCopy, copyDirectoryOptions, transferContext, cancellationToken);
+                return TransferManager.CopyDirectoryAsync(sourceObject, destObject, item.CopyMethod, copyDirectoryOptions, transferContext, cancellationToken);
             }
         }
     }

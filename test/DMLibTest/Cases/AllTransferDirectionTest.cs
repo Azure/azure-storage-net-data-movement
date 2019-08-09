@@ -133,13 +133,13 @@ namespace DMLibTest
             uriSourceAdaptor.CreateIfNotExists();
 
             DMLibTestContext.SourceType = DMLibDataType.URI;
-            DMLibTestContext.IsAsync = true;
+            DMLibTestContext.CopyMethod = DMLibCopyMethod.ServiceSideAsyncCopy;
 
             DMLibDataType[] uriDestDataTypes = { DMLibDataType.CloudFile, DMLibDataType.BlockBlob, DMLibDataType.PageBlob, DMLibDataType.AppendBlob };
             foreach (DMLibDataType uriDestDataType in uriDestDataTypes)
             {
                 DMLibTestContext.DestType = uriDestDataType;
-                string sourceDataInfoKey = GetTransferString(DMLibDataType.URI, uriDestDataType, true);
+                string sourceDataInfoKey = GetTransferString(DMLibDataType.URI, uriDestDataType, CopyMethod.ServiceSideAsyncCopy);
 
                 uriSourceAdaptor.GenerateData(sourceDataInfos[sourceDataInfoKey]);
             }
@@ -228,7 +228,7 @@ namespace DMLibTest
                     DestObject = destAdaptor.GetTransferObject(string.Empty, fileNode),
                     SourceType = direction.SourceType,
                     DestType = direction.DestType,
-                    IsServiceCopy = direction.IsAsync,
+                    CopyMethod = direction.CopyMethod,
                     TransferContext = new SingleTransferContext()
                     {
                         SetAttributesCallbackAsync = AllTransferDirectionTest.SetAttributesCallbackMethodAsync
@@ -260,7 +260,7 @@ namespace DMLibTest
                     DestObject = destAdaptor.GetTransferObject(string.Empty, dirNode),
                     SourceType = direction.SourceType,
                     DestType = direction.DestType,
-                    IsServiceCopy = direction.IsAsync,
+                    CopyMethod = direction.CopyMethod,
                     IsDirectoryTransfer = true,
                     Options = options,
                     TransferContext = new DirectoryTransferContext()
@@ -512,30 +512,30 @@ namespace DMLibTest
 
         private static string GetTransferFileName(DMLibTransferDirection direction)
         {
-            return GetTransferString(direction.SourceType, direction.DestType, direction.IsAsync);
+            return GetTransferString(direction.SourceType, direction.DestType, direction.CopyMethod);
         }
 
         private static string GetTransferDirName(DMLibTransferDirection direction)
         {
-            return "dir" + GetTransferString(direction.SourceType, direction.DestType, direction.IsAsync);
+            return "dir" + GetTransferString(direction.SourceType, direction.DestType, direction.CopyMethod);
         }
 
-        private static string GetTransferString(DMLibDataType sourceType, DMLibDataType destType, bool isAsync)
+        private static string GetTransferString(DMLibDataType sourceType, DMLibDataType destType, CopyMethod copyMethod)
         {
-            return sourceType.ToString() + destType.ToString() + (isAsync ? "async" : ""); 
+            return sourceType.ToString() + destType.ToString() + copyMethod.ToString(); 
         }
 
         private static IEnumerable<DMLibTransferDirection> GetAllValidDirections()
         {
-            return EnumerateAllDirections(validSyncDirections, validAsyncDirections);
+            return EnumerateAllDirections(validSyncDirections, validServiceSyncDirections, validAsyncDirections);
         }
 
         private static IEnumerable<DMLibTransferDirection> GetAllDirectoryValidDirections()
         {
-            return EnumerateAllDirections(dirValidSyncDirections, dirValidAsyncDirections);
+            return EnumerateAllDirections(dirValidSyncDirections, dirValidServiceSyncDirections, dirValidAsyncDirections);
         }
 
-        private static IEnumerable<DMLibTransferDirection> EnumerateAllDirections(bool[][] syncDirections, bool[][] asyncDirections)
+        private static IEnumerable<DMLibTransferDirection> EnumerateAllDirections(bool[][] syncDirections, bool[][] serviceSyncDirections, bool[][] asyncDirections)
         {
             for (int sourceIndex = 0; sourceIndex < DataTypes.Length; ++sourceIndex)
             {
@@ -550,7 +550,17 @@ namespace DMLibTest
                         {
                             SourceType = sourceDataType,
                             DestType = destDataType,
-                            IsAsync = false,
+                            CopyMethod = CopyMethod.SyncCopy,
+                        };
+                    }
+
+                    if (serviceSyncDirections[sourceIndex][destIndex])
+                    {
+                        yield return new DMLibTransferDirection()
+                        {
+                            SourceType = sourceDataType,
+                            DestType = destDataType,
+                            CopyMethod = CopyMethod.ServiceSideSyncCopy,
                         };
                     }
 
@@ -560,7 +570,7 @@ namespace DMLibTest
                         {
                             SourceType = sourceDataType,
                             DestType = destDataType,
-                            IsAsync = true,
+                            CopyMethod = CopyMethod.ServiceSideAsyncCopy,
                         };
                     }
                 }
@@ -578,6 +588,19 @@ namespace DMLibTest
             new bool[] {true, false, true, true, true, false, false}, // block
             new bool[] {true, false, true, true, false, true, false}, // page
             new bool[] {true, false, true, true, false, false, true}, // append
+        };
+
+        // [SourceType][DestType]
+        private static bool[][] validServiceSyncDirections =
+        {
+            //          stream, uri, local, xsmb, block, page, append
+            new bool[] {false, false, false, false, false, false, false}, // stream
+            new bool[] {false, false, false, false, false, false, false}, // uri
+            new bool[] {false, false, false, false, false, false, false}, // local
+            new bool[] {false, false, false, false, false, false, false}, // xsmb
+            new bool[] {false, false, false, false, true, false, false}, // block
+            new bool[] {false, false, false, false, false, true, false}, // page
+            new bool[] {false, false, false, false, false, false, true}, // append
         };
 
         // [SourceType][DestType]
@@ -604,6 +627,19 @@ namespace DMLibTest
             new bool[] {false, false, true, true, true, false, false}, // block
             new bool[] {false, false, true, true, false, true, false}, // page
             new bool[] {false, false, true, true, false, false, true}, // append
+        };
+
+        // [SourceType][DestType]
+        private static bool[][] dirValidServiceSyncDirections =
+        {
+            //          stream, uri, local, xsmb, block, page, append
+            new bool[] {false, false, false, false, false, false, false}, // stream
+            new bool[] {false, false, false, false, false, false, false}, // uri
+            new bool[] {false, false, false, false, false, false, false}, // local
+            new bool[] {false, false, false, false, false, false, false}, // xsmb
+            new bool[] {false, false, false, false, true, false, false}, // block
+            new bool[] {false, false, false, false, false, true, false}, // page
+            new bool[] {false, false, false, false, false, false, true}, // append
         };
 
         // [SourceType][DestType]
@@ -668,7 +704,7 @@ namespace DMLibTest
             set;
         }
 
-        public bool IsAsync
+        public CopyMethod CopyMethod
         {
             get;
             set;

@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     using System.Globalization;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Storage.Blob;
     using Microsoft.Azure.Storage.DataMovement;
 
     internal abstract class TransferControllerBase : ITransferController, IDisposable

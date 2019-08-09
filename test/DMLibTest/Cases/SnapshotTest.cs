@@ -68,6 +68,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobSource)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectoryIncludeSnapshots()
         {
             string snapshotFile1 = "snapshotFile1";
@@ -110,6 +111,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobSource)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectoryNotIncludeSnapshots()
         {
             string snapshotFile1 = "snapshotFile1";
@@ -165,6 +167,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobSource)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectoryWithSpecialCharNamedBlobs()
         {
 #if DNXCORE50
@@ -290,7 +293,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile, isAsync: true)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
         public void TestFileShareSnapshotsCopyToBase()
         {
             int fileCount = 3;
@@ -314,7 +317,7 @@ namespace DMLibTest.Cases
             Task<TransferStatus> task = TransferManager.CopyDirectoryAsync(
                 SourceObject,
                 DestObject,
-                DMLibTestContext.IsAsync,
+                DMLibTestContext.CopyMethod.ToCopyMethod(),
                 new CopyDirectoryOptions() { Recursive = true },
                 new DirectoryTransferContext() { ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite });
             Test.Assert(task.Wait(15 * 60 * 100), "Tansfer finished in time.");
@@ -361,7 +364,7 @@ namespace DMLibTest.Cases
             Task<TransferStatus> task = TransferManager.CopyDirectoryAsync(
                 SourceObject,
                 DestObject,
-                DMLibTestContext.IsAsync,
+                DMLibTestContext.CopyMethod.ToCopyMethod(),
                 new CopyDirectoryOptions() { Recursive = true },
                 new DirectoryTransferContext() { ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite  });
             try

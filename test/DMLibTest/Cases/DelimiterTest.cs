@@ -63,7 +63,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile | DMLibDataType.Local)]
-        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile, isAsync: true)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile, copymethod: DMLibCopyMethod.SyncCopy)]
         public void TestNormalDelimiter()
         {
             char delimiter = Helper.GenerateRandomDelimiter();
@@ -72,7 +72,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile | DMLibDataType.Local)]
-        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile, isAsync:true)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile, copymethod: DMLibCopyMethod.SyncCopy)]
         public void TestSpecialDelimiter()
         {
             string specialChars = "~`!@#$%()-_+={}[];‘,.^& ";

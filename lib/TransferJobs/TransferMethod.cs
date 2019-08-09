@@ -17,7 +17,12 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// To send a start copy request to azure storage to let it do the copying,
         /// and monitor the copying progress until the copy finished.
         /// </summary>
-        AsyncCopy,
+        ServiceSideAsyncCopy,
+
+        /// <summary>
+        /// To copy content of each chunk with with "Put Block From URL", "Append Block From URL" or "Put Page From URL".
+        /// </summary>
+        ServiceSideSyncCopy,
 
         /// <summary>
         /// Creates dummy objects only, no data transfer will happen.

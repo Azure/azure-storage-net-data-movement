@@ -271,7 +271,7 @@ namespace DMLibTest.Cases
             {
                 SharedAccessPermissions permissions;
 
-                if (DMLibTestContext.IsAsync)
+                if (DMLibTestContext.CopyMethod == DMLibCopyMethod.ServiceSideAsyncCopy)
                 {
                     permissions = SharedAccessPermissions.Write | SharedAccessPermissions.Read;
                 }
@@ -337,7 +337,7 @@ namespace DMLibTest.Cases
             {
                 SharedAccessPermissions permissions;
 
-                if (DMLibTestContext.IsAsync)
+                if (DMLibTestContext.CopyMethod == DMLibCopyMethod.ServiceSideAsyncCopy)
                 {
                     permissions = SharedAccessPermissions.Write | SharedAccessPermissions.Read;
                 }

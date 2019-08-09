@@ -85,6 +85,7 @@
     </Compile>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="ChunkedMemoryStream.cs" />
+    <Compile Include="CopyMethod.cs" />
     <Compile Include="DirectoryListingScheduler.cs" />
     <Compile Include="Extensions\StorageCopyState.cs" />
     <Compile Include="FileNativeMethods.cs" />
@@ -115,6 +116,10 @@
     <Compile Include="TransferControllers\AsyncCopyControllers\FileAsyncCopyController.cs" />
     <Compile Include="TransferControllers\AsyncCopyControllers\AsyncCopyController.cs" />
     <Compile Include="TransferControllers\DummyTransferController.cs" />
+    <Compile Include="TransferControllers\ServerSideSyncCopyControllers\AppendBlobServiceSideSyncCopyController.cs" />
+    <Compile Include="TransferControllers\ServerSideSyncCopyControllers\BlockBlobServiceSideSyncCopyController.cs" />
+    <Compile Include="TransferControllers\ServerSideSyncCopyControllers\PageBlobServiceSideSyncCopyController.cs" />
+    <Compile Include="TransferControllers\ServerSideSyncCopyControllers\ServiceSideSyncCopyController.cs" />
     <Compile Include="TransferControllers\TransferReaders\CloudFileReader.cs" />
     <Compile Include="TransferControllers\TransferReaders\PageBlobReader.cs" />
     <Compile Include="TransferControllers\TransferReaders\RangeBasedReader.cs" />

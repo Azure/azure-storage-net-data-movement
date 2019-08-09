@@ -12,16 +12,16 @@ namespace DMLibTestCodeGen
         public DMLibTransferDirection(
             DMLibDataType sourceType,
             DMLibDataType destType,
-            bool isAsync,
+            DMLibCopyMethod copyMethod,
             List<string> tags)
             : base(tags)
         {
             this.SourceType = sourceType;
             this.DestType = destType;
-            this.IsAsync = isAsync;
+            this.CopyMethod = copyMethod;
         }
 
-        public bool IsAsync
+        public DMLibCopyMethod CopyMethod
         {
             get;
             private set;
@@ -49,13 +49,13 @@ namespace DMLibTestCodeGen
 
             return this.SourceType == other.SourceType &&
                 this.DestType == other.DestType &&
-                this.IsAsync == other.IsAsync;
+                this.CopyMethod == other.CopyMethod;
         }
 
         public override int GetHashCode()
         {
             int factor = 31;
-            int hash = this.IsAsync ? 1 : 0;
+            int hash = (int)this.CopyMethod;
             hash = hash * factor + (int)this.SourceType;
             hash = hash * factor + (int)this.DestType;
 
@@ -64,21 +64,22 @@ namespace DMLibTestCodeGen
 
         public override string GetTestMethodNameSuffix()
         {
-            // [SourceType]2[DestType][Async]
+            // [SourceType]2[DestType][ServiceSideAsyncCopy]
             return string.Format("{0}2{1}{2}",
                 this.SourceType.ToString(),
                 this.DestType.ToString(),
-                this.IsAsync ? "Async" : string.Empty);
+                this.CopyMethod);
         }
 
         protected override IEnumerable<string> GetExtraTags()
         {
-            yield return string.Format("{0}2{1}{2}", this.SourceType, this.DestType, this.IsAsync ? "Async" : string.Empty);
+            yield break;
+            //yield return string.Format("{0}2{1}{2}", this.SourceType, this.DestType, this.IsAsync ? "Async" : string.Empty);
 
-            if (this.IsAsync)
-            {
-                yield return MultiDirectionTag.Async;
-            }
+            //if (this.IsAsync)
+            //{
+            //    yield return MultiDirectionTag.Async;
+            //}
         }
     }
 }

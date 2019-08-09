@@ -269,6 +269,9 @@ MD5 in property: {2}</value>
   <data name="RestartableInfoCorruptedException" xml:space="preserve">
     <value>Failed to read restartable info from file.</value>
   </data>
+  <data name="ServiceSideSyncCopyNotSupportException" xml:space="preserve">
+    <value>Service side synchronous copying is only supported when destination is Azure Blob Storage.</value>
+  </data>
   <data name="SmallMemoryCacheSizeLimitationException" xml:space="preserve">
     <value>MaximumCacheSize cannot be less than {0}.</value>
     <comment>{0} is minimum memory cache size limitation</comment>
@@ -335,6 +338,12 @@ MD5 in property: {2}</value>
   </data>
   <data name="AzureFile" xml:space="preserve">
     <value>AzureFile</value>
+  </data>
+  <data name="ServiceSideSyncCopyFromFileNotSupportedException" xml:space="preserve">
+    <value>Copying from Azure File Storage with service side synchronous copying is not supported.</value>
+  </data>
+  <data name="ServiceSideSyncCopyToFileNotSupportedException" xml:space="preserve">
+    <value>Copying to Azure File Storage with service side synchronous copying is not supported.</value>
   </data>
   <data name="SyncCopyFromUriToAzureBlobNotSupportedException" xml:space="preserve">
     <value>Copying from uri to Azure Blob Storage synchronously is not supported.</value>
