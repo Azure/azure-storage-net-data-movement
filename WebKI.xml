@@ -14,8 +14,9 @@
     <HelpKINode Title="about Constants class" Url="html/78ef46df-2ad1-49df-b83d-ebc9f1fdccc3.htm" />
     <HelpKINode Title="fields" Url="html/3c79556f-cc19-98fb-381e-c8f63eb074dd.htm" />
   </HelpKINode>
-  <HelpKINode Title="Constants.DefaultBlockSize field" Url="html/3af7194b-65a4-587a-02ee-e857de905cd5.htm" />
+  <HelpKINode Title="Constants.DefaultBlockBlobBlockSize field" Url="html/76058680-f274-c4a1-b303-6e6ad8909a07.htm" />
   <HelpKINode Title="Constants.DefaultMemoryChunkSize field" Url="html/e03cc070-9ac7-8f34-8160-fa6308ce61f7.htm" />
+  <HelpKINode Title="Constants.DefaultTransferChunkSize field" Url="html/37616d65-bd5f-3ab7-2788-956b6b74a1ba.htm" />
   <HelpKINode Title="Constants.DirectoryBlobMetadataKey field" Url="html/b648c167-8f23-729d-ff51-52ab54741a4c.htm" />
   <HelpKINode Title="Constants.MaxBlockSize field" Url="html/5aaa50df-a3e1-aa28-4f66-5760841dad2c.htm" />
   <HelpKINode Title="CopyAsync method" Url="html/7e0bd9bb-8193-7cee-4d53-00538f63fd9b.htm" />
@@ -31,6 +32,7 @@
   <HelpKINode Title="CopyDirectoryOptions.CopyDirectoryOptions constructor" Url="html/d3c5038c-086b-b502-2a41-a30cffc43503.htm" />
   <HelpKINode Title="CopyDirectoryOptions.Delimiter property" Url="html/b8f78ba2-14e0-3cc9-f0ec-1ec039d198d9.htm" />
   <HelpKINode Title="CopyDirectoryOptions.IncludeSnapshots property" Url="html/5ba80ade-f6f5-7a98-3642-24e5e1575611.htm" />
+  <HelpKINode Title="CopyMethod enumeration" Url="html/58081785-1aad-637b-4400-75a2df34f394.htm" />
   <HelpKINode Title="CopyOptions class">
     <HelpKINode Title="CopyOptions Class" Url="html/a046a94f-bbcd-548f-32e8-2f56a81a8795.htm" />
     <HelpKINode Title="about CopyOptions class" Url="html/a046a94f-bbcd-548f-32e8-2f56a81a8795.htm" />
@@ -41,8 +43,9 @@
   <HelpKINode Title="CopyOptions.CopyOptions constructor" Url="html/bcd07f92-0fdb-ae80-b992-fe5885e0a8af.htm" />
   <HelpKINode Title="CopyOptions.DestinationAccessCondition property" Url="html/195f3814-8b6d-89f2-8ea4-07632226fab3.htm" />
   <HelpKINode Title="CopyOptions.SourceAccessCondition property" Url="html/2bd14d9b-fa97-bbc9-4ac2-d69df0a21a52.htm" />
-  <HelpKINode Title="DefaultBlockSize field" Url="html/3af7194b-65a4-587a-02ee-e857de905cd5.htm" />
+  <HelpKINode Title="DefaultBlockBlobBlockSize field" Url="html/76058680-f274-c4a1-b303-6e6ad8909a07.htm" />
   <HelpKINode Title="DefaultMemoryChunkSize field" Url="html/e03cc070-9ac7-8f34-8160-fa6308ce61f7.htm" />
+  <HelpKINode Title="DefaultTransferChunkSize field" Url="html/37616d65-bd5f-3ab7-2788-956b6b74a1ba.htm" />
   <HelpKINode Title="Delimiter property">
     <HelpKINode Title="CopyDirectoryOptions.Delimiter Property " Url="html/b8f78ba2-14e0-3cc9-f0ec-1ec039d198d9.htm" />
     <HelpKINode Title="DownloadDirectoryOptions.Delimiter Property " Url="html/8f94c0ca-02a7-7228-b7b0-4aab6c22edac.htm" />
@@ -130,6 +133,7 @@
   <HelpKINode Title="Microsoft.Azure.Storage.DataMovement namespace" Url="html/470222ea-2ca0-cef6-b4c7-34a0b0e6e3a2.htm" />
   <HelpKINode Title="Microsoft.Azure.Storage.DataMovement.Constants class" Url="html/78ef46df-2ad1-49df-b83d-ebc9f1fdccc3.htm" />
   <HelpKINode Title="Microsoft.Azure.Storage.DataMovement.CopyDirectoryOptions class" Url="html/6b1d0b7e-1dce-3a66-a81c-09f473d28914.htm" />
+  <HelpKINode Title="Microsoft.Azure.Storage.DataMovement.CopyMethod enumeration" Url="html/58081785-1aad-637b-4400-75a2df34f394.htm" />
   <HelpKINode Title="Microsoft.Azure.Storage.DataMovement.CopyOptions class" Url="html/a046a94f-bbcd-548f-32e8-2f56a81a8795.htm" />
   <HelpKINode Title="Microsoft.Azure.Storage.DataMovement.DirectoryOptions class" Url="html/6da25d86-7e78-dd90-e6b4-dec180eff814.htm" />
   <HelpKINode Title="Microsoft.Azure.Storage.DataMovement.DirectoryTransferContext class" Url="html/5254e502-c4a7-c3e6-c5e9-5fa269974911.htm" />
@@ -163,6 +167,8 @@
   <HelpKINode Title="Recursive property" Url="html/9decde3a-47b6-8e87-5702-71fc3bc3a03d.htm" />
   <HelpKINode Title="SameSourceAndDestination enumeration member" Url="html/3bbc9946-4798-8bc4-3139-aa703cda9544.htm" />
   <HelpKINode Title="SearchPattern property" Url="html/6537915b-1285-6823-e235-1d2fc9f384dc.htm" />
+  <HelpKINode Title="ServiceSideAsyncCopy enumeration member" Url="html/58081785-1aad-637b-4400-75a2df34f394.htm" />
+  <HelpKINode Title="ServiceSideSyncCopy enumeration member" Url="html/58081785-1aad-637b-4400-75a2df34f394.htm" />
   <HelpKINode Title="SetAttributesCallbackAsync delegate" Url="html/9782b0f3-d83f-f396-fe0f-4273213d4d6c.htm" />
   <HelpKINode Title="SetAttributesCallbackAsync property" Url="html/b3c443a6-691c-64c4-1b1a-ea001a05668a.htm" />
   <HelpKINode Title="ShouldOverwriteCallbackAsync delegate" Url="html/71b7afa9-1d3b-cfd8-ae6b-1e91cdfc7440.htm" />
@@ -185,6 +191,7 @@
   </HelpKINode>
   <HelpKINode Title="StartTime property" Url="html/bb6c0f30-ea92-2940-4be5-6a814055c848.htm" />
   <HelpKINode Title="SubTransferFails enumeration member" Url="html/3bbc9946-4798-8bc4-3139-aa703cda9544.htm" />
+  <HelpKINode Title="SyncCopy enumeration member" Url="html/58081785-1aad-637b-4400-75a2df34f394.htm" />
   <HelpKINode Title="TransferAlreadyExists enumeration member" Url="html/3bbc9946-4798-8bc4-3139-aa703cda9544.htm" />
   <HelpKINode Title="TransferCheckpoint class">
     <HelpKINode Title="TransferCheckpoint Class" Url="html/1ed84635-5329-21ff-d1de-ba7a1f65db66.htm" />
