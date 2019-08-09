@@ -27,6 +27,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         private BlockingCollection<ITransferController> controllerQueue;
 
+        private AutoResetEvent queueAddedEvent;
+
         /// <summary>
         /// Internal queue for the main controllers collection.
         /// </summary>
@@ -137,6 +139,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             this.ongoingTasks = 0;
 
+            this.queueAddedEvent = new AutoResetEvent(false);
             this.ongoingTaskEvent = new ManualResetEventSlim(false);
 
             this.StartSchedule();
@@ -212,6 +215,8 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             Utils.CheckCancellation(this.cancellationTokenSource.Token);
             this.controllerQueue.Add(controller, this.cancellationTokenSource.Token);
+
+            this.queueAddedEvent.Set();
 
             try
             {
@@ -352,6 +357,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                             this.controllerResetEvent = null;
                         }
 
+                        if (null != this.queueAddedEvent)
+                        {
+                            this.queueAddedEvent.Dispose();
+                            this.queueAddedEvent = null;
+                        }
+                        
                         if (null != this.ongoingTaskEvent)
                         {
                             this.ongoingTaskEvent.Dispose();
@@ -380,30 +391,31 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             Task.Run(() =>
                 {
-                    SpinWait sw = new SpinWait();
+                    var sw = new SpinWait();
                     while (!this.cancellationTokenSource.Token.IsCancellationRequested &&
                         (!this.controllerQueue.IsCompleted || Interlocked.Read(ref this.activeControllerItemCount) != 0))
                     {
-                        this.FillInQueue(
-                            this.activeControllerItems,
-                            this.controllerQueue,
-                            this.cancellationTokenSource.Token);
+                            FillInQueue(
+                                this.activeControllerItems,
+                                this.controllerQueue,
+                                this.cancellationTokenSource.Token);
 
-                        if (!this.cancellationTokenSource.Token.IsCancellationRequested)
-                        {
-                            // If we don't have the requested amount of active tasks
-                            // running, get a task item from any active transfer item
-                            // that has work available.
-                            if (!this.DoWorkFrom(this.activeControllerItems))
+                            if (!this.cancellationTokenSource.Token.IsCancellationRequested)
                             {
-                                sw.SpinOnce();
+                                // If we don't have the requested amount of active tasks
+                                // running, get a task item from any active transfer item
+                                // that has work available.
+                                if (!this.DoWorkFrom(this.activeControllerItems))
+                                {
+                                    sw.SpinOnce();
+                                }
+                                else
+                                {
+                                    sw.Reset();
+                                }
                             }
-                            else
-                            {
-                                sw.Reset();
-                                continue;
-                            }
-                        }
+
+                        WaitHandle.WaitAny(new[] { queueAddedEvent, this.CancellationTokenSource.Token.WaitHandle });
                     }
                 });
         }
