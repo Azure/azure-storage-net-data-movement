@@ -14,6 +14,8 @@ namespace Microsoft.Azure.Storage.DataMovement
     {
 #if DOTNET5_4
         private IncrementalHash hash = null;
+        private NativeMD5 nativeMd5 = null;
+        private bool useV1MD5 = true;
 #else         
         private MD5 hash = null;
 #endif
@@ -22,7 +24,15 @@ namespace Microsoft.Azure.Storage.DataMovement
         internal MD5Wrapper()
         {
 #if DOTNET5_4
-            this.hash = IncrementalHash.CreateHash(HashAlgorithmName.MD5);
+            this.useV1MD5 = CloudStorageAccount.UseV1MD5 || !Interop.CrossPlatformHelpers.IsWindows;
+            if (useV1MD5)
+            {
+                this.hash = IncrementalHash.CreateHash(HashAlgorithmName.MD5);
+            }
+            else
+            {
+                this.nativeMd5 = new NativeMD5();
+            }
 #else
 
             if (CloudStorageAccount.UseV1MD5)
@@ -47,7 +57,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (count > 0)
             {
 #if DOTNET5_4
-                this.hash.AppendData(input, offset, count);
+                if (useV1MD5)
+                {
+                    this.hash.AppendData(input, offset, count);
+                }
+                else
+                {
+                    this.nativeMd5.TransformBlock(input, offset, count, null, 0);
+                }
 #else
                 this.hash.TransformBlock(input, offset, count, null, 0);
 #endif
@@ -61,7 +78,15 @@ namespace Microsoft.Azure.Storage.DataMovement
         internal string ComputeHash()
         {
 #if DOTNET5_4
-            return Convert.ToBase64String(this.hash.GetHashAndReset());
+            if (useV1MD5)
+            {
+                return Convert.ToBase64String(this.hash.GetHashAndReset());
+            }
+            else
+            {
+                this.nativeMd5.TransformFinalBlock(new byte[0], 0, 0);
+                return Convert.ToBase64String(this.nativeMd5.Hash);
+            }
 #else
             this.hash.TransformFinalBlock(new byte[0], 0, 0);
             return Convert.ToBase64String(this.hash.Hash);
@@ -75,6 +100,14 @@ namespace Microsoft.Azure.Storage.DataMovement
                 this.hash.Dispose();
                 this.hash = null;
             }
+
+#if DOTNET5_4
+            if (this.nativeMd5 != null)
+            {
+                this.nativeMd5.Dispose();
+                this.nativeMd5 = null;
+            }
+#endif
         }
     }
 }
