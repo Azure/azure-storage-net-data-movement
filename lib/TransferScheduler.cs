@@ -260,14 +260,31 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 try
                 {
-                    if (!collection.TryTake(out transferItem)
-                        || null == transferItem)
+                    if (this.activeControllerItemCount <= 0)
                     {
-                        return;
+                        transferItem = collection.Take(this.cancellationTokenSource.Token);
+
+                        if (null == transferItem)
+                        {
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (!collection.TryTake(out transferItem)
+                            || null == transferItem)
+                        {
+                            return;
+                        }
                     }
                 }
-                catch (ObjectDisposedException)
+                catch (OperationCanceledException)
                 {
+                    return;
+                }
+                catch (InvalidOperationException)
+                {
+                    // This kind of exception will be thrown when the BlockingCollection is marked as complete for adding, or is disposed. 
                     return;
                 }
 
