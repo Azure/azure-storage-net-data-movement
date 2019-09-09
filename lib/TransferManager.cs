@@ -95,7 +95,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
 
-            return UploadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
+            return UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
 
-            return UploadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
+            return UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -195,7 +195,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
 
-            return UploadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
+            return UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -245,7 +245,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
 
-            return UploadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
+            return UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -395,11 +395,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (options != null)
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
-
                 sourceLocation.BlobRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
             }
 
-            return DownloadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
+            return DownloadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -451,7 +450,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 sourceLocation.BlobRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
             }
 
-            return DownloadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
+            return DownloadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -503,7 +502,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 sourceLocation.FileRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
             }
 
-            return DownloadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
+            return DownloadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -555,7 +554,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 sourceLocation.FileRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
             }
 
-            return DownloadInternalAsync(sourceLocation, destLocation, context, cancellationToken);
+            return DownloadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -1575,15 +1574,27 @@ namespace Microsoft.Azure.Storage.DataMovement
             scheduler?.MemoryManager.SetMemoryLimitation(memoryLimitation);
         }
 
-        private static Task UploadInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, TransferContext context, CancellationToken cancellationToken)
+        private static Task UploadInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, UploadOptions uploadOptions, TransferContext context, CancellationToken cancellationToken)
         {
             Transfer transfer = GetOrCreateSingleObjectTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
+
+            if (null != uploadOptions)
+            {
+                transfer.PreserveSMBAttributes = uploadOptions.PreserveSMBAttributes;
+            }
+
             return DoTransfer(transfer, context, cancellationToken);
         }
 
-        private static Task DownloadInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, TransferContext context, CancellationToken cancellationToken)
+        private static Task DownloadInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, DownloadOptions downloadOptions, TransferContext context, CancellationToken cancellationToken)
         {
             Transfer transfer = GetOrCreateSingleObjectTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
+
+            if (null != downloadOptions)
+            {
+                transfer.PreserveSMBAttributes = downloadOptions.PreserveSMBAttributes;
+            }
+
             return DoTransfer(transfer, context, cancellationToken);
         }
 

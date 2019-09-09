@@ -6,7 +6,9 @@
 
 namespace Microsoft.Azure.Storage.DataMovement
 {
+    using System;
     using System.Collections.Generic;
+    using Microsoft.Azure.Storage.File;
 
     internal class Attributes
     {
@@ -44,6 +46,10 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Gets or sets the user-defined metadata for blob/azure file.
         /// </summary>
         public IDictionary<string, string> Metadata { get; set; }
+
+        public CloudFileNtfsAttributes? SMBAttributes { get; set; }
+        public DateTimeOffset? CreationTime { get; set; }
+        public DateTimeOffset? LastWriteTime { get; set; }
 
         /// <summary>
         /// Gets or sets a value to indicate whether to overwrite all attribute on destination,

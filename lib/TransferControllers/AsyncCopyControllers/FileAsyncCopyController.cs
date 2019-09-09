@@ -132,12 +132,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         protected override async Task SetAttributesAsync(SetAttributesCallbackAsync setCustomAttributes)
         {
-            var originalAttributes = Utils.GenerateAttributes(this.destFile);
+            var originalAttributes = Utils.GenerateAttributes(this.destFile, true);
             var originalMetadata = new Dictionary<string, string>(this.destFile.Metadata);
 
             await setCustomAttributes(this.destFile);
 
-            if (!Utils.CompareProperties(originalAttributes, Utils.GenerateAttributes(this.destFile)))
+            if (!Utils.CompareProperties(originalAttributes, Utils.GenerateAttributes(this.destFile, true)))
             {
                 await this.destFile.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),

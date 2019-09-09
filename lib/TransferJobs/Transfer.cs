@@ -239,6 +239,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
+        public bool PreserveSMBAttributes
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// Gets the progress tracker for this transfer.
         /// </summary>

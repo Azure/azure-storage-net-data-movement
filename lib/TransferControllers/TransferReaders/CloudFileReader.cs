@@ -59,7 +59,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.sourceLocation.FileRequestOptions.DisableContentMD5Validation.HasValue ?
                 this.sourceLocation.FileRequestOptions.DisableContentMD5Validation.Value : false : false;
 
-            this.SharedTransferData.Attributes = Utils.GenerateAttributes(this.cloudFile);
+            this.SharedTransferData.Attributes = Utils.GenerateAttributes(this.cloudFile, this.SharedTransferData.TransferJob.Transfer.PreserveSMBAttributes);
             this.SharedTransferData.TotalLength = this.cloudFile.Properties.Length;
         }
 
