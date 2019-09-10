@@ -144,9 +144,9 @@ CloudBlockBlob sourceBlob = sourceBlobContainer.GetBlockBlobReference("sourceBlo
 
 string destStorageConnectionString = "destinationStorageConnectionString";
 CloudStorageAccount destAccount = CloudStorageAccount.Parse(destStorageConnectionString);
-CloudBlobClient destBlobClient = sourceAccount.CreateCloudBlobClient();
-CloudBlobContainer destBlobContainer = sourceBlobClient.GetContainerReference("destinationcontainer");
-CloudBlockBlob destBlob = sourceBlobContainer.GetBlockBlobReference("destBlobName");
+CloudBlobClient destBlobClient = destAccount.CreateCloudBlobClient();
+CloudBlobContainer destBlobContainer = destBlobClient.GetContainerReference("destinationcontainer");
+CloudBlockBlob destBlob = destBlobContainer.GetBlockBlobReference("destBlobName");
 ```
 
 Once you setup the storage blob contexts, you can start to use `WindowsAzure.Storage.DataMovement.TransferManager` to copy the blob and track the copy progress:
