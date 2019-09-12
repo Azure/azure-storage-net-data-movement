@@ -27,6 +27,7 @@
     <Compile Include="..\..\test\DMLibTest\Cases\FollowSymlinkTest.cs" Link="Cases\FollowSymlinkTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\LongFilePathTest.cs" Link="Cases\LongFilePathTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\MetadataTest.cs" Link="Cases\MetadataTest.cs" />
+    <Compile Include="..\..\test\DMLibTest\Cases\SMBPropertiesTest.cs" Link="Cases\SMBPropertiesTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\StreamTest.cs" Link="Cases\StreamTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\OverwriteTest.cs" Link="Cases\OverwriteTest.cs" />
     <Compile Include="..\..\test\DMLibTest\Cases\ProgressHandlerTest.cs" Link="Cases\ProgressHandlerTest.cs" />
@@ -84,6 +85,7 @@
     <Compile Include="..\..\test\DMLibTest\Generated\SearchPatternTest_Generated.cs" Link="Generated\SearchPatternTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\SetAttributesTest_Generated.cs" Link="Generated\SetAttributesTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\ShouldTransferTest_Generated.cs" Link="Generated\ShouldTransferTest_Generated.cs" />
+    <Compile Include="..\..\test\DMLibTest\Generated\SMBPropertiesTest_Generated.cs" Link="Generated\SMBPropertiesTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\SnapshotTest_Generated.cs" Link="Generated\SnapshotTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Generated\UnsupportedDirectionTest_Generated.cs" Link="Generated\UnsupportedDirectionTest_Generated.cs" />
     <Compile Include="..\..\test\DMLibTest\Util\DMLibTestConstants.cs" Link="Util\DMLibTestConstants.cs" />

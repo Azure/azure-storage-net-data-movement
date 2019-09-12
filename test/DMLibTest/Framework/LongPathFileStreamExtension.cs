@@ -353,5 +353,25 @@ namespace DMLibTest.Framework
         {
             return LongPathFile.Open(path, mode, FileAccess.ReadWrite, FileShare.ReadWrite);
         }
+
+        public static void SetAttributes(string path, FileAttributes fileAttributes)
+        {
+            path = LongPath.ToUncPath(path);
+            LongPathFile.SetAttributes(path, fileAttributes);
+        }
+
+        public static void GetFileProperties(string path, out DateTimeOffset? creationTime, out DateTimeOffset? lastWriteTime, out FileAttributes? fileAttributes
+#if DOTNET5_4
+            , bool isDirectory = false
+#endif
+            )
+        {
+            path = LongPath.ToUncPath(path);
+#if DOTNET5_4
+            LongPathFile.GetFileProperties(path, out creationTime, out lastWriteTime, out fileAttributes, isDirectory);
+#else
+            LongPathFile.GetFileProperties(path, out creationTime, out lastWriteTime, out fileAttributes);
+#endif
+        }
     }
 }

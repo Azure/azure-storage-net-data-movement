@@ -246,6 +246,19 @@ namespace DMLibTest
             DMLibDataHelper.CreateLocalDirIfNotExists(dirPath);
             cloudFileDir.CreateIfNotExists(HelperConst.DefaultFileOptions);
 
+            if (null != cloudFileDir.Parent)
+            {
+                if (null != dirNode.SMBAttributes)
+                {
+                    cloudFileDir.Properties.NtfsAttributes = dirNode.SMBAttributes;
+                }
+
+                cloudFileDir.Properties.CreationTime = dirNode.CreationTime;
+                cloudFileDir.Properties.LastWriteTime = dirNode.LastWriteTime;
+
+                cloudFileDir.SetProperties(HelperConst.DefaultFileOptions);
+            }
+
             foreach (var subDir in dirNode.DirNodes)
             {
                 CloudFileDirectory subCloudFileDir = cloudFileDir.GetDirectoryReference(subDir.Name);
@@ -303,6 +316,15 @@ namespace DMLibTest
                 cloudFile.Properties.ContentDisposition = fileNode.ContentDisposition;
                 cloudFile.Properties.ContentEncoding = fileNode.ContentEncoding;
                 cloudFile.Properties.ContentLanguage = fileNode.ContentLanguage;
+                
+                cloudFile.SetProperties(options: HelperConst.DefaultFileOptions);
+            }
+
+            if (null != fileNode.SMBAttributes)
+            {
+                cloudFile.Properties.NtfsAttributes = fileNode.SMBAttributes;
+                cloudFile.Properties.CreationTime = fileNode.CreationTime;
+                cloudFile.Properties.LastWriteTime = fileNode.LastWriteTime;
                 cloudFile.SetProperties(options: HelperConst.DefaultFileOptions);
             }
 
@@ -381,6 +403,11 @@ namespace DMLibTest
 
         private void BuildDirNode(CloudFileDirectory cloudDir, DirNode dirNode)
         {
+            cloudDir.FetchAttributes(options: HelperConst.DefaultFileOptions);
+            dirNode.LastWriteTime = cloudDir.Properties.LastWriteTime;
+            dirNode.CreationTime = cloudDir.Properties.CreationTime;
+            dirNode.SMBAttributes = cloudDir.Properties.NtfsAttributes;
+
             foreach (IListFileItem item in cloudDir.ListFilesAndDirectories(HelperConst.DefaultFileOptions))
             {
                 CloudFile cloudFile = item as CloudFile;
@@ -414,6 +441,10 @@ namespace DMLibTest
             fileNode.ContentEncoding = cloudFile.Properties.ContentEncoding;
             fileNode.ContentLanguage = cloudFile.Properties.ContentLanguage;
             fileNode.Metadata = cloudFile.Metadata;
+
+            fileNode.LastWriteTime = cloudFile.Properties.LastWriteTime;
+            fileNode.CreationTime = cloudFile.Properties.CreationTime;
+            fileNode.SMBAttributes = cloudFile.Properties.NtfsAttributes;
 
             DateTimeOffset dateTimeOffset = (DateTimeOffset)cloudFile.Properties.LastModified;
             fileNode.LastModifiedTime = dateTimeOffset.UtcDateTime;
