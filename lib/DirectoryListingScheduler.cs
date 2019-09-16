@@ -20,9 +20,9 @@ namespace Microsoft.Azure.Storage.DataMovement
         // By testing result with downloading from Azure File Directory on 16 core machines on .Net on Windows and on .Net Core on Linux
         // it has best downloading speed with 2 listing threads on .Net on Windows and with 4 listing threads on .Net Core on Linux.
 #if DOTNET5_4
-        private const int MaxParallelListingThreads = 4;
+        private const int MaxParallelListingThreads = 6;
 #else
-        private const int MaxParallelListingThreads = 2;
+        private const int MaxParallelListingThreads = 3;
 #endif
 
         SemaphoreSlim semaphore = null;

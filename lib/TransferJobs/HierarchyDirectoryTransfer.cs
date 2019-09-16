@@ -805,6 +805,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                     (this.Source as AzureFileDirectoryLocation).FileDirectory.GetDirectoryReference(relativePath),
                     null);
             }
+            else if (this.Source.Type == TransferLocationType.LocalDirectory)
+            {
+                return new DirectoryEntry
+                    (relativePath, 
+                    LongPath.Combine(this.Source.Instance as string, relativePath), null);
+            }
             else
             {
                 // For now, HierarchyDirectoryTransfer should only be used when source is Azure File Directory.
@@ -823,6 +829,15 @@ namespace Microsoft.Azure.Storage.DataMovement
                 azureFileLocation.FileRequestOptions = azureFileDirLocation.FileRequestOptions;
 
                 return azureFileLocation;
+            }
+            else if (dirLocation.Type == TransferLocationType.LocalDirectory)
+            {
+                DirectoryLocation localDirLocation = dirLocation as DirectoryLocation;
+                var destDirectory = Path.Combine(localDirLocation.DirectoryPath, relativePath);
+
+                DirectoryLocation localSubDirLocation = new DirectoryLocation(destDirectory);
+
+                return localSubDirLocation;
             }
             else
             {
@@ -861,7 +876,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 case TransferLocationType.LocalDirectory:
                     {
                         DirectoryLocation localDirLocation = dirLocation as DirectoryLocation;
-                        string path = Path.Combine(localDirLocation.DirectoryPath, destRelativePath);
+                        string path = LongPath.Combine(localDirLocation.DirectoryPath, destRelativePath);
 
                         return new DirectoryLocation(path);
                     }

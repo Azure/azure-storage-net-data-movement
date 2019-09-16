@@ -10,6 +10,7 @@ namespace DMLibTest
     using Microsoft.Azure.Storage.RetryPolicies;
     using MS.Test.Common.MsTestLib;
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -245,7 +246,7 @@ namespace DMLibTest
             string dirPath = Path.Combine(parentPath, dirNode.Name);
             DMLibDataHelper.CreateLocalDirIfNotExists(dirPath);
             cloudFileDir.CreateIfNotExists(HelperConst.DefaultFileOptions);
-
+            
             if (null != cloudFileDir.Parent)
             {
                 if (null != dirNode.SMBAttributes)
@@ -253,10 +254,27 @@ namespace DMLibTest
                     cloudFileDir.Properties.NtfsAttributes = dirNode.SMBAttributes;
                 }
 
-                cloudFileDir.Properties.CreationTime = dirNode.CreationTime;
-                cloudFileDir.Properties.LastWriteTime = dirNode.LastWriteTime;
+                if (dirNode.CreationTime.HasValue) cloudFileDir.Properties.CreationTime = dirNode.CreationTime;
+                if (dirNode.LastWriteTime.HasValue) cloudFileDir.Properties.LastWriteTime = dirNode.LastWriteTime;
 
                 cloudFileDir.SetProperties(HelperConst.DefaultFileOptions);
+                cloudFileDir.FetchAttributes(null, HelperConst.DefaultFileOptions);
+
+                dirNode.CreationTime = cloudFileDir.Properties.CreationTime;
+                dirNode.LastWriteTime = cloudFileDir.Properties.LastWriteTime;
+
+                if ((null != dirNode.Metadata)
+                    && (dirNode.Metadata.Count > 0))
+                {
+                    cloudFileDir.Metadata.Clear();
+
+                    foreach (var keyValuePair in dirNode.Metadata)
+                    {
+                        cloudFileDir.Metadata.Add(keyValuePair);
+                    }
+
+                    cloudFileDir.SetMetadata(null, HelperConst.DefaultFileOptions);
+                }
             }
 
             foreach (var subDir in dirNode.DirNodes)
@@ -407,6 +425,11 @@ namespace DMLibTest
             dirNode.LastWriteTime = cloudDir.Properties.LastWriteTime;
             dirNode.CreationTime = cloudDir.Properties.CreationTime;
             dirNode.SMBAttributes = cloudDir.Properties.NtfsAttributes;
+
+            if (cloudDir.Metadata.Count > 0)
+            {
+                dirNode.Metadata = new Dictionary<string, string>(cloudDir.Metadata);
+            }
 
             foreach (IListFileItem item in cloudDir.ListFilesAndDirectories(HelperConst.DefaultFileOptions))
             {

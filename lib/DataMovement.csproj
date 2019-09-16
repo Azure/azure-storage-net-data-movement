@@ -145,10 +145,12 @@
     <Compile Include="TransferEnumerators\AzureNameResolver.cs" />
     <Compile Include="TransferEnumerators\AzureToFileNameResolver.cs" />
     <Compile Include="TransferEnumerators\AzureBlobToAzureFileNameResolver.cs" />
+    <Compile Include="TransferEnumerators\DirectoryEntry.cs" />
     <Compile Include="TransferEnumerators\EnumerateDirectoryHelper.cs" />
     <Compile Include="TransferEnumerators\ErrorEntry.cs" />
     <Compile Include="TransferEnumerators\FileEntry.cs" />
     <Compile Include="TransferEnumerators\FileEnumerator.cs" />
+    <Compile Include="TransferEnumerators\FileHierarchyEnumerator.cs" />
     <Compile Include="TransferEnumerators\FileListContinuationToken.cs" />
     <Compile Include="TransferEnumerators\AzureBlobToAzureBlobNameResolver.cs" />
     <Compile Include="TransferEnumerators\FileToAzureFileNameResolver.cs" />

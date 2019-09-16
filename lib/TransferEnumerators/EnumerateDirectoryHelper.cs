@@ -35,6 +35,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             public string SymlinkTarget { get; set; }
         };
 
+        internal class LocalEnumerateItem
+        {
+            public string Path { get; set; }
+            public bool IsDirectory { get; set; }
+        }
+
         /// <summary>
         /// Returns the names of files (including their paths) in the specified directory that match the specified 
         /// search pattern, using a value to determine whether to search subdirectories.
@@ -50,7 +56,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
         /// <param name="searchOption">One of the values of the SearchOption enumeration that specifies whether 
         /// the search operation should include only the current directory or should include all subdirectories.
         /// The default value is TopDirectoryOnly.</param>
-        /// <param name="followsymlink">indicating whether to enumerate symlinked subdirectories.</param>
+        /// <param name="followsymlink">Indicating whether to enumerate symlinked subdirectories.</param>
+        /// <param name="returnDirectories">Indicating whether to return file and directory items or only return file items</param>
         /// <param name="cancellationToken">CancellationToken to cancel the method.</param>
         /// <returns>An enumerable collection of file names in the directory specified by path and that match 
         /// searchPattern and searchOption.</returns>
@@ -59,12 +66,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
         // transparency (instead of CAS) make sure that partially trusted code cannot call this method.
         [SecurityCritical]
 #endif // TRANSPARENCY_V2
-        public static IEnumerable<string> EnumerateFiles(
+        public static IEnumerable<LocalEnumerateItem> EnumerateInDirectory(
             string path,
             string searchPattern,
             string fromFilePath,
             SearchOption searchOption,
             bool followsymlink,
+            bool returnDirectories,
             CancellationToken cancellationToken)
         {
             Utils.CheckCancellation(cancellationToken);
@@ -79,7 +87,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             if (searchPattern.Length == 0)
             {
                 // Returns an empty string collection.
-                return new List<string>();
+                return new List<LocalEnumerateItem>();
             }
 
             // To support patterns like "folderA\" aiming at listing files under some folder.
@@ -150,18 +158,19 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             }
 
             Utils.CheckCancellation(cancellationToken);
-            return InternalEnumerateFiles(directoryName, filePattern, fromFilePath, searchOption, followsymlink, cancellationToken);
+            return InternalEnumerateInDirectory(directoryName, filePattern, fromFilePath, searchOption, followsymlink, returnDirectories, cancellationToken);
         }
 
 #if TRANSPARENCY_V2
         [SecurityCritical]
 #endif // TRANSPARENCY_V2
-        private static IEnumerable<string> InternalEnumerateFiles(
+        private static IEnumerable<LocalEnumerateItem> InternalEnumerateInDirectory(
             string directoryName,
             string filePattern,
             string fromFilePath,
             SearchOption searchOption,
             bool followsymlink,
+            bool returnDirectories,
             CancellationToken cancellationToken)
         {
             Stack<string> folders = new Stack<string>();
@@ -320,7 +329,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                         {
                             if (passedContinuationToken)
                             {
-                                yield return LongPath.Combine(folder, fileEntryInfo.FileName);
+                                yield return new LocalEnumerateItem()
+                                {
+                                    Path = LongPath.Combine(folder, fileEntryInfo.FileName),
+                                    IsDirectory = false
+                                };
+
                             }
                             else
                             {
@@ -335,7 +349,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                                     }
                                     else
                                     {
-                                        yield return LongPath.Combine(folder, fileEntryInfo.FileName);
+                                        yield return new LocalEnumerateItem()
+                                        {
+                                            Path = LongPath.Combine(folder, fileEntryInfo.FileName),
+                                            IsDirectory = false
+                                        };
                                     }
                                 }
                                 else
@@ -353,10 +371,24 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
                                     if (compareResult > 0)
                                     {
-                                        yield return LongPath.Combine(folder, fileEntryInfo.FileName);
+                                        yield return new LocalEnumerateItem()
+                                        {
+                                            Path = LongPath.Combine(folder, fileEntryInfo.FileName),
+                                            IsDirectory = false
+                                        };
                                     }
                                 }
                             }
+                        }
+                        else if (returnDirectories &&
+                            !fileEntryInfo.FileName.Equals(@".") &&
+                            !fileEntryInfo.FileName.Equals(@".."))
+                        {
+                            yield return new LocalEnumerateItem()
+                            {
+                                Path = LongPath.Combine(folder, fileEntryInfo.FileName),
+                                IsDirectory = true
+                            };
                         }
                     }
 

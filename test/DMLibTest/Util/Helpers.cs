@@ -2457,7 +2457,16 @@ namespace DMLibTest
         public static void DeleteFileDirectory(CloudFileDirectory cloudDirectory)
         {
             CleanupFileDirectory(cloudDirectory);
-            cloudDirectory.Delete();
+            try
+            {
+                cloudDirectory.Delete();
+            }
+            catch (StorageException)
+            {
+                cloudDirectory.Properties.NtfsAttributes = CloudFileNtfsAttributes.Normal;
+                cloudDirectory.SetProperties(HelperConst.DefaultFileOptions);
+                cloudDirectory.Delete();
+            }
         }
 
         /// <summary>

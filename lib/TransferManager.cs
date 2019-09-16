@@ -360,18 +360,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             DirectoryLocation sourceLocation = new DirectoryLocation(sourcePath);
             AzureFileDirectoryLocation destLocation = new AzureFileDirectoryLocation(destFileDir);
-            FileEnumerator sourceEnumerator = new FileEnumerator(sourceLocation, null == options ? false : options.FollowSymlink);
 
             // Set default request options
             SetDefaultRequestOptions(destLocation);
 
-            if (options != null)
-            {
-                sourceEnumerator.SearchPattern = options.SearchPattern;
-                sourceEnumerator.Recursive = options.Recursive;
-            }
-
-            return UploadDirectoryInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context, cancellationToken);
+            return UploadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -1615,7 +1608,17 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (options != null)
             {
+                HierarchyDirectoryTransfer hierarchyDirectoryTransfer = transfer as HierarchyDirectoryTransfer;
+
+                if (null != hierarchyDirectoryTransfer)
+                {
+                    TransferManager.CheckSearchPatternOfAzureFileSource(options);
+                    hierarchyDirectoryTransfer.SearchPattern = options.SearchPattern;
+                    hierarchyDirectoryTransfer.Recursive = options.Recursive;
+                }
+
                 transfer.BlobType = options.BlobType;
+                transfer.PreserveSMBAttributes = options.PreserveSMBAttributes;
             }
 
             await DoTransfer(transfer, context, cancellationToken);
@@ -1630,6 +1633,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (null != options)
             {
                 transfer.Delimiter = options.Delimiter;
+                transfer.PreserveSMBAttributes = options.PreserveSMBAttributes;
 
                 HierarchyDirectoryTransfer hierarchyDirectoryTransfer = transfer as HierarchyDirectoryTransfer;
 
@@ -1745,10 +1749,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             Transfer transfer = GetTransfer(sourceLocation, destLocation, transferMethod, transferContext);
             if (transfer == null)
             {
-                var azureFileDirectoryLocation = sourceLocation as AzureFileDirectoryLocation;
-                if (null != azureFileDirectoryLocation)
+                if ((sourceLocation.Type == TransferLocationType.AzureFileDirectory)
+                    || (sourceLocation.Type == TransferLocationType.LocalDirectory))
                 {
-                    directoryTransfer = new HierarchyDirectoryTransfer(azureFileDirectoryLocation, destLocation, transferMethod);
+                    directoryTransfer = new HierarchyDirectoryTransfer(sourceLocation, destLocation, transferMethod);
                 }
                 else
                 {

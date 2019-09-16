@@ -41,5 +41,13 @@ namespace Microsoft.Azure.Storage.DataMovement
                 this.followSymlink = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets a flag that indicates whether to preserve SMB attributes during uploading.
+        /// If set to true, destination Azure File's attributes will be set as source local file's attributes.
+        /// This flag only takes effect when uploading from local file to Azure File Service.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SMB")]
+        public bool PreserveSMBAttributes { get; set; }
     }
 }

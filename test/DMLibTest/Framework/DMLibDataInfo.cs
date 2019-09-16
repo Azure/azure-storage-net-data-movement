@@ -378,6 +378,12 @@ namespace DMLibTest
             set;
         }
 
+        public IDictionary<string, string> Metadata
+        {
+            get;
+            set;
+        }
+
         public IEnumerable<DirNode> DirNodes
         {
             get
@@ -484,6 +490,11 @@ namespace DMLibTest
             newDirNode.SMBAttributes = this.SMBAttributes;
             newDirNode.CreationTime = this.CreationTime;
             newDirNode.LastWriteTime = this.LastWriteTime;
+
+            if (null != this.Metadata)
+            {
+                newDirNode.Metadata = new Dictionary<string, string>(this.Metadata);
+            }
 
             foreach(FileNode fileNode in this.FileNodes)
             {
