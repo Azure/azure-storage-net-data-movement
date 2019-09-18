@@ -550,7 +550,11 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (preserveSMBProperties)
             {
-                if (attributes.SMBAttributes.HasValue) file.Properties.NtfsAttributes = attributes.SMBAttributes.Value;
+                if (attributes.SMBAttributes.HasValue)
+                {
+                    file.Properties.NtfsAttributes = attributes.SMBAttributes.Value;
+                }
+
                 file.Properties.CreationTime = attributes.CreationTime;
                 file.Properties.LastWriteTime = attributes.LastWriteTime;
             }
