@@ -14,7 +14,9 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// </summary>
     public sealed class UploadDirectoryOptions : DirectoryOptions
     {
+        private bool preserveSMBAttributes = false;
         private bool followSymlink = false;
+
         /// <summary>
         /// Gets or sets type of destination blob. This option takes effect only when uploading to Azure blob storage.
         /// If blob type is not specified, BlockBlob is used.
@@ -48,6 +50,28 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// This flag only takes effect when uploading from local file to Azure File Service.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SMB")]
-        public bool PreserveSMBAttributes { get; set; }
+        public bool PreserveSMBAttributes
+        {
+            get
+            {
+                return this.preserveSMBAttributes;
+            }
+
+            set
+            {
+#if DOTNET5_4
+                if (value && !Interop.CrossPlatformHelpers.IsWindows)
+                {
+                    throw new PlatformNotSupportedException();
+                }
+                else
+                {
+                    this.preserveSMBAttributes = value;
+                }
+#else
+                this.preserveSMBAttributes = value;
+#endif
+            }
+        }
     }
 }

@@ -3,6 +3,8 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
+using System;
+
 namespace Microsoft.Azure.Storage.DataMovement
 {
     /// <summary>
@@ -10,6 +12,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// </summary>
     public sealed class DownloadDirectoryOptions : DirectoryOptions
     {
+        private bool preserveSMBAttributes = false;
         private char delimiter = '/';
 
         /// <summary>
@@ -51,6 +54,28 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// This flag only takes effect when downloading from Azure File Service to local file.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SMB")]
-        public bool PreserveSMBAttributes { get; set; }
+        public bool PreserveSMBAttributes
+        {
+            get
+            {
+                return this.preserveSMBAttributes;
+            }
+
+            set
+            {
+#if DOTNET5_4
+                if (value && !Interop.CrossPlatformHelpers.IsWindows)
+                {
+                    throw new PlatformNotSupportedException();
+                }
+                else
+                {
+                    this.preserveSMBAttributes = value;
+                }
+#else
+                this.preserveSMBAttributes = value;
+#endif
+            }
+        }
     }
 }
