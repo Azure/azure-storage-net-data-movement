@@ -144,7 +144,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                         relativePath = relativePath.Remove(0, baseFullPath.Length);
                     }
 
-                    var continuationToken = new FileListContinuationToken(relativePath);
+                    string continuationTokenPath = entry.Path;
+                    continuationTokenPath = continuationTokenPath.Remove(0, fullPath.Length);
+                    var continuationToken = new FileListContinuationToken(continuationTokenPath);
+
                     if (relativePath.Length > Constants.MaxRelativePathLength)
                     {
                         relativePath = relativePath.Substring(0, Constants.MaxRelativePathLength / 2) + "..." + relativePath.Substring(relativePath.Length - Constants.MaxRelativePathLength / 2);
