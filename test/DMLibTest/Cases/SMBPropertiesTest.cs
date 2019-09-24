@@ -583,6 +583,89 @@ namespace DMLibTest.Cases
             VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
         }
 
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.Local, DMLibCopyMethod.SyncCopy)]
+        public void TestNotsupportedPlatform()
+        {
+            Exception exception = null;
+            try
+            {
+                DownloadDirectoryOptions downloadDirectoryOptions = new DownloadDirectoryOptions()
+                {
+                    PreserveSMBAttributes = true,
+                };
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            ValidateExceptionForParemterSetting(exception);
+
+            exception = null;
+            try
+            {
+                UploadDirectoryOptions uploadDirectoryOptions = new UploadDirectoryOptions()
+                {
+                    PreserveSMBAttributes = true,
+                };
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            ValidateExceptionForParemterSetting(exception);
+
+            exception = null;
+            try
+            {
+                DownloadOptions downloadOptions = new DownloadOptions()
+                {
+                    PreserveSMBAttributes = true,
+                };
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            ValidateExceptionForParemterSetting(exception);
+
+            exception = null;
+            try
+            {
+                UploadOptions uploadOptions = new UploadOptions()
+                {
+                    PreserveSMBAttributes = true,
+                };
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            ValidateExceptionForParemterSetting(exception);
+        }
+
+        private static void ValidateExceptionForParemterSetting(Exception exception)
+        {
+            if (!CrossPlatformHelpers.IsWindows)
+            {
+                if (null == exception || !(exception is PlatformNotSupportedException))
+                {
+                    Test.Error("PlatformNotSupportedException expected for Non-Windows platform");
+                }
+            }
+            else
+            {
+                if (null != exception)
+                {
+                    Test.Error("Should no exception for Windows platform");
+                }
+            }
+        }
+
         private void GenerateDirNodeWithMetadata(
            DirNode parent,
            int dirLevel)

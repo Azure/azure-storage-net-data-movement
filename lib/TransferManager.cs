@@ -1612,7 +1612,6 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 if (null != hierarchyDirectoryTransfer)
                 {
-                    TransferManager.CheckSearchPatternOfAzureFileSource(options);
                     hierarchyDirectoryTransfer.SearchPattern = options.SearchPattern;
                     hierarchyDirectoryTransfer.Recursive = options.Recursive;
                 }
@@ -1639,6 +1638,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 if (null != hierarchyDirectoryTransfer)
                 {
+                    TransferManager.CheckSearchPatternOfAzureFileSource(options);
                     hierarchyDirectoryTransfer.SearchPattern = options.SearchPattern;
                     hierarchyDirectoryTransfer.Recursive = options.Recursive;
                 }
@@ -1750,7 +1750,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (transfer == null)
             {
                 if ((sourceLocation.Type == TransferLocationType.AzureFileDirectory)
-                    || (sourceLocation.Type == TransferLocationType.LocalDirectory))
+                    || ((sourceLocation.Type == TransferLocationType.LocalDirectory) && (destLocation.Type == TransferLocationType.AzureFileDirectory)))
                 {
                     directoryTransfer = new HierarchyDirectoryTransfer(sourceLocation, destLocation, transferMethod);
                 }

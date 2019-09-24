@@ -69,7 +69,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
             string filePattern = string.IsNullOrEmpty(this.SearchPattern) ? DefaultFilePattern : this.SearchPattern;
 
-            SearchOption searchOption = SearchOption.TopDirectoryOnly;
+            SearchOption searchOption = this.Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
             IEnumerable<EnumerateDirectoryHelper.LocalEnumerateItem> directoryEnumerator = null;
             ErrorEntry errorEntry = null;
 
@@ -92,22 +92,23 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             string fullPath = LongPath.ToUncPath(this.location.DirectoryPath);
             string baseFullPath = LongPath.ToUncPath(this.baseDirectory);
 #endif
+
             fullPath = AppendDirectorySeparator(fullPath);
             baseFullPath = AppendDirectorySeparator(baseFullPath);
 
-
+            bool isBaseDirectory = string.Equals(fullPath, baseFullPath);
             try
             {
                 // Directory.GetFiles/EnumerateFiles will be broken when encounted special items, such as
                 // files in recycle bins or the folder "System Volume Information". Rewrite this function
                 // because our listing should not be stopped by these unexpected files.
-                directoryEnumerator = EnumerateDirectoryHelper.EnumerateInDirectory(
+                directoryEnumerator = EnumerateDirectoryHelper.EnumerateAllEntriesInDirectory(
                     fullPath,
                     filePattern,
                     this.listContinuationToken == null ? null : this.listContinuationToken.FilePath,
                     searchOption,
                     followSymlink,
-                    true,
+                    isBaseDirectory,
                     cancellationToken);
             }
             catch (Exception ex)

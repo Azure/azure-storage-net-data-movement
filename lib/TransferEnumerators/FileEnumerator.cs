@@ -97,7 +97,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                     this.listContinuationToken == null ? null : this.listContinuationToken.FilePath,
                     searchOption,
                     followSymlink,
-                    false,
                     cancellationToken);
             }
             catch (Exception ex)

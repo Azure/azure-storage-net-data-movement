@@ -255,6 +255,13 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return;
             }
 
+            if ((this.dest.Type == TransferLocationType.AzureFileDirectory)
+                && (null == (this.dest as AzureFileDirectoryLocation).FileDirectory.Parent))
+            {
+                //Root Azure File directory, no need to create.
+                return;
+            }
+
             CloudFileNtfsAttributes? fileAttributes = null;
             DateTimeOffset? creationTime = null;
             DateTimeOffset? lastWriteTime = null;
