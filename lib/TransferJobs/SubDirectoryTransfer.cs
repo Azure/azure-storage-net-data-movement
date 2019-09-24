@@ -303,9 +303,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                         Utils.GenerateOperationContext(this.baseDirectoryTransfer.Context),
                         cancellationToken).GetAwaiter().GetResult();
 
-                    fileAttributes = sourceFileDirectory.Properties.NtfsAttributes;
-                    creationTime = sourceFileDirectory.Properties.CreationTime;
-                    lastWriteTime = sourceFileDirectory.Properties.LastWriteTime;
+                    if (this.baseDirectoryTransfer.PreserveSMBAttributes)
+                    {
+                        fileAttributes = sourceFileDirectory.Properties.NtfsAttributes;
+                        creationTime = sourceFileDirectory.Properties.CreationTime;
+                        lastWriteTime = sourceFileDirectory.Properties.LastWriteTime;
+                    }
                     metadata = sourceFileDirectory.Metadata;
                 }
             }
