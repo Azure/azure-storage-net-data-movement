@@ -324,15 +324,8 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 if (fileAttributes.HasValue)
                 {
-                    string longDirectoryPath = localFileDestLocation.DirectoryPath;
-
-                    if (Interop.CrossPlatformHelpers.IsWindows)
-                    {
-                        longDirectoryPath = LongPath.ToUncPath(longDirectoryPath);
-                    }
-
-                    LongPathFile.SetFileTime(longDirectoryPath, creationTime.Value, lastWriteTime.Value, true);
-                    LongPathFile.SetAttributes(longDirectoryPath, Utils.AzureFileNtfsAttributesToLocalAttributes(fileAttributes.Value));
+                    LongPathFile.SetFileTime(localFileDestLocation.DirectoryPath, creationTime.Value, lastWriteTime.Value, true);
+                    LongPathFile.SetAttributes(localFileDestLocation.DirectoryPath, Utils.AzureFileNtfsAttributesToLocalAttributes(fileAttributes.Value));
                 }
             }
             else if (this.dest.Type == TransferLocationType.AzureFileDirectory)

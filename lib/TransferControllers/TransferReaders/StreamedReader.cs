@@ -517,13 +517,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             DateTimeOffset? lastWriteTime;
                             FileAttributes? fileAttributes;
 
-                            string longFilePath = this.filePath;
-                            if (Interop.CrossPlatformHelpers.IsWindows)
-                            {
-                                longFilePath = LongPath.ToUncPath(longFilePath);
-                            }
-
-                            LongPathFile.GetFileProperties(longFilePath, out creationTime, out lastWriteTime, out fileAttributes);
+                            LongPathFile.GetFileProperties(this.filePath, out creationTime, out lastWriteTime, out fileAttributes);
 
                             attributes.CloudFileNtfsAttributes = Utils.LocalAttributesToAzureFileNtfsAttributes(fileAttributes.Value);
                             attributes.CreationTime = creationTime;

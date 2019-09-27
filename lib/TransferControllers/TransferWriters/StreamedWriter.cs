@@ -385,14 +385,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     if (this.SharedTransferData.Attributes.CloudFileNtfsAttributes.HasValue
                         && !string.IsNullOrEmpty(this.filePath))
                     {
-                        string longFilePath = this.filePath;
-                        if (Interop.CrossPlatformHelpers.IsWindows)
-                        {
-                            longFilePath = LongPath.ToUncPath(longFilePath);
-                        }
-
-                        LongPathFile.SetFileTime(longFilePath, this.SharedTransferData.Attributes.CreationTime.Value, this.SharedTransferData.Attributes.LastWriteTime.Value);
-                        LongPathFile.SetAttributes(longFilePath, Utils.AzureFileNtfsAttributesToLocalAttributes(this.SharedTransferData.Attributes.CloudFileNtfsAttributes.Value));
+                        LongPathFile.SetFileTime(this.filePath, this.SharedTransferData.Attributes.CreationTime.Value, this.SharedTransferData.Attributes.LastWriteTime.Value);
+                        LongPathFile.SetAttributes(this.filePath, Utils.AzureFileNtfsAttributesToLocalAttributes(this.SharedTransferData.Attributes.CloudFileNtfsAttributes.Value));
                     }
                 }
 

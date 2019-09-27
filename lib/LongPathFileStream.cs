@@ -573,6 +573,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if DOTNET5_4
             File.SetAttributes(path, fileAttributes);
 #else
+            path = LongPath.ToUncPath(path);
             if (!NativeMethods.SetFileAttributesW(path, (uint)(fileAttributes)))
             {
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
@@ -608,10 +609,13 @@ namespace Microsoft.Azure.Storage.DataMovement
             )
         {
 #if !DOTNET5_4
+            path = LongPath.ToUncPath(path);
+
             if (path.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
             {
                 path = path.Substring(0, path.Length - 1);
             }
+
             NativeMethods.WIN32_FIND_DATA findData;
             NativeMethods.SafeFindHandle findHandle;
 
@@ -662,6 +666,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         public static void SetFileTime(string path, DateTimeOffset creationTimeUtc, DateTimeOffset lastWriteTimeUtc, bool isDirectory = false)
         {
 #if !DOTNET5_4
+            path = LongPath.ToUncPath(path);
             SafeFileHandle fileHandle = GetFileHandle(path, FileMode.Open, FileAccess.Write, FileShare.None, isDirectory);
 
             try
