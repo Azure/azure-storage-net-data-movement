@@ -67,6 +67,7 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile)]
         public void TestDirectoryPreserveSMBProperties()
         {
+            if (!CrossPlatformHelpers.IsWindows) return;
             CloudFileNtfsAttributes[] SMBFileAttributes = {
                 CloudFileNtfsAttributes.ReadOnly,
                 CloudFileNtfsAttributes.Hidden,
@@ -225,27 +226,28 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile)]
         public void TestDirectoryPreserveSMBPropertiesResume()
         {
+            if (!CrossPlatformHelpers.IsWindows) return;
             CloudFileNtfsAttributes[] SMBFileAttributes = {
                 CloudFileNtfsAttributes.ReadOnly,
                 CloudFileNtfsAttributes.Hidden,
 #if DEBUG
-                //CloudFileNtfsAttributes.System,
-                //CloudFileNtfsAttributes.Archive,
-                //CloudFileNtfsAttributes.Normal,
-                //CloudFileNtfsAttributes.Offline,
-                //CloudFileNtfsAttributes.NotContentIndexed,
-                //CloudFileNtfsAttributes.NoScrubData,
+                CloudFileNtfsAttributes.System,
+                CloudFileNtfsAttributes.Archive,
+                CloudFileNtfsAttributes.Normal,
+                CloudFileNtfsAttributes.Offline,
+                CloudFileNtfsAttributes.NotContentIndexed,
+                CloudFileNtfsAttributes.NoScrubData,
 
-                //CloudFileNtfsAttributes.ReadOnly | CloudFileNtfsAttributes.Hidden,
-                //CloudFileNtfsAttributes.System | CloudFileNtfsAttributes.Archive,
-                //CloudFileNtfsAttributes.Offline |CloudFileNtfsAttributes.NotContentIndexed | CloudFileNtfsAttributes.NoScrubData,
+                CloudFileNtfsAttributes.ReadOnly | CloudFileNtfsAttributes.Hidden,
+                CloudFileNtfsAttributes.System | CloudFileNtfsAttributes.Archive,
+                CloudFileNtfsAttributes.Offline |CloudFileNtfsAttributes.NotContentIndexed | CloudFileNtfsAttributes.NoScrubData,
 
-                //CloudFileNtfsAttributes.ReadOnly |
-                //CloudFileNtfsAttributes.Hidden |
-                //CloudFileNtfsAttributes.System |
-                //CloudFileNtfsAttributes.Archive |
-                //CloudFileNtfsAttributes.NotContentIndexed |
-                //CloudFileNtfsAttributes.NoScrubData
+                CloudFileNtfsAttributes.ReadOnly |
+                CloudFileNtfsAttributes.Hidden |
+                CloudFileNtfsAttributes.System |
+                CloudFileNtfsAttributes.Archive |
+                CloudFileNtfsAttributes.NotContentIndexed |
+                CloudFileNtfsAttributes.NoScrubData
 #endif
             };
 
@@ -439,6 +441,7 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile)]
         public void TestPreserveSMBProperties()
         {
+            if (!CrossPlatformHelpers.IsWindows) return;
             CloudFileNtfsAttributes[] SMBFileAttributes = {
                 CloudFileNtfsAttributes.ReadOnly,
                 CloudFileNtfsAttributes.Hidden,

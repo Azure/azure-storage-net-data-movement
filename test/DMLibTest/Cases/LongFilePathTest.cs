@@ -140,6 +140,11 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.Local)]
         public void LongFilePathSingleDownloadPreserveSMBAttributes()
         {
+            if (!CrossPlatformHelpers.IsWindows)
+            {
+                return;
+            }
+
             int fileSizeInKB = 1;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
             FileNode fileNode = new FileNode(DMLibTestBase.FileName);

@@ -292,6 +292,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
+        public bool FollowSymblink
+        {
+            get;
+            set;
+        }
+
         public override Transfer Copy()
         {
             return new HierarchyDirectoryTransfer(this);
@@ -370,7 +376,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if DOTNET5_4
             int maxListingThreadCount = 6;
 #else
-            int maxListingThreadCount = 3;
+            int maxListingThreadCount = 2;
 #endif
 
             if ((this.Destination.Type == TransferLocationType.LocalDirectory) || (this.Source.Type == TransferLocationType.LocalDirectory))
@@ -768,7 +774,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
                 catch (Exception ex)
                 {
-                    shouldStopOthers = true;
                     if (ex is TransferException)
                     {
                         this.enumerateException = ex;
@@ -783,6 +788,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                             ex);
                     }
 
+                    shouldStopOthers = true;
                     errorHappened = true;
                 }
                 finally

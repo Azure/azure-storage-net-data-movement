@@ -1614,6 +1614,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     hierarchyDirectoryTransfer.SearchPattern = options.SearchPattern;
                     hierarchyDirectoryTransfer.Recursive = options.Recursive;
+                    hierarchyDirectoryTransfer.FollowSymblink = options.FollowSymlink;
                 }
 
                 transfer.BlobType = options.BlobType;

@@ -102,6 +102,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         [OnDeserialized]
         private void OnDeserializedCallback(StreamingContext context)
         {
+            this.lastAzureFileDirectory = new List<CloudFileDirectory>();
         }
 #endif
 
@@ -479,6 +480,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             DirectoryTransfer.UpdateCredentials(this.Source, transfer.Source);
             DirectoryTransfer.UpdateCredentials(this.Destination, transfer.Destination);
+            transfer.PreserveSMBAttributes = this.PreserveSMBAttributes;
         }
 
         private static void UpdateCredentials(TransferLocation dirLocation, TransferLocation subLocation)

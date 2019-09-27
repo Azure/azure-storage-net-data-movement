@@ -41,7 +41,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         private const string DestName = "Dest";
         private const string TransferMethodName = "TransferMethod";
         private const string TransferProgressName = "Progress";
-        private const string PreserveSMBAttributesName = "PreserveSMBAttributes";
 
         // Currently, we have two ways to persist the transfer instance:
         // 1. User can persist a TransferCheckpoint instance with all transfer instances in it.
@@ -103,7 +102,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.Source = serializableSourceLocation.Location;
             this.Destination = serializableDestLocation.Location;
             this.TransferMethod = (TransferMethod)info.GetValue(TransferMethodName, typeof(TransferMethod));
-            this.PreserveSMBAttributes = (bool)info.GetBoolean(PreserveSMBAttributesName);
 
             if (null == context.Context || !(context.Context is StreamJournal))
             {
@@ -242,9 +240,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
-#if !BINARY_SERIALIZATION
-        [DataMember]
-#endif
         public bool PreserveSMBAttributes
         {
             get;
@@ -279,7 +274,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             info.AddValue(SourceName, serializableSourceLocation, typeof(SerializableTransferLocation));
             info.AddValue(DestName, serializableDestLocation, typeof(SerializableTransferLocation));
             info.AddValue(TransferMethodName, this.TransferMethod);
-            info.AddValue(PreserveSMBAttributesName, this.PreserveSMBAttributes);
 
             if (null == context.Context || !(context.Context is StreamJournal))
             {

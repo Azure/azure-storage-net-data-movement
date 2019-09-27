@@ -311,17 +311,20 @@ namespace DMLibTest
             fileNode.SizeInByte = fileInfo.Length;
             fileNode.Metadata = new Dictionary<string, string>();
 
-            DateTimeOffset? creationTime = null;
-            DateTimeOffset? lastWriteTime = null;
-            FileAttributes? fileAttributes = null;
-            LongPathFileExtension.GetFileProperties(fileInfo.FullName, out creationTime, out lastWriteTime, out fileAttributes);
-
-            fileNode.CreationTime = creationTime;
-            fileNode.LastWriteTime = lastWriteTime;
-
-            if (handleSMBAttributes)
+            if (CrossPlatformHelpers.IsWindows)
             {
-                fileNode.SMBAttributes = Helper.ToCloudFileNtfsAttributes(fileAttributes.Value);
+                DateTimeOffset? creationTime = null;
+                DateTimeOffset? lastWriteTime = null;
+                FileAttributes? fileAttributes = null;
+                LongPathFileExtension.GetFileProperties(fileInfo.FullName, out creationTime, out lastWriteTime, out fileAttributes);
+
+                fileNode.CreationTime = creationTime;
+                fileNode.LastWriteTime = lastWriteTime;
+
+                if (handleSMBAttributes)
+                {
+                    fileNode.SMBAttributes = Helper.ToCloudFileNtfsAttributes(fileAttributes.Value);
+                }
             }
         }
 

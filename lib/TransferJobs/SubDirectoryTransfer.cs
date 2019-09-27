@@ -234,7 +234,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
             else if (this.source.Type == TransferLocationType.LocalDirectory)
             {
-                var fileEnumerator = new FileHierarchyEnumerator(this.source as DirectoryLocation, this.baseDirectoryTransfer.Source.Instance as string, false);
+                var fileEnumerator = new FileHierarchyEnumerator(this.source as DirectoryLocation, this.baseDirectoryTransfer.Source.Instance as string, this.baseDirectoryTransfer.FollowSymblink);
                 fileEnumerator.EnumerateContinuationToken = this.enumerateContinuationToken.ListContinuationToken;
                 fileEnumerator.SearchPattern = this.baseDirectoryTransfer.SearchPattern;
                 fileEnumerator.Recursive = this.baseDirectoryTransfer.Recursive;
@@ -309,6 +309,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         creationTime = sourceFileDirectory.Properties.CreationTime;
                         lastWriteTime = sourceFileDirectory.Properties.LastWriteTime;
                     }
+
                     metadata = sourceFileDirectory.Metadata;
                 }
             }
