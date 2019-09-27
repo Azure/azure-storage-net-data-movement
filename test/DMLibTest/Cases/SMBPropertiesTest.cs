@@ -383,6 +383,7 @@ namespace DMLibTest.Cases
                         resumeItem.TransferContext = resumeContext;
 
                         result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
+                        VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
 
                         options = new TestExecutionOptions<DMLibDataInfo>();
                         options.IsDirectoryTransfer = true;
