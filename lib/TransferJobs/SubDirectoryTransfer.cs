@@ -366,7 +366,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         private static void CreateCloudFileDestinationDirectory(CloudFileDirectory fileDirectory, 
             CloudFileNtfsAttributes? fileAttributes, 
             DateTimeOffset? creationTime,
@@ -449,7 +448,21 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
             }
 
-            if (needToSetProperties && (fileAttributes.HasValue || null != metadata))
+            if (needToSetProperties)
+            {
+                SetAzureFileDirectoryAttributes(fileDirectory, fileAttributes, creationTime, lastWriteTime, metadata, cancellationToken);
+            }
+        }
+
+        private static void SetAzureFileDirectoryAttributes(
+            CloudFileDirectory fileDirectory,
+            CloudFileNtfsAttributes? fileAttributes,
+            DateTimeOffset? creationTime,
+            DateTimeOffset? lastWriteTime,
+            IDictionary<string, string> metadata,
+            CancellationToken cancellationToken)
+        {
+            if (fileAttributes.HasValue || null != metadata)
             {
                 fileDirectory.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
 

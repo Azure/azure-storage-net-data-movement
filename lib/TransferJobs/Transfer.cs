@@ -240,6 +240,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
+        /// <summary>
+        /// Gets or sets a flag that indicates whether to preserve SMB attributes 
+        /// during transferring between local file to Azure File Service.
+        /// </summary>
         public bool PreserveSMBAttributes
         {
             get;

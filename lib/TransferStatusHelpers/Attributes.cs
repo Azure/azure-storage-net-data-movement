@@ -47,8 +47,19 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         public IDictionary<string, string> Metadata { get; set; }
 
-        public CloudFileNtfsAttributes? SMBAttributes { get; set; }
+        /// <summary>
+        /// Gets or sets the file attributes for azure file.
+        /// </summary>
+        public CloudFileNtfsAttributes? CloudFileNtfsAttributes { get; set; }
+
+        /// <summary>
+        /// Gets or sets the file's creation time for azure file.
+        /// </summary>
         public DateTimeOffset? CreationTime { get; set; }
+        
+        /// <summary>
+        /// Gets or sets the file's last write time for azure file.
+        /// </summary>
         public DateTimeOffset? LastWriteTime { get; set; }
 
         /// <summary>

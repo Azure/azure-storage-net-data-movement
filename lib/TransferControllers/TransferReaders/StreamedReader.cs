@@ -525,7 +525,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                             LongPathFile.GetFileProperties(longFilePath, out creationTime, out lastWriteTime, out fileAttributes);
 
-                            attributes.SMBAttributes = Utils.LocalAttributesToAzureFileNtfsAttributes(fileAttributes.Value);
+                            attributes.CloudFileNtfsAttributes = Utils.LocalAttributesToAzureFileNtfsAttributes(fileAttributes.Value);
                             attributes.CreationTime = creationTime;
                             attributes.LastWriteTime = lastWriteTime;
                         }

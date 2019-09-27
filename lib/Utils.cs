@@ -127,6 +127,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                 if (first.CreationTime.Value != second.CreationTime.Value)
                     return false;
             }
+            else if (second.CreationTime.HasValue)
+            {
+                return false;
+            }
 
             if (first.LastWriteTime.HasValue)
             {
@@ -136,14 +140,22 @@ namespace Microsoft.Azure.Storage.DataMovement
                 if (first.LastWriteTime.Value != second.LastWriteTime.Value)
                     return false;
             }
-
-            if (first.SMBAttributes.HasValue)
+            else if (second.LastWriteTime.HasValue)
             {
-                if (!second.SMBAttributes.HasValue)
+                return false;
+            }
+
+            if (first.CloudFileNtfsAttributes.HasValue)
+            {
+                if (!second.CloudFileNtfsAttributes.HasValue)
                     return false;
 
-                if (first.SMBAttributes.Value != second.SMBAttributes.Value)
+                if (first.CloudFileNtfsAttributes.Value != second.CloudFileNtfsAttributes.Value)
                     return false;
+            }
+            else if (second.CloudFileNtfsAttributes.HasValue)
+            {
+                return false;
             }
 
             return string.Equals(first.CacheControl, second.CacheControl)
@@ -236,7 +248,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (preserveSMBProperties)
             {
-                attributes.SMBAttributes = file.Properties.NtfsAttributes;
+                attributes.CloudFileNtfsAttributes = file.Properties.NtfsAttributes;
                 attributes.CreationTime = file.Properties.CreationTime;
                 attributes.LastWriteTime = file.Properties.LastWriteTime;
             }
@@ -550,9 +562,9 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (preserveSMBProperties)
             {
-                if (attributes.SMBAttributes.HasValue)
+                if (attributes.CloudFileNtfsAttributes.HasValue)
                 {
-                    file.Properties.NtfsAttributes = attributes.SMBAttributes.Value;
+                    file.Properties.NtfsAttributes = attributes.CloudFileNtfsAttributes.Value;
                 }
 
                 file.Properties.CreationTime = attributes.CreationTime;

@@ -32,6 +32,8 @@ namespace Microsoft.Azure.Storage.DataMovement.Interop
         public const uint GENERIC_READ = 0x80000000;
         public const uint GENERIC_WRITE = 0x40000000;
         public const uint GENERIC_READ_WRITE = GENERIC_READ | GENERIC_WRITE;
+
+        // This flag must be set to obtain a handle to a directory.
         public const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
 
         // Open or create file
@@ -90,8 +92,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Interop
             SafeFileHandle hFile,
             ref FILETIME lpCreationTime,
             ref FILETIME lpLastAccessTime,
-            ref FILETIME lpLastWriteTime
-            );
+            ref FILETIME lpLastWriteTime);
 
         /// <summary>
         /// Throw exception if last Win32 error is not zero.
