@@ -110,6 +110,11 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile)]
         public void LongFilePathSingleUploadPreserveSMBAttributes()
         {
+            if (!CrossPlatformHelpers.IsWindows)
+            {
+                return;
+            }
+
             int fileSizeInKB = 1;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
             FileNode fileNode = new FileNode(DMLibTestBase.FileName);
