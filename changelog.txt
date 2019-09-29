@@ -1,3 +1,14 @@
+2019.09.29 Version 1.1.0
+ * All Service on both .Net Framework and .Net Core
+   - Upgraded Microsoft.Azure.Storage.Blob from 10.0.3 to 11.1.0
+   - Upgraded Microsoft.Azure.Storage.File from 10.0.3 to 11.1.0
+   - Fixed an issue of CPU is still in using when there's nothing being transferred in DataMovement Library
+   - Fixed an issue of reporting exception when running on a specific environment with FIPS enabled
+ * File Service on both .Net Framework and .Net Core
+   - Optimized on Azure File directory creation when uploading from local file directory to Azure File directory and copying from Azure Blob virtual directory to Azure File directory
+   - Added support to copying empty directories when uploading/downloading from/to local file directory to/from Azure File directory
+   - Added support to preserve SMB attributes when uploading/downloading from/to local file directory to/from Azure File directory on Windows. SMB attributes includes creation time, last write time and NTFS File Attributes.
+
 2019.08.08 Version 1.0.0
  * Blob Service on both .Net Framework and .Net Core
    - Added a copy method to leverage Service Side Synchronous Copy when copying blobs.
