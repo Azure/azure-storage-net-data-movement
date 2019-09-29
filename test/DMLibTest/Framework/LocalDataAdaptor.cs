@@ -260,8 +260,23 @@ namespace DMLibTest
             }
         }
 
-    private void BuildDirNode(DirectoryInfo dirInfo, DirNode parent, bool handleSMBAttributes = false)
+        private void BuildDirNode(DirectoryInfo dirInfo, DirNode parent, bool handleSMBAttributes = false)
         {
+            if (handleSMBAttributes)
+            {
+                DateTimeOffset? creationTime = null;
+                DateTimeOffset? lastWriteTime = null;
+                FileAttributes? fileAttributes = null;
+
+#if DOTNET5_4
+                LongPathFileExtension.GetFileProperties(dirInfo.FullName, out creationTime, out lastWriteTime, out fileAttributes, true);
+#else
+                LongPathFileExtension.GetFileProperties(dirInfo.FullName, out creationTime, out lastWriteTime, out fileAttributes);
+#endif
+                parent.CreationTime = creationTime;
+                parent.LastWriteTime = lastWriteTime;
+            }
+
             foreach (FileInfo fileInfo in dirInfo.GetFiles())
             {
                 FileNode fileNode = new FileNode(fileInfo.Name);
@@ -284,7 +299,12 @@ namespace DMLibTest
             DateTimeOffset? creationTime = null;
             DateTimeOffset? lastWriteTime = null;
             FileAttributes? fileAttributes = null;
+
+#if DOTNET5_4
+            LongPathFileExtension.GetFileProperties(dirPath, out creationTime, out lastWriteTime, out fileAttributes, true);
+#else
             LongPathFileExtension.GetFileProperties(dirPath, out creationTime, out lastWriteTime, out fileAttributes);
+#endif
 
             parent.CreationTime = creationTime;
             parent.LastWriteTime = lastWriteTime;

@@ -350,11 +350,19 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
                 catch (StorageException storageException)
                 {
-                    throw new TransferException(TransferErrorCode.FailToVadlidateDestination,
-                        string.Format(CultureInfo.CurrentCulture,
-                            Resources.FailedToValidateDestinationException,
-                            storageException.ToErrorDetail()),
-                        storageException);
+                    if ((null != storageException.InnerException)
+                        && (storageException.InnerException is OperationCanceledException))
+                    {
+                        throw storageException.InnerException;
+                    }
+                    else
+                    {
+                        throw new TransferException(TransferErrorCode.FailToVadlidateDestination,
+                            string.Format(CultureInfo.CurrentCulture,
+                                Resources.FailedToValidateDestinationException,
+                                storageException.ToErrorDetail()),
+                            storageException);
+                    }
                 }
             }
         }
