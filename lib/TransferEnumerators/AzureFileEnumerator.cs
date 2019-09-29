@@ -204,7 +204,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                         continuationToken,
                         requestOptions,
                         null,
-                        cancellationToken).Result;
+                        cancellationToken).GetAwaiter().GetResult();
                 }
                 catch (Exception ex)
                 {

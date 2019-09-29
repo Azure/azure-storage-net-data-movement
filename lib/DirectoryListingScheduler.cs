@@ -16,38 +16,11 @@ namespace Microsoft.Azure.Storage.DataMovement
 
     class DirectoryListingScheduler : IDisposable
     {
-        // Value to control concurrent of directory listing.
-        // By testing result with downloading from Azure File Directory on 16 core machines on .Net on Windows and on .Net Core on Linux
-        // it has best downloading speed with 2 listing threads on .Net on Windows and with 4 listing threads on .Net Core on Linux.
-#if DOTNET5_4
-        private const int MaxParallelListingThreads = 4;
-#else
-        private const int MaxParallelListingThreads = 2;
-#endif
-
         SemaphoreSlim semaphore = null;
-        private static DirectoryListingScheduler SchedulerInstance = null;
-        private static object SingletonLock = new object();
 
-        private DirectoryListingScheduler()
+        public DirectoryListingScheduler(int maxParallelListingThreads)
         {
-            semaphore = new SemaphoreSlim(MaxParallelListingThreads, MaxParallelListingThreads);
-        }
-
-        public static DirectoryListingScheduler Instance()
-        {
-            if (null == SchedulerInstance)
-            {
-                lock (SingletonLock)
-                {
-                    if (null == SchedulerInstance)
-                    {
-                        SchedulerInstance = new DirectoryListingScheduler();
-                    }
-                }
-            }
-
-            return SchedulerInstance;
+            semaphore = new SemaphoreSlim(maxParallelListingThreads, maxParallelListingThreads);
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]

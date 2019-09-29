@@ -346,6 +346,22 @@ namespace DMLibTest
                     return false;
                 }
 
+                if ((null != dirNodeA.Metadata) && (dirNodeA.Metadata.Count > 0))
+                {
+                    if (null == dirNodeB.Metadata) return false;
+
+                    if (dirNodeA.Metadata.Count != dirNodeB.Metadata.Count) return false;
+
+                    foreach (var keyValue in dirNodeA.Metadata)
+                    {
+                        if (!string.Equals(dirNodeB.Metadata[keyValue.Key], keyValue.Value)) return false;
+                    }
+                }
+                else
+                {
+                    if ((null != dirNodeB.Metadata) && (dirNodeB.Metadata.Count > 0)) return false;
+                }
+
                 foreach(FileNode fileNodeA in dirNodeA.FileNodes)
                 {
                     FileNode fileNodeB = dirNodeB.GetFileNode(fileNodeA.Name);

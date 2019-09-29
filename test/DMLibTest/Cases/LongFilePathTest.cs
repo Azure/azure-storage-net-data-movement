@@ -107,6 +107,80 @@ namespace DMLibTest.Cases
         }
 
         [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile)]
+        public void LongFilePathSingleUploadPreserveSMBAttributes()
+        {
+            if (!CrossPlatformHelpers.IsWindows)
+            {
+                return;
+            }
+
+            int fileSizeInKB = 1;
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            FileNode fileNode = new FileNode(DMLibTestBase.FileName);
+            fileNode.SizeInByte = fileSizeInKB;
+            fileNode.SMBAttributes = CloudFileNtfsAttributes.Hidden;
+            sourceDataInfo.RootNode.AddFileNode(fileNode);
+
+            LocalDataAdaptor sourceAdaptor = GetDestAdaptor(DMLibDataType.Local) as LocalDataAdaptor;
+            sourceAdaptor.GenerateDataInfo(sourceDataInfo, true);
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.DisableSourceGenerator = true;
+            options.TransferItemModifier = (fileNodeVar, transferItem) =>
+            {
+                dynamic transferOptions = DefaultTransferOptions;
+                transferOptions.PreserveSMBAttributes = true;
+                transferItem.Options = transferOptions;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            Helper.CompareSMBProperties(sourceDataInfo.RootNode, result.DataInfo.RootNode, true);
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.Local)]
+        public void LongFilePathSingleDownloadPreserveSMBAttributes()
+        {
+            if (!CrossPlatformHelpers.IsWindows)
+            {
+                return;
+            }
+
+            int fileSizeInKB = 1;
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+            FileNode fileNode = new FileNode(DMLibTestBase.FileName);
+            fileNode.SizeInByte = fileSizeInKB;
+            fileNode.SMBAttributes = CloudFileNtfsAttributes.Hidden;
+            sourceDataInfo.RootNode.AddFileNode(fileNode);
+
+            DMLibDataInfo destDataInfo = new DMLibDataInfo(GetDirectoryName(destDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.DestTransferDataInfo = destDataInfo;
+            options.DisableDestinationFetch = true;
+
+            options.TransferItemModifier = (fileNodeVar, transferItem) =>
+            {
+                dynamic transferOptions = DefaultTransferOptions;
+                transferOptions.PreserveSMBAttributes = true;
+                transferItem.Options = transferOptions;
+            };
+
+            var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+            LocalDataAdaptor destAdaptor = GetDestAdaptor(DMLibDataType.Local) as LocalDataAdaptor;
+            destDataInfo = destAdaptor.GetTransferDataInfo(destDataInfo.RootPath, true);
+            
+            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, destDataInfo), "Verify transfer result.");
+
+            Helper.CompareSMBProperties(sourceDataInfo.RootNode, destDataInfo.RootNode, true);
+        }
+
+        [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.LocalDest)]
         public void LongFilePathSingleDownload()
         {

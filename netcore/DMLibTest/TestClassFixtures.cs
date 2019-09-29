@@ -263,6 +263,19 @@ namespace DMLibTest
         }
     }
 
+    public class SMBPropertiesTestFixture : IDisposable
+    {
+        public SMBPropertiesTestFixture()
+        {
+            SMBPropertiesTest.MyClassInitialize(null);
+        }
+
+        public void Dispose()
+        {
+            SMBPropertiesTest.MyClassCleanup();
+        }
+    }
+
     public class UnsupportedDirectionTestFixture : IDisposable
     {
         public UnsupportedDirectionTestFixture()

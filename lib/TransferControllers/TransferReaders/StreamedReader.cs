@@ -58,6 +58,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         /// </summary>
         private MD5HashStream md5HashStream;
 
+        private string filePath = null;
+
         public StreamedReader(
             TransferScheduler scheduler,
             SyncTransferController controller,
@@ -173,8 +175,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             fileLocation.RelativePath);
                         throw new TransferException(TransferErrorCode.OpenFileFailed, errorMessage);
                     }
+
+                    this.filePath = fileLocation.FilePath;
 #if DOTNET5_4
-                    string filePath = fileLocation.FilePath;
                     if (Interop.CrossPlatformHelpers.IsWindows)
                     {
                         filePath = LongPath.ToUncPath(fileLocation.FilePath);
@@ -186,8 +189,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         FileAccess.Read,
                         FileShare.Read);
 #else
-                        this.inputStream = LongPathFile.Open(
-                            fileLocation.FilePath,
+                    this.inputStream = LongPathFile.Open(
+                            this.filePath,
                             FileMode.Open,
                             FileAccess.Read,
                             FileShare.Read);
@@ -500,11 +503,29 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     var md5 = this.md5HashStream.MD5HashTransformFinalBlock();
                     this.CloseOwnStream();
 
-                    this.SharedTransferData.Attributes = new Attributes()
+                    Attributes attributes = new Attributes()
                     {
                         ContentMD5 = md5,
                         OverWriteAll = false
                     };
+
+                    if (this.transferJob.Transfer.PreserveSMBAttributes)
+                    {
+                        if (!string.IsNullOrEmpty(this.filePath))
+                        {
+                            DateTimeOffset? creationTime;
+                            DateTimeOffset? lastWriteTime;
+                            FileAttributes? fileAttributes;
+
+                            LongPathFile.GetFileProperties(this.filePath, out creationTime, out lastWriteTime, out fileAttributes);
+
+                            attributes.CloudFileNtfsAttributes = Utils.LocalAttributesToAzureFileNtfsAttributes(fileAttributes.Value);
+                            attributes.CreationTime = creationTime;
+                            attributes.LastWriteTime = lastWriteTime;
+                        }
+                    }
+
+                    this.SharedTransferData.Attributes = attributes;
                 }
             }
         }

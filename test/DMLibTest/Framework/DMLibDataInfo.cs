@@ -9,6 +9,7 @@ namespace DMLibTest
     using System.Collections.Generic;
     using System.IO;
     using System.Text;
+    using Microsoft.Azure.Storage.File;
 
     public class DMLibDataInfo : IDataInfo
     {
@@ -144,6 +145,24 @@ namespace DMLibTest
             set;
         }
 
+        public CloudFileNtfsAttributes? SMBAttributes
+        {
+            get;
+            set;
+        }
+
+        public DateTimeOffset? CreationTime
+        {
+            get;
+            set;
+        }
+
+        public DateTimeOffset? LastWriteTime
+        {
+            get;
+            set;
+        }
+
         public IDictionary<string, string> Metadata
         {
             get;
@@ -213,6 +232,9 @@ namespace DMLibTest
                 SizeInByte = this.SizeInByte,
                 FileAttr = this.FileAttr,
                 AbsolutePath = this.AbsolutePath,
+                SMBAttributes = this.SMBAttributes,
+                CreationTime = this.CreationTime,
+                LastWriteTime = this.LastWriteTime
             };
         }
     }
@@ -338,6 +360,30 @@ namespace DMLibTest
             }
         }
 
+        public CloudFileNtfsAttributes? SMBAttributes
+        {
+            get;
+            set;
+        }
+
+        public DateTimeOffset? CreationTime
+        {
+            get;
+            set;
+        }
+
+        public DateTimeOffset? LastWriteTime
+        {
+            get;
+            set;
+        }
+
+        public IDictionary<string, string> Metadata
+        {
+            get;
+            set;
+        }
+
         public IEnumerable<DirNode> DirNodes
         {
             get
@@ -441,6 +487,14 @@ namespace DMLibTest
         public DirNode Clone()
         {
             DirNode newDirNode = new DirNode(this.Name);
+            newDirNode.SMBAttributes = this.SMBAttributes;
+            newDirNode.CreationTime = this.CreationTime;
+            newDirNode.LastWriteTime = this.LastWriteTime;
+
+            if (null != this.Metadata)
+            {
+                newDirNode.Metadata = new Dictionary<string, string>(this.Metadata);
+            }
 
             foreach(FileNode fileNode in this.FileNodes)
             {

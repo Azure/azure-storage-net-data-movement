@@ -79,6 +79,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         // This is notify the main execute thread for directory that there's new directory item listed.
         private ManualResetEventSlim newAddSubDirResetEventSlim = new ManualResetEventSlim();
 
+        private DirectoryListingScheduler directoryListingScheduler = null;
+
 #if !BINARY_SERIALIZATION
         [DataMember]
 #endif
@@ -193,7 +195,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 #endif // BINARY_SERIALIZATION
 
-        #region Serialization helpers
+#region Serialization helpers
 
 #if !BINARY_SERIALIZATION
         [DataMember]
@@ -260,7 +262,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 #endif //!BINARY_SERIALIZATION
-        #endregion // Serialization helpers
+#endregion // Serialization helpers
 
         public override int MaxTransferConcurrency
         {
@@ -285,6 +287,12 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
         public bool Recursive
+        {
+            get;
+            set;
+        }
+
+        public bool FollowSymblink
         {
             get;
             set;
@@ -332,6 +340,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                     this.newAddSubDirResetEventSlim.Dispose();
                     this.newAddSubDirResetEventSlim = null;
                 }
+
+                if (null != this.directoryListingScheduler)
+                {
+                    this.directoryListingScheduler.Dispose();
+                    this.directoryListingScheduler = null;
+                }
             }
 
             base.Dispose(disposing);
@@ -349,10 +363,32 @@ namespace Microsoft.Azure.Storage.DataMovement
                 this.newAddSubDirResetEventSlim.Dispose();
             }
 
+            if (null != directoryListingScheduler)
+            {
+                this.directoryListingScheduler.Dispose();
+            }
+
             this.newAddSubDirResetEventSlim = new ManualResetEventSlim();
             this.cancellationTokenSource = new CancellationTokenSource();
             this.transfersCompleteSource = new TaskCompletionSource<object>();
             this.subDirTransfersCompleteSource = new TaskCompletionSource<object>();
+
+#if DOTNET5_4
+            int maxListingThreadCount = 6;
+#else
+            int maxListingThreadCount = 2;
+#endif
+
+            if ((this.Destination.Type == TransferLocationType.LocalDirectory) || (this.Source.Type == TransferLocationType.LocalDirectory))
+            {
+#if DOTNET5_4
+                maxListingThreadCount = 4;
+#else
+                maxListingThreadCount = 2;
+#endif
+            }
+
+            directoryListingScheduler = new DirectoryListingScheduler(maxListingThreadCount);
         }
 
         public override async Task ExecuteInternalAsync(TransferScheduler scheduler, CancellationToken cancellationToken)
@@ -698,7 +734,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             Task directoryListTask = null;
             try
             {
-                directoryListTask = DirectoryListingScheduler.Instance().Schedule(
+                directoryListTask = this.directoryListingScheduler.Schedule(
                     subDirectoryTransfer,
                     cancellationToken,
                     persistDirTransfer,
@@ -738,7 +774,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
                 catch (Exception ex)
                 {
-                    shouldStopOthers = true;
                     if (ex is TransferException)
                     {
                         this.enumerateException = ex;
@@ -753,6 +788,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                             ex);
                     }
 
+                    shouldStopOthers = true;
                     errorHappened = true;
                 }
                 finally
@@ -805,6 +841,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                     (this.Source as AzureFileDirectoryLocation).FileDirectory.GetDirectoryReference(relativePath),
                     null);
             }
+            else if (this.Source.Type == TransferLocationType.LocalDirectory)
+            {
+                return new DirectoryEntry
+                    (relativePath, 
+                    LongPath.Combine(this.Source.Instance as string, relativePath), null);
+            }
             else
             {
                 // For now, HierarchyDirectoryTransfer should only be used when source is Azure File Directory.
@@ -823,6 +865,15 @@ namespace Microsoft.Azure.Storage.DataMovement
                 azureFileLocation.FileRequestOptions = azureFileDirLocation.FileRequestOptions;
 
                 return azureFileLocation;
+            }
+            else if (dirLocation.Type == TransferLocationType.LocalDirectory)
+            {
+                DirectoryLocation localDirLocation = dirLocation as DirectoryLocation;
+                var destDirectory = Path.Combine(localDirLocation.DirectoryPath, relativePath);
+
+                DirectoryLocation localSubDirLocation = new DirectoryLocation(destDirectory);
+
+                return localSubDirLocation;
             }
             else
             {
@@ -861,7 +912,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 case TransferLocationType.LocalDirectory:
                     {
                         DirectoryLocation localDirLocation = dirLocation as DirectoryLocation;
-                        string path = Path.Combine(localDirLocation.DirectoryPath, destRelativePath);
+                        string path = LongPath.Combine(localDirLocation.DirectoryPath, destRelativePath);
 
                         return new DirectoryLocation(path);
                     }

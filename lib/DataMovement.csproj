@@ -54,14 +54,14 @@
     <Reference Include="Microsoft.Azure.KeyVault.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Azure.KeyVault.Core.1.0.0\lib\net40\Microsoft.Azure.KeyVault.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Storage.Blob, Version=10.0.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.Storage.Blob.10.0.3\lib\net452\Microsoft.Azure.Storage.Blob.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.Blob, Version=11.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.Storage.Blob.11.1.0\lib\net452\Microsoft.Azure.Storage.Blob.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Storage.Common, Version=10.0.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.Storage.Common.10.0.3\lib\net452\Microsoft.Azure.Storage.Common.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.Common, Version=11.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.Storage.Common.11.1.0\lib\net452\Microsoft.Azure.Storage.Common.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Storage.File, Version=10.0.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.Storage.File.10.0.3\lib\net452\Microsoft.Azure.Storage.File.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Storage.File, Version=11.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.Storage.File.11.1.0\lib\net452\Microsoft.Azure.Storage.File.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Configuration, Version=1.8.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.1.8.0.0\lib\net35-full\Microsoft.WindowsAzure.Configuration.dll</HintPath>
@@ -108,6 +108,7 @@
     <Compile Include="SerializationHelper\SerializableCloudFileDirectory.cs" />
     <Compile Include="SerializationHelper\SerializableFileRequestOptions.cs" />
     <Compile Include="SerializationHelper\SerializableRequestOptions.cs" />
+    <Compile Include="TestHook\TestHookCallbacks.cs" />
     <Compile Include="TransferCallbacks.cs" />
     <Compile Include="TransferCheckpoint.cs" />
     <Compile Include="TransferCollection.cs" />
@@ -144,10 +145,12 @@
     <Compile Include="TransferEnumerators\AzureNameResolver.cs" />
     <Compile Include="TransferEnumerators\AzureToFileNameResolver.cs" />
     <Compile Include="TransferEnumerators\AzureBlobToAzureFileNameResolver.cs" />
+    <Compile Include="TransferEnumerators\DirectoryEntry.cs" />
     <Compile Include="TransferEnumerators\EnumerateDirectoryHelper.cs" />
     <Compile Include="TransferEnumerators\ErrorEntry.cs" />
     <Compile Include="TransferEnumerators\FileEntry.cs" />
     <Compile Include="TransferEnumerators\FileEnumerator.cs" />
+    <Compile Include="TransferEnumerators\FileHierarchyEnumerator.cs" />
     <Compile Include="TransferEnumerators\FileListContinuationToken.cs" />
     <Compile Include="TransferEnumerators\AzureBlobToAzureBlobNameResolver.cs" />
     <Compile Include="TransferEnumerators\FileToAzureFileNameResolver.cs" />

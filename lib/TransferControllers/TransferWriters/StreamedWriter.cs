@@ -40,6 +40,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         /// </summary>
         private bool ownsStream;
 
+        private string filePath = null;
+
         private volatile State state;
 
         private volatile bool isStateSwitchedInternal;
@@ -163,14 +165,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
                 else
                 {
-                    string filePath = (this.TransferJob.Destination as FileLocation).FilePath;
+                    this.filePath = (this.TransferJob.Destination as FileLocation).FilePath;
 
                     if (!this.Controller.IsForceOverwrite)
                     {
                         await this.Controller.CheckOverwriteAsync(
-                            LongPathFile.Exists(filePath),
+                            LongPathFile.Exists(this.filePath),
                             this.TransferJob.Source.Instance,
-                            filePath);
+                            this.filePath);
                     }
 
                     this.Controller.CheckCancellation();
@@ -377,6 +379,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
 
                 this.CloseOwnedOutputStream();
+
+                if (this.TransferJob.Transfer.PreserveSMBAttributes)
+                {
+                    if (this.SharedTransferData.Attributes.CloudFileNtfsAttributes.HasValue
+                        && !string.IsNullOrEmpty(this.filePath))
+                    {
+                        LongPathFile.SetFileTime(this.filePath, this.SharedTransferData.Attributes.CreationTime.Value, this.SharedTransferData.Attributes.LastWriteTime.Value);
+                        LongPathFile.SetAttributes(this.filePath, Utils.AzureFileNtfsAttributesToLocalAttributes(this.SharedTransferData.Attributes.CloudFileNtfsAttributes.Value));
+                    }
+                }
+
                 this.NotifyFinished(ex);
                 this.state = State.Finished;
             }

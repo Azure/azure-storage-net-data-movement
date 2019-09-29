@@ -90,6 +90,11 @@ namespace DMLibTest
             return Path.Combine(this.BasePath, rootPath, dirNode.GetLocalRelativePath());
         }
 
+        public void GenerateDataInfo(DMLibDataInfo dataInfo, bool handleSMBAttributes)
+        {
+            this.GenerateDir(dataInfo.RootNode, Path.Combine(this.BasePath, dataInfo.RootPath), handleSMBAttributes);
+        }
+
         protected override void GenerateDataImp(DMLibDataInfo dataInfo)
         {
             this.GenerateDir(dataInfo.RootNode, Path.Combine(this.BasePath, dataInfo.RootPath));
@@ -100,7 +105,7 @@ namespace DMLibTest
             throw new NotSupportedException();
         }
 
-        public override DMLibDataInfo GetTransferDataInfo(string rootDir)
+        public DMLibDataInfo GetTransferDataInfo(string rootDir, bool handleSMBAttributes)
         {
 #if DOTNET5_4
             DirectoryInfo rootDirInfo = new DirectoryInfo(Path.Combine(this.BasePath, rootDir));
@@ -120,12 +125,17 @@ namespace DMLibTest
             }
 #endif
             DMLibDataInfo dataInfo = new DMLibDataInfo(rootDir);
-            this.BuildDirNode(rootDirInfo, dataInfo.RootNode);
+            this.BuildDirNode(rootDirInfo, dataInfo.RootNode, true);
 
             return dataInfo;
         }
 
-        private void GenerateDir(DirNode dirNode, string parentPath)
+        public override DMLibDataInfo GetTransferDataInfo(string rootDir)
+        {
+            return this.GetTransferDataInfo(rootDir, false);
+        }
+
+        private void GenerateDir(DirNode dirNode, string parentPath, bool handleSMBAttributes = false)
         {
             string dirPath = Path.Combine(parentPath, dirNode.Name);
 
@@ -142,12 +152,12 @@ namespace DMLibTest
 
             foreach (var file in dirNode.FileNodes)
             {
-                GenerateFile(file, dirPath);
+                GenerateFile(file, dirPath, handleSMBAttributes);
             }
 
             foreach (var subDir in dirNode.NormalDirNodes)
             {
-                GenerateDir(subDir, dirPath);
+                GenerateDir(subDir, dirPath, handleSMBAttributes);
             }
 
             foreach (var subDir in dirNode.SymlinkedDirNodes)
@@ -209,18 +219,24 @@ namespace DMLibTest
             }
         }
 
-        private void GenerateFile(FileNode fileNode, string parentPath)
+        private void GenerateFile(FileNode fileNode, string parentPath, bool handleSMBAttributes = false)
         {
             this.CheckFileNode(fileNode);
 
             string localFilePath = Path.Combine(parentPath, fileNode.Name);
             DMLibDataHelper.CreateLocalFile(fileNode, localFilePath);
+
+            if (handleSMBAttributes)
+            {
+                LongPathFileExtension.SetAttributes(localFilePath, Helper.ToFileAttributes(fileNode.SMBAttributes.Value));
+            }
+
 #if DOTNET5_4
             FileInfo fileInfo = new FileInfo(localFilePath);
 
-            this.BuildFileNode(fileInfo, fileNode);
+            this.BuildFileNode(fileInfo, fileNode, handleSMBAttributes);
 #else
-            this.BuildFileNode(localFilePath, fileNode);
+            this.BuildFileNode(localFilePath, fileNode, handleSMBAttributes);
 #endif
         }
 
@@ -235,7 +251,7 @@ namespace DMLibTest
             {
                 Test.Info("Building file info of {0}", Path.Combine(parentPath, fileNode.Name));
                 FileInfo fileInfo = new FileInfo(Path.Combine(parentPath, fileNode.Name));
-                this.BuildFileNode(fileInfo, fileNode);
+                this.BuildFileNode(fileInfo, fileNode, false);
             }
 
             foreach (DirNode dirNode in parent.DirNodes)
@@ -244,50 +260,95 @@ namespace DMLibTest
             }
         }
 
-    private void BuildDirNode(DirectoryInfo dirInfo, DirNode parent)
+        private void BuildDirNode(DirectoryInfo dirInfo, DirNode parent, bool handleSMBAttributes = false)
         {
+            if (handleSMBAttributes)
+            {
+                DateTimeOffset? creationTime = null;
+                DateTimeOffset? lastWriteTime = null;
+                FileAttributes? fileAttributes = null;
+
+#if DOTNET5_4
+                LongPathFileExtension.GetFileProperties(dirInfo.FullName, out creationTime, out lastWriteTime, out fileAttributes, true);
+#else
+                LongPathFileExtension.GetFileProperties(dirInfo.FullName, out creationTime, out lastWriteTime, out fileAttributes);
+#endif
+                parent.CreationTime = creationTime;
+                parent.LastWriteTime = lastWriteTime;
+            }
+
             foreach (FileInfo fileInfo in dirInfo.GetFiles())
             {
                 FileNode fileNode = new FileNode(fileInfo.Name);
-                this.BuildFileNode(fileInfo, fileNode);
+                this.BuildFileNode(fileInfo, fileNode, handleSMBAttributes);
                 parent.AddFileNode(fileNode);
             }
 
             foreach (DirectoryInfo subDirInfo in dirInfo.GetDirectories())
             {
                 DirNode subDirNode = new DirNode(subDirInfo.Name);
-                this.BuildDirNode(subDirInfo, subDirNode);
+                this.BuildDirNode(subDirInfo, subDirNode, handleSMBAttributes);
                 parent.AddDirNode(subDirNode);
             }
         }
 
-        private void BuildDirNode(string dirPath, DirNode parent)
+        private void BuildDirNode(string dirPath, DirNode parent, bool handleSMBAttributes)
         {
             dirPath = AppendDirectorySeparator(dirPath);
+
+            DateTimeOffset? creationTime = null;
+            DateTimeOffset? lastWriteTime = null;
+            FileAttributes? fileAttributes = null;
+
+#if DOTNET5_4
+            LongPathFileExtension.GetFileProperties(dirPath, out creationTime, out lastWriteTime, out fileAttributes, true);
+#else
+            LongPathFileExtension.GetFileProperties(dirPath, out creationTime, out lastWriteTime, out fileAttributes);
+#endif
+
+            parent.CreationTime = creationTime;
+            parent.LastWriteTime = lastWriteTime;
+
             foreach (var fileInfo in LongPathDirectoryExtension.GetFiles(dirPath))
             {
                 FileNode fileNode = new FileNode(fileInfo.Remove(0,dirPath.Length));
-                this.BuildFileNode(fileInfo, fileNode);
+                this.BuildFileNode(fileInfo, fileNode, handleSMBAttributes);
                 parent.AddFileNode(fileNode);
             }
 
             foreach (var subDirInfo in LongPathDirectoryExtension.GetDirectories(dirPath))
             {
                 DirNode subDirNode = new DirNode(subDirInfo.Remove(0, dirPath.Length));
-                this.BuildDirNode(subDirInfo, subDirNode);
+                this.BuildDirNode(subDirInfo, subDirNode, handleSMBAttributes);
                 parent.AddDirNode(subDirNode);
             }
         }
 
-        private void BuildFileNode(FileInfo fileInfo, FileNode fileNode)
+        private void BuildFileNode(FileInfo fileInfo, FileNode fileNode, bool handleSMBAttributes)
         {
             fileNode.MD5 = Helper.GetFileContentMD5(fileInfo.FullName);
             fileNode.LastModifiedTime = fileInfo.LastWriteTimeUtc;
             fileNode.SizeInByte = fileInfo.Length;
             fileNode.Metadata = new Dictionary<string, string>();
+
+            if (CrossPlatformHelpers.IsWindows)
+            {
+                DateTimeOffset? creationTime = null;
+                DateTimeOffset? lastWriteTime = null;
+                FileAttributes? fileAttributes = null;
+                LongPathFileExtension.GetFileProperties(fileInfo.FullName, out creationTime, out lastWriteTime, out fileAttributes);
+
+                fileNode.CreationTime = creationTime;
+                fileNode.LastWriteTime = lastWriteTime;
+
+                if (handleSMBAttributes)
+                {
+                    fileNode.SMBAttributes = Helper.ToCloudFileNtfsAttributes(fileAttributes.Value);
+                }
+            }
         }
 
-        private void BuildFileNode(string path, FileNode fileNode)
+        private void BuildFileNode(string path, FileNode fileNode, bool handleSMBAttributes)
         {
             fileNode.MD5 = Helper.GetFileContentMD5(LongPathExtension.GetFullPath(path));
             // fileNode.LastModifiedTime =
@@ -295,6 +356,19 @@ namespace DMLibTest
             {
                 fileNode.SizeInByte = fs.Length;
             }
+
+            DateTimeOffset? creationTime = null;
+            DateTimeOffset? lastWriteTime = null;
+            FileAttributes? fileAttributes = null;
+            LongPathFileExtension.GetFileProperties(path, out creationTime, out lastWriteTime, out fileAttributes);
+
+            fileNode.CreationTime = creationTime;
+            fileNode.LastWriteTime = lastWriteTime;
+            if (handleSMBAttributes)
+            {
+                fileNode.SMBAttributes = Helper.ToCloudFileNtfsAttributes(fileAttributes.Value);
+            }
+
             fileNode.Metadata = new Dictionary<string, string>();
         }
 

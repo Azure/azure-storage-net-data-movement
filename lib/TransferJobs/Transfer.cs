@@ -168,6 +168,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.Destination = other.Destination;
             this.TransferMethod = other.TransferMethod;
             this.OriginalFormatVersion = other.OriginalFormatVersion;
+            this.PreserveSMBAttributes = other.PreserveSMBAttributes;
         }
 
         /// Used to ensure that deserialized transfers are only used
@@ -234,6 +235,16 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Gets or sets blob type of destination blob.
         /// </summary>
         public BlobType BlobType
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets a flag that indicates whether to preserve SMB attributes 
+        /// during transferring between local file to Azure File Service.
+        /// </summary>
+        public bool PreserveSMBAttributes
         {
             get;
             set;

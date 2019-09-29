@@ -119,6 +119,45 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         public static bool CompareProperties(Attributes first, Attributes second)
         {
+            if (first.CreationTime.HasValue)
+            {
+                if (!second.CreationTime.HasValue)
+                    return false;
+
+                if (first.CreationTime.Value != second.CreationTime.Value)
+                    return false;
+            }
+            else if (second.CreationTime.HasValue)
+            {
+                return false;
+            }
+
+            if (first.LastWriteTime.HasValue)
+            {
+                if (!second.LastWriteTime.HasValue)
+                    return false;
+
+                if (first.LastWriteTime.Value != second.LastWriteTime.Value)
+                    return false;
+            }
+            else if (second.LastWriteTime.HasValue)
+            {
+                return false;
+            }
+
+            if (first.CloudFileNtfsAttributes.HasValue)
+            {
+                if (!second.CloudFileNtfsAttributes.HasValue)
+                    return false;
+
+                if (first.CloudFileNtfsAttributes.Value != second.CloudFileNtfsAttributes.Value)
+                    return false;
+            }
+            else if (second.CloudFileNtfsAttributes.HasValue)
+            {
+                return false;
+            }
+
             return string.Equals(first.CacheControl, second.CacheControl)
                    && string.Equals(first.ContentDisposition, second.ContentDisposition)
                    && string.Equals(first.ContentEncoding, second.ContentEncoding)
@@ -193,9 +232,9 @@ namespace Microsoft.Azure.Storage.DataMovement
                        };
         }
 
-        public static Attributes GenerateAttributes(CloudFile file)
+        public static Attributes GenerateAttributes(CloudFile file, bool preserveSMBProperties)
         {
-            return new Attributes()
+            Attributes attributes = new Attributes()
                        {
                            CacheControl = file.Properties.CacheControl, 
                            ContentDisposition = file.Properties.ContentDisposition, 
@@ -206,6 +245,15 @@ namespace Microsoft.Azure.Storage.DataMovement
                            Metadata = file.Metadata, 
                            OverWriteAll = true
                        };
+
+            if (preserveSMBProperties)
+            {
+                attributes.CloudFileNtfsAttributes = file.Properties.NtfsAttributes;
+                attributes.CreationTime = file.Properties.CreationTime;
+                attributes.LastWriteTime = file.Properties.LastWriteTime;
+            }
+
+            return attributes;
         }
 
         /// <summary>
@@ -484,7 +532,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        public static void SetAttributes(CloudFile file, Attributes attributes)
+        public static void SetAttributes(CloudFile file, Attributes attributes, bool preserveSMBProperties)
         {
             if (attributes.OverWriteAll)
             {
@@ -510,6 +558,17 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     file.Properties.ContentType = attributes.ContentType;
                 }
+            }
+
+            if (preserveSMBProperties)
+            {
+                if (attributes.CloudFileNtfsAttributes.HasValue)
+                {
+                    file.Properties.NtfsAttributes = attributes.CloudFileNtfsAttributes.Value;
+                }
+
+                file.Properties.CreationTime = attributes.CreationTime;
+                file.Properties.LastWriteTime = attributes.LastWriteTime;
             }
         }
 
@@ -664,8 +723,88 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 #endif
+        public static FileAttributes AzureFileNtfsAttributesToLocalAttributes(CloudFileNtfsAttributes cloudFileNtfsAttributes)
+        {
+            FileAttributes fileAttributes = FileAttributes.Normal;
 
-private static bool IsValidWindowsFileName(string fileName)
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.ReadOnly) == CloudFileNtfsAttributes.ReadOnly)
+                fileAttributes |= FileAttributes.ReadOnly;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Hidden) == CloudFileNtfsAttributes.Hidden)
+                fileAttributes |= FileAttributes.Hidden;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.System) == CloudFileNtfsAttributes.System)
+                fileAttributes |= FileAttributes.System;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Directory) == CloudFileNtfsAttributes.Directory)
+                fileAttributes |= FileAttributes.Directory;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Archive) == CloudFileNtfsAttributes.Archive)
+                fileAttributes |= FileAttributes.Archive;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Temporary) == CloudFileNtfsAttributes.Temporary)
+                fileAttributes |= FileAttributes.Temporary;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Offline) == CloudFileNtfsAttributes.Offline)
+                fileAttributes |= FileAttributes.Offline;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.NotContentIndexed) == CloudFileNtfsAttributes.NotContentIndexed)
+                fileAttributes |= FileAttributes.NotContentIndexed;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.NoScrubData) == CloudFileNtfsAttributes.NoScrubData)
+                fileAttributes |= FileAttributes.NoScrubData;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Normal) == CloudFileNtfsAttributes.None)
+            {
+                if (fileAttributes != FileAttributes.Normal)
+                {
+                    fileAttributes = fileAttributes & (~FileAttributes.Normal);
+                }
+            }
+
+            return fileAttributes;
+        }
+
+        public static CloudFileNtfsAttributes LocalAttributesToAzureFileNtfsAttributes(FileAttributes fileAttributes)
+        {
+            CloudFileNtfsAttributes cloudFileNtfsAttributes = CloudFileNtfsAttributes.None;
+
+            if ((fileAttributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.ReadOnly;
+
+            if ((fileAttributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Hidden;
+
+            if ((fileAttributes & FileAttributes.System) == FileAttributes.System)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.System;
+
+            if ((fileAttributes & FileAttributes.Directory) == FileAttributes.Directory)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Directory;
+
+            if ((fileAttributes & FileAttributes.Archive) == FileAttributes.Archive)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Archive;
+
+            if ((fileAttributes & FileAttributes.Normal) == FileAttributes.Normal)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Normal;
+
+            if ((fileAttributes & FileAttributes.Temporary) == FileAttributes.Temporary)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Temporary;
+
+            if ((fileAttributes & FileAttributes.Offline) == FileAttributes.Offline)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Offline;
+
+            if ((fileAttributes & FileAttributes.NotContentIndexed) == FileAttributes.NotContentIndexed)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.NotContentIndexed;
+
+            if ((fileAttributes & FileAttributes.NoScrubData) == FileAttributes.NoScrubData)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.NoScrubData;
+
+            if (cloudFileNtfsAttributes == CloudFileNtfsAttributes.None) cloudFileNtfsAttributes = CloudFileNtfsAttributes.Normal;
+
+            return cloudFileNtfsAttributes;
+        }
+
+        private static bool IsValidWindowsFileName(string fileName)
         {
             string fileNameNoExt = LongPath.GetFileNameWithoutExtension(fileName);
             string fileNameWithExt = LongPath.GetFileName(fileName);

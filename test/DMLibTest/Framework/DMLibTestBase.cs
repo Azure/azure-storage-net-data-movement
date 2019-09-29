@@ -417,6 +417,7 @@ namespace DMLibTest
 
         private void LimitSpeed(object sender, RequestEventArgs e)
         {
+            Test.Info("LimitSpeeding");
             Thread.Sleep(100);
         }
 

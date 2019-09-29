@@ -16,7 +16,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
     /// <summary>
     /// Transfer enumerator for file system.
     /// </summary>
-    internal class FileEnumerator : TransferEnumeratorBase, ITransferEnumerator
+    internal class FileHierarchyEnumerator : TransferEnumeratorBase, ITransferEnumerator
     {
         private const string DefaultFilePattern = "*";
 
@@ -26,14 +26,18 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
         private bool followSymlink;
 
+        private string baseDirectory;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="FileEnumerator" /> class.
         /// </summary>
         /// <param name="location">Directory location.</param>
+        /// <param name="baseDirectory">Directory location.</param>
         /// <param name="followSymlink">Indicating whether to enumerate symlinked subdirectories.</param>
-        public FileEnumerator(DirectoryLocation location, bool followSymlink)
+        public FileHierarchyEnumerator(DirectoryLocation location, string baseDirectory, bool followSymlink)
         {
             this.location = location;
+            this.baseDirectory = baseDirectory;
             this.followSymlink = followSymlink;
         }
 
@@ -73,30 +77,38 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
 #if DOTNET5_4
             string fullPath = null;
+            string baseFullPath = null;
             if (Interop.CrossPlatformHelpers.IsWindows)
             {
                 fullPath = LongPath.ToUncPath(this.location.DirectoryPath);
+                baseFullPath = LongPath.ToUncPath(this.baseDirectory);
             }
             else
             {
                 fullPath = Path.GetFullPath(this.location.DirectoryPath);
+                baseFullPath = Path.GetFullPath(this.baseDirectory);
             }
 #else
             string fullPath = LongPath.ToUncPath(this.location.DirectoryPath);
+            string baseFullPath = LongPath.ToUncPath(this.baseDirectory);
 #endif
-            fullPath = AppendDirectorySeparator(fullPath);
 
+            fullPath = AppendDirectorySeparator(fullPath);
+            baseFullPath = AppendDirectorySeparator(baseFullPath);
+
+            bool isBaseDirectory = string.Equals(fullPath, baseFullPath);
             try
             {
                 // Directory.GetFiles/EnumerateFiles will be broken when encounted special items, such as
                 // files in recycle bins or the folder "System Volume Information". Rewrite this function
                 // because our listing should not be stopped by these unexpected files.
-                directoryEnumerator = EnumerateDirectoryHelper.EnumerateInDirectory(
+                directoryEnumerator = EnumerateDirectoryHelper.EnumerateAllEntriesInDirectory(
                     fullPath,
                     filePattern,
                     this.listContinuationToken == null ? null : this.listContinuationToken.FilePath,
                     searchOption,
                     followSymlink,
+                    isBaseDirectory,
                     cancellationToken);
             }
             catch (Exception ex)
@@ -128,21 +140,34 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
                     string relativePath = entry.Path;
 
-                    if (relativePath.StartsWith(fullPath, StringComparison.OrdinalIgnoreCase))
+                    if (relativePath.StartsWith(baseFullPath, StringComparison.OrdinalIgnoreCase))
                     {
-                        relativePath = relativePath.Remove(0, fullPath.Length);
+                        relativePath = relativePath.Remove(0, baseFullPath.Length);
                     }
 
-                    var continuationToken = new FileListContinuationToken(relativePath);
+                    string continuationTokenPath = entry.Path;
+                    continuationTokenPath = continuationTokenPath.Remove(0, fullPath.Length);
+                    var continuationToken = new FileListContinuationToken(continuationTokenPath);
+
                     if (relativePath.Length > Constants.MaxRelativePathLength)
                     {
                         relativePath = relativePath.Substring(0, Constants.MaxRelativePathLength / 2) + "..." + relativePath.Substring(relativePath.Length - Constants.MaxRelativePathLength / 2);
                     }
 
-                    yield return new FileEntry(
-                        relativePath,
-                        LongPath.Combine(this.location.DirectoryPath, relativePath),
-                        continuationToken);
+                    if (entry.IsDirectory)
+                    {
+                        yield return new DirectoryEntry(
+                            relativePath,
+                            LongPath.Combine(this.baseDirectory, relativePath),
+                            continuationToken);
+                    }
+                    else
+                    {
+                        yield return new FileEntry(
+                            relativePath,
+                            LongPath.Combine(this.baseDirectory, relativePath),
+                            continuationToken);
+                    }
                 }
             }
         }

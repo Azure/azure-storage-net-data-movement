@@ -34,6 +34,143 @@ namespace DMLibTest
     {
         private static Random random = new Random();
 
+        public static CloudFileNtfsAttributes ToCloudFileNtfsAttributes(FileAttributes fileAttributes)
+        {
+            CloudFileNtfsAttributes cloudFileNtfsAttributes = CloudFileNtfsAttributes.None;
+
+            if ((fileAttributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.ReadOnly;
+            if ((fileAttributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Hidden;
+            if ((fileAttributes & FileAttributes.System) == FileAttributes.System)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.System;
+            if ((fileAttributes & FileAttributes.Directory) == FileAttributes.Directory)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Directory;
+            if ((fileAttributes & FileAttributes.Archive) == FileAttributes.Archive)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Archive;
+            if ((fileAttributes & FileAttributes.Normal) == FileAttributes.Normal)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Normal;
+            if ((fileAttributes & FileAttributes.Temporary) == FileAttributes.Temporary)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Temporary;
+            if ((fileAttributes & FileAttributes.Offline) == FileAttributes.Offline)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.Offline;
+            if ((fileAttributes & FileAttributes.NotContentIndexed) == FileAttributes.NotContentIndexed)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.NotContentIndexed;
+            if ((fileAttributes & FileAttributes.NoScrubData) == FileAttributes.NoScrubData)
+                cloudFileNtfsAttributes |= CloudFileNtfsAttributes.NoScrubData;
+
+            return cloudFileNtfsAttributes;
+        }
+
+        public static FileAttributes ToFileAttributes(CloudFileNtfsAttributes cloudFileNtfsAttributes)
+        {
+            FileAttributes fileAttributes = (FileAttributes)0;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.ReadOnly) == CloudFileNtfsAttributes.ReadOnly)
+                fileAttributes |= FileAttributes.ReadOnly;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Hidden) == CloudFileNtfsAttributes.Hidden)
+                fileAttributes |= FileAttributes.Hidden;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.System) == CloudFileNtfsAttributes.System)
+                fileAttributes |= FileAttributes.System;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Directory) == CloudFileNtfsAttributes.Directory)
+                fileAttributes |= FileAttributes.Directory;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Archive) == CloudFileNtfsAttributes.Archive)
+                fileAttributes |= FileAttributes.Archive;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Normal) == CloudFileNtfsAttributes.Normal)
+                fileAttributes |= FileAttributes.Normal;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Temporary) == CloudFileNtfsAttributes.Temporary)
+                fileAttributes |= FileAttributes.Temporary;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.Offline) == CloudFileNtfsAttributes.Offline)
+                fileAttributes |= FileAttributes.Offline;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.NotContentIndexed) == CloudFileNtfsAttributes.NotContentIndexed)
+                fileAttributes |= FileAttributes.NotContentIndexed;
+
+            if ((cloudFileNtfsAttributes & CloudFileNtfsAttributes.NoScrubData) == CloudFileNtfsAttributes.NoScrubData)
+                fileAttributes |= FileAttributes.NoScrubData;
+
+            return fileAttributes;
+        }
+
+        public static void CompareSMBProperties(DirNode dirNode0, DirNode dirNode1, bool compareFileAttributes)
+        {
+            Test.Assert(string.Equals(dirNode0.Name, dirNode1.Name), "Directory name should be the expected");
+
+            if (dirNode0.LastWriteTime.HasValue)
+            {
+                if (!dirNode1.LastWriteTime.HasValue
+                    || (dirNode0.LastWriteTime.Value != dirNode1.LastWriteTime.Value))
+                {
+                    Test.Error("lastwritetime for {0} is not expected.", dirNode0.Name);
+                }
+            }
+
+            if (dirNode0.CreationTime.HasValue)
+            {
+                if (!dirNode1.CreationTime.HasValue
+                    || (dirNode0.CreationTime.Value != dirNode1.CreationTime.Value))
+                {
+                    Test.Error("CreationTime for {0} is not expected.", dirNode0.Name);
+                }
+            }
+
+            if (compareFileAttributes)
+            {
+                if (dirNode0.SMBAttributes.HasValue)
+                {
+                    if (!dirNode1.SMBAttributes.HasValue
+                        || (dirNode0.SMBAttributes.Value != dirNode1.SMBAttributes.Value))
+                    {
+                        Test.Error("SMBAttributes for {0} is not expected.", dirNode0.Name);
+                    }
+                }
+            }
+
+            foreach (var fileNode in dirNode0.FileNodes)
+            {
+                var fileNode1 = dirNode1.GetFileNode(fileNode.Name);
+
+                if (null == fileNode1)
+                {
+                    Test.Error("File node mismatch");
+                    continue;
+                }
+
+                if ((fileNode.LastWriteTime.Value != fileNode1.LastWriteTime.Value)
+                    || (fileNode.CreationTime.Value != fileNode1.CreationTime.Value))
+                {
+                    Test.Error("File node mismatch");
+                }
+
+                if (compareFileAttributes
+                    && fileNode.SMBAttributes.Value != fileNode1.SMBAttributes.Value)
+                {
+                    Test.Error("File node mismatch");
+                }
+            }
+
+            foreach (var subDirNode in dirNode0.DirNodes)
+            {
+                var subDirNode1 = dirNode1.GetDirNode(subDirNode.Name);
+
+                if (null == subDirNode1)
+                {
+                    Test.Error("DirNode mismatch {0}", subDirNode.Name);
+                }
+                else
+                {
+                    CompareSMBProperties(subDirNode, subDirNode1, compareFileAttributes);
+                }
+            }
+        }
+
         public static void CopyLocalDirectory(string sourceDir, string destDir, bool recursive)
         {
             if (!LongPathDirectoryExtension.Exists(destDir))
@@ -2246,7 +2383,20 @@ namespace DMLibTest
             {
                 if (item is CloudFile)
                 {
-                    (item as CloudFile).Delete();
+                    var file = (item as CloudFile);
+                    try
+                    {
+                        file.Delete();
+                    }
+                    catch (StorageException se)
+                    {
+                        if (Helper.IsConflictStorageException(se))
+                        {
+                            file.Properties.NtfsAttributes = CloudFileNtfsAttributes.Normal;
+                            file.SetProperties(null, HelperConst.DefaultFileOptions, null);
+                            file.Delete(options: HelperConst.DefaultFileOptions);
+                        }
+                    }
                 }
 
                 if (item is CloudFileDirectory)
@@ -2307,7 +2457,16 @@ namespace DMLibTest
         public static void DeleteFileDirectory(CloudFileDirectory cloudDirectory)
         {
             CleanupFileDirectory(cloudDirectory);
-            cloudDirectory.Delete();
+            try
+            {
+                cloudDirectory.Delete();
+            }
+            catch (StorageException)
+            {
+                cloudDirectory.Properties.NtfsAttributes = CloudFileNtfsAttributes.Normal;
+                cloudDirectory.SetProperties(HelperConst.DefaultFileOptions);
+                cloudDirectory.Delete();
+            }
         }
 
         /// <summary>

@@ -15,89 +15,24 @@
 
   <ItemGroup>
     <Compile Include="..\..\lib\LongPathFileStream.cs" Link="Framework\LongPathFileStream.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\AccessConditionTest.cs" Link="Cases\AccessConditionTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\AllTransferDirectionTest.cs" Link="Cases\AllTransferDirectionTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\BigFileTest.cs" Link="Cases\BigFileTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\BlockSizeTest.cs" Link="Cases\BlockSizeTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\BVT.cs" Link="Cases\BVT.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\CheckContentMD5Test.cs" Link="Cases\CheckContentMD5Test.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\ChunkedMemoryStreamTests.cs" Link="Cases\ChunkedMemoryStreamTests.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\DelimiterTest.cs" Link="Cases\DelimiterTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\DummyTransferTest.cs" Link="Cases\DummyTransferTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\FollowSymlinkTest.cs" Link="Cases\FollowSymlinkTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\LongFilePathTest.cs" Link="Cases\LongFilePathTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\MetadataTest.cs" Link="Cases\MetadataTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\StreamTest.cs" Link="Cases\StreamTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\OverwriteTest.cs" Link="Cases\OverwriteTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\ProgressHandlerTest.cs" Link="Cases\ProgressHandlerTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\ResumeTest.cs" Link="Cases\ResumeTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\SASTokenVersionTest.cs" Link="Cases\SASTokenVersionTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\SearchPatternTest.cs" Link="Cases\SearchPatternTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\SetAttributesTest.cs" Link="Cases\SetAttributesTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\ShouldTransferTest.cs" Link="Cases\ShouldTransferTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\SnapshotTest.cs" Link="Cases\SnapshotTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\UnsupportedDirectionTest.cs" Link="Cases\UnsupportedDirectionTest.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\AssemblyInitCleanup.cs" Link="Framework\AssemblyInitCleanup.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\BlobDataAdaptorBase.cs" Link="Framework\BlobDataAdaptorBase.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\CloudBlobDataAdaptor.cs" Link="Framework\CloudBlobDataAdaptor.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\CloudFileDataAdaptor.cs" Link="Framework\CloudFileDataAdaptor.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\CloudObjectExtensions.cs" Link="Framework\CloudObjectExtensions.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\CopyWrapper.cs" Link="Framework\CopyWrapper.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\DataAdaptor.cs" Link="Framework\DataAdaptor.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\DMLibDataHelper.cs" Link="Framework\DMLibDataHelper.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\DMLibDataInfo.cs" Link="Framework\DMLibDataInfo.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\DMLibDataPreparedTestBase.cs" Link="Framework\DMLibDataPreparedTestBase.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\DMLibInputHelper.cs" Link="Framework\DMLibInputHelper.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\DMLibTestBase.cs" Link="Framework\DMLibTestBase.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\DMLibWrapper.cs" Link="Framework\DMLibWrapper.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\DownloadWrapper.cs" Link="Framework\DownloadWrapper.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\FileNativeMethodsExtension.cs" Link="Framework\FileNativeMethodsExtension.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\IDataInfo.cs" Link="Framework\IDataInfo.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\LocalDataAdaptor.cs" Link="Framework\LocalDataAdaptor.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\LocalDataAdaptorBase.cs" Link="Framework\LocalDataAdaptorBase.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\LongPathFileStreamExtension.cs" Link="Framework\LongPathFileStreamExtension.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\MultiDirectionTestBase.cs" Link="Framework\MultiDirectionTestBase.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\MultiDirectionTestHelper.cs" Link="Framework\MultiDirectionTestHelper.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\MultiDirectionTestInfo.cs" Link="Framework\MultiDirectionTestInfo.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\ProgressChecker.cs" Link="Framework\ProgressChecker.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\SharedAccessPermissions.cs" Link="Framework\SharedAccessPermissions.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\TestExecutionOptions.cs" Link="Framework\TestExecutionOptions.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\TestResult.cs" Link="Framework\TestResult.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\TransferEventChecker.cs" Link="Framework\TransferEventChecker.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\TransferItem.cs" Link="Framework\TransferItem.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\UploadWrapper.cs" Link="Framework\UploadWrapper.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\URIBlobDataAdaptor.cs" Link="Framework\URIBlobDataAdaptor.cs" />
-    <Compile Include="..\..\test\DMLibTest\Framework\VerificationHelper.cs" Link="Framework\VerificationHelper.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\AccessConditionTest_Generated.cs" Link="Generated\AccessConditionTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\BigFileTest_Generated.cs" Link="Generated\BigFileTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\BlockSizeTest_Generated.cs" Link="Generated\BlockSizeTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\BVT_Generated.cs" Link="Generated\BVT_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\CheckContentMD5Test_Generated.cs" Link="Generated\CheckContentMD5Test_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\DelimiterTest_Generated.cs" Link="Generated\DelimiterTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\FollowSymlinkTest_Generated.cs" Link="Generated\FollowSymlinkTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\LongFilePathTest_Generated.cs" Link="Generated\LongFilePathTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\MetadataTest_Generated.cs" Link="Generated\MetadataTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\OverwriteTest_Generated.cs" Link="Generated\OverwriteTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\ProgressHandlerTest_Generated.cs" Link="Generated\ProgressHandlerTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\ResumeTest_Generated.cs" Link="Generated\ResumeTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\SASTokenVersionTest_Generated.cs" Link="Generated\SASTokenVersionTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\SearchPatternTest_Generated.cs" Link="Generated\SearchPatternTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\SetAttributesTest_Generated.cs" Link="Generated\SetAttributesTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\ShouldTransferTest_Generated.cs" Link="Generated\ShouldTransferTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\SnapshotTest_Generated.cs" Link="Generated\SnapshotTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Generated\UnsupportedDirectionTest_Generated.cs" Link="Generated\UnsupportedDirectionTest_Generated.cs" />
-    <Compile Include="..\..\test\DMLibTest\Util\DMLibTestConstants.cs" Link="Util\DMLibTestConstants.cs" />
-    <Compile Include="..\..\test\DMLibTest\Util\DMLibTestHelper.cs" Link="Util\DMLibTestHelper.cs" />
-    <Compile Include="..\..\test\DMLibTest\Util\DMLibTestStream.cs" Link="Util\DMLibTestStream.cs" />
-    <Compile Include="..\..\test\DMLibTest\Util\Helpers.cs" Link="Util\Helpers.cs" />
-    <Compile Include="..\..\test\DMLibTest\Util\SASGenerator.cs" Link="Util\SASGenerator.cs" />
-    <Compile Include="..\..\test\DMLibTest\Util\TestAccounts.cs" Link="Util\TestAccounts.cs" />
+    <Compile Include="..\..\test\DMLibTest\Cases\*.cs">
+      <Link>Cases\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+    <Compile Include="..\..\test\DMLibTest\Framework\*.cs">
+      <Link>Framework\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+    <Compile Include="..\..\test\DMLibTest\Generated\*.cs">
+      <Link>Generated\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+    <Compile Include="..\..\test\DMLibTest\Util\*.cs">
+      <Link>Util\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
   </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
-    <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Azure.Storage.File" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.1.0" />
+    <PackageReference Include="Microsoft.Azure.Storage.File" Version="11.1.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
@@ -110,14 +45,7 @@
     <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Cases\" />
-    <Folder Include="Framework\" />
-    <Folder Include="Generated\" />
-    <Folder Include="Util\" />
-  </ItemGroup>
-
+  
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>

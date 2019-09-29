@@ -7,6 +7,7 @@
 namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
     using System.IO;
@@ -62,7 +63,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <summary>
         /// Records last Azure file directory created to optimize Azure file directory check.
         /// </summary>
-        private CloudFileDirectory lastAzureFileDirectory = null;
+        private List<CloudFileDirectory> lastAzureFileDirectory = new List<CloudFileDirectory>();
 
 #if !BINARY_SERIALIZATION
         [DataMember]
@@ -101,6 +102,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         [OnDeserialized]
         private void OnDeserializedCallback(StreamingContext context)
         {
+            this.lastAzureFileDirectory = new List<CloudFileDirectory>();
         }
 #endif
 
@@ -281,6 +283,44 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        protected TransferLocation GetDestTransferLocationForEmptyDir(TransferLocation dirLocation, TransferEntry entry)
+        {
+            string destRelativePath = this.nameResolver.ResolveName(entry);
+
+            AzureBlobEntry sourceBlobEntry = entry as AzureBlobEntry;
+
+            switch (dirLocation.Type)
+            {
+                case TransferLocationType.AzureBlobDirectory:
+                    {
+                        return null;
+                    }
+
+                case TransferLocationType.AzureFileDirectory:
+                    {
+                        AzureFileDirectoryLocation fileDirLocation = dirLocation as AzureFileDirectoryLocation;
+                        CloudFileDirectory destDirLocation = fileDirLocation.FileDirectory;
+
+                        if (!string.IsNullOrEmpty(destRelativePath))
+                        {
+                            destDirLocation = destDirLocation.GetDirectoryReference(destRelativePath);
+                        }
+
+                        AzureFileDirectoryLocation retLocation = new AzureFileDirectoryLocation(destDirLocation);
+                        retLocation.FileRequestOptions = fileDirLocation.FileRequestOptions;
+                        return retLocation;
+                    }
+
+                case TransferLocationType.LocalDirectory:
+                    {
+                        return null;
+                    }
+
+                default:
+                    throw new ArgumentException("TransferLocationType");
+            }
+        }
+
         protected TransferLocation GetDestinationTransferLocation(TransferLocation dirLocation, TransferEntry entry)
         {
             string destRelativePath = this.nameResolver.ResolveName(entry);
@@ -399,6 +439,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             TransferLocation destLocation = GetDestinationTransferLocation(this.Destination, entry);
             var transferMethod = IsDummyCopy(entry) ? TransferMethod.DummyCopy : this.TransferMethod;
             SingleObjectTransfer transfer = new SingleObjectTransfer(sourceLocation, destLocation, transferMethod);
+            transfer.PreserveSMBAttributes = this.PreserveSMBAttributes;
             transfer.Context = this.Context;
             return transfer;
         }
@@ -439,6 +480,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             DirectoryTransfer.UpdateCredentials(this.Source, transfer.Source);
             DirectoryTransfer.UpdateCredentials(this.Destination, transfer.Destination);
+            transfer.PreserveSMBAttributes = this.PreserveSMBAttributes;
         }
 
         private static void UpdateCredentials(TransferLocation dirLocation, TransferLocation subLocation)
@@ -509,38 +551,56 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private void CreateParentDirectoryIfNotExists(CloudFile file)
         {
-            FileRequestOptions fileRequestOptions = Transfer_RequestOptions.DefaultFileRequestOptions;
             CloudFileDirectory parent = file.Parent;
-            if (!this.IsLastDirEqualsOrSubDirOf(parent))
-            {
-                if (this.IsForceOverwrite || !parent.ExistsAsync(fileRequestOptions, null).Result)
-                {
-                    Utils.CreateCloudFileDirectoryRecursively(parent);
-                }
-
-                this.lastAzureFileDirectory = parent;
-            }
+            CreateDirectoryIfNotExist(parent);
         }
 
-        private bool IsLastDirEqualsOrSubDirOf(CloudFileDirectory dir)
+        public void CreateDirectoryIfNotExist(CloudFileDirectory directory)
         {
-            if (null == dir)
-            {
-                // Both null, equals
-                return null == this.lastAzureFileDirectory;
-            }
-            else if (null != this.lastAzureFileDirectory)
-            {
-                string absoluteUri1 = AppendSlash(this.lastAzureFileDirectory.SnapshotQualifiedUri.AbsoluteUri);
-                string absoluteUri2 = AppendSlash(dir.SnapshotQualifiedUri.AbsoluteUri);
+            int index = 0;
+            CreateDirectoryRecursive(directory, ref index);
+        }
 
-                if (absoluteUri1.StartsWith(absoluteUri2, StringComparison.Ordinal))
+        private void CreateDirectoryRecursive(CloudFileDirectory directory, ref int index)
+        {
+            if (null == directory.Parent)
+            {
+                return;
+            }
+            else
+            {
+                CreateDirectoryRecursive(directory.Parent, ref index);
+            }
+
+            if (index < this.lastAzureFileDirectory.Count)
+            {
+                if (!string.Equals(this.lastAzureFileDirectory[index].Name, directory.Name, StringComparison.Ordinal))
                 {
-                    return true;
+                    this.lastAzureFileDirectory.RemoveRange(index, this.lastAzureFileDirectory.Count - index);
+                }
+                else
+                {
+                    ++index;
+                    return;
                 }
             }
 
-            return false;
+            try
+            {
+                directory.Create(Transfer_RequestOptions.DefaultFileRequestOptions);
+            }
+            catch (StorageException ex)
+            {
+                if ((null == ex.RequestInformation)
+                    || ((int)HttpStatusCode.Conflict != ex.RequestInformation.HttpStatusCode)
+                    || (!string.Equals("ResourceAlreadyExists", ex.RequestInformation.ErrorCode)))
+                {
+                    throw;
+                }
+            }
+
+            this.lastAzureFileDirectory.Add(directory);
+            ++index;
         }
 
         private static string AppendSlash(string input)

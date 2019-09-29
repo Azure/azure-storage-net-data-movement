@@ -232,6 +232,15 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 this.transferEnumerator = fileEnumerator;
             }
+            else if (this.source.Type == TransferLocationType.LocalDirectory)
+            {
+                var fileEnumerator = new FileHierarchyEnumerator(this.source as DirectoryLocation, this.baseDirectoryTransfer.Source.Instance as string, this.baseDirectoryTransfer.FollowSymblink);
+                fileEnumerator.EnumerateContinuationToken = this.enumerateContinuationToken.ListContinuationToken;
+                fileEnumerator.SearchPattern = this.baseDirectoryTransfer.SearchPattern;
+                fileEnumerator.Recursive = this.baseDirectoryTransfer.Recursive;
+
+                this.transferEnumerator = fileEnumerator;
+            }
             else
             {
                 throw new NotSupportedException();
@@ -240,12 +249,83 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private void CreateDestinationDirectory(CancellationToken cancellationToken)
         {
+            if (this.dest.Type == TransferLocationType.AzureBlobDirectory)
+            {
+                // No physical destination directory needed.
+                return;
+            }
+
+            if ((this.dest.Type == TransferLocationType.AzureFileDirectory)
+                && (null == (this.dest as AzureFileDirectoryLocation).FileDirectory.Parent))
+            {
+                //Root Azure File directory, no need to create.
+                return;
+            }
+
+            CloudFileNtfsAttributes? fileAttributes = null;
+            DateTimeOffset? creationTime = null;
+            DateTimeOffset? lastWriteTime = null;
+            IDictionary<string, string> metadata = null;
+
+            if (this.source.Type == TransferLocationType.LocalDirectory)
+            {
+                if (this.baseDirectoryTransfer.PreserveSMBAttributes)
+                {
+                    var sourceLocalDirLocation = this.source as DirectoryLocation;
+
+                    FileAttributes? localFileAttributes = null;
+
+                    string longDirectoryPath = sourceLocalDirLocation.DirectoryPath;
+
+                    if (Interop.CrossPlatformHelpers.IsWindows)
+                    {
+                        longDirectoryPath = LongPath.ToUncPath(longDirectoryPath);
+                    }
+
+#if DOTNET5_4
+                    LongPathFile.GetFileProperties(longDirectoryPath, out creationTime, out lastWriteTime, out localFileAttributes, true);
+#else
+                    LongPathFile.GetFileProperties(longDirectoryPath, out creationTime, out lastWriteTime, out localFileAttributes);
+#endif
+                    fileAttributes = Utils.LocalAttributesToAzureFileNtfsAttributes(localFileAttributes.Value);
+                }
+            }
+            else if (this.source.Type == TransferLocationType.AzureFileDirectory)
+            {
+                if (this.baseDirectoryTransfer.PreserveSMBAttributes || this.dest.Type == TransferLocationType.AzureFileDirectory)
+                {
+                    AzureFileDirectoryLocation sourceFileDirLocation = this.source as AzureFileDirectoryLocation;
+
+                    var sourceFileDirectory = sourceFileDirLocation.FileDirectory;
+                    sourceFileDirectory.FetchAttributesAsync(
+                        null,
+                        Utils.GenerateFileRequestOptions(sourceFileDirLocation.FileRequestOptions),
+                        Utils.GenerateOperationContext(this.baseDirectoryTransfer.Context),
+                        cancellationToken).GetAwaiter().GetResult();
+
+                    if (this.baseDirectoryTransfer.PreserveSMBAttributes)
+                    {
+                        fileAttributes = sourceFileDirectory.Properties.NtfsAttributes;
+                        creationTime = sourceFileDirectory.Properties.CreationTime;
+                        lastWriteTime = sourceFileDirectory.Properties.LastWriteTime;
+                    }
+
+                    metadata = sourceFileDirectory.Metadata;
+                }
+            }
+
             if (this.dest.Type == TransferLocationType.LocalDirectory)
             {
                 var localFileDestLocation = this.dest as DirectoryLocation;
                 if (!LongPathDirectory.Exists(localFileDestLocation.DirectoryPath))
                 {
                     LongPathDirectory.CreateDirectory(localFileDestLocation.DirectoryPath);
+                }
+
+                if (fileAttributes.HasValue)
+                {
+                    LongPathFile.SetFileTime(localFileDestLocation.DirectoryPath, creationTime.Value, lastWriteTime.Value, true);
+                    LongPathFile.SetAttributes(localFileDestLocation.DirectoryPath, Utils.AzureFileNtfsAttributesToLocalAttributes(fileAttributes.Value));
                 }
             }
             else if (this.dest.Type == TransferLocationType.AzureFileDirectory)
@@ -261,26 +341,63 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 try
                 {
-                    CreateCloudFileDestinationDirectory(fileDirectory, cancellationToken);
+                    CreateCloudFileDestinationDirectory(fileDirectory, 
+                        fileAttributes,
+                        creationTime,
+                        lastWriteTime,
+                        metadata,
+                        cancellationToken);
                 }
                 catch (StorageException storageException)
                 {
-                    throw new TransferException(TransferErrorCode.FailToVadlidateDestination,
-                        string.Format(CultureInfo.CurrentCulture,
-                            Resources.FailedToValidateDestinationException,
-                            storageException.ToErrorDetail()),
-                        storageException);
+                    if ((null != storageException.InnerException)
+                        && (storageException.InnerException is OperationCanceledException))
+                    {
+                        throw storageException.InnerException;
+                    }
+                    else
+                    {
+                        throw new TransferException(TransferErrorCode.FailToVadlidateDestination,
+                            string.Format(CultureInfo.CurrentCulture,
+                                Resources.FailedToValidateDestinationException,
+                                storageException.ToErrorDetail()),
+                            storageException);
+                    }
                 }
             }
         }
 
-        private static void CreateCloudFileDestinationDirectory(CloudFileDirectory fileDirectory, CancellationToken cancellationToken)
+        private static void CreateCloudFileDestinationDirectory(CloudFileDirectory fileDirectory, 
+            CloudFileNtfsAttributes? fileAttributes, 
+            DateTimeOffset? creationTime,
+            DateTimeOffset? lastWriteTime,
+            IDictionary<string, string> metadata,
+            CancellationToken cancellationToken)
         {
             bool parentNotExist = false;
+
+            if (fileAttributes.HasValue)
+            {
+                fileDirectory.Properties.NtfsAttributes = fileAttributes.Value;
+                fileDirectory.Properties.CreationTime = creationTime;
+                fileDirectory.Properties.LastWriteTime = lastWriteTime;
+            }
+
+            if (null != metadata)
+            {
+                fileDirectory.Metadata.Clear();
+                foreach (var keyValuePair in metadata)
+                {
+                    fileDirectory.Metadata.Add(keyValuePair);
+                }
+            }
+
+            bool needToSetProperties = false;
 
             try
             {
                 fileDirectory.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
+                return;
             }
             catch (StorageException ex)
             {
@@ -290,7 +407,11 @@ namespace Microsoft.Azure.Storage.DataMovement
                     {
                         parentNotExist = true;
                     }
-                    else if (!string.Equals("ResourceAlreadyExists", ex.RequestInformation.ErrorCode))
+                    else if (string.Equals("ResourceAlreadyExists", ex.RequestInformation.ErrorCode))
+                    {
+                        needToSetProperties = true;
+                    }
+                    else
                     {
                         throw;
                     }
@@ -303,7 +424,75 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (parentNotExist)
             {
-                Utils.CreateCloudFileDirectoryRecursively(fileDirectory);
+                Utils.CreateCloudFileDirectoryRecursively(fileDirectory.Parent);
+                try
+                {
+                    fileDirectory.CreateAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
+                }
+                catch (StorageException ex)
+                {
+                    if (null != ex.RequestInformation)
+                    {
+                        if (string.Equals("ResourceAlreadyExists", ex.RequestInformation.ErrorCode))
+                        {
+                            needToSetProperties = true;
+                        }
+                        else
+                        {
+                            throw;
+                        }
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            if (needToSetProperties)
+            {
+                SetAzureFileDirectoryAttributes(fileDirectory, fileAttributes, creationTime, lastWriteTime, metadata, cancellationToken);
+            }
+        }
+
+        private static void SetAzureFileDirectoryAttributes(
+            CloudFileDirectory fileDirectory,
+            CloudFileNtfsAttributes? fileAttributes,
+            DateTimeOffset? creationTime,
+            DateTimeOffset? lastWriteTime,
+            IDictionary<string, string> metadata,
+            CancellationToken cancellationToken)
+        {
+            if (fileAttributes.HasValue || null != metadata)
+            {
+                fileDirectory.FetchAttributesAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
+
+                if (fileAttributes.HasValue)
+                {
+                    if (fileDirectory.Properties.NtfsAttributes != fileAttributes.Value
+                        || fileDirectory.Properties.CreationTime != creationTime.Value
+                        || fileDirectory.Properties.LastWriteTime != lastWriteTime.Value)
+                    {
+                        fileDirectory.Properties.NtfsAttributes = fileAttributes.Value;
+                        fileDirectory.Properties.CreationTime = creationTime;
+                        fileDirectory.Properties.LastWriteTime = lastWriteTime;
+                        fileDirectory.SetPropertiesAsync(Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
+                    }
+                }
+
+                if (null != metadata)
+                {
+                    if (!metadata.DictionaryEquals(fileDirectory.Metadata))
+                    {
+                        fileDirectory.Metadata.Clear();
+                        foreach (var keyValuePair in metadata)
+                        {
+                            fileDirectory.Metadata.Add(keyValuePair);
+                        }
+
+                        fileDirectory.SetMetadataAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
+                    }
+                }
             }
         }
     }

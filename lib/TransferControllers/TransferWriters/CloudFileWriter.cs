@@ -124,7 +124,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
 
             var originalMetadata = new Dictionary<string, string>(this.cloudFile.Metadata);
-            Utils.SetAttributes(this.cloudFile, this.SharedTransferData.Attributes);
+            Utils.SetAttributes(this.cloudFile, this.SharedTransferData.Attributes, this.TransferJob.Transfer.PreserveSMBAttributes);
             await this.Controller.SetCustomAttributesAsync(this.cloudFile).ConfigureAwait(false);
 
             await this.cloudFile.SetPropertiesAsync(
