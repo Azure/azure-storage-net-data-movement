@@ -15,6 +15,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Threading.Tasks;
     using Microsoft.Azure.Storage.Blob;
     using Microsoft.Azure.Storage.DataMovement.TransferControllers;
+    using Microsoft.Azure.Storage.File;
 
     /// <summary>
     /// TransferScheduler class, used for  transferring Microsoft Azure
@@ -543,26 +544,37 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             CloudBlob destinationBlob = transferJob.Destination.Instance as CloudBlob;
 
-            if (null == destinationBlob)
+            if (null != destinationBlob)
             {
-                throw new TransferException(Resources.ServiceSideSyncCopyNotSupportException);
-            }
-
-            if (BlobType.PageBlob == destinationBlob.BlobType)
-            {
-                return new PageBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
-            }
-            else if (BlobType.AppendBlob == destinationBlob.BlobType)
-            {
-                return new AppendBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
-            }
-            else if (BlobType.BlockBlob == destinationBlob.BlobType)
-            {
-                return new BlockBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+                if (BlobType.PageBlob == destinationBlob.BlobType)
+                {
+                    return new PageBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+                }
+                else if (BlobType.AppendBlob == destinationBlob.BlobType)
+                {
+                    return new AppendBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+                }
+                else if (BlobType.BlockBlob == destinationBlob.BlobType)
+                {
+                    return new BlockBlobServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+                }
+                else
+                {
+                    throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.NotSupportedBlobType, destinationBlob.BlobType));
+                }
             }
             else
             {
-                throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.NotSupportedBlobType, destinationBlob.BlobType));
+                CloudFile destinationFile = transferJob.Destination.Instance as CloudFile;
+
+                if (null != destinationFile)
+                {
+                    return new FileServiceSideSyncCopyController(transferScheduler, transferJob, cancellationToken);
+                }
+                else
+                {
+                    throw new TransferException(Resources.ServiceSideSyncCopyNotSupportException);
+                }
             }
         }
 

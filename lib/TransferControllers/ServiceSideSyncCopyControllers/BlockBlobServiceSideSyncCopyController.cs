@@ -16,7 +16,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Storage.Blob;
-    
+
     /// <summary>
     /// Transfer controller to copy to block blob with PutBlockFromURL.
     /// </summary>
@@ -24,6 +24,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     {
         private string BlockIdPrefix;
 
+        private AzureBlobLocation destLocation;
         private CloudBlockBlob destBlockBlob;
         private long blockSize;
 
@@ -45,13 +46,29 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             CancellationToken userCancellationToken)
             : base(scheduler, transferJob, userCancellationToken)
         {
+            TransferLocation sourceLocation = transferJob.Source;
+            if (sourceLocation.Type == TransferLocationType.AzureBlob)
+            {
+                var blobLocation = sourceLocation as AzureBlobLocation;
+                this.SourceHandler = new ServiceSideSyncCopySource.BlobSourceHandler(blobLocation, transferJob);
+            }
+            else if (sourceLocation.Type == TransferLocationType.AzureFile)
+            {
+                this.SourceHandler = new ServiceSideSyncCopySource.FileSourceHandler(sourceLocation as AzureFileLocation, transferJob);
+            }
+            else
+            {
+                throw new ArgumentException("transferJob");
+            }
+
+            this.destLocation = transferJob.Destination as AzureBlobLocation;
             this.destBlockBlob = this.destLocation.Blob as CloudBlockBlob;
+            this.DestHandler = new ServiceSideSyncCopyDest.BlockBlobDestHandler(this.destLocation, transferJob);
             this.hasWork = true;
         }
 
         protected override void PostFetchSourceAttributes()
         {
-
             if (this.IsForceOverwrite && null == this.destLocation.AccessCondition)
             {
                 PrepareForCopy();
@@ -74,7 +91,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     this.destLocation.AccessCondition,
                     this.destLocation.CheckedAccessCondition);
 
-                await this.destBlob.FetchAttributesAsync(
+                await this.destBlockBlob.FetchAttributesAsync(
                     accessCondition,
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
@@ -128,12 +145,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     {
                         startOffset = checkpoint.EntryTransferOffset;
 
-                        if (checkpoint.EntryTransferOffset < this.totalLength)
+                        if (checkpoint.EntryTransferOffset < this.SourceHandler.TotalLength)
                         {
                             checkpoint.TransferWindow.Add(startOffset);
                             checkpoint.EntryTransferOffset = Math.Min(
                                 checkpoint.EntryTransferOffset + this.blockSize,
-                                this.totalLength);
+                                this.SourceHandler.TotalLength);
 
                             canUpload = true;
                         }
@@ -146,7 +163,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            hasWork = ((null != this.lastTransferWindow) || (this.TransferJob.CheckPoint.EntryTransferOffset < this.totalLength));
+            hasWork = ((null != this.lastTransferWindow) || (this.TransferJob.CheckPoint.EntryTransferOffset < this.SourceHandler.TotalLength));
             string blockId = this.GetBlockIdByIndex((int)(startOffset / this.blockSize));
 
             if (needGenerateBlockId)
@@ -156,8 +173,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             await Task.Yield();
 
-            Uri sourceUri = this.sourceBlob.GenerateCopySourceUri();
-            long length = Math.Min(this.totalLength - startOffset, this.blockSize);
+            Uri sourceUri = this.SourceHandler.GetCopySourceUri();
+            long length = Math.Min(this.SourceHandler.TotalLength - startOffset, this.blockSize);
 
             AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true);
 
@@ -165,7 +182,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             operationContext.UserHeaders = new Dictionary<string, string>(capacity: 1);
             operationContext.UserHeaders.Add(
                 Shared.Protocol.Constants.HeaderConstants.SourceIfMatchHeader,
-                this.sourceLocation.ETag);
+                this.SourceHandler.ETag);
 
             await this.destBlockBlob.PutBlockAsync(
                 blockId,
@@ -202,22 +219,22 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.hasWork = false;
 
-            var sourceProperties = this.sourceBlob.Properties;
+            Attributes sourceAttributes = this.SourceHandler.SourceAttributes;
 
-            Utils.SetAttributes(this.destBlob,
+            Utils.SetAttributes(this.destBlockBlob,
                 new Attributes()
                 {
-                    CacheControl = sourceProperties.CacheControl,
-                    ContentDisposition = sourceProperties.ContentDisposition,
-                    ContentEncoding = sourceProperties.ContentEncoding,
-                    ContentLanguage = sourceProperties.ContentLanguage,
-                    ContentMD5 = sourceProperties.ContentMD5,
-                    ContentType = sourceProperties.ContentType,
-                    Metadata = this.sourceBlob.Metadata,
+                    CacheControl = sourceAttributes.CacheControl,
+                    ContentDisposition = sourceAttributes.ContentDisposition,
+                    ContentEncoding = sourceAttributes.ContentEncoding,
+                    ContentLanguage = sourceAttributes.ContentLanguage,
+                    ContentMD5 = sourceAttributes.ContentMD5,
+                    ContentType = sourceAttributes.ContentType,
+                    Metadata = sourceAttributes.Metadata,
                     OverWriteAll = true
                 });
 
-            await this.SetCustomAttributesAsync(this.destBlob);
+            await this.SetCustomAttributesAsync(this.destBlockBlob);
 
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
@@ -233,10 +250,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             // Content-Type, REST API SetBlobProperties must be called explicitly:
             // 1. The attributes are inherited from others and Content-Type is null or empty.
             // 2. User specifies Content-Type to string.Empty while uploading.
-            if ((this.gotDestinationAttributes && string.IsNullOrEmpty(this.sourceAttributes.ContentType))
-                || (!this.gotDestinationAttributes && this.sourceAttributes.ContentType == string.Empty))
+            if ((this.gotDestinationAttributes && string.IsNullOrEmpty(this.SourceHandler.SourceAttributes.ContentType))
+                || (!this.gotDestinationAttributes && this.SourceHandler.SourceAttributes.ContentType == string.Empty))
             {
-                await this.destBlob.SetPropertiesAsync(
+                await this.destBlockBlob.SetPropertiesAsync(
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
                     blobRequestOptions,
                     operationContext,
@@ -287,8 +304,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 // If destination file exists, query user whether to overwrite it.
                 await this.CheckOverwriteAsync(
                     destExist,
-                    this.sourceBlob.Uri.ToString(),
-                    this.destBlob.Uri.ToString());
+                    this.SourceHandler.Uri.ToString(),
+                    this.destBlockBlob.Uri.ToString());
             }
 
             this.gotDestinationAttributes = true;
@@ -300,7 +317,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private void PrepareForCopy()
         {
-            var calculatedBlockSize =  ((long)Math.Ceiling((double)this.totalLength / 50000 / Constants.DefaultTransferChunkSize)) * Constants.DefaultTransferChunkSize;
+            var calculatedBlockSize =  ((long)Math.Ceiling((double)this.SourceHandler.TotalLength / 50000 / Constants.DefaultTransferChunkSize)) * Constants.DefaultTransferChunkSize;
             this.blockSize = Math.Max(TransferManager.Configurations.BlockSize, calculatedBlockSize);
 
             SingleObjectCheckpoint checkpoint = this.TransferJob.CheckPoint;
@@ -313,7 +330,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.blockIds = new SortedDictionary<int, string>();
             this.BlockIdPrefix = GenerateBlockIdPrefix();
             this.InitializeBlockIds();
-            int blockCount = null == this.lastTransferWindow ? 0 : this.lastTransferWindow.Count + (int)Math.Ceiling((double)(totalLength - checkpoint.EntryTransferOffset) / this.blockSize);
+            int blockCount = null == this.lastTransferWindow ? 0 : this.lastTransferWindow.Count + (int)Math.Ceiling((double)(this.SourceHandler.TotalLength - checkpoint.EntryTransferOffset) / this.blockSize);
 
             if (0 == blockCount)
             {
@@ -365,11 +382,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     this.countdownEvent = null;
                 }
             }
-        }
-
-        protected override Task CreateDestinationAsync(AccessCondition accessCondition, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
         }
 
         protected override Task DoPreCopyAsync()
@@ -427,7 +439,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             string blobNameHash;
             using (var md5 = new MD5Wrapper())
             {
-                var blobNameBytes = Encoding.UTF8.GetBytes(this.destBlob.Name);
+                var blobNameBytes = Encoding.UTF8.GetBytes(this.destBlockBlob.Name);
                 md5.UpdateHash(blobNameBytes, 0, blobNameBytes.Length);
                 blobNameHash = md5.ComputeHash();
             }

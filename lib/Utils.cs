@@ -56,6 +56,76 @@ namespace Microsoft.Azure.Storage.DataMovement
                 Resources.ReadableSizeFormatExaBytes
             };
 
+        public class Range
+        {
+            public long StartOffset
+            {
+                get;
+                set;
+            }
+
+            public long EndOffset
+            {
+                get;
+                set;
+            }
+
+            public bool HasData
+            {
+                get;
+                set;
+            }
+
+            /// <summary>
+            /// Split a Range into multiple Range objects, each at most maxRangeSize long.
+            /// </summary>
+            /// <param name="maxRangeSize">Maximum length for each piece.</param>
+            /// <returns>List of Range objects.</returns>
+            public IEnumerable<Range> SplitRanges(long maxRangeSize)
+            {
+                long startOffset = this.StartOffset;
+                long rangeSize = this.EndOffset - this.StartOffset + 1;
+
+                do
+                {
+                    long singleRangeSize = Math.Min(rangeSize, maxRangeSize);
+                    Range subRange = new Range
+                    {
+                        StartOffset = startOffset,
+                        EndOffset = startOffset + singleRangeSize - 1,
+                        HasData = this.HasData,
+                    };
+
+                    startOffset += singleRangeSize;
+                    rangeSize -= singleRangeSize;
+
+                    yield return subRange;
+                }
+                while (rangeSize > 0);
+            }
+        }
+
+        public class RangesSpan
+        {
+            public long StartOffset
+            {
+                get;
+                set;
+            }
+
+            public long EndOffset
+            {
+                get;
+                set;
+            }
+
+            public List<Range> Ranges
+            {
+                get;
+                set;
+            }
+        }
+
         /// <summary>
         /// Append snapshot time to a file name.
         /// </summary>

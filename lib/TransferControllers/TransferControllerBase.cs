@@ -430,8 +430,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     this.TransferJob.Overwrite = true;
                 }
             }
-
-            this.TransferJob.Transfer.UpdateJournal();
+            else
+            {
+                this.TransferJob.Transfer.UpdateJournal();
+            }
 
             if (exist && !this.TransferJob.Overwrite.Value)
             {

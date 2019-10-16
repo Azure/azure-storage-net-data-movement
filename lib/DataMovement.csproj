@@ -121,10 +121,23 @@
     <Compile Include="TransferControllers\AsyncCopyControllers\FileAsyncCopyController.cs" />
     <Compile Include="TransferControllers\AsyncCopyControllers\AsyncCopyController.cs" />
     <Compile Include="TransferControllers\DummyTransferController.cs" />
-    <Compile Include="TransferControllers\ServerSideSyncCopyControllers\AppendBlobServiceSideSyncCopyController.cs" />
-    <Compile Include="TransferControllers\ServerSideSyncCopyControllers\BlockBlobServiceSideSyncCopyController.cs" />
-    <Compile Include="TransferControllers\ServerSideSyncCopyControllers\PageBlobServiceSideSyncCopyController.cs" />
-    <Compile Include="TransferControllers\ServerSideSyncCopyControllers\ServiceSideSyncCopyController.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\AppendBlobServiceSideSyncCopyController.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\BlockBlobServiceSideSyncCopyController.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\FileServiceSideSyncCopyController.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\PageBlobServiceSideSyncCopyController.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\RangeBasedServiceSideSyncCopy.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopyDest\AppendBlobDestHandler.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopyDest\BlobDestHandler.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopyDest\BlockBlobDestHandler.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopyDest\IDestHandler.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopyDest\FileDestHandler.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopyDest\PageBlobDestHandler.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopySource\BlobSourceHandler.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopyController.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopySource\FileSourceHandler.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopySource\PageBlobSourceHandler.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopySource\IRangeBasedSourceHandler.cs" />
+    <Compile Include="TransferControllers\ServiceSideSyncCopyControllers\ServiceSideSyncCopySource\ISourceHandler.cs" />
     <Compile Include="TransferControllers\TransferReaders\CloudFileReader.cs" />
     <Compile Include="TransferControllers\TransferReaders\PageBlobReader.cs" />
     <Compile Include="TransferControllers\TransferReaders\RangeBasedReader.cs" />
@@ -237,6 +250,7 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
