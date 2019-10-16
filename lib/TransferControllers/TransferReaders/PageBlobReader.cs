@@ -71,13 +71,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.SharedTransferData.TotalLength = this.pageBlob.Properties.Length;
         }
 
-        protected override async Task<List<Range>> DoGetRangesAsync(RangesSpan rangesSpan)
+        protected override async Task<List<Utils.Range>> DoGetRangesAsync(Utils.RangesSpan rangesSpan)
         {
             AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
                 this.sourceLocation.Blob.Properties.ETag,
                 this.sourceLocation.AccessCondition);
 
-            List<Range> rangeList = new List<Range>();
+            List<Utils.Range> rangeList = new List<Utils.Range>();
 
             foreach (var pageRange in await this.pageBlob.GetPageRangesAsync(
                     rangesSpan.StartOffset,
@@ -87,7 +87,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
                     this.CancellationToken))
             {
-                rangeList.Add(new Range() 
+                rangeList.Add(new Utils.Range() 
                 {
                     StartOffset = pageRange.StartOffset,
                     EndOffset = pageRange.EndOffset,

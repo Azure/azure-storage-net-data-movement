@@ -27,8 +27,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         private CountdownEvent getRangesCountDownEvent;
         private CountdownEvent toDownloadItemsCountdownEvent;
         private int getRangesSpanIndex = 0;
-        private List<RangesSpan> rangesSpanList;
-        private List<Range> rangeList;
+        private List<Utils.RangesSpan> rangesSpanList;
+        private List<Utils.Range> rangeList;
         private int nextDownloadIndex = 0;
         private long lastTransferOffset;
         private TransferDownloadBuffer currentDownloadBuffer = null;
@@ -200,12 +200,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.hasWork = spanIndex < (this.rangesSpanList.Count - 1);
 
-            RangesSpan rangesSpan = this.rangesSpanList[spanIndex];
+            Utils.RangesSpan rangesSpan = this.rangesSpanList[spanIndex];
 
             rangesSpan.Ranges = await this.DoGetRangesAsync(rangesSpan);
 
-            List<Range> ranges = new List<Range>();
-            Range currentRange = null;
+            List<Utils.Range> ranges = new List<Utils.Range>();
+            Utils.Range currentRange = null;
             long currentStartOffset = rangesSpan.StartOffset;
 
             foreach (var range in rangesSpan.Ranges)
@@ -217,7 +217,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     // merge it to the adjacent data range.
                     if (null == currentRange)
                     {
-                        currentRange = new Range()
+                        currentRange = new Utils.Range()
                         {
                             StartOffset = currentStartOffset,
                             EndOffset = range.EndOffset,
@@ -238,7 +238,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         ranges.Add(currentRange);
                     }
 
-                    currentRange = new Range
+                    currentRange = new Utils.Range
                     {
                         StartOffset = range.StartOffset,
                         EndOffset = range.EndOffset,
@@ -281,7 +281,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             if (this.nextDownloadIndex < this.rangeList.Count)
             {
-                Range rangeData = this.rangeList[this.nextDownloadIndex];
+                Utils.Range rangeData = this.rangeList[this.nextDownloadIndex];
 
                 int blockSize = this.SharedTransferData.BlockSize;
                 long blockStartOffset = (rangeData.StartOffset / blockSize) * blockSize;
@@ -458,15 +458,15 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         private void PrepareToGetRanges()
         {
             this.getRangesSpanIndex = -1;
-            this.rangesSpanList = new List<RangesSpan>();
-            this.rangeList = new List<Range>();
+            this.rangesSpanList = new List<Utils.RangesSpan>();
+            this.rangeList = new List<Utils.Range>();
 
             this.nextDownloadIndex = 0;
 
             SingleObjectCheckpoint checkpoint = this.transferJob.CheckPoint;
             int blockSize = this.SharedTransferData.BlockSize;
 
-            RangesSpan rangesSpan = null;
+            Utils.RangesSpan rangesSpan = null;
 
             if ((null != checkpoint.TransferWindow)
                 && (checkpoint.TransferWindow.Any()))
@@ -507,7 +507,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                 if (this.transferJob.CheckPoint.TransferWindow.Any())
                 {
-                    rangesSpan = new RangesSpan();
+                    rangesSpan = new Utils.RangesSpan();
                     rangesSpan.StartOffset = checkpoint.TransferWindow[0];
                     rangesSpan.EndOffset = Math.Min(rangesSpan.StartOffset + Constants.PageRangesSpanSize, this.SharedTransferData.TotalLength) - 1;
 
@@ -517,7 +517,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         {
                             long lastEndOffset = rangesSpan.EndOffset;
                             this.rangesSpanList.Add(rangesSpan);
-                            rangesSpan = new RangesSpan();
+                            rangesSpan = new Utils.RangesSpan();
                             rangesSpan.StartOffset = checkpoint.TransferWindow[i] > lastEndOffset ? checkpoint.TransferWindow[i] : lastEndOffset + 1;
                             rangesSpan.EndOffset = Math.Min(rangesSpan.StartOffset + Constants.PageRangesSpanSize, this.SharedTransferData.TotalLength) - 1;
                         }
@@ -535,7 +535,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             while (offset < this.SharedTransferData.TotalLength)
             {
-                rangesSpan = new RangesSpan()
+                rangesSpan = new Utils.RangesSpan()
                 {
                     StartOffset = offset,
                     EndOffset = Math.Min(offset + Constants.PageRangesSpanSize, this.SharedTransferData.TotalLength) - 1
@@ -571,13 +571,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             long currentEndOffset = -1;
 
             // 1st RangesSpan (148MB)
-            IEnumerator<RangesSpan> enumerator = this.rangesSpanList.GetEnumerator();
+            IEnumerator<Utils.RangesSpan> enumerator = this.rangesSpanList.GetEnumerator();
             bool hasValue = enumerator.MoveNext();
             bool reachLastTransferOffset = false;
             int lastTransferWindowIndex = 0;
 
-            RangesSpan current;
-            RangesSpan next;
+            Utils.RangesSpan current;
+            Utils.RangesSpan next;
 
             if (hasValue)
             {
@@ -612,7 +612,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             // They are connected, merge the range
                             if ((current.Ranges.Last().EndOffset + 1) == next.Ranges.First().StartOffset)
                             {
-                                Range mergedRange = new Range()
+                                Utils.Range mergedRange = new Utils.Range()
                                 {
                                     StartOffset = current.Ranges.Last().StartOffset,
                                     EndOffset = next.Ranges.First().EndOffset,
@@ -636,7 +636,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         }
                     }
 
-                    foreach (Range range in current.Ranges)
+                    foreach (Utils.Range range in current.Ranges)
                     {
                         // Check if we have a gap before the current range.
                         // If so we'll generate a range with HasData = false.
@@ -682,7 +682,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (reachLastTransferOffset)
             {
                 this.rangeList.AddRange(
-                    new Range
+                    new Utils.Range
                     {
                         StartOffset = startOffset,
                         EndOffset = endOffset,
@@ -691,7 +691,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                Range range = new Range()
+                Utils.Range range = new Utils.Range()
                 {
                     StartOffset = -1,
                     HasData = hasData
@@ -716,7 +716,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             {
                                 // Store the previous range and create a new one
                                 this.rangeList.AddRange(range.SplitRanges(Constants.DefaultTransferChunkSize));
-                                range = new Range()
+                                range = new Utils.Range()
                                 {
                                     StartOffset = Math.Max(lastTransferWindowStart, startOffset),
                                     HasData = hasData
@@ -748,7 +748,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                     if (checkpoint.EntryTransferOffset <= endOffset)
                     {
-                        this.rangeList.AddRange(new Range()
+                        this.rangeList.AddRange(new Utils.Range()
                         {
                             StartOffset = checkpoint.EntryTransferOffset,
                             EndOffset = endOffset,
@@ -788,83 +788,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.state = State.Finished;
                 this.hasWork = false;
             }
-        }
-        
-        protected class RangesSpan
-        {
-            public long StartOffset
-            {
-                get;
-                set;
-            }
-
-            public long EndOffset
-            {
-                get;
-                set;
-            }
-
-            public List<Range> Ranges
-            {
-                get;
-                set;
-            }
-        }
-
-        protected class Range
-        {
-            public long StartOffset
-            {
-                get;
-                set;
-            }
-
-            public long EndOffset
-            {
-                get;
-                set;
-            }
-
-            public bool HasData
-            {
-                get;
-                set;
-            }
-
-            /// <summary>
-            /// Split a Range into multiple Range objects, each at most maxRangeSize long.
-            /// </summary>
-            /// <param name="maxRangeSize">Maximum length for each piece.</param>
-            /// <returns>List of Range objects.</returns>
-            public IEnumerable<Range> SplitRanges(long maxRangeSize)
-            {
-                long startOffset = this.StartOffset;
-                long rangeSize = this.EndOffset - this.StartOffset + 1;
-
-                do
-                {
-                    long singleRangeSize = Math.Min(rangeSize, maxRangeSize);
-                    Range subRange = new Range
-                    {
-                        StartOffset = startOffset,
-                        EndOffset = startOffset + singleRangeSize - 1,
-                        HasData = this.HasData,
-                    };
-
-                    startOffset += singleRangeSize;
-                    rangeSize -= singleRangeSize;
-
-                    yield return subRange;
-                }
-                while (rangeSize > 0);
-            }
-        }
+        }       
 
         protected class RangeBasedDownloadState
         {
-            private Range range;
+            private Utils.Range range;
 
-            public Range Range
+            public Utils.Range Range
             {
                 get
                 {
@@ -913,6 +843,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         protected abstract Task DoDownloadRangeToStreamAsync(RangeBasedDownloadState asyncState);
 
-        protected abstract Task<List<Range>> DoGetRangesAsync(RangesSpan rangesSpan);
+        protected abstract Task<List<Utils.Range>> DoGetRangesAsync(Utils.RangesSpan rangesSpan);
     }
 }

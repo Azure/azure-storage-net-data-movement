@@ -106,9 +106,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.SharedTransferData.TotalLength = this.cloudFile.Properties.Length;
         }
 
-        protected override async Task<List<Range>> DoGetRangesAsync(RangesSpan rangesSpan)
+        protected override async Task<List<Utils.Range>> DoGetRangesAsync(Utils.RangesSpan rangesSpan)
         {
-            List<Range> rangeList = new List<Range>();
+            List<Utils.Range> rangeList = new List<Utils.Range>();
 
             foreach (var fileRange in await this.cloudFile.ListRangesAsync(
                      rangesSpan.StartOffset,
@@ -118,7 +118,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                      Utils.GenerateOperationContext(this.Controller.TransferContext),
                      this.CancellationToken))
             {
-                rangeList.Add(new Range()
+                rangeList.Add(new Utils.Range()
                 {
                     StartOffset = fileRange.StartOffset,
                     EndOffset = fileRange.EndOffset,

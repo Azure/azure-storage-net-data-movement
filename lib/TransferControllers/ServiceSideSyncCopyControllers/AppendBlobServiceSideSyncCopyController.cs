@@ -8,9 +8,7 @@
 namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 {
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Globalization;
     using System.IO;
     using System.Net;
     using System.Threading;
@@ -26,6 +24,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         private CloudAppendBlob destAppendBlob = null;
 
         private long blockSize = Constants.DefaultTransferChunkSize;
+        private AzureBlobLocation destLocation;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AppendBlobServiceSideSyncCopyController"/> class.
@@ -39,7 +38,24 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             CancellationToken userCancellationToken)
             : base(scheduler, transferJob, userCancellationToken)
         {
+            TransferLocation sourceLocation = transferJob.Source;
+            if (sourceLocation.Type == TransferLocationType.AzureBlob)
+            {
+                var blobLocation = sourceLocation as AzureBlobLocation;
+                this.SourceHandler = new ServiceSideSyncCopySource.BlobSourceHandler(blobLocation, transferJob);
+            }
+            else if (sourceLocation.Type == TransferLocationType.AzureFile)
+            {
+                this.SourceHandler = new ServiceSideSyncCopySource.FileSourceHandler(sourceLocation as AzureFileLocation, transferJob);
+            }
+            else
+            {
+                throw new ArgumentException("transferJob");
+            }
+
+            this.destLocation = transferJob.Destination as AzureBlobLocation;
             this.destAppendBlob = this.destLocation.Blob as CloudAppendBlob;
+            this.DestHandler = new ServiceSideSyncCopyDest.AppendBlobDestHandler(this.destLocation, transferJob);
             this.hasWork = true;
         }
 
@@ -51,7 +67,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                if (this.TransferJob.CheckPoint.EntryTransferOffset == this.totalLength)
+                if (this.TransferJob.CheckPoint.EntryTransferOffset == this.SourceHandler.TotalLength)
                 {
                     this.state = State.Commit;
                 }
@@ -69,7 +85,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
             await this.CheckAndCreateDestinationAsync();
 
-            if (this.TransferJob.CheckPoint.EntryTransferOffset == this.totalLength)
+            if (this.TransferJob.CheckPoint.EntryTransferOffset == this.SourceHandler.TotalLength)
             {
                 this.state = State.Commit;
             }
@@ -87,12 +103,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             await Task.Yield();
 
-            long length = Math.Min(this.blockSize, this.totalLength - startOffset);
+            long length = Math.Min(this.blockSize, this.SourceHandler.TotalLength - startOffset);
 
-            Uri sourceUri = this.sourceBlob.GenerateCopySourceUri();
+            Uri sourceUri = this.SourceHandler.GetCopySourceUri();
 
+            // TODO: SourceHandler AccessCondition
             AccessCondition sourceAccessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                this.sourceLocation.ETag, this.sourceLocation.AccessCondition, true);
+                this.SourceHandler.ETag, this.SourceHandler.AccessCondition, true);
 
             AccessCondition destAccessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true) ?? new AccessCondition();
             destAccessCondition.IfAppendPositionEqual = startOffset;
@@ -133,8 +150,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 throw new InvalidOperationException(Resources.DestinationChangedException, catchedStorageException);
             }
 
-            this.sourceLocation.CheckedAccessCondition = true;
-
             this.UpdateProgress(() =>
             {
                 this.TransferJob.CheckPoint.EntryTransferOffset += length;
@@ -142,20 +157,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.UpdateProgressAddBytesTransferred(length);
             });
 
-            if (this.TransferJob.CheckPoint.EntryTransferOffset == this.totalLength)
+            if (this.TransferJob.CheckPoint.EntryTransferOffset == this.SourceHandler.TotalLength)
             {
                 this.state = State.Commit;
             }
             this.hasWork = true;
-        }
-
-        protected override async Task CreateDestinationAsync(AccessCondition accessCondition, CancellationToken cancellationToken)
-        {
-            await this.destAppendBlob.CreateOrReplaceAsync(
-                accessCondition,
-                Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                Utils.GenerateOperationContext(this.TransferContext),
-                cancellationToken);
         }
 
         protected override Task DoPreCopyAsync()
@@ -165,7 +171,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private async Task<bool> ValidateAppendedChunkAsync(long startOffset, long length)
         {
-            await this.destBlob.FetchAttributesAsync(
+            await this.destAppendBlob.FetchAttributesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
@@ -173,7 +179,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.gotDestAttributes = true;
 
-            if (this.destBlob.Properties.Length != (startOffset + length))
+            if (this.destAppendBlob.Properties.Length != (startOffset + length))
             {
                 return false;
             }
@@ -196,19 +202,16 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                 Task[] downloadTasks = new Task[2];
 
-                downloadTasks[0] = this.sourceBlob.DownloadRangeToStreamAsync(
+                downloadTasks[0] = this.SourceHandler.DownloadRangeToStreamAsync(
                     new FakeStream(),
                     startOffset,
                     length,
                     null,
-                    new BlobRequestOptions()
-                    {
-                        UseTransactionalMD5 = true
-                    },
+                    true,
                     sourceOperationContext,
                     this.CancellationToken);
 
-                downloadTasks[1] = this.destBlob.DownloadRangeToStreamAsync(
+                downloadTasks[1] = this.destAppendBlob.DownloadRangeToStreamAsync(
                     new FakeStream(),
                     startOffset,
                     length,
