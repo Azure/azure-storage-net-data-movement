@@ -63,9 +63,14 @@ namespace Microsoft.Azure.Storage.DataMovement
         public DateTimeOffset? LastWriteTime { get; set; }
 
         /// <summary>
-        /// Gets or sets a value to indicate whether to overwrite all attribute on destination,
-        /// or keep its original value if it's not set.
+        /// Gets or sets the file attributes for azure file.
         /// </summary>
-        public bool OverWriteAll { get; set; }
+        public string PortableSDDL { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value to indicate whether to overwrite all attribute on destination,
+    /// or keep its original value if it's not set.
+    /// </summary>
+    public bool OverWriteAll { get; set; }
     }
 }

@@ -525,6 +525,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         }
                     }
 
+                    if (PreserveSMBPermissions.None != this.transferJob.Transfer.PreserveSMBPermissions)
+                    {
+                        if (!string.IsNullOrEmpty(this.filePath))
+                        {
+                            attributes.PortableSDDL = FileSecurityOperations.GetFilePortableSDDL(filePath, this.transferJob.Transfer.PreserveSMBPermissions);
+                        }
+                    }
+
                     this.SharedTransferData.Attributes = attributes;
                 }
             }

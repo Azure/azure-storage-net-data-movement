@@ -162,7 +162,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             set
             {
-                DirectoryTransferContext tempValue = value as DirectoryTransferContext;
+                var tempValue = value as DirectoryTransferContext;
 
                 if (tempValue == null)
                 {
@@ -440,6 +440,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             var transferMethod = IsDummyCopy(entry) ? TransferMethod.DummyCopy : this.TransferMethod;
             SingleObjectTransfer transfer = new SingleObjectTransfer(sourceLocation, destLocation, transferMethod);
             transfer.PreserveSMBAttributes = this.PreserveSMBAttributes;
+            transfer.PreserveSMBPermissions = this.PreserveSMBPermissions;
             transfer.Context = this.Context;
             return transfer;
         }
@@ -481,6 +482,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             DirectoryTransfer.UpdateCredentials(this.Source, transfer.Source);
             DirectoryTransfer.UpdateCredentials(this.Destination, transfer.Destination);
             transfer.PreserveSMBAttributes = this.PreserveSMBAttributes;
+            transfer.PreserveSMBPermissions = this.PreserveSMBPermissions;
         }
 
         private static void UpdateCredentials(TransferLocation dirLocation, TransferLocation subLocation)
