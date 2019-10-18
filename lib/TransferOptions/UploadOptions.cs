@@ -16,6 +16,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     public sealed class UploadOptions
     {
         private bool preserveSMBAttributes = false;
+        private PreserveSMBPermissions preserveSMBPermissions = PreserveSMBPermissions.None;
 
         /// <summary>
         /// Gets or sets an <see cref="AccessCondition"/> object that represents the access conditions for the destination object. If <c>null</c>, no condition is used.
@@ -53,6 +54,29 @@ namespace Microsoft.Azure.Storage.DataMovement
 #else
                 this.preserveSMBAttributes = value;
 #endif
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SMB")]
+        public PreserveSMBPermissions PreserveSMBPermissions
+        {
+            get
+            {
+                return this.preserveSMBPermissions;
+            }
+
+            set
+            {
+#if DOTNET5_4
+                if (value && !Interop.CrossPlatformHelpers.IsWindows)
+                {
+                    throw new PlatformNotSupportedException();
+                }
+#endif
+                this.preserveSMBPermissions = value;
             }
         }
     }

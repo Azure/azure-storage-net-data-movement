@@ -190,6 +190,10 @@ MD5 in property: {2}</value>
     <value>Failed to open file {0}: {1}.</value>
     <comment>{0} is file name, {1} is detailed error message.</comment>
   </data>
+  <data name="FailedToEnablePrivilegeException" xml:space="preserve">
+    <value>Failed to enable {0}, please run the process with an account with the specific privilege assigned, for example run it with administrator.</value>
+    <comment>{0} is privilege string.</comment>
+  </data>
   <data name="FilePathTooLong" xml:space="preserve">
     <value>The specified path, file name, or both are too long for file: "{0}"</value>
     <comment>{0} is the relative path.</comment>
@@ -226,6 +230,10 @@ MD5 in property: {2}</value>
   <data name="PathNotFound" xml:space="preserve">
     <value>Cannot find the path '{0}'.</value>
     <comment>{0} is the path.</comment>
+  </data>
+  <data name="PrivilegeRequiredException" xml:space="preserve">
+    <value>"A required privilege is not held. Please run the process with the privilege assigned, for example run it with administrator. Reference to {0} for details.</value>
+    <comment>{0} is the document link.</comment>
   </data>
   <data name="ProvideExactlyOneOfThreeParameters" xml:space="preserve">
     <value>Exactly one of these parameters must be provided: {0}, {1}, {2}.</value>

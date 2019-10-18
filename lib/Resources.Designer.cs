@@ -270,6 +270,15 @@ namespace Microsoft.Azure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failed to enable {0}, please run the process with an account with the specific privilege assigned, for example run it with administrator..
+        /// </summary>
+        internal static string FailedToEnablePrivilegeException {
+            get {
+                return ResourceManager.GetString("FailedToEnablePrivilegeException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to enumerate directory {0} with file pattern {1}..
         /// </summary>
         internal static string FailedToEnumerateDirectory {
@@ -419,6 +428,15 @@ namespace Microsoft.Azure.Storage.DataMovement {
         internal static string PathNotFound {
             get {
                 return ResourceManager.GetString("PathNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &quot;A required privilege is not held. Please run the process with the privilege assigned, for example run it with administrator. Reference to {0} for details..
+        /// </summary>
+        internal static string PrivilegeRequiredException {
+            get {
+                return ResourceManager.GetString("PrivilegeRequiredException", resourceCulture);
             }
         }
         

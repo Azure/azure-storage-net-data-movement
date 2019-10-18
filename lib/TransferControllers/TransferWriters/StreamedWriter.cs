@@ -390,6 +390,18 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
                 }
 
+                if ((PreserveSMBPermissions.None != this.TransferJob.Transfer.PreserveSMBPermissions)
+                    && (!string.IsNullOrEmpty(this.SharedTransferData.Attributes.PortableSDDL)))
+                {
+                    if (!string.IsNullOrEmpty(this.filePath))
+                    {
+                        FileSecurityOperations.SetFileSecurity(
+                            this.filePath,
+                            this.SharedTransferData.Attributes.PortableSDDL,
+                            this.TransferJob.Transfer.PreserveSMBPermissions);
+                    }
+                }
+
                 this.NotifyFinished(ex);
                 this.state = State.Finished;
             }

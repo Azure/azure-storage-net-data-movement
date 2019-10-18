@@ -93,7 +93,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (options != null)
             {
                 destLocation.AccessCondition = options.DestinationAccessCondition;
-            }
+            }               
 
             return UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
@@ -182,7 +182,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters", Justification = "With TransferContext, it also accepts DirectoryTransferContext. Here forbid this behavior.")]
-        public static Task UploadAsync(string sourcePath, CloudFile destFile, UploadOptions options, SingleTransferContext context, CancellationToken cancellationToken)
+        public static async Task UploadAsync(string sourcePath, CloudFile destFile, UploadOptions options, SingleTransferContext context, CancellationToken cancellationToken)
         {
             FileLocation sourceLocation = new FileLocation(sourcePath);
             AzureFileLocation destLocation = new AzureFileLocation(destFile);
@@ -193,9 +193,20 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (options != null)
             {
                 destLocation.AccessCondition = options.DestinationAccessCondition;
+                FileSecurityOperations.BeginTransferJob(options.PreserveSMBPermissions, false);
             }
 
-            return UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
+            try
+            {
+                await UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
+            }
+            finally
+            {
+                if (options != null)
+                {
+                    FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, false);
+                }
+            }
         }
 
         /// <summary>
@@ -356,7 +367,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="context">A <see cref="DirectoryTransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
-        public static Task<TransferStatus> UploadDirectoryAsync(string sourcePath, CloudFileDirectory destFileDir, UploadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
+        public static async Task<TransferStatus> UploadDirectoryAsync(string sourcePath, CloudFileDirectory destFileDir, UploadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
             DirectoryLocation sourceLocation = new DirectoryLocation(sourcePath);
             AzureFileDirectoryLocation destLocation = new AzureFileDirectoryLocation(destFileDir);
@@ -364,7 +375,19 @@ namespace Microsoft.Azure.Storage.DataMovement
             // Set default request options
             SetDefaultRequestOptions(destLocation);
 
-            return UploadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
+            if (null != options)
+            {
+                FileSecurityOperations.BeginTransferJob(options.PreserveSMBPermissions, false);
+            }
+
+            try
+            {
+                return await UploadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
+            }
+            finally
+            {
+                FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, false);
+            }
         }
 
         /// <summary>
@@ -439,8 +462,9 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (options != null)
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
-
                 sourceLocation.BlobRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
+
+                //TODO handle unsupported options
             }
 
             return DownloadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
@@ -480,7 +504,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [SuppressMessage("Microsoft.Design", "CA1011:ConsiderPassingBaseTypesAsParameters", Justification = "With TransferContext, it also accepts DirectoryTransferContext. Here forbid this behavior.")]
-        public static Task DownloadAsync(CloudFile sourceFile, string destPath, DownloadOptions options, SingleTransferContext context, CancellationToken cancellationToken)
+        public static async Task DownloadAsync(CloudFile sourceFile, string destPath, DownloadOptions options, SingleTransferContext context, CancellationToken cancellationToken)
         {
             AzureFileLocation sourceLocation = new AzureFileLocation(sourceFile);
             FileLocation destLocation = new FileLocation(destPath);
@@ -491,11 +515,18 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (options != null)
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
-
                 sourceLocation.FileRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
+                FileSecurityOperations.BeginTransferJob(options.PreserveSMBPermissions, true);
             }
 
-            return DownloadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
+            try
+            {
+                await DownloadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
+            }
+            finally
+            {
+                FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, true);
+            }
         }
 
         /// <summary>
@@ -543,7 +574,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (options != null)
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
-
                 sourceLocation.FileRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
             }
 
@@ -615,7 +645,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="context">A <see cref="DirectoryTransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
-        public static Task<TransferStatus> DownloadDirectoryAsync(CloudFileDirectory sourceFileDir, string destPath, DownloadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
+        public static async Task<TransferStatus> DownloadDirectoryAsync(CloudFileDirectory sourceFileDir, string destPath, DownloadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
             AzureFileDirectoryLocation sourceLocation = new AzureFileDirectoryLocation(sourceFileDir);
             DirectoryLocation destLocation = new DirectoryLocation(destPath);
@@ -627,9 +657,17 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 TransferManager.CheckSearchPatternOfAzureFileSource(options);                                
                 sourceLocation.FileRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
+                FileSecurityOperations.BeginTransferJob(options.PreserveSMBPermissions, true);
             }
 
-            return DownloadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
+            try
+            {
+                return await DownloadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
+            }
+            finally
+            {
+                FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, true);
+            }
         }
 
         /// <summary>
@@ -1571,9 +1609,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             Transfer transfer = GetOrCreateSingleObjectTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 
-            if (null != uploadOptions)
+            if ((null != uploadOptions)
+                && (destLocation.Type == TransferLocationType.AzureFileDirectory))
             {
                 transfer.PreserveSMBAttributes = uploadOptions.PreserveSMBAttributes;
+                transfer.PreserveSMBPermissions = uploadOptions.PreserveSMBPermissions;
             }
 
             return DoTransfer(transfer, context, cancellationToken);
@@ -1583,9 +1623,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             Transfer transfer = GetOrCreateSingleObjectTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 
-            if (null != downloadOptions)
+            if ((null != downloadOptions)
+                && (sourceLocation.Type == TransferLocationType.AzureFile))
             {
                 transfer.PreserveSMBAttributes = downloadOptions.PreserveSMBAttributes;
+                transfer.PreserveSMBPermissions = downloadOptions.PreserveSMBPermissions;
             }
 
             return DoTransfer(transfer, context, cancellationToken);
@@ -1618,7 +1660,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
 
                 transfer.BlobType = options.BlobType;
-                transfer.PreserveSMBAttributes = options.PreserveSMBAttributes;
+
+                if (destLocation.Type == TransferLocationType.AzureFileDirectory)
+                {
+                    transfer.PreserveSMBAttributes = options.PreserveSMBAttributes;
+                    transfer.PreserveSMBPermissions = options.PreserveSMBPermissions;
+                }
             }
 
             await DoTransfer(transfer, context, cancellationToken);
@@ -1633,7 +1680,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (null != options)
             {
                 transfer.Delimiter = options.Delimiter;
-                transfer.PreserveSMBAttributes = options.PreserveSMBAttributes;
+
+                if (sourceLocation.Type == TransferLocationType.AzureFileDirectory)
+                {
+                    transfer.PreserveSMBAttributes = options.PreserveSMBAttributes;
+                    transfer.PreserveSMBPermissions = options.PreserveSMBPermissions;
+                }
 
                 HierarchyDirectoryTransfer hierarchyDirectoryTransfer = transfer as HierarchyDirectoryTransfer;
 

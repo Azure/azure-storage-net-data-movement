@@ -250,6 +250,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
+        public PreserveSMBPermissions PreserveSMBPermissions
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// Gets the progress tracker for this transfer.
         /// </summary>

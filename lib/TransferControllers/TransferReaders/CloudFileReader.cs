@@ -59,7 +59,29 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.sourceLocation.FileRequestOptions.DisableContentMD5Validation.HasValue ?
                 this.sourceLocation.FileRequestOptions.DisableContentMD5Validation.Value : false : false;
 
-            this.SharedTransferData.Attributes = Utils.GenerateAttributes(this.cloudFile, this.SharedTransferData.TransferJob.Transfer.PreserveSMBAttributes);
+            var transfer = this.SharedTransferData.TransferJob.Transfer;
+
+            this.SharedTransferData.Attributes = Utils.GenerateAttributes(this.cloudFile, transfer.PreserveSMBAttributes);
+
+            if (PreserveSMBPermissions.None != transfer.PreserveSMBPermissions)
+            {
+                if (!string.IsNullOrEmpty(this.cloudFile.FilePermission))
+                {
+                    this.SharedTransferData.Attributes.PortableSDDL = this.cloudFile.FilePermission;
+                }
+                else if (!string.IsNullOrEmpty(this.cloudFile.Properties.FilePermissionKey))
+                {
+                    this.SharedTransferData.Attributes.PortableSDDL = await this.cloudFile.Share.GetFilePermissionAsync(this.cloudFile.Properties.FilePermissionKey,
+                        Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
+                        Utils.GenerateOperationContext(this.Controller.TransferContext),
+                        this.CancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    this.SharedTransferData.Attributes.PortableSDDL = null;
+                }
+            }
+
             this.SharedTransferData.TotalLength = this.cloudFile.Properties.Length;
         }
 

@@ -124,6 +124,26 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
 
             var originalMetadata = new Dictionary<string, string>(this.cloudFile.Metadata);
+
+            if ((PreserveSMBPermissions.None != this.TransferJob.Transfer.PreserveSMBPermissions)
+                && !string.IsNullOrEmpty(this.SharedTransferData.Attributes.PortableSDDL))
+            {
+                if (this.SharedTransferData.Attributes.PortableSDDL.Length >= 8 * 1024)
+                {
+                    string permissionKey = await this.cloudFile.Share.CreateFilePermissionAsync(this.SharedTransferData.Attributes.PortableSDDL,
+                        fileRequestOptions,
+                        operationContext,
+                        this.CancellationToken).ConfigureAwait(false);
+
+                    this.cloudFile.Properties.FilePermissionKey = permissionKey;
+                    this.cloudFile.FilePermission = null;
+                }
+                else
+                {
+                    this.cloudFile.FilePermission = this.SharedTransferData.Attributes.PortableSDDL;
+                }
+            }
+
             Utils.SetAttributes(this.cloudFile, this.SharedTransferData.Attributes, this.TransferJob.Transfer.PreserveSMBAttributes);
             await this.Controller.SetCustomAttributesAsync(this.cloudFile).ConfigureAwait(false);
 

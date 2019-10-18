@@ -17,6 +17,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     public sealed class UploadDirectoryOptions : DirectoryOptions
     {
         private bool preserveSMBAttributes = false;
+        private PreserveSMBPermissions preserveSMBPermissions = PreserveSMBPermissions.None;
         private bool followSymlink = false;
 
         /// <summary>
@@ -77,6 +78,30 @@ namespace Microsoft.Azure.Storage.DataMovement
 #else
                 this.preserveSMBAttributes = value;
 #endif
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value that indicates whether to preserve SMB permissions during downloading.
+        /// Preserving SMB permissions is only supported on Windows.
+        /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SMB")]
+        public PreserveSMBPermissions PreserveSMBPermissions
+        {
+            get
+            {
+                return this.preserveSMBPermissions;
+            }
+
+            set
+            {
+#if DOTNET5_4
+                if (value && !Interop.CrossPlatformHelpers.IsWindows)
+                {
+                    throw new PlatformNotSupportedException();
+                }
+#endif
+                this.preserveSMBPermissions = value;
             }
         }
     }
