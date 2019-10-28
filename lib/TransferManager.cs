@@ -386,7 +386,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
             finally
             {
-                FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, false);
+                if (options != null)
+                {
+                    FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, false);
+                }
             }
         }
 
@@ -525,7 +528,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
             finally
             {
-                FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, true);
+                if (options != null)
+                {
+                    FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, true);
+                }
             }
         }
 
@@ -666,7 +672,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
             finally
             {
-                FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, true);
+                if (options != null)
+                {
+                    FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, true);
+                }
             }
         }
 
@@ -1610,7 +1619,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             Transfer transfer = GetOrCreateSingleObjectTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 
             if ((null != uploadOptions)
-                && (destLocation.Type == TransferLocationType.AzureFileDirectory))
+                && (destLocation.Type == TransferLocationType.AzureFile))
             {
                 transfer.PreserveSMBAttributes = uploadOptions.PreserveSMBAttributes;
                 transfer.PreserveSMBPermissions = uploadOptions.PreserveSMBPermissions;

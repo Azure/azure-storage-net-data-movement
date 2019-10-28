@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System;
     using System.Collections.Generic;
     using System.ComponentModel;
+    using System.Diagnostics;
     using System.Globalization;
     using System.Linq;
     using System.Runtime.InteropServices;
@@ -32,6 +33,13 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         public static void BeginTransferJob(PreserveSMBPermissions preserveSMBPermissions, bool setLocalFilePermission)
         {
+#if DEBUG
+            if (TestHookCallbacks.UnderTesting)
+            {
+                return;
+            }
+#endif
+
             if (PreserveSMBPermissions.PreserveSACLPermission == (preserveSMBPermissions & PreserveSMBPermissions.PreserveSACLPermission))
             {
                 if (!SACLPrivilegeEnabledOriginal)
@@ -115,6 +123,13 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         public static void EndTransferJob(PreserveSMBPermissions preserveSMBPermissions, bool setLocalFilePermission)
         {
+#if DEBUG
+            if (TestHookCallbacks.UnderTesting)
+            {
+                return;
+            }
+#endif
+
             if (PreserveSMBPermissions.PreserveSACLPermission == (preserveSMBPermissions & PreserveSMBPermissions.PreserveSACLPermission))
             {
                 if (!SACLPrivilegeEnabledOriginal)
@@ -227,11 +242,15 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
             else if (Marshal.GetLastWin32Error() == NativeMethods.ERROR_NOT_ALL_ASSIGNED)
             {
+#if !DMLIB_TEST
                 throw new TransferException(
                     string.Format(
                         CultureInfo.CurrentCulture,
                         Resources.FailedToEnablePrivilegeException,
                         securityPrivilege));
+#else
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+#endif
             }
 
             if ((previousPrivileges.Privileges.Count() == 1)
@@ -249,6 +268,16 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         public static void SetFileSecurity(string filePath, string portableSDDL, PreserveSMBPermissions preserveSMBPermissions)
         {
+#if DEBUG
+            if (null != TestHookCallbacks.SetFilePermissionsCallback)
+            {
+                TestHookCallbacks.SetFilePermissionsCallback(filePath, portableSDDL, preserveSMBPermissions);
+                return;
+            }
+#endif
+
+            filePath = LongPath.ToUncPath(filePath);
+
             if (PreserveSMBPermissions.None == preserveSMBPermissions) return;
 
             if (string.IsNullOrEmpty(portableSDDL)) return;
@@ -274,11 +303,15 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 if (errorCode == NativeMethods.ERROR_PRIVILEGE_NOT_HELD)
                 {
+#if !DMLIB_TEST
                     throw new TransferException(
                         string.Format(
                             CultureInfo.CurrentCulture,
                             Resources.PrivilegeRequiredException,
                             "https://docs.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-setnamedsecurityinfow"));
+#else
+                    throw new Win32Exception(errorCode);
+#endif
                 }
                 else if (errorCode != 0)
                 {
@@ -295,6 +328,13 @@ namespace Microsoft.Azure.Storage.DataMovement
             string filePath,
             PreserveSMBPermissions preserveSMBPermissions)
         {
+#if DEBUG
+            if (null != TestHookCallbacks.GetFilePermissionsCallback)
+            {
+                return TestHookCallbacks.GetFilePermissionsCallback(filePath, preserveSMBPermissions);
+            }
+#endif
+
             if (preserveSMBPermissions == PreserveSMBPermissions.None)
             {
                 return null;
@@ -508,6 +548,8 @@ namespace Microsoft.Azure.Storage.DataMovement
             string filePath,
             NativeMethods.SECURITY_INFORMATION securityInfo)
         {
+            filePath = LongPath.ToUncPath(filePath);
+
             // Note: to get the SACL, special permissions are needed. Refer https://docs.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-getsecurityinfo
             IntPtr pZero = IntPtr.Zero;
             IntPtr pSid = pZero;
@@ -519,6 +561,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 securityInfo,
                 out pSid, out pZero, out pZero, out pZero, out psd);
 
+#if !DMLIB_TEST
             if (errorReturn == NativeMethods.ERROR_PRIVILEGE_NOT_HELD)
             {
                 throw new TransferException(
@@ -531,6 +574,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 throw new Win32Exception((int)errorReturn);
             }
+#else
+            if (errorReturn != 0)
+            {
+                throw new Win32Exception((int)errorReturn);
+            }
+#endif
 
             try
             {

@@ -778,13 +778,19 @@ namespace Microsoft.Azure.Storage.DataMovement
                     {
                         this.enumerateException = ex;
                     }
+                    else if ((null != ex.InnerException)
+                        && (ex.InnerException is OperationCanceledException))
+                    {
+                        // Ingore this exception, there's other place reporting such kind of exception when cancellation is triggered.
+                        errorHappened = true;
+                    }
                     else
                     {
                         this.enumerateException = new TransferException(
                             TransferErrorCode.FailToEnumerateDirectory,
                             string.Format(CultureInfo.CurrentCulture,
                                 Resources.EnumerateDirectoryException,
-                                this.Destination.Instance.ConvertToString()), 
+                                this.Destination.Instance.ConvertToString()),
                             ex);
                     }
 

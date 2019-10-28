@@ -25,7 +25,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;BINARY_SERIALIZATION</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;BINARY_SERIALIZATION;DMLIB_TEST</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -33,7 +33,7 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;BINARY_SERIALIZATION</DefineConstants>
+    <DefineConstants>TRACE;BINARY_SERIALIZATION;DMLIB_TEST</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -95,6 +95,12 @@
   <ItemGroup>
     <Compile Include="..\..\lib\FileNativeMethods.cs">
       <Link>Framework\FileNativeMethods.cs</Link>
+    </Compile>
+    <Compile Include="..\..\lib\FileSecurityNativeMethods.cs">
+      <Link>Framework\FileSecurityNativeMethods.cs</Link>
+    </Compile>
+    <Compile Include="..\..\lib\FileSecurityOperations.cs">
+      <Link>Framework\FileSecurityOperations.cs</Link>
     </Compile>
     <Compile Include="..\..\lib\Interop\Interop.Windows.cs">
       <Link>Framework\Interop.Windows.cs</Link>

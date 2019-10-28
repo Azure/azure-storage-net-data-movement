@@ -101,7 +101,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             set
             {
 #if DOTNET5_4
-                if (value && !Interop.CrossPlatformHelpers.IsWindows)
+                if ((value != PreserveSMBPermissions.None) && !Interop.CrossPlatformHelpers.IsWindows)
                 {
                     throw new PlatformNotSupportedException();
                 }

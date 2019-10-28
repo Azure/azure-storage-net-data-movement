@@ -670,6 +670,272 @@ namespace DMLibTest.Cases
             }
         }
 
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.Local)]
+        [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile)]
+        public void TestDirectoryPreserveSMBPermissions()
+        {
+            if (!CrossPlatformHelpers.IsWindows) return;
+
+            // Prepare data
+            DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
+            string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
+            GenerateDirNodeWithPermissions(sourceDataInfo.RootNode, 2, sampleSDDL);
+
+            DirectoryTransferContext dirTransferContext = new DirectoryTransferContext();
+
+            var options = new TestExecutionOptions<DMLibDataInfo>();
+            options.IsDirectoryTransfer = true;
+
+            PreserveSMBPermissions preserveSMBPermissions =
+                PreserveSMBPermissions.PreserveOwnerPermission 
+                | PreserveSMBPermissions.PreserveGroupPermission 
+                | PreserveSMBPermissions.PreserveDACLPermission;
+
+            options.TransferItemModifier = (fileNode, transferItem) =>
+            {
+                transferItem.TransferContext = dirTransferContext;
+
+                dynamic transferOptions = DefaultTransferDirectoryOptions;
+                transferOptions.Recursive = true;
+                transferOptions.PreserveSMBPermissions = preserveSMBPermissions;
+                transferItem.Options = transferOptions;
+            };
+
+#if DEBUG
+            TestHookCallbacks.UnderTesting = true;
+            TestHookCallbacks.GetFilePermissionsCallback = (path, SMBPermissionType) =>
+            {
+                Test.Assert(SMBPermissionType == preserveSMBPermissions, "The SMB permission type should be expected.");
+                return sampleSDDL;
+            };
+
+            TestHookCallbacks.SetFilePermissionsCallback = (path, portableSDDL, SMBPermissionType) =>
+            {
+                Test.Assert(SMBPermissionType == preserveSMBPermissions, "The SMB permission type should be expected.");
+                Test.Assert(portableSDDL.StartsWith(sampleSDDL),
+                    "The SDDL value should be expected.");
+            };
+#endif
+
+            try
+            {
+                // Execute test case
+                var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+                VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
+
+                if (DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                {
+                    Helper.CompareSMBPermissions(sourceDataInfo.RootNode, result.DataInfo.RootNode, preserveSMBPermissions);
+                }
+            }
+            finally
+            {
+#if DEBUG
+                TestHookCallbacks.UnderTesting = false;
+                TestHookCallbacks.GetFilePermissionsCallback = null;
+                TestHookCallbacks.SetFilePermissionsCallback = null;
+#endif
+            }
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.Local)]
+        [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile)]
+        public void TestPreserveSMBPermissions()
+        {
+            if (!CrossPlatformHelpers.IsWindows) return;
+            try
+            {
+                PreserveSMBPermissions preserveSMBPermissions = 
+                    PreserveSMBPermissions.PreserveOwnerPermission 
+                    | PreserveSMBPermissions.PreserveGroupPermission 
+                    | PreserveSMBPermissions.PreserveDACLPermission;
+                string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
+
+#if DEBUG
+                TestHookCallbacks.UnderTesting = true;
+                TestHookCallbacks.GetFilePermissionsCallback = (path, SMBPermissionType) =>
+                {
+                    Test.Assert(SMBPermissionType == preserveSMBPermissions, "The SMB permission type should be expected.");
+                    return sampleSDDL;
+                };
+
+                TestHookCallbacks.SetFilePermissionsCallback = (path, portableSDDL, SMBPermissionType) =>
+                {
+                    Test.Assert(SMBPermissionType == preserveSMBPermissions, "The SMB permission type should be expected.");
+                    Test.Assert(portableSDDL.StartsWith(sampleSDDL),
+                        "The SDDL value should be expected.");
+                };
+#endif
+
+                // Prepare data
+                DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
+                    FileNode fileNode = new FileNode(DMLibTestBase.FileName);
+                    fileNode.SizeInByte = 1024;
+                    fileNode.PortableSDDL = sampleSDDL;
+                    sourceDataInfo.RootNode.AddFileNode(fileNode);
+
+                    SingleTransferContext transferContext = new SingleTransferContext();
+
+                    var options = new TestExecutionOptions<DMLibDataInfo>();
+
+                    options.TransferItemModifier = (fileNodeVar, transferItem) =>
+                    {
+                        transferItem.TransferContext = transferContext;
+
+                        dynamic transferOptions = DefaultTransferOptions;
+                        transferOptions.PreserveSMBPermissions = preserveSMBPermissions;
+                        transferItem.Options = transferOptions;
+                    };
+
+                    // Execute test case
+                    var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+                    VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
+
+                    if (DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                    {
+                        Helper.CompareSMBPermissions(sourceDataInfo.RootNode, result.DataInfo.RootNode, preserveSMBPermissions);
+                    }
+                }
+            finally
+            {
+#if DEBUG
+                TestHookCallbacks.UnderTesting = false;
+                TestHookCallbacks.GetFilePermissionsCallback = null;
+                TestHookCallbacks.SetFilePermissionsCallback = null;
+#endif
+            }
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.Local)]
+        [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile)]
+        public void TestDirectoryPreserveSMBPermissionsResume()
+        {
+            if (!CrossPlatformHelpers.IsWindows) return;
+
+            PreserveSMBPermissions preserveSMBPermissions = 
+                PreserveSMBPermissions.PreserveOwnerPermission 
+                | PreserveSMBPermissions.PreserveGroupPermission 
+                | PreserveSMBPermissions.PreserveDACLPermission;
+
+            string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
+            CancellationTokenSource tokenSource = new CancellationTokenSource();
+            TransferItem transferItem = null;
+
+            bool IsStreamJournal = random.Next(0, 2) == 0;
+            using (Stream journalStream = new MemoryStream())
+            {
+                // Prepare data
+                DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
+                GenerateDirNodeWithPermissions(sourceDataInfo.RootNode, 2, sampleSDDL);
+
+                DirectoryTransferContext dirTransferContext = null;
+
+                if (IsStreamJournal)
+                {
+                    dirTransferContext = new DirectoryTransferContext(journalStream);
+                }
+                else
+                {
+                    dirTransferContext = new DirectoryTransferContext();
+                }
+
+                var progressChecker = new ProgressChecker(14, 14 * 1024);
+                dirTransferContext.ProgressHandler = progressChecker.GetProgressHandler();
+
+                var options = new TestExecutionOptions<DMLibDataInfo>();
+                options.IsDirectoryTransfer = true;
+
+                options.TransferItemModifier = (fileNode, item) =>
+                {
+                    item.TransferContext = dirTransferContext;
+
+                    dynamic transferOptions = DefaultTransferDirectoryOptions;
+                    transferOptions.Recursive = true;
+                    transferOptions.PreserveSMBPermissions = preserveSMBPermissions;
+                    item.Options = transferOptions;
+                    item.CancellationToken = tokenSource.Token;
+                    transferItem = item;
+                };
+
+                TransferCheckpoint checkpoint = null;
+
+                options.AfterAllItemAdded = () =>
+                {
+                    // Wait until there are data transferred
+                    progressChecker.DataTransferred.WaitOne();
+
+                    if (!IsStreamJournal)
+                    {
+                        checkpoint = dirTransferContext.LastCheckpoint;
+                    }
+
+                    // Cancel the transfer and store the second checkpoint
+                    tokenSource.Cancel();
+                };
+
+#if DEBUG
+                TestHookCallbacks.UnderTesting = true;
+                TestHookCallbacks.GetFilePermissionsCallback = (path, SMBPermissionType) =>
+                {
+                    Test.Assert(SMBPermissionType == preserveSMBPermissions, "The SMB permission type should be expected.");
+                    return sampleSDDL;
+                };
+
+                TestHookCallbacks.SetFilePermissionsCallback = (path, portableSDDL, SMBPermissionType) =>
+                {
+                    Test.Assert(SMBPermissionType == preserveSMBPermissions, "The SMB permission type should be expected.");
+                    Test.Assert(portableSDDL.StartsWith(sampleSDDL),
+                        "The SDDL value should be expected.");
+                };
+#endif
+
+                try
+                {
+                    // Execute test case
+                    var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+                    Test.Assert(result.Exceptions.Count == 1, "Verify job is cancelled");
+                    Exception exception = result.Exceptions[0];
+                    Helper.VerifyCancelException(exception);
+
+                    TransferItem resumeItem = transferItem.Clone();
+                    DirectoryTransferContext resumeContext = null;
+                    journalStream.Position = 0;
+                    if (IsStreamJournal)
+                    {
+                        resumeContext = new DirectoryTransferContext(journalStream);
+                    }
+                    else
+                    {
+                        resumeContext = new DirectoryTransferContext(DMLibTestHelper.RandomReloadCheckpoint(checkpoint));
+                    }
+
+                    resumeItem.TransferContext = resumeContext;
+
+                    result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
+                    VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
+
+                    if (DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                    {
+                        Helper.CompareSMBPermissions(sourceDataInfo.RootNode, result.DataInfo.RootNode, preserveSMBPermissions);
+                    }
+                }
+                finally
+                {
+#if DEBUG
+                    TestHookCallbacks.UnderTesting = false;
+                    TestHookCallbacks.GetFilePermissionsCallback = null;
+                    TestHookCallbacks.SetFilePermissionsCallback = null;
+#endif
+                }
+            }
+        }
+
         private void GenerateDirNodeWithMetadata(
            DirNode parent,
            int dirLevel)
@@ -698,6 +964,38 @@ namespace DMLibTest.Cases
             dirNode.Metadata.Add("Name0", "Value0");
             dirNode.Metadata.Add("Name1", "Value1");
             this.GenerateDirNodeWithMetadata(dirNode, dirLevel);
+            parent.AddDirNode(dirNode);
+        }
+
+        private void GenerateDirNodeWithPermissions(
+            DirNode parent,
+            int dirLevel,
+            string permissions)
+        {
+            FileNode fileNode = new FileNode(DMLibTestBase.FileName + "_0");
+            fileNode.SizeInByte = 1024;
+            fileNode.PortableSDDL = permissions;
+            parent.AddFileNode(fileNode);
+
+            fileNode = new FileNode(DMLibTestBase.FileName + "_1");
+            fileNode.SizeInByte = 1024;
+            fileNode.PortableSDDL = permissions;
+            parent.AddFileNode(fileNode);
+
+            if (dirLevel <= 0)
+            {
+                return;
+            }
+
+            --dirLevel;
+            DirNode dirNode = new DirNode(DMLibTestBase.DirName + "_0");
+            dirNode.PortableSDDL = permissions;
+            this.GenerateDirNodeWithPermissions(dirNode, dirLevel, permissions);
+            parent.AddDirNode(dirNode);
+
+            dirNode = new DirNode(DMLibTestBase.DirName + "_1");
+            dirNode.PortableSDDL = permissions;
+            this.GenerateDirNodeWithPermissions(dirNode, dirLevel, permissions);
             parent.AddDirNode(dirNode);
         }
 

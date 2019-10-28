@@ -256,8 +256,9 @@ namespace DMLibTest
 
                 if (dirNode.CreationTime.HasValue) cloudFileDir.Properties.CreationTime = dirNode.CreationTime;
                 if (dirNode.LastWriteTime.HasValue) cloudFileDir.Properties.LastWriteTime = dirNode.LastWriteTime;
-
+                if (null != dirNode.PortableSDDL) cloudFileDir.FilePermission = dirNode.PortableSDDL;
                 cloudFileDir.SetProperties(HelperConst.DefaultFileOptions);
+
                 cloudFileDir.FetchAttributes(null, HelperConst.DefaultFileOptions);
 
                 dirNode.CreationTime = cloudFileDir.Properties.CreationTime;
@@ -346,6 +347,12 @@ namespace DMLibTest
                 cloudFile.SetProperties(options: HelperConst.DefaultFileOptions);
             }
 
+            if (null != fileNode.PortableSDDL)
+            {
+                cloudFile.FilePermission = fileNode.PortableSDDL;
+                cloudFile.SetProperties(options: HelperConst.DefaultFileOptions);
+            }
+
             if (null != fileNode.Metadata && fileNode.Metadata.Count > 0)
             {
                 cloudFile.Metadata.Clear();
@@ -426,6 +433,15 @@ namespace DMLibTest
             dirNode.CreationTime = cloudDir.Properties.CreationTime;
             dirNode.SMBAttributes = cloudDir.Properties.NtfsAttributes;
 
+            if (!string.IsNullOrEmpty(cloudDir.FilePermission))
+            {
+                dirNode.PortableSDDL = cloudDir.FilePermission;
+            }
+            else if (!string.IsNullOrEmpty(cloudDir.Properties.FilePermissionKey))
+            {
+                dirNode.PortableSDDL = cloudDir.Share.GetFilePermission(cloudDir.Properties.FilePermissionKey, options: HelperConst.DefaultFileOptions);
+            }
+
             if (cloudDir.Metadata.Count > 0)
             {
                 dirNode.Metadata = new Dictionary<string, string>(cloudDir.Metadata);
@@ -468,6 +484,15 @@ namespace DMLibTest
             fileNode.LastWriteTime = cloudFile.Properties.LastWriteTime;
             fileNode.CreationTime = cloudFile.Properties.CreationTime;
             fileNode.SMBAttributes = cloudFile.Properties.NtfsAttributes;
+
+            if (!string.IsNullOrEmpty(cloudFile.FilePermission))
+            {
+                fileNode.PortableSDDL = cloudFile.FilePermission;
+            }
+            else if (!string.IsNullOrEmpty(cloudFile.Properties.FilePermissionKey))
+            {
+                fileNode.PortableSDDL = cloudFile.Share.GetFilePermission(cloudFile.Properties.FilePermissionKey, options: HelperConst.DefaultFileOptions);
+            }
 
             DateTimeOffset dateTimeOffset = (DateTimeOffset)cloudFile.Properties.LastModified;
             fileNode.LastModifiedTime = dateTimeOffset.UtcDateTime;

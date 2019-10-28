@@ -12,6 +12,15 @@ namespace Microsoft.Azure.Storage.DataMovement
     {
         public static Action<string, FileAttributes> SetFileAttributesCallback;
         public static Func<string, FileAttributes> GetFileAttributesCallback;
+
+        public static Action<string, string, PreserveSMBPermissions> SetFilePermissionsCallback;
+        public static Func<string, PreserveSMBPermissions, string> GetFilePermissionsCallback;
+
+        public static bool UnderTesting
+        {
+            get;
+            set;
+        }
     }
 #endif
 }

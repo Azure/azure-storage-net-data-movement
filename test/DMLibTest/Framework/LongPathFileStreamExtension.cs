@@ -366,12 +366,21 @@ namespace DMLibTest.Framework
 #endif
             )
         {
-            path = LongPath.ToUncPath(path);
 #if DOTNET5_4
             LongPathFile.GetFileProperties(path, out creationTime, out lastWriteTime, out fileAttributes, isDirectory);
 #else
             LongPathFile.GetFileProperties(path, out creationTime, out lastWriteTime, out fileAttributes);
 #endif
+        }
+
+        public static string GetFilePortableSDDL(string path, PreserveSMBPermissions preserveSMBPermissions)
+        {
+            return FileSecurityOperations.GetFilePortableSDDL(path, preserveSMBPermissions);
+        }
+
+        public static void SetFileSecurityInfo(string path, string portableSDDL, PreserveSMBPermissions preserveSMBPermissions)
+        {
+            FileSecurityOperations.SetFileSecurity(path, portableSDDL, preserveSMBPermissions);
         }
     }
 }
