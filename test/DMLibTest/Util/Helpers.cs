@@ -22,6 +22,7 @@ namespace DMLibTest
     using Microsoft.Azure.Storage;
     using Microsoft.Azure.Storage.Auth;
     using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.DataMovement;
     using Microsoft.Azure.Storage.File;
     using Microsoft.Azure.Storage.RetryPolicies;
     using MS.Test.Common.MsTestLib;
@@ -97,6 +98,133 @@ namespace DMLibTest
                 fileAttributes |= FileAttributes.NoScrubData;
 
             return fileAttributes;
+        }
+
+        public static void CompareSMBPermissions(DirNode sourceNode, DirNode destNode, PreserveSMBPermissions preserveSMBPermissions)
+        {
+            Test.Assert(string.Equals(sourceNode.Name, destNode.Name), "Directory name should be the expected");
+
+            if (null != sourceNode.PortableSDDL)
+            {
+                ComparePortableSDDLString(destNode.PortableSDDL, sourceNode.PortableSDDL, preserveSMBPermissions);
+            }
+
+            foreach (var sourceFileNode in sourceNode.FileNodes)
+            {
+                var destFileNode = destNode.GetFileNode(sourceFileNode.Name);
+
+                if (null == destFileNode)
+                {
+                    Test.Error("File node mismatch");
+                    continue;
+                }
+
+                ComparePortableSDDLString(destFileNode.PortableSDDL, sourceFileNode.PortableSDDL, preserveSMBPermissions);
+            }
+
+            foreach (var sourceSubDirNode in sourceNode.DirNodes)
+            {
+                var destSubDirNode = destNode.GetDirNode(sourceSubDirNode.Name);
+
+                if (null == destSubDirNode)
+                {
+                    Test.Error("DirNode mismatch {0}", sourceSubDirNode.Name);
+                }
+                else
+                {
+                    CompareSMBPermissions(sourceSubDirNode, destSubDirNode, preserveSMBPermissions);
+                }
+            }
+        }
+
+        private static void ComparePortableSDDLString(string sourceSDDL, string destSDDL, PreserveSMBPermissions preserveSMBPermissions)
+        {
+            string[] sourcesddlStrings = GetSDDLStringsForAllTypes(sourceSDDL);
+            string[] destsddlStrings = GetSDDLStringsForAllTypes(destSDDL);
+
+            if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveOwnerPermission) == PreserveSMBPermissions.PreserveOwnerPermission)
+            {
+                Test.Assert(string.Equals(sourcesddlStrings[0], destsddlStrings[0]), "SDDL Value should  be expected.");
+            }
+
+            if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveGroupPermission) == PreserveSMBPermissions.PreserveGroupPermission)
+            {
+                Test.Assert(string.Equals(sourcesddlStrings[1], destsddlStrings[1]), "SDDL Value should  be expected.");
+            }
+
+            if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveDACLPermission) == PreserveSMBPermissions.PreserveDACLPermission)
+            {
+                Test.Assert(string.Equals(sourcesddlStrings[2], destsddlStrings[2]), "SDDL Value should  be expected.");
+            }
+
+            if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveSACLPermission) == PreserveSMBPermissions.PreserveSACLPermission)
+            {
+                Test.Assert(string.Equals(sourcesddlStrings[3], destsddlStrings[3]), "SDDL Value should  be expected.");
+            }
+        }
+
+        private static string[] GetSDDLStringsForAllTypes(string wholeSDDL)
+        {
+            string[] sddlStrings = new string[4];
+            int ownerIndex = wholeSDDL.IndexOf("O:");
+            int groupIndex = wholeSDDL.IndexOf("G:");
+            int daclIndex = wholeSDDL.IndexOf("D:");
+            int saclIndex = wholeSDDL.IndexOf("S:");
+
+            if (ownerIndex != -1)
+            {
+                if (groupIndex != -1)
+                {
+                    sddlStrings[0] = wholeSDDL.Substring(ownerIndex, groupIndex - ownerIndex);
+                }
+                else if (daclIndex != -1)
+                {
+                    sddlStrings[0] = wholeSDDL.Substring(ownerIndex, daclIndex - ownerIndex);
+                }
+                else if (saclIndex != -1)
+                {
+                    sddlStrings[0] = wholeSDDL.Substring(ownerIndex, saclIndex - ownerIndex);
+                }
+                else
+                {
+                    sddlStrings[0] = wholeSDDL.Substring(ownerIndex, wholeSDDL.Length - ownerIndex);
+                }
+            }
+
+            if (groupIndex != -1)
+            {
+                if (daclIndex != -1)
+                {
+                    sddlStrings[1] = wholeSDDL.Substring(groupIndex, daclIndex - groupIndex);
+                }
+                else if (saclIndex != -1)
+                {
+                    sddlStrings[1] = wholeSDDL.Substring(groupIndex, saclIndex - groupIndex);
+                }
+                else
+                {
+                    sddlStrings[1] = wholeSDDL.Substring(groupIndex, wholeSDDL.Length - groupIndex);
+                }
+            }
+
+            if (daclIndex != -1)
+            {
+                if (saclIndex != -1)
+                {
+                    sddlStrings[2] = wholeSDDL.Substring(daclIndex, saclIndex - daclIndex);
+                }
+                else
+                {
+                    sddlStrings[2] = wholeSDDL.Substring(daclIndex, wholeSDDL.Length - daclIndex);
+                }
+            }
+
+            if (saclIndex != -1)
+            {
+                sddlStrings[3] = wholeSDDL.Substring(saclIndex, wholeSDDL.Length - saclIndex);
+            }
+
+            return sddlStrings;
         }
 
         public static void CompareSMBProperties(DirNode dirNode0, DirNode dirNode1, bool compareFileAttributes)

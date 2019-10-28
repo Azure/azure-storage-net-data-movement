@@ -12,6 +12,7 @@ namespace DMLibTest
     using DMLibTest.Framework;
     using MS.Test.Common.MsTestLib;
     using System.Threading;
+    using Microsoft.Azure.Storage.DataMovement;
 
     internal class LocalDataAdaptor : LocalDataAdaptorBase<DMLibDataInfo>
     {
@@ -90,9 +91,9 @@ namespace DMLibTest
             return Path.Combine(this.BasePath, rootPath, dirNode.GetLocalRelativePath());
         }
 
-        public void GenerateDataInfo(DMLibDataInfo dataInfo, bool handleSMBAttributes)
+        public void GenerateDataInfo(DMLibDataInfo dataInfo, bool handleSMBAttributes, PreserveSMBPermissions getPermissions)
         {
-            this.GenerateDir(dataInfo.RootNode, Path.Combine(this.BasePath, dataInfo.RootPath), handleSMBAttributes);
+            this.GenerateDir(dataInfo.RootNode, Path.Combine(this.BasePath, dataInfo.RootPath), handleSMBAttributes, getPermissions);
         }
 
         protected override void GenerateDataImp(DMLibDataInfo dataInfo)
@@ -105,7 +106,7 @@ namespace DMLibTest
             throw new NotSupportedException();
         }
 
-        public DMLibDataInfo GetTransferDataInfo(string rootDir, bool handleSMBAttributes)
+        public DMLibDataInfo GetTransferDataInfo(string rootDir, bool handleSMBAttributes, PreserveSMBPermissions getSMBPermissions)
         {
 #if DOTNET5_4
             DirectoryInfo rootDirInfo = new DirectoryInfo(Path.Combine(this.BasePath, rootDir));
@@ -125,17 +126,17 @@ namespace DMLibTest
             }
 #endif
             DMLibDataInfo dataInfo = new DMLibDataInfo(rootDir);
-            this.BuildDirNode(rootDirInfo, dataInfo.RootNode, true);
+            this.BuildDirNode(rootDirInfo, dataInfo.RootNode, handleSMBAttributes, getSMBPermissions);
 
             return dataInfo;
         }
 
         public override DMLibDataInfo GetTransferDataInfo(string rootDir)
         {
-            return this.GetTransferDataInfo(rootDir, false);
+            return this.GetTransferDataInfo(rootDir, false, PreserveSMBPermissions.None);
         }
 
-        private void GenerateDir(DirNode dirNode, string parentPath, bool handleSMBAttributes = false)
+        private void GenerateDir(DirNode dirNode, string parentPath, bool handleSMBAttributes = false, PreserveSMBPermissions getPermissions = PreserveSMBPermissions.None)
         {
             string dirPath = Path.Combine(parentPath, dirNode.Name);
 
@@ -152,12 +153,12 @@ namespace DMLibTest
 
             foreach (var file in dirNode.FileNodes)
             {
-                GenerateFile(file, dirPath, handleSMBAttributes);
+                GenerateFile(file, dirPath, handleSMBAttributes, getPermissions);
             }
 
             foreach (var subDir in dirNode.NormalDirNodes)
             {
-                GenerateDir(subDir, dirPath, handleSMBAttributes);
+                GenerateDir(subDir, dirPath, handleSMBAttributes, getPermissions);
             }
 
             foreach (var subDir in dirNode.SymlinkedDirNodes)
@@ -219,7 +220,7 @@ namespace DMLibTest
             }
         }
 
-        private void GenerateFile(FileNode fileNode, string parentPath, bool handleSMBAttributes = false)
+        private void GenerateFile(FileNode fileNode, string parentPath, bool handleSMBAttributes = false, PreserveSMBPermissions getPermissions = PreserveSMBPermissions.None)
         {
             this.CheckFileNode(fileNode);
 
@@ -234,9 +235,9 @@ namespace DMLibTest
 #if DOTNET5_4
             FileInfo fileInfo = new FileInfo(localFilePath);
 
-            this.BuildFileNode(fileInfo, fileNode, handleSMBAttributes);
+            this.BuildFileNode(fileInfo, fileNode, handleSMBAttributes, getPermissions);
 #else
-            this.BuildFileNode(localFilePath, fileNode, handleSMBAttributes);
+            this.BuildFileNode(localFilePath, fileNode, handleSMBAttributes, getPermissions);
 #endif
         }
 
@@ -251,7 +252,7 @@ namespace DMLibTest
             {
                 Test.Info("Building file info of {0}", Path.Combine(parentPath, fileNode.Name));
                 FileInfo fileInfo = new FileInfo(Path.Combine(parentPath, fileNode.Name));
-                this.BuildFileNode(fileInfo, fileNode, false);
+                this.BuildFileNode(fileInfo, fileNode, false, PreserveSMBPermissions.None);
             }
 
             foreach (DirNode dirNode in parent.DirNodes)
@@ -260,39 +261,36 @@ namespace DMLibTest
             }
         }
 
-        private void BuildDirNode(DirectoryInfo dirInfo, DirNode parent, bool handleSMBAttributes = false)
+        private void BuildDirNode(DirectoryInfo dirInfo, DirNode parent, bool handleSMBAttributes = false, PreserveSMBPermissions preserveSMBPermissions = PreserveSMBPermissions.None)
         {
-            if (handleSMBAttributes)
-            {
-                DateTimeOffset? creationTime = null;
-                DateTimeOffset? lastWriteTime = null;
-                FileAttributes? fileAttributes = null;
+            DateTimeOffset? creationTime = null;
+            DateTimeOffset? lastWriteTime = null;
+            FileAttributes? fileAttributes = null;
 
 #if DOTNET5_4
-                LongPathFileExtension.GetFileProperties(dirInfo.FullName, out creationTime, out lastWriteTime, out fileAttributes, true);
+            LongPathFileExtension.GetFileProperties(dirInfo.FullName, out creationTime, out lastWriteTime, out fileAttributes, true);
 #else
                 LongPathFileExtension.GetFileProperties(dirInfo.FullName, out creationTime, out lastWriteTime, out fileAttributes);
 #endif
-                parent.CreationTime = creationTime;
-                parent.LastWriteTime = lastWriteTime;
-            }
+            parent.CreationTime = creationTime;
+            parent.LastWriteTime = lastWriteTime;
 
             foreach (FileInfo fileInfo in dirInfo.GetFiles())
             {
                 FileNode fileNode = new FileNode(fileInfo.Name);
-                this.BuildFileNode(fileInfo, fileNode, handleSMBAttributes);
+                this.BuildFileNode(fileInfo, fileNode, handleSMBAttributes, preserveSMBPermissions);
                 parent.AddFileNode(fileNode);
             }
 
             foreach (DirectoryInfo subDirInfo in dirInfo.GetDirectories())
             {
                 DirNode subDirNode = new DirNode(subDirInfo.Name);
-                this.BuildDirNode(subDirInfo, subDirNode, handleSMBAttributes);
+                this.BuildDirNode(subDirInfo, subDirNode, handleSMBAttributes, preserveSMBPermissions);
                 parent.AddDirNode(subDirNode);
             }
         }
 
-        private void BuildDirNode(string dirPath, DirNode parent, bool handleSMBAttributes)
+        private void BuildDirNode(string dirPath, DirNode parent, bool handleSMBAttributes, PreserveSMBPermissions getSMBPermissions)
         {
             dirPath = AppendDirectorySeparator(dirPath);
 
@@ -309,22 +307,27 @@ namespace DMLibTest
             parent.CreationTime = creationTime;
             parent.LastWriteTime = lastWriteTime;
 
+            if (PreserveSMBPermissions.None != getSMBPermissions)
+            {
+                parent.PortableSDDL = LongPathFileExtension.GetFilePortableSDDL(dirPath, getSMBPermissions);
+            }
+
             foreach (var fileInfo in LongPathDirectoryExtension.GetFiles(dirPath))
             {
-                FileNode fileNode = new FileNode(fileInfo.Remove(0,dirPath.Length));
-                this.BuildFileNode(fileInfo, fileNode, handleSMBAttributes);
+                FileNode fileNode = new FileNode(fileInfo.Remove(0, dirPath.Length));
+                this.BuildFileNode(fileInfo, fileNode, handleSMBAttributes, getSMBPermissions);
                 parent.AddFileNode(fileNode);
             }
 
             foreach (var subDirInfo in LongPathDirectoryExtension.GetDirectories(dirPath))
             {
                 DirNode subDirNode = new DirNode(subDirInfo.Remove(0, dirPath.Length));
-                this.BuildDirNode(subDirInfo, subDirNode, handleSMBAttributes);
+                this.BuildDirNode(subDirInfo, subDirNode, handleSMBAttributes, getSMBPermissions);
                 parent.AddDirNode(subDirNode);
             }
         }
 
-        private void BuildFileNode(FileInfo fileInfo, FileNode fileNode, bool handleSMBAttributes)
+        private void BuildFileNode(FileInfo fileInfo, FileNode fileNode, bool handleSMBAttributes, PreserveSMBPermissions getPermissions)
         {
             fileNode.MD5 = Helper.GetFileContentMD5(fileInfo.FullName);
             fileNode.LastModifiedTime = fileInfo.LastWriteTimeUtc;
@@ -345,10 +348,15 @@ namespace DMLibTest
                 {
                     fileNode.SMBAttributes = Helper.ToCloudFileNtfsAttributes(fileAttributes.Value);
                 }
+
+                if (PreserveSMBPermissions.None != getPermissions)
+                {
+                    fileNode.PortableSDDL = LongPathFileExtension.GetFilePortableSDDL(fileInfo.FullName, getPermissions);
+                }
             }
         }
 
-        private void BuildFileNode(string path, FileNode fileNode, bool handleSMBAttributes)
+        private void BuildFileNode(string path, FileNode fileNode, bool handleSMBAttributes, PreserveSMBPermissions getPermissions)
         {
             fileNode.MD5 = Helper.GetFileContentMD5(LongPathExtension.GetFullPath(path));
             // fileNode.LastModifiedTime =
@@ -364,9 +372,15 @@ namespace DMLibTest
 
             fileNode.CreationTime = creationTime;
             fileNode.LastWriteTime = lastWriteTime;
+
             if (handleSMBAttributes)
             {
                 fileNode.SMBAttributes = Helper.ToCloudFileNtfsAttributes(fileAttributes.Value);
+            }
+
+            if (PreserveSMBPermissions.None != getPermissions)
+            {
+                fileNode.PortableSDDL = LongPathFileExtension.GetFilePortableSDDL(path, getPermissions);
             }
 
             fileNode.Metadata = new Dictionary<string, string>();

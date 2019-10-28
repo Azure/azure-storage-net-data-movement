@@ -163,6 +163,12 @@ namespace DMLibTest
             set;
         }
 
+        public string PortableSDDL
+        {
+            get;
+            set;
+        }
+
         public IDictionary<string, string> Metadata
         {
             get;
@@ -373,6 +379,12 @@ namespace DMLibTest
         }
 
         public DateTimeOffset? LastWriteTime
+        {
+            get;
+            set;
+        }
+
+        public string PortableSDDL
         {
             get;
             set;
