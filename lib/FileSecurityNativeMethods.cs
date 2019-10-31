@@ -15,7 +15,9 @@ namespace Microsoft.Azure.Storage.DataMovement.Interop
         public const int SE_PRIVILEGE_ENABLED = 0x00000002;
         public const int SE_PRIVILEGE_DISABLED = 0x00000000;
 
+        public const int ERROR_ACCESS_DENIED = 5;
         public const int ERROR_NOT_ALL_ASSIGNED = 1300;
+        public const int ERROR_INVALID_OWNER = 1307;
         public const int ERROR_PRIVILEGE_NOT_HELD = 1314;
         public const int ERROR_INSUFFICIENT_BUFFER = 122;
         public const int SDDL_REVISION_1 = 1;
