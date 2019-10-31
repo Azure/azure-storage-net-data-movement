@@ -270,7 +270,7 @@ namespace Microsoft.Azure.Storage.DataMovement {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Failed to enable {0}, please run the process with an account with the specific privilege assigned, for example run it with administrator..
+        ///   Looks up a localized string similar to Failed to enable {0}, please run the process with an account with privilege &apos;{0}&apos; assigned, for example run it with administrator..
         /// </summary>
         internal static string FailedToEnablePrivilegeException {
             get {
@@ -432,7 +432,7 @@ namespace Microsoft.Azure.Storage.DataMovement {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &quot;A required privilege is not held. Please run the process with the privilege assigned, for example run it with administrator. Reference to {0} for details..
+        ///   Looks up a localized string similar to &quot;Lack of required privilege(s). Please run the process with privilege(s) &apos;{0}&apos; assigned, for example run it with administrator..
         /// </summary>
         internal static string PrivilegeRequiredException {
             get {

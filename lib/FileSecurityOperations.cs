@@ -300,22 +300,49 @@ namespace Microsoft.Azure.Storage.DataMovement
                     pSecurityDescriptor);
 
                 int errorCode = Marshal.GetLastWin32Error();
+                int hresult = Marshal.GetHRForLastWin32Error();
 
-                if (errorCode == NativeMethods.ERROR_PRIVILEGE_NOT_HELD)
+                if ((errorCode == NativeMethods.ERROR_PRIVILEGE_NOT_HELD)
+                    || (errorCode == NativeMethods.ERROR_ACCESS_DENIED)
+                    || (errorCode == NativeMethods.ERROR_INVALID_OWNER))
                 {
 #if !DMLIB_TEST
-                    throw new TransferException(
-                        string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.PrivilegeRequiredException,
-                            "https://docs.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-setnamedsecurityinfow"));
+                    string privilegeName = null;
+
+                    if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveOwnerPermission) == PreserveSMBPermissions.PreserveOwnerPermission)
+                    {
+                        privilegeName = NativeMethods.OwnerPrivilegeName;
+                    }
+
+                    if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveSACLPermission) == PreserveSMBPermissions.PreserveSACLPermission)
+                    {
+                        if (null == privilegeName)
+                        {
+                            privilegeName = NativeMethods.SACLPrivilegeName;
+                        }
+                        else
+                        {
+                            privilegeName += " ";
+                            privilegeName += NativeMethods.SACLPrivilegeName;
+                        }
+                    }
+
+                    if (null != privilegeName)
+                    {
+                        throw new TransferException(
+                            string.Format(
+                                CultureInfo.CurrentCulture,
+                                Resources.PrivilegeRequiredException,
+                                privilegeName));
+                    }
 #else
                     throw new Win32Exception(errorCode);
 #endif
                 }
-                else if (errorCode != 0)
+
+                if (errorCode != 0)
                 {
-                    Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
+                    Marshal.ThrowExceptionForHR(hresult);
                 }
             }
             finally
@@ -568,7 +595,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     string.Format(
                         CultureInfo.CurrentCulture,
                         Resources.PrivilegeRequiredException,
-                        "https://docs.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-getsecurityinfo"));
+                        NativeMethods.SACLPrivilegeName));
             }
             else if (errorReturn != 0)
             {
