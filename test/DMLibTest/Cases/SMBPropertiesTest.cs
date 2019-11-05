@@ -688,9 +688,9 @@ namespace DMLibTest.Cases
             options.IsDirectoryTransfer = true;
 
             PreserveSMBPermissions preserveSMBPermissions =
-                PreserveSMBPermissions.PreserveOwnerPermission 
-                | PreserveSMBPermissions.PreserveGroupPermission 
-                | PreserveSMBPermissions.PreserveDACLPermission;
+                PreserveSMBPermissions.Owner 
+                | PreserveSMBPermissions.Group 
+                | PreserveSMBPermissions.DACL;
 
             options.TransferItemModifier = (fileNode, transferItem) =>
             {
@@ -749,9 +749,9 @@ namespace DMLibTest.Cases
             try
             {
                 PreserveSMBPermissions preserveSMBPermissions = 
-                    PreserveSMBPermissions.PreserveOwnerPermission 
-                    | PreserveSMBPermissions.PreserveGroupPermission 
-                    | PreserveSMBPermissions.PreserveDACLPermission;
+                    PreserveSMBPermissions.Owner 
+                    | PreserveSMBPermissions.Group 
+                    | PreserveSMBPermissions.DACL;
                 string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
 
 #if DEBUG
@@ -818,9 +818,9 @@ namespace DMLibTest.Cases
             if (!CrossPlatformHelpers.IsWindows) return;
 
             PreserveSMBPermissions preserveSMBPermissions = 
-                PreserveSMBPermissions.PreserveOwnerPermission 
-                | PreserveSMBPermissions.PreserveGroupPermission 
-                | PreserveSMBPermissions.PreserveDACLPermission;
+                PreserveSMBPermissions.Owner 
+                | PreserveSMBPermissions.Group 
+                | PreserveSMBPermissions.DACL;
 
             string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
             CancellationTokenSource tokenSource = new CancellationTokenSource();

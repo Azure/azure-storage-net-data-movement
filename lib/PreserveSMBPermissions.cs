@@ -27,18 +27,18 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// To set owner permission to local file during downloading, the process needs to run with an account who has been assigned
         /// the privilege, for example run the process with administrator account.
         /// </summary>
-        PreserveOwnerPermission = 0x00000001,
+        Owner = 0x00000001,
 
         /// <summary>
         /// To preserve Group permission.
         /// </summary>
-        PreserveGroupPermission = 0x00000002,
+        Group = 0x00000002,
 
         /// <summary>
         /// To preserve DACL permission.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "DACL")]
-        PreserveDACLPermission = 0x00000004,
+        DACL = 0x00000004,
 
         /// <summary>
         /// To preserve SACL permission.
@@ -48,6 +48,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// the privilege, for example run the process with administrator account.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SACL")]
-        PreserveSACLPermission = 0x00000008
+        SACL = 0x00000008
     }
 }

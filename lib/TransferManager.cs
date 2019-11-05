@@ -193,7 +193,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (options != null)
             {
                 destLocation.AccessCondition = options.DestinationAccessCondition;
-                FileSecurityOperations.BeginTransferJob(options.PreserveSMBPermissions, false);
+                FileSecurityOperations.EnableRequiredPrivileges(options.PreserveSMBPermissions, false);
             }
 
             try
@@ -204,7 +204,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 if (options != null)
                 {
-                    FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, false);
+                    FileSecurityOperations.DisablePrivileges(options.PreserveSMBPermissions, false);
                 }
             }
         }
@@ -377,7 +377,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (null != options)
             {
-                FileSecurityOperations.BeginTransferJob(options.PreserveSMBPermissions, false);
+                FileSecurityOperations.EnableRequiredPrivileges(options.PreserveSMBPermissions, false);
             }
 
             try
@@ -388,7 +388,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 if (options != null)
                 {
-                    FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, false);
+                    FileSecurityOperations.DisablePrivileges(options.PreserveSMBPermissions, false);
                 }
             }
         }
@@ -466,8 +466,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
                 sourceLocation.BlobRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
-
-                //TODO handle unsupported options
             }
 
             return DownloadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
@@ -519,7 +517,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
                 sourceLocation.FileRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
-                FileSecurityOperations.BeginTransferJob(options.PreserveSMBPermissions, true);
+                FileSecurityOperations.EnableRequiredPrivileges(options.PreserveSMBPermissions, true);
             }
 
             try
@@ -530,7 +528,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 if (options != null)
                 {
-                    FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, true);
+                    FileSecurityOperations.DisablePrivileges(options.PreserveSMBPermissions, true);
                 }
             }
         }
@@ -663,7 +661,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 TransferManager.CheckSearchPatternOfAzureFileSource(options);                                
                 sourceLocation.FileRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
-                FileSecurityOperations.BeginTransferJob(options.PreserveSMBPermissions, true);
+                FileSecurityOperations.EnableRequiredPrivileges(options.PreserveSMBPermissions, true);
             }
 
             try
@@ -674,7 +672,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 if (options != null)
                 {
-                    FileSecurityOperations.EndTransferJob(options.PreserveSMBPermissions, true);
+                    FileSecurityOperations.DisablePrivileges(options.PreserveSMBPermissions, true);
                 }
             }
         }

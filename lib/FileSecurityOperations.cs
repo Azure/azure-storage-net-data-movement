@@ -31,7 +31,15 @@ namespace Microsoft.Azure.Storage.DataMovement
         private static bool OwnerPrivilegeEnabled = false;
         private static bool SACLPrivilegeEnabled = false;
 
-        public static void BeginTransferJob(PreserveSMBPermissions preserveSMBPermissions, bool setLocalFilePermission)
+        /// <summary>
+        /// This method should be invoked at the end of transfer job handling, to disable privileges which are enabled at the beginning of the transfer job.
+        /// Getting/setting premissions from/to local file may need some specific privileges. 
+        /// These privileges should be enabled at the beginning of a transfer job, and disbled at the end of the transfer job.
+        /// </summary>
+        /// <param name="preserveSMBPermissions">Permissions types to be preserved.</param>
+        /// <param name="setLocalFilePermission">Indicating whether to set permission to local file. 
+        /// Setting owner info to local file would need specific privilege, while getting owner info doesn't require this privilege.</param>
+        public static void EnableRequiredPrivileges(PreserveSMBPermissions preserveSMBPermissions, bool setLocalFilePermission)
         {
 #if DEBUG
             if (TestHookCallbacks.UnderTesting)
@@ -40,7 +48,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 #endif
 
-            if (PreserveSMBPermissions.PreserveSACLPermission == (preserveSMBPermissions & PreserveSMBPermissions.PreserveSACLPermission))
+            if (PreserveSMBPermissions.SACL == (preserveSMBPermissions & PreserveSMBPermissions.SACL))
             {
                 if (!SACLPrivilegeEnabledOriginal)
                 {
@@ -83,7 +91,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return;
             }
 
-            if (PreserveSMBPermissions.PreserveOwnerPermission == (preserveSMBPermissions & PreserveSMBPermissions.PreserveOwnerPermission))
+            if (PreserveSMBPermissions.Owner == (preserveSMBPermissions & PreserveSMBPermissions.Owner))
             {
                 if (!OwnerPrivilegeEnabledOriginal)
                 {
@@ -106,9 +114,21 @@ namespace Microsoft.Azure.Storage.DataMovement
                             OwnerPrivilegeEnabledOriginal = SetPrivilege(NativeMethods.OwnerPrivilegeName, true);
                         }
                         catch (COMException)
-                        { }
+                        {
+                            // Ignore exception here
+                            // Under some condition, setting owner info to local file will still success even when there's no SeRestorePrivilege privilege.
+                            // So here only try to enable the privilege. Later, if it fails to set owner info to local file, reports error for the specific file.
+                            --OwnerPrivilegeJobCount;
+                            return;
+                        }
                         catch (TransferException)
-                        { }
+                        {
+                            // Ignore exception here
+                            // Under some condition, setting owner info to local file will still success even when there's no SeRestorePrivilege privilege.
+                            // So here only try to enable the privilege. Later, if it fails to set owner info to local file, reports error for the specific file.
+                            --OwnerPrivilegeJobCount;
+                            return;
+                        }
 
                         OwnerPrivilegeEnabled = true;
 
@@ -121,7 +141,15 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        public static void EndTransferJob(PreserveSMBPermissions preserveSMBPermissions, bool setLocalFilePermission)
+        /// <summary>
+        /// This method should be invoked at the end of transfer job handling, to disable privileges which are enabled at the beginning of the transfer job.
+        /// Getting/setting premissions from/to local file may need some specific privileges. 
+        /// These privileges should be enabled at the beginning of a transfer job, and disbled at the end of the transfer job.
+        /// </summary>
+        /// <param name="preserveSMBPermissions">Permissions types to be preserved.</param>
+        /// <param name="setLocalFilePermission">Indicating whether to set permission to local file. 
+        /// Setting owner info to local file would need specific privilege, while getting owner info doesn't require this privilege.</param>
+        public static void DisablePrivileges(PreserveSMBPermissions preserveSMBPermissions, bool setLocalFilePermission)
         {
 #if DEBUG
             if (TestHookCallbacks.UnderTesting)
@@ -130,7 +158,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 #endif
 
-            if (PreserveSMBPermissions.PreserveSACLPermission == (preserveSMBPermissions & PreserveSMBPermissions.PreserveSACLPermission))
+            if (PreserveSMBPermissions.SACL == (preserveSMBPermissions & PreserveSMBPermissions.SACL))
             {
                 if (!SACLPrivilegeEnabledOriginal)
                 {
@@ -150,12 +178,20 @@ namespace Microsoft.Azure.Storage.DataMovement
                                 SetPrivilege(NativeMethods.SACLPrivilegeName, false);
                             }
                             catch (TransferException)
-                            { }
+                            {
+                                // Ignore the exception
+                                // Here just try to clear up the privileges which may have been enabled at the very beginning of a tranfer job.
+                                // Failure on disabling the privilege won't impact transfer result.
+                            }
                             catch (COMException)
-                            { }
-                        }
+                            {
+                                // Ignore the exception
+                                // Here just try to clear up the privileges which may have been enabled at the very beginning of a tranfer job.
+                                // Failure on disabling the privilege won't impact transfer result.
+                            }
 
-                        SACLPrivilegeEnabled = false;
+                            SACLPrivilegeEnabled = false;
+                        }
                     }
                 }
             }
@@ -165,13 +201,14 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return;
             }
 
-            if (PreserveSMBPermissions.PreserveOwnerPermission == (preserveSMBPermissions & PreserveSMBPermissions.PreserveOwnerPermission))
+            if (PreserveSMBPermissions.Owner == (preserveSMBPermissions & PreserveSMBPermissions.Owner))
             {
                 if (!OwnerPrivilegeEnabledOriginal)
                 {
                     lock (OwnerPrivilegeLock)
                     {
-                        if (OwnerPrivilegeEnabledOriginal)
+                        if (!OwnerPrivilegeEnabled
+                            || OwnerPrivilegeEnabledOriginal)
                         {
                             return;
                         }
@@ -185,12 +222,20 @@ namespace Microsoft.Azure.Storage.DataMovement
                                 SetPrivilege(NativeMethods.OwnerPrivilegeName, false);
                             }
                             catch (TransferException)
-                            { }
+                            {
+                                // Ignore the exception
+                                // Here just try to clear up the privileges which may have been enabled at the very beginning of a tranfer job.
+                                // Failure on disabling the privilege won't impact transfer result.
+                            }
                             catch (COMException)
-                            { }
-                        }
+                            {
+                                // Ignore the exception
+                                // Here just try to clear up the privileges which may have been enabled at the very beginning of a tranfer job.
+                                // Failure on disabling the privilege won't impact transfer result.
+                            }
 
-                        OwnerPrivilegeEnabled = false;
+                            OwnerPrivilegeEnabled = false;
+                        }
                     }
                 }
             }
@@ -309,12 +354,12 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if !DMLIB_TEST
                     string privilegeName = null;
 
-                    if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveOwnerPermission) == PreserveSMBPermissions.PreserveOwnerPermission)
+                    if ((preserveSMBPermissions & PreserveSMBPermissions.Owner) == PreserveSMBPermissions.Owner)
                     {
                         privilegeName = NativeMethods.OwnerPrivilegeName;
                     }
 
-                    if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveSACLPermission) == PreserveSMBPermissions.PreserveSACLPermission)
+                    if ((preserveSMBPermissions & PreserveSMBPermissions.SACL) == PreserveSMBPermissions.SACL)
                     {
                         if (null == privilegeName)
                         {
@@ -377,16 +422,16 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             uint securityInfo = 0;
 
-            if (PreserveSMBPermissions.PreserveOwnerPermission == (preserveSMBPermissions & PreserveSMBPermissions.PreserveOwnerPermission))
+            if (PreserveSMBPermissions.Owner == (preserveSMBPermissions & PreserveSMBPermissions.Owner))
                 securityInfo |= (uint)NativeMethods.SECURITY_INFORMATION.OWNER_SECURITY_INFORMATION;
 
-            if (PreserveSMBPermissions.PreserveGroupPermission == (preserveSMBPermissions & PreserveSMBPermissions.PreserveGroupPermission))
+            if (PreserveSMBPermissions.Group == (preserveSMBPermissions & PreserveSMBPermissions.Group))
                 securityInfo |= (uint)NativeMethods.SECURITY_INFORMATION.GROUP_SECURITY_INFORMATION;
 
-            if (PreserveSMBPermissions.PreserveDACLPermission == (preserveSMBPermissions & PreserveSMBPermissions.PreserveDACLPermission))
+            if (PreserveSMBPermissions.DACL == (preserveSMBPermissions & PreserveSMBPermissions.DACL))
                 securityInfo |= (uint)NativeMethods.SECURITY_INFORMATION.DACL_SECURITY_INFORMATION;
 
-            if (PreserveSMBPermissions.PreserveSACLPermission == (preserveSMBPermissions & PreserveSMBPermissions.PreserveSACLPermission))
+            if (PreserveSMBPermissions.SACL == (preserveSMBPermissions & PreserveSMBPermissions.SACL))
                 securityInfo |= (uint)NativeMethods.SECURITY_INFORMATION.SACL_SECURITY_INFORMATION;
 
             return (NativeMethods.SECURITY_INFORMATION)(securityInfo);
