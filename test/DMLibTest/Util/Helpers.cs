@@ -142,22 +142,22 @@ namespace DMLibTest
             string[] sourcesddlStrings = GetSDDLStringsForAllTypes(sourceSDDL);
             string[] destsddlStrings = GetSDDLStringsForAllTypes(destSDDL);
 
-            if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveOwnerPermission) == PreserveSMBPermissions.PreserveOwnerPermission)
+            if ((preserveSMBPermissions & PreserveSMBPermissions.Owner) == PreserveSMBPermissions.Owner)
             {
                 Test.Assert(string.Equals(sourcesddlStrings[0], destsddlStrings[0]), "SDDL Value should  be expected.");
             }
 
-            if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveGroupPermission) == PreserveSMBPermissions.PreserveGroupPermission)
+            if ((preserveSMBPermissions & PreserveSMBPermissions.Group) == PreserveSMBPermissions.Group)
             {
                 Test.Assert(string.Equals(sourcesddlStrings[1], destsddlStrings[1]), "SDDL Value should  be expected.");
             }
 
-            if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveDACLPermission) == PreserveSMBPermissions.PreserveDACLPermission)
+            if ((preserveSMBPermissions & PreserveSMBPermissions.DACL) == PreserveSMBPermissions.DACL)
             {
                 Test.Assert(string.Equals(sourcesddlStrings[2], destsddlStrings[2]), "SDDL Value should  be expected.");
             }
 
-            if ((preserveSMBPermissions & PreserveSMBPermissions.PreserveSACLPermission) == PreserveSMBPermissions.PreserveSACLPermission)
+            if ((preserveSMBPermissions & PreserveSMBPermissions.SACL) == PreserveSMBPermissions.SACL)
             {
                 Test.Assert(string.Equals(sourcesddlStrings[3], destsddlStrings[3]), "SDDL Value should  be expected.");
             }

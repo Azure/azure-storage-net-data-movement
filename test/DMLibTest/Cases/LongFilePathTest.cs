@@ -115,9 +115,9 @@ namespace DMLibTest.Cases
                 return;
             }
 
-            PreserveSMBPermissions preserveSMBPermissions = PreserveSMBPermissions.PreserveOwnerPermission
-                        | PreserveSMBPermissions.PreserveGroupPermission
-                        | PreserveSMBPermissions.PreserveDACLPermission;
+            PreserveSMBPermissions preserveSMBPermissions = PreserveSMBPermissions.Owner
+                        | PreserveSMBPermissions.Group
+                        | PreserveSMBPermissions.DACL;
 
             int fileSizeInKB = 1;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(GetDirectoryName(sourceDirectoryName, DMLibTestBase.FileName, pathLengthLimit));
@@ -154,7 +154,7 @@ namespace DMLibTest.Cases
             }
             string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
 
-            PreserveSMBPermissions preserveSMBPermissions = PreserveSMBPermissions.PreserveDACLPermission;
+            PreserveSMBPermissions preserveSMBPermissions = PreserveSMBPermissions.DACL;
 
             int fileSizeInKB = 1;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);

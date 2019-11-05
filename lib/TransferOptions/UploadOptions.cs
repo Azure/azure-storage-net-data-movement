@@ -58,7 +58,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
         /// <summary>
-        /// 
+        /// Gets or sets a value that indicates whether to preserve SMB permissions during uploading.
+        /// Preserving SMB permissions is only supported on Windows.
         /// </summary>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SMB")]
         public PreserveSMBPermissions PreserveSMBPermissions

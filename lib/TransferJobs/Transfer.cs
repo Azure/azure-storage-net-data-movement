@@ -250,6 +250,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
+        /// <summary>
+        /// Gets or sets a value that indicates whether to preserve SMB permissions during transferring.
+        /// Preserving SMB permissions is only supported on Windows.
+        /// </summary>
         public PreserveSMBPermissions PreserveSMBPermissions
         {
             get;
