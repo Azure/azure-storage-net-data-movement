@@ -166,6 +166,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        public AzureFileDirectorySDDLCache SDDLCache
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// Creates a copy of current transfer object.
         /// </summary>

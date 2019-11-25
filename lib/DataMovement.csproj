@@ -84,6 +84,7 @@
       <Link>SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="AzureFileDirectorySDDLCache.cs" />
     <Compile Include="ChunkedMemoryStream.cs" />
     <Compile Include="CopyMethod.cs" />
     <Compile Include="DirectoryListingScheduler.cs" />

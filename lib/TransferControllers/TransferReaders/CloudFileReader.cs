@@ -71,10 +71,31 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
                 else if (!string.IsNullOrEmpty(this.cloudFile.Properties.FilePermissionKey))
                 {
-                    this.SharedTransferData.Attributes.PortableSDDL = await this.cloudFile.Share.GetFilePermissionAsync(this.cloudFile.Properties.FilePermissionKey,
-                        Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
-                        Utils.GenerateOperationContext(this.Controller.TransferContext),
-                        this.CancellationToken).ConfigureAwait(false);
+                    var sddlCache = this.SharedTransferData.TransferJob.Transfer.SDDLCache;
+
+                    if (null != sddlCache)
+                    {
+                        string portableSDDL = sddlCache.GetValue(this.cloudFile.Properties.FilePermissionKey);
+
+                        if (null == portableSDDL)
+                        {
+                            portableSDDL = await this.cloudFile.Share.GetFilePermissionAsync(this.cloudFile.Properties.FilePermissionKey,
+                                Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
+                                Utils.GenerateOperationContext(this.Controller.TransferContext),
+                                this.CancellationToken).ConfigureAwait(false);
+
+                            sddlCache.AddValue(this.cloudFile.Properties.FilePermissionKey, portableSDDL);
+                        }
+
+                        this.SharedTransferData.Attributes.PortableSDDL = portableSDDL;
+                    }
+                    else
+                    {
+                        this.SharedTransferData.Attributes.PortableSDDL = await this.cloudFile.Share.GetFilePermissionAsync(this.cloudFile.Properties.FilePermissionKey,
+                            Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
+                            Utils.GenerateOperationContext(this.Controller.TransferContext),
+                            this.CancellationToken).ConfigureAwait(false);
+                    }
                 }
                 else
                 {

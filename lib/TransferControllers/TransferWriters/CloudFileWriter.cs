@@ -130,19 +130,37 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             {
                 if (this.SharedTransferData.Attributes.PortableSDDL.Length >= 8 * 1024)
                 {
-                    string permissionKey = await this.cloudFile.Share.CreateFilePermissionAsync(this.SharedTransferData.Attributes.PortableSDDL,
-                        fileRequestOptions,
-                        operationContext,
-                        this.CancellationToken).ConfigureAwait(false);
+                    string permissionKey = null;
+                    var sddlCache = this.TransferJob.Transfer.SDDLCache;
+                    if (null != sddlCache)
+                    {
+                        permissionKey = sddlCache.GetValue(this.SharedTransferData.Attributes.PortableSDDL);
+
+                        if (null == permissionKey)
+                        {
+                            permissionKey = await this.cloudFile.Share.CreateFilePermissionAsync(this.SharedTransferData.Attributes.PortableSDDL,
+                                fileRequestOptions,
+                                operationContext,
+                                this.CancellationToken).ConfigureAwait(false);
+
+                            sddlCache.AddValue(this.SharedTransferData.Attributes.PortableSDDL, permissionKey);
+                        }
+                    }
+                    else
+                    {
+                        permissionKey = await this.cloudFile.Share.CreateFilePermissionAsync(this.SharedTransferData.Attributes.PortableSDDL,
+                            fileRequestOptions,
+                            operationContext,
+                            this.CancellationToken).ConfigureAwait(false);
+                    }
 
                     this.cloudFile.Properties.FilePermissionKey = permissionKey;
-                    this.cloudFile.FilePermission = null;
-                }
-                else
-                {
-                    this.cloudFile.FilePermission = this.SharedTransferData.Attributes.PortableSDDL;
-                }
             }
+            else
+            {
+                this.cloudFile.FilePermission = this.SharedTransferData.Attributes.PortableSDDL;
+            }
+        }
 
             Utils.SetAttributes(this.cloudFile, this.SharedTransferData.Attributes, this.TransferJob.Transfer.PreserveSMBAttributes);
             await this.Controller.SetCustomAttributesAsync(this.cloudFile).ConfigureAwait(false);
