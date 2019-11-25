@@ -170,6 +170,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 else
                 {
                     SingleObjectTransfer transferItem = this.baseDirectoryTransfer.CreateTransfer(entry);
+                    transferItem.SDDLCache = this.baseDirectoryTransfer.SDDLCache;
 #if DEBUG
                     Utils.HandleFaultInjection(entry.RelativePath, transferItem);
 #endif
@@ -268,75 +269,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             DateTimeOffset? lastWriteTime = null;
             IDictionary<string, string> metadata = null;
 
-            if (this.source.Type == TransferLocationType.LocalDirectory)
-            {
-                if ((this.baseDirectoryTransfer.PreserveSMBAttributes)
-                    || (PreserveSMBPermissions.None != this.baseDirectoryTransfer.PreserveSMBPermissions))
-                {
-                    var sourceLocalDirLocation = this.source as DirectoryLocation;
-                    string directoryPath = sourceLocalDirLocation.DirectoryPath;
-
-                    if (this.baseDirectoryTransfer.PreserveSMBAttributes)
-                    {
-                        FileAttributes? localFileAttributes = null;
-#if DOTNET5_4
-                        LongPathFile.GetFileProperties(directoryPath, out creationTime, out lastWriteTime, out localFileAttributes, true);
-#else
-                        LongPathFile.GetFileProperties(directoryPath, out creationTime, out lastWriteTime, out localFileAttributes);
-#endif
-                        fileAttributes = Utils.LocalAttributesToAzureFileNtfsAttributes(localFileAttributes.Value);
-                    }
-
-                    portableSDDL = FileSecurityOperations.GetFilePortableSDDL(directoryPath, this.baseDirectoryTransfer.PreserveSMBPermissions);
-                }
-
-
-            }
-            else if (this.source.Type == TransferLocationType.AzureFileDirectory)
-            {
-                if (this.baseDirectoryTransfer.PreserveSMBAttributes 
-                    || (PreserveSMBPermissions.None != this.baseDirectoryTransfer.PreserveSMBPermissions)
-                    || this.dest.Type == TransferLocationType.AzureFileDirectory)
-                {
-                    AzureFileDirectoryLocation sourceFileDirLocation = this.source as AzureFileDirectoryLocation;
-
-                    var sourceFileDirectory = sourceFileDirLocation.FileDirectory;
-                    sourceFileDirectory.FetchAttributesAsync(
-                        null,
-                        Utils.GenerateFileRequestOptions(sourceFileDirLocation.FileRequestOptions),
-                        Utils.GenerateOperationContext(this.baseDirectoryTransfer.Context),
-                        cancellationToken).GetAwaiter().GetResult();
-
-                    if (this.baseDirectoryTransfer.PreserveSMBAttributes)
-                    {
-                        fileAttributes = sourceFileDirectory.Properties.NtfsAttributes;
-                        creationTime = sourceFileDirectory.Properties.CreationTime;
-                        lastWriteTime = sourceFileDirectory.Properties.LastWriteTime;
-                    }
-
-                    metadata = sourceFileDirectory.Metadata;
-
-                    if (PreserveSMBPermissions.None != this.baseDirectoryTransfer.PreserveSMBPermissions)
-                    {
-                        if (!string.IsNullOrEmpty(sourceFileDirectory.FilePermission))
-                        {
-                            portableSDDL = sourceFileDirectory.FilePermission;
-                        }
-                        else if (!string.IsNullOrEmpty(sourceFileDirectory.Properties.FilePermissionKey))
-                        {
-                            portableSDDL = sourceFileDirectory.Share.GetFilePermissionAsync(
-                                sourceFileDirectory.Properties.FilePermissionKey,
-                                Utils.GenerateFileRequestOptions(sourceFileDirLocation.FileRequestOptions),
-                                Utils.GenerateOperationContext(this.baseDirectoryTransfer.Context),
-                                cancellationToken).GetAwaiter().GetResult();
-                        }
-                        else
-                        {
-                            portableSDDL = null;
-                        }
-                    }
-                }
-            }
+            this.GetSourceProperites(out fileAttributes, out portableSDDL, out creationTime, out lastWriteTime, out metadata, cancellationToken);
 
             if (this.dest.Type == TransferLocationType.LocalDirectory)
             {
@@ -397,7 +330,99 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        private static void CreateCloudFileDestinationDirectory(CloudFileDirectory fileDirectory, 
+        private void GetSourceProperites(out CloudFileNtfsAttributes? fileAttributes,
+            out string portableSDDL,
+            out DateTimeOffset? creationTime,
+            out DateTimeOffset? lastWriteTime,
+            out IDictionary<string, string> metadata,
+            CancellationToken cancellationToken)
+        {
+            fileAttributes = null;
+            portableSDDL = null;
+            creationTime = null;
+            lastWriteTime = null;
+            metadata = null;
+
+            if (this.source.Type == TransferLocationType.LocalDirectory)
+            {
+                if ((this.baseDirectoryTransfer.PreserveSMBAttributes)
+                    || (PreserveSMBPermissions.None != this.baseDirectoryTransfer.PreserveSMBPermissions))
+                {
+                    var sourceLocalDirLocation = this.source as DirectoryLocation;
+                    string directoryPath = sourceLocalDirLocation.DirectoryPath;
+
+                    if (this.baseDirectoryTransfer.PreserveSMBAttributes)
+                    {
+                        FileAttributes? localFileAttributes = null;
+#if DOTNET5_4
+                        LongPathFile.GetFileProperties(directoryPath, out creationTime, out lastWriteTime, out localFileAttributes, true);
+#else
+                        LongPathFile.GetFileProperties(directoryPath, out creationTime, out lastWriteTime, out localFileAttributes);
+#endif
+                        fileAttributes = Utils.LocalAttributesToAzureFileNtfsAttributes(localFileAttributes.Value);
+                    }
+
+                    portableSDDL = FileSecurityOperations.GetFilePortableSDDL(directoryPath, this.baseDirectoryTransfer.PreserveSMBPermissions);
+                }
+
+
+            }
+            else if (this.source.Type == TransferLocationType.AzureFileDirectory)
+            {
+                if (this.baseDirectoryTransfer.PreserveSMBAttributes
+                    || (PreserveSMBPermissions.None != this.baseDirectoryTransfer.PreserveSMBPermissions)
+                    || this.dest.Type == TransferLocationType.AzureFileDirectory)
+                {
+                    AzureFileDirectoryLocation sourceFileDirLocation = this.source as AzureFileDirectoryLocation;
+
+                    var sourceFileDirectory = sourceFileDirLocation.FileDirectory;
+                    sourceFileDirectory.FetchAttributesAsync(
+                        null,
+                        Utils.GenerateFileRequestOptions(sourceFileDirLocation.FileRequestOptions),
+                        Utils.GenerateOperationContext(this.baseDirectoryTransfer.Context),
+                        cancellationToken).GetAwaiter().GetResult();
+
+                    if (this.baseDirectoryTransfer.PreserveSMBAttributes)
+                    {
+                        fileAttributes = sourceFileDirectory.Properties.NtfsAttributes;
+                        creationTime = sourceFileDirectory.Properties.CreationTime;
+                        lastWriteTime = sourceFileDirectory.Properties.LastWriteTime;
+                    }
+
+                    metadata = sourceFileDirectory.Metadata;
+
+                    if (PreserveSMBPermissions.None != this.baseDirectoryTransfer.PreserveSMBPermissions)
+                    {
+                        if (!string.IsNullOrEmpty(sourceFileDirectory.FilePermission))
+                        {
+                            portableSDDL = sourceFileDirectory.FilePermission;
+                        }
+                        else if (!string.IsNullOrEmpty(sourceFileDirectory.Properties.FilePermissionKey))
+                        {
+                            portableSDDL = this.baseDirectoryTransfer.SDDLCache.GetValue(
+                                sourceFileDirectory.Properties.FilePermissionKey);
+
+                            if (null == portableSDDL)
+                            {
+                                portableSDDL = sourceFileDirectory.Share.GetFilePermissionAsync(
+                                    sourceFileDirectory.Properties.FilePermissionKey,
+                                    Utils.GenerateFileRequestOptions(sourceFileDirLocation.FileRequestOptions),
+                                    Utils.GenerateOperationContext(this.baseDirectoryTransfer.Context),
+                                    cancellationToken).GetAwaiter().GetResult();
+                                this.baseDirectoryTransfer.SDDLCache.AddValue(sourceFileDirectory.Properties.FilePermissionKey,
+                                    portableSDDL);
+                            }
+                        }
+                        else
+                        {
+                            portableSDDL = null;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CreateCloudFileDestinationDirectory(CloudFileDirectory fileDirectory, 
             CloudFileNtfsAttributes? fileAttributes, 
             DateTimeOffset? creationTime,
             DateTimeOffset? lastWriteTime,
@@ -429,14 +454,20 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 if (portableSDDL.Length > 8 * 1024)
                 {
-                    filePermissionKey = fileDirectory.Share.CreateFilePermissionAsync(
-                        portableSDDL,
-                        Transfer_RequestOptions.DefaultFileRequestOptions,
-                        Utils.GenerateOperationContext(null),
-                        cancellationToken).GetAwaiter().GetResult();
+                    filePermissionKey = this.baseDirectoryTransfer.SDDLCache.GetValue(portableSDDL);
 
-                    fileDirectory.Properties.FilePermissionKey = portableSDDL;
-                    fileDirectory.FilePermission = null;
+                    if (null == filePermissionKey)
+                    {
+                        filePermissionKey = fileDirectory.Share.CreateFilePermissionAsync(
+                            portableSDDL,
+                            Transfer_RequestOptions.DefaultFileRequestOptions,
+                            Utils.GenerateOperationContext(null),
+                            cancellationToken).GetAwaiter().GetResult();
+
+                        this.baseDirectoryTransfer.SDDLCache.AddValue(portableSDDL, filePermissionKey);
+                    }
+
+                    fileDirectory.Properties.FilePermissionKey = filePermissionKey;
                 }
                 else
                 {
@@ -546,7 +577,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                 if (!string.IsNullOrEmpty(filePermissionKey))
                 {
                     fileDirectory.Properties.FilePermissionKey = filePermissionKey;
-                    fileDirectory.FilePermission = null;
                     needToSetProperties = true;
                 }
                 else if (!string.IsNullOrEmpty(portableSDDL))

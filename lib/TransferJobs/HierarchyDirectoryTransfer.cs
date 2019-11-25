@@ -81,6 +81,8 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private DirectoryListingScheduler directoryListingScheduler = null;
 
+        private AzureFileDirectorySDDLCache azureFileDirectorySDDLCache = new AzureFileDirectorySDDLCache(); 
+
 #if !BINARY_SERIALIZATION
         [DataMember]
 #endif
@@ -280,6 +282,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        public AzureFileDirectorySDDLCache SDDLCache
+        {
+            get
+            {
+                return this.azureFileDirectorySDDLCache;
+            }
+        }
+
         public string SearchPattern
         {
             get;
@@ -345,6 +355,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     this.directoryListingScheduler.Dispose();
                     this.directoryListingScheduler = null;
+                }
+
+                if (null != this.azureFileDirectorySDDLCache)
+                {
+                    this.azureFileDirectorySDDLCache.Dispose();
+                    this.azureFileDirectorySDDLCache = null;
                 }
             }
 
