@@ -139,7 +139,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
 
                 TransferEntry entry = enumerator.Current;
-                ErrorEntry errorEntry = entry as ErrorEntry;
+                var errorEntry = entry as ErrorEntry;
                 if (errorEntry != null)
                 {
                     TransferException exception = errorEntry.Exception as TransferException;
@@ -399,8 +399,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         }
                         else if (!string.IsNullOrEmpty(sourceFileDirectory.Properties.FilePermissionKey))
                         {
-                            portableSDDL = this.baseDirectoryTransfer.SDDLCache.GetValue(
-                                sourceFileDirectory.Properties.FilePermissionKey);
+                            this.baseDirectoryTransfer.SDDLCache.TryGetValue(sourceFileDirectory.Properties.FilePermissionKey, out portableSDDL);
 
                             if (null == portableSDDL)
                             {
@@ -409,7 +408,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                                     Utils.GenerateFileRequestOptions(sourceFileDirLocation.FileRequestOptions),
                                     Utils.GenerateOperationContext(this.baseDirectoryTransfer.Context),
                                     cancellationToken).GetAwaiter().GetResult();
-                                this.baseDirectoryTransfer.SDDLCache.AddValue(sourceFileDirectory.Properties.FilePermissionKey,
+                                this.baseDirectoryTransfer.SDDLCache.TryAddValue(sourceFileDirectory.Properties.FilePermissionKey,
                                     portableSDDL);
                             }
                         }
@@ -452,9 +451,9 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (!string.IsNullOrEmpty(portableSDDL))
             {
-                if (portableSDDL.Length > 8 * 1024)
+                if (portableSDDL.Length > Constants.MaxSDDLLengthInProperties)
                 {
-                    filePermissionKey = this.baseDirectoryTransfer.SDDLCache.GetValue(portableSDDL);
+                    this.baseDirectoryTransfer.SDDLCache.TryGetValue(portableSDDL, out filePermissionKey);
 
                     if (null == filePermissionKey)
                     {
@@ -464,7 +463,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                             Utils.GenerateOperationContext(null),
                             cancellationToken).GetAwaiter().GetResult();
 
-                        this.baseDirectoryTransfer.SDDLCache.AddValue(portableSDDL, filePermissionKey);
+                        this.baseDirectoryTransfer.SDDLCache.TryAddValue(portableSDDL, filePermissionKey);
                     }
 
                     fileDirectory.Properties.FilePermissionKey = filePermissionKey;

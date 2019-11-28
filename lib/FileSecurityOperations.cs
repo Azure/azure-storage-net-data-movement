@@ -466,22 +466,23 @@ namespace Microsoft.Azure.Storage.DataMovement
             StringBuilder portableSddl = new StringBuilder();
 
             // Map of well known domain relative idenifiers to their full SID
-            Dictionary<string, string> domainRelativeIdentifiersMap = new Dictionary<string, string>();
-
-            domainRelativeIdentifiersMap.Add("LA", domainSid + "-500");
-            domainRelativeIdentifiersMap.Add("LG", domainSid + "-501");
-            domainRelativeIdentifiersMap.Add("CA", domainSid + "-517");
-            domainRelativeIdentifiersMap.Add("DA", domainSid + "-512");
-            domainRelativeIdentifiersMap.Add("DD", domainSid + "-516");
-            domainRelativeIdentifiersMap.Add("DU", domainSid + "-513");
-            domainRelativeIdentifiersMap.Add("DG", domainSid + "-514");
-            domainRelativeIdentifiersMap.Add("DC", domainSid + "-515");
-            domainRelativeIdentifiersMap.Add("SA", domainSid + "-518");
-            domainRelativeIdentifiersMap.Add("EA", domainSid + "-519");
-            domainRelativeIdentifiersMap.Add("PA", domainSid + "-520");
-            domainRelativeIdentifiersMap.Add("RS", domainSid + "-553");
-            domainRelativeIdentifiersMap.Add("ED", domainSid + "-498");
-            domainRelativeIdentifiersMap.Add("RO", domainSid + "-521");
+            Dictionary<string, string> domainRelativeIdentifiersMap = new Dictionary<string, string>
+            {
+                { "LA", domainSid + "-500" },
+                { "LG", domainSid + "-501" },
+                { "CA", domainSid + "-517" },
+                { "DA", domainSid + "-512" },
+                { "DD", domainSid + "-516" },
+                { "DU", domainSid + "-513" },
+                { "DG", domainSid + "-514" },
+                { "DC", domainSid + "-515" },
+                { "SA", domainSid + "-518" },
+                { "EA", domainSid + "-519" },
+                { "PA", domainSid + "-520" },
+                { "RS", domainSid + "-553" },
+                { "ED", domainSid + "-498" },
+                { "RO", domainSid + "-521" }
+            };
 
             // Parse the sddl and convert into portable format i.e. replace each detected RID into full SID
             {

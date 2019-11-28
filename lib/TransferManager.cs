@@ -632,7 +632,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         /// <param name="sourceFileDir">The <see cref="CloudFileDirectory"/> that is the source Azure file directory.</param>
         /// <param name="destPath">Path to the destination directory</param>
-        /// <param name="options">A <see cref="DownloadOptions"/> object that specifies additional options for the operation.</param>
+        /// <param name="options">A <see cref="DownloadDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="DirectoryTransferContext"/> object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         public static Task<TransferStatus> DownloadDirectoryAsync(CloudFileDirectory sourceFileDir, string destPath, DownloadDirectoryOptions options, DirectoryTransferContext context)
@@ -645,7 +645,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         /// <param name="sourceFileDir">The <see cref="CloudFileDirectory"/> that is the source Azure file directory.</param>
         /// <param name="destPath">Path to the destination directory</param>
-        /// <param name="options">A <see cref="DownloadOptions"/> object that specifies additional options for the operation.</param>
+        /// <param name="options">A <see cref="DownloadDirectoryOptions"/> object that specifies additional options for the operation.</param>
         /// <param name="context">A <see cref="DirectoryTransferContext"/> object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> object to observe while waiting for a task to complete.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
