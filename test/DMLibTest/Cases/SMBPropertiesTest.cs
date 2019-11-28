@@ -592,12 +592,10 @@ namespace DMLibTest.Cases
         public void TestNotsupportedPlatform()
         {
             Exception exception = null;
+            DownloadDirectoryOptions downloadDirectoryOptions = new DownloadDirectoryOptions();
             try
             {
-                DownloadDirectoryOptions downloadDirectoryOptions = new DownloadDirectoryOptions()
-                {
-                    PreserveSMBAttributes = true,
-                };
+                downloadDirectoryOptions.PreserveSMBAttributes = true;
             }
             catch (Exception ex)
             {
@@ -609,10 +607,20 @@ namespace DMLibTest.Cases
             exception = null;
             try
             {
-                UploadDirectoryOptions uploadDirectoryOptions = new UploadDirectoryOptions()
-                {
-                    PreserveSMBAttributes = true,
-                };
+                downloadDirectoryOptions.PreserveSMBPermissions = PreserveSMBPermissions.Owner;
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            ValidateExceptionForParemterSetting(exception);
+
+            exception = null;
+            UploadDirectoryOptions uploadDirectoryOptions = new UploadDirectoryOptions();
+            try
+            {
+                uploadDirectoryOptions.PreserveSMBAttributes = true;
             }
             catch (Exception ex)
             {
@@ -624,10 +632,20 @@ namespace DMLibTest.Cases
             exception = null;
             try
             {
-                DownloadOptions downloadOptions = new DownloadOptions()
-                {
-                    PreserveSMBAttributes = true,
-                };
+                uploadDirectoryOptions.PreserveSMBPermissions = PreserveSMBPermissions.Owner;
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            ValidateExceptionForParemterSetting(exception);
+
+            exception = null;
+            DownloadOptions downloadOptions = new DownloadOptions();
+            try
+            {
+                downloadOptions.PreserveSMBAttributes = true;
             }
             catch (Exception ex)
             {
@@ -639,10 +657,31 @@ namespace DMLibTest.Cases
             exception = null;
             try
             {
-                UploadOptions uploadOptions = new UploadOptions()
-                {
-                    PreserveSMBAttributes = true,
-                };
+                downloadOptions.PreserveSMBPermissions = PreserveSMBPermissions.Owner;
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            ValidateExceptionForParemterSetting(exception);
+
+            exception = null;
+            UploadOptions uploadOptions = new UploadOptions();
+            try
+            {
+                uploadOptions.PreserveSMBAttributes = true;
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+            }
+
+            ValidateExceptionForParemterSetting(exception);
+
+            try
+            {
+                uploadOptions.PreserveSMBPermissions = PreserveSMBPermissions.Owner;
             }
             catch (Exception ex)
             {
@@ -746,6 +785,7 @@ namespace DMLibTest.Cases
         public void TestPreserveSMBPermissions()
         {
             if (!CrossPlatformHelpers.IsWindows) return;
+
             try
             {
                 PreserveSMBPermissions preserveSMBPermissions = 
