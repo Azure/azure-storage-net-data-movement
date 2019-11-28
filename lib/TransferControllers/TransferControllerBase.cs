@@ -153,7 +153,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         protected async Task<bool> CheckShouldTransfer()
         {
-            DirectoryTransferContext directoryTransferContext = this.TransferContext as DirectoryTransferContext;
+            var directoryTransferContext = this.TransferContext as DirectoryTransferContext;
             if ((null != directoryTransferContext)
                 && (null != directoryTransferContext.ShouldTransferCallbackAsync))
             {

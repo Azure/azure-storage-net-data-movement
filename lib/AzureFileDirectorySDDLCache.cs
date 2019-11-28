@@ -22,16 +22,29 @@ namespace Microsoft.Azure.Storage.DataMovement
         private const int MaximumItemCount = 128;
 
         public AzureFileDirectorySDDLCache()
-        { }
+        {
+        }
 
-        public string GetValue(string key)
+        /// <summary>
+        /// To to get corresponding value from the cache by a key.
+        /// </summary>
+        /// <param name="key">Key of item in the cache. 
+        /// For uploading scenario, it's portable SDDL gotten from local file.
+        /// For downloading scenario, it's permission-key on Azure File Share.
+        /// </param>
+        /// <param name="value">Key of item in the cache. 
+        /// For uploading scenario, it's permission-key on Azure File Share.
+        /// For downloading scenario, it's portable SDDL gotten from local file.</param>
+        /// <returns>Flag to indicate whether can get the item from cache.
+        /// True: Key exists in cache, got corresponding value.
+        /// False: Key does not exist in cache, set value to null. </returns>
+        public bool TryGetValue(string key, out string value)
         {
             this.cacheLock.EnterReadLock();
             try
             {
-                string value = null;
-                sddlPermissionKey.TryGetValue(key, out value);
-                return value;
+                value = null;
+                return sddlPermissionKey.TryGetValue(key, out value);
             }
             finally
             {
@@ -39,7 +52,20 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        public void AddValue(string key, string value)
+        /// <summary>
+        /// To to add an item to the cache.
+        /// </summary>
+        /// <param name="key">Key of item in the cache. 
+        /// For uploading scenario, it's portable SDDL gotten from local file.
+        /// For downloading scenario, it's permission-key on Azure File Share.
+        /// </param>
+        /// <param name="value">Key of item in the cache. 
+        /// For uploading scenario, it's permission-key on Azure File Share.
+        /// For downloading scenario, it's portable SDDL gotten from local file.</param>
+        /// <returns>Flag to indicate whether the item has been added into the cache.
+        /// True: There's no the same key in cache, the item has been added into cache.
+        /// False: There's already an item with the same key in cache, the item is not added into cache. </returns>
+        public bool TryAddValue(string key, string value)
         {
             this.cacheLock.EnterWriteLock();
             try
@@ -47,7 +73,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 string originValue = null;
                 if (sddlPermissionKey.TryGetValue(key, out originValue))
                 {
-                    return;
+                    return false;
                 }
 
                 if ((this.itemCount + 1) > MaximumItemCount)
@@ -61,6 +87,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
                 this.sddlPermissionKey.Add(key, value);
                 this.dictionaryKeys.Enqueue(key);
+                return true;
             }
             finally
             {

@@ -128,13 +128,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if ((PreserveSMBPermissions.None != this.TransferJob.Transfer.PreserveSMBPermissions)
                 && !string.IsNullOrEmpty(this.SharedTransferData.Attributes.PortableSDDL))
             {
-                if (this.SharedTransferData.Attributes.PortableSDDL.Length >= 8 * 1024)
+                if (this.SharedTransferData.Attributes.PortableSDDL.Length >= Constants.MaxSDDLLengthInProperties)
                 {
                     string permissionKey = null;
                     var sddlCache = this.TransferJob.Transfer.SDDLCache;
                     if (null != sddlCache)
                     {
-                        permissionKey = sddlCache.GetValue(this.SharedTransferData.Attributes.PortableSDDL);
+                        sddlCache.TryGetValue(this.SharedTransferData.Attributes.PortableSDDL, out permissionKey);
 
                         if (null == permissionKey)
                         {
@@ -143,7 +143,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                                 operationContext,
                                 this.CancellationToken).ConfigureAwait(false);
 
-                            sddlCache.AddValue(this.SharedTransferData.Attributes.PortableSDDL, permissionKey);
+                            sddlCache.TryAddValue(this.SharedTransferData.Attributes.PortableSDDL, permissionKey);
                         }
                     }
                     else

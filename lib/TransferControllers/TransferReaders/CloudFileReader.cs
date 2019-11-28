@@ -56,8 +56,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.SharedTransferData.DisableContentMD5Validation =
                 null != this.sourceLocation.FileRequestOptions ?
-                this.sourceLocation.FileRequestOptions.DisableContentMD5Validation.HasValue ?
-                this.sourceLocation.FileRequestOptions.DisableContentMD5Validation.Value : false : false;
+                this.sourceLocation.FileRequestOptions.DisableContentMD5Validation ?? false : false;
 
             var transfer = this.SharedTransferData.TransferJob.Transfer;
 
@@ -75,7 +74,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                     if (null != sddlCache)
                     {
-                        string portableSDDL = sddlCache.GetValue(this.cloudFile.Properties.FilePermissionKey);
+                        string portableSDDL = null;
+                        sddlCache.TryGetValue(this.cloudFile.Properties.FilePermissionKey, out portableSDDL);
 
                         if (null == portableSDDL)
                         {
@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                                 Utils.GenerateOperationContext(this.Controller.TransferContext),
                                 this.CancellationToken).ConfigureAwait(false);
 
-                            sddlCache.AddValue(this.cloudFile.Properties.FilePermissionKey, portableSDDL);
+                            sddlCache.TryAddValue(this.cloudFile.Properties.FilePermissionKey, portableSDDL);
                         }
 
                         this.SharedTransferData.Attributes.PortableSDDL = portableSDDL;

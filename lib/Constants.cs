@@ -40,6 +40,14 @@ namespace Microsoft.Azure.Storage.DataMovement
         public const string DirectoryBlobMetadataKey = "hdi_isfolder";
 
         /// <summary>
+        /// Maximum length for SDDL string to be set in x-ms-permission header. 
+        /// For SDDL string longer than this value, should invoke CreatePermission on Share first and then set permission-key to x-ms-permission-key header.
+        /// It allows at most 8KB length for a header value. 
+        /// Here use a value which is a bit smaller than 8KB to gurantee success of REST call.
+        /// </summary>
+        internal const int MaxSDDLLengthInProperties = 8100;
+
+        /// <summary>
         /// Maximum windows file path is 260 characters, including a terminating NULL characters.
         /// This leaves 259 useable characters.
         /// </summary>
