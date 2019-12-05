@@ -37,5 +37,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
         string ETag { get; }
         AccessCondition AccessCondition { get; }
+
+        bool NeedToCheckAccessCondition { get; }
     }
 }

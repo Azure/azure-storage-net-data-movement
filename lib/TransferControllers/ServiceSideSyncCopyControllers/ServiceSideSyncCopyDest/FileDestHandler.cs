@@ -70,11 +70,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                 }
                 else
                 {
-                    AccessCondition accessCondition = AccessCondition.GenerateIfNoneMatchCondition("*");
-
                     try
                     {
-                        await this.CreateDestinationAsync(totalLength, accessCondition, CancellationToken.None);
+                        await this.CreateDestinationAsync(totalLength, null, CancellationToken.None);
 
                         needCreateDestination = false;
                         this.destLocation.CheckedAccessCondition = true;

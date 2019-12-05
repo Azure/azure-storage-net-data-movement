@@ -562,6 +562,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectoryMeta()
         {
             // Prepare data

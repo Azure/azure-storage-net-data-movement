@@ -65,9 +65,10 @@ namespace DMLibTest
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.Cloud2Cloud)]
-        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
-        [DMLibTestMethod(DMLibDataType.AppendBlob, DMLibDataType.AppendBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
-        [DMLibTestMethod(DMLibDataType.PageBlob, DMLibDataType.PageBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestMetadata()
         {
             Dictionary<string, string> metadata = new Dictionary<string, string>();
@@ -98,6 +99,9 @@ namespace DMLibTest
         [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideAsyncCopy)]
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestMetadataOverwrite()
         {
             Dictionary<string, string> metadata = new Dictionary<string, string>();

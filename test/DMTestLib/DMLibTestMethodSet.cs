@@ -64,6 +64,9 @@ namespace DMLibTestCodeGen
             AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy));
             AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideAsyncCopy));
 
+            // Service side sync copying
+            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.Cloud, DMLibCopyMethod.ServiceSideSyncCopy));
+            AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy));
             AllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy));
 
             // All valid directory transfer directions
@@ -79,6 +82,10 @@ namespace DMLibTestCodeGen
             DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideAsyncCopy));
             DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy));
             DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.BlockBlob, DMLibCopyMethod.ServiceSideAsyncCopy));
+
+            // Service side sync copying
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudFile, DMLibDataType.Cloud, DMLibCopyMethod.ServiceSideSyncCopy));
+            DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.Cloud, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy));
             DirAllValidDirectionSet.AddTestMethodAttribute(new DMLibTestMethodAttribute(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy));
         }
 
