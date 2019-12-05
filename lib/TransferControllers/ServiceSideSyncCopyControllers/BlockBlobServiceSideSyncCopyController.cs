@@ -176,13 +176,19 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             Uri sourceUri = this.SourceHandler.GetCopySourceUri();
             long length = Math.Min(this.SourceHandler.TotalLength - startOffset, this.blockSize);
 
-            AccessCondition accessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true);
+            AccessCondition accessCondition = this.SourceHandler.NeedToCheckAccessCondition 
+                ? Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true)
+                : null;
 
             var operationContext = Utils.GenerateOperationContext(this.TransferContext);
-            operationContext.UserHeaders = new Dictionary<string, string>(capacity: 1);
-            operationContext.UserHeaders.Add(
-                Shared.Protocol.Constants.HeaderConstants.SourceIfMatchHeader,
-                this.SourceHandler.ETag);
+
+            if (this.SourceHandler.NeedToCheckAccessCondition)
+            {
+                operationContext.UserHeaders = new Dictionary<string, string>(capacity: 1);
+                operationContext.UserHeaders.Add(
+                    Shared.Protocol.Constants.HeaderConstants.SourceIfMatchHeader,
+                    this.SourceHandler.ETag);
+            }
 
             await this.destBlockBlob.PutBlockAsync(
                 blockId,

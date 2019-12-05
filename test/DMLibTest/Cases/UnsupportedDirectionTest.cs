@@ -71,8 +71,6 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.AppendBlob, DMLibCopyMethod.ServiceSideAsyncCopy)]
         [DMLibTestMethod(DMLibDataType.URI, DMLibDataType.CloudFile)]
         [DMLibTestMethod(DMLibDataType.URI, DMLibDataType.CloudBlob)]
-        [DMLibTestMethod(DMLibDataType.Cloud, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         // TODO: add more test cases
         public void TestUnsupportedDirection()
         {

@@ -108,8 +108,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             Uri sourceUri = this.SourceHandler.GetCopySourceUri();
 
             // TODO: SourceHandler AccessCondition
-            AccessCondition sourceAccessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                this.SourceHandler.ETag, this.SourceHandler.AccessCondition, true);
+            AccessCondition sourceAccessCondition = this.SourceHandler.NeedToCheckAccessCondition 
+                ? Utils.GenerateIfMatchConditionWithCustomerCondition(
+                this.SourceHandler.ETag, this.SourceHandler.AccessCondition, true)
+                : null;
 
             AccessCondition destAccessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true) ?? new AccessCondition();
             destAccessCondition.IfAppendPositionEqual = startOffset;

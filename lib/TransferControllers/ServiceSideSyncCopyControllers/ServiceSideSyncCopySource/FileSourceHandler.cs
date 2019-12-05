@@ -47,6 +47,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
             get { return this.sourceFile.Uri; }
         }
 
+        public bool NeedToCheckAccessCondition
+        {
+            get { return false; }
+        }
+
         public Task DownloadRangeToStreamAsync(Stream stream,
             long startOffset,
             long length,

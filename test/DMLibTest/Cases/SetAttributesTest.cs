@@ -158,7 +158,6 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudDest)]
-        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestSetAttributes()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
@@ -213,7 +212,6 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudDest)]
-        [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectorySetAttributes()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);

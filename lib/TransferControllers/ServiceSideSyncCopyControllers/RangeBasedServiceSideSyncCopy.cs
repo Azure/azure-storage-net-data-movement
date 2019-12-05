@@ -157,12 +157,18 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                this.InitializeCopyStatus();
-                this.state = State.Copy;
+                if (0 == this.InitializeCopyStatus())
+                {
+                    this.state = State.Commit;
+                }
+                else
+                {
+                    this.state = State.Copy;
+                }   
             }
         }
 
-        private void InitializeCopyStatus()
+        private int InitializeCopyStatus()
         {
             int pageLength = TransferManager.Configurations.BlockSize;
 
@@ -177,6 +183,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             int blockCount = (null == this.lastTransferWindow ? 0 : this.lastTransferWindow.Count)
                 + (int)Math.Ceiling((double)(this.SourceHandler.TotalLength - checkpoint.EntryTransferOffset) / pageLength);
             this.countdownEvent = new CountdownEvent(blockCount);
+
+            return blockCount;
         }
 
         override protected async Task GetDestinationAsync()

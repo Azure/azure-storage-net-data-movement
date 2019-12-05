@@ -79,12 +79,15 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         protected override Task CopyChunkFromUriAsync(long startOffset, long length)
         {
+            var sourceAccessCondition = this.SourceHandler.NeedToCheckAccessCondition 
+                ? Utils.GenerateIfMatchConditionWithCustomerCondition(this.SourceHandler.ETag, this.SourceHandler.AccessCondition, true)
+                : null;
             return this.destPageBlob.WritePagesAsync(this.SourceHandler.GetCopySourceUri(),
                 startOffset,
                 length,
                 startOffset,
                 null,
-                Utils.GenerateIfMatchConditionWithCustomerCondition(this.SourceHandler.ETag, this.SourceHandler.AccessCondition, true),
+                sourceAccessCondition,
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
