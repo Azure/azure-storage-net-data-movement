@@ -138,8 +138,7 @@
     <value>The TransferLocation cannot be serialized when it represents a stream location.</value>
   </data>
   <data name="CloudFileSizeTooLargeException" xml:space="preserve">
-    <value>File size {0} is larger than cloud file maximum size {1} bytes.</value>
-    <comment>{0} is file size. {1} is the size limit of the destination.</comment>
+    <value>The file size exceeds the maximum permissible limit.</value>
   </data>
   <data name="CanOnlyCopyToFileOrBlobException" xml:space="preserve">
     <value>Destination of asynchronous copying must be File Storage or Blob Storage.</value>

@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     using System;
     using System.Collections.Generic;
     using System.Globalization;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Azure.Storage.File;
@@ -51,19 +52,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     string.Format(CultureInfo.CurrentCulture, Resources.SourceMustBeFixedSize, Resources.AzureFile));
             }
 
-            if (inputStreamLength > Constants.MaxCloudFileSize)
-            {
-                string exceptionMessage = string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.CloudFileSizeTooLargeException,
-                    Utils.BytesToHumanReadableSize(inputStreamLength),
-                    Utils.BytesToHumanReadableSize(Constants.MaxCloudFileSize));
-
-                throw new TransferException(
-                    TransferErrorCode.UploadSourceFileSizeTooLarge,
-                    exceptionMessage);
-            }
-
             return;
         }
 
@@ -89,12 +77,31 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.CleanupPropertyForCanonicalization();
             }
 
-            await this.cloudFile.CreateAsync(
-                size,
-                null,
-                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions, true),
-                Utils.GenerateOperationContext(this.Controller.TransferContext),
-                this.CancellationToken).ConfigureAwait(false);
+            try
+            {
+                await this.cloudFile.CreateAsync(
+                    size,
+                    null,
+                    Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions, true),
+                    Utils.GenerateOperationContext(this.Controller.TransferContext),
+                    this.CancellationToken).ConfigureAwait(false);
+            }
+            catch (StorageException ex)
+            {
+                if ((null != ex.RequestInformation)
+                    && (ex.RequestInformation.HttpStatusCode == (int)(HttpStatusCode.BadRequest))
+                    && string.Equals(ex.RequestInformation.ErrorCode, Constants.FileSizeOutOfRangeErrorCode))
+                {
+                    throw new TransferException(
+                        TransferErrorCode.UploadSourceFileSizeTooLarge,
+                        Resources.CloudFileSizeTooLargeException,
+                        ex);
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         protected override async Task WriteRangeAsync(TransferData transferData)

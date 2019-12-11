@@ -90,11 +90,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         internal const long MaxBlockBlobFileSize = (long)50000 * 100 * 1024 * 1024;
 
         /// <summary>
-        /// Stores the max cloud file size, 1TB.
-        /// </summary>
-        internal const long MaxCloudFileSize = (long)1024 * 1024 * 1024 * 1024;
-
-        /// <summary>
         /// Max transfer window size. 
         /// There can be multiple threads to transfer a file, 
         /// and we need to record transfer window 
@@ -162,7 +157,12 @@ namespace Microsoft.Azure.Storage.DataMovement
         internal const int ListSegmentLengthMultiplier = 8;
 
         internal const string BlobTypeMismatch = "Blob type of the blob reference doesn't match blob type of the blob.";
-        
+
+        /// <summary>
+        /// Error code message returned from Azure Storage Server when length of the Azure File is longer than allowed.
+        /// </summary>
+        internal const string FileSizeOutOfRangeErrorCode = "OutOfRangeInput";
+
         /// <summary>
         /// The maximum size of a block blob that can be uploaded with a single Put Blob request.
         /// </summary>
