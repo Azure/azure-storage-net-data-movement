@@ -43,12 +43,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                 {
                     await checkOverWrite(true);
                 }
-                else if (!this.destLocation.CheckedAccessCondition && null != this.destLocation.AccessCondition)
+                else 
                 {
                     try
                     {
                         await this.destFile.FetchAttributesAsync(
-                            Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, false),
+                            null,
                             Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                             Utils.GenerateOperationContext(this.transferContext),
                             cancellationToken);
@@ -68,31 +68,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                         }
                     }
                 }
-                else
-                {
-                    try
-                    {
-                        await this.CreateDestinationAsync(totalLength, null, CancellationToken.None);
-
-                        needCreateDestination = false;
-                        this.destLocation.CheckedAccessCondition = true;
-                        this.transferJob.Overwrite = true;
-                        this.transferJob.Transfer.UpdateJournal();
-                    }
-                    catch (StorageException se)
-                    {
-                        if ((null != se.RequestInformation) &&
-                            (((int)HttpStatusCode.Conflict == se.RequestInformation.HttpStatusCode)
-                                    && string.Equals(se.RequestInformation.ErrorCode, "BlobAlreadyExists")))
-                        {
-                            await checkOverWrite(true);
-                        }
-                        else
-                        {
-                            throw;
-                        }
-                    }
-                }
             }
             else
             {
@@ -105,11 +80,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
             {
                 await this.CreateDestinationAsync(
                     totalLength,
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
+                    null,
                     cancellationToken);
 
                 this.transferJob.Overwrite = true;
-                this.destLocation.CheckedAccessCondition = true;
                 this.transferJob.Transfer.UpdateJournal();
             }
 
