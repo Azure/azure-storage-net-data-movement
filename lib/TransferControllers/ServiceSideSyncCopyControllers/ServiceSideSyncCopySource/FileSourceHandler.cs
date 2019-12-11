@@ -70,33 +70,24 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
         public async Task FetchAttributesAsync(CancellationToken cancellationToken)
         {
-            if (this.sourceLocation.IsInstanceInfoFetched != true)
+            try
             {
-                AccessCondition accessCondition = Utils.GenerateIfMatchConditionWithCustomerCondition(
-                     this.sourceLocation.ETag,
-                     this.sourceLocation.AccessCondition,
-                     this.sourceLocation.CheckedAccessCondition);
-                try
-                {
-                    await this.sourceFile.FetchAttributesAsync(
-                        accessCondition,
-                        Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
-                        Utils.GenerateOperationContext(this.transferContext),
-                        cancellationToken);
-                }
+                await this.sourceFile.FetchAttributesAsync(
+                    null,
+                    Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
+                    Utils.GenerateOperationContext(this.transferContext),
+                    cancellationToken);
+            }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
             {
                 var e = ex as StorageException ?? ex.InnerException as StorageException;
 #else
-                catch (StorageException e)
-                {
+            catch (StorageException e)
+            {
 #endif
-                    HandleFetchSourceAttributesException(e);
-                    throw;
-                }
-
-                this.sourceLocation.CheckedAccessCondition = true;
+                HandleFetchSourceAttributesException(e);
+                throw;
             }
 
             if (string.IsNullOrEmpty(this.sourceLocation.ETag))
@@ -136,7 +127,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
             var fileRanges = await this.sourceFile.ListRangesAsync(
                 startOffset,
                 length,
-                Utils.GenerateConditionWithCustomerCondition(this.sourceLocation.AccessCondition, this.sourceLocation.CheckedAccessCondition),
+                null,
                 Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.transferContext),
                 cancellationToken);

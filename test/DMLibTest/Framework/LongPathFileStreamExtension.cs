@@ -369,6 +369,7 @@ namespace DMLibTest.Framework
 #if DOTNET5_4
             LongPathFile.GetFileProperties(path, out creationTime, out lastWriteTime, out fileAttributes, isDirectory);
 #else
+            path = LongPath.ToUncPath(path);
             LongPathFile.GetFileProperties(path, out creationTime, out lastWriteTime, out fileAttributes);
 #endif
         }
