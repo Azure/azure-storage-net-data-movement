@@ -78,6 +78,8 @@ namespace DMLibTest.Cases
 #else
         private const string TestContentType = "newtype";
 #endif
+        private const string TestContentLanguage = "testlanguage";
+
         private const string invalidMD5 = "ThisIsAnInvalidMD5MD5A==";
         
         private static readonly string StraightALongString = new string('a', 1024);
@@ -159,18 +161,18 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestSetAttributes()
         {
-            Dictionary<string, string> metadata = new Dictionary<string, string>();
-            if (DMLibTestContext.SourceType != DMLibDataType.Local)
-            {
-                metadata.Add("foo", "bar");
-            }
-
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
             FileNode fileNode = new FileNode(DMLibTestBase.FileName)
             {
-                SizeInByte = DMLibTestBase.FileSizeInKB * 1024L, 
-                Metadata = metadata
+                SizeInByte = DMLibTestBase.FileSizeInKB * 1024L
             };
+
+            if (DMLibTestContext.SourceType != DMLibDataType.Local)
+            {
+                fileNode.Metadata = new Dictionary<string, string>();
+                fileNode.Metadata.Add("foo", "bar");
+                fileNode.ContentLanguage = SetAttributesTest.TestContentLanguage;
+            }
 
             sourceDataInfo.RootNode.AddFileNode(fileNode);
 
@@ -202,6 +204,11 @@ namespace DMLibTest.Cases
 
             FileNode destFileNode = result.DataInfo.RootNode.GetFileNode(DMLibTestBase.FileName);
             Test.Assert(TestContentType.Equals(destFileNode.ContentType), "Verify content type: {0}, expected {1}", destFileNode.ContentType, TestContentType);
+
+            if (DMLibTestContext.SourceType != DMLibDataType.Local)
+            {
+                Test.Assert(SetAttributesTest.TestContentLanguage.Equals(destFileNode.ContentLanguage), "Verify ContentLanguage: {0}, expected {1}", destFileNode.ContentLanguage, SetAttributesTest.TestContentLanguage);
+            }
         }
 
         [TestCategory(Tag.Function)]
@@ -209,21 +216,21 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectorySetAttributes()
         {
-            Dictionary<string, string> metadata = new Dictionary<string, string>();
-            if (DMLibTestContext.SourceType != DMLibDataType.Local)
-            {
-                metadata.Add("foo", "bar");
-            }
-
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
 
             for (int i = 0; i < 3; ++i)
             {
                 FileNode fileNode = new FileNode(DMLibTestBase.FileName + i)
                 {
-                    SizeInByte = DMLibTestBase.FileSizeInKB * 1024L, 
-                    Metadata = metadata
+                    SizeInByte = DMLibTestBase.FileSizeInKB * 1024L
                 };
+
+                if (DMLibTestContext.SourceType != DMLibDataType.Local)
+                {
+                    fileNode.Metadata = new Dictionary<string, string>();
+                    fileNode.Metadata.Add("foo", "bar");
+                    fileNode.ContentLanguage = SetAttributesTest.TestContentLanguage;
+                }
 
                 sourceDataInfo.RootNode.AddFileNode(fileNode);
             }
@@ -263,6 +270,11 @@ namespace DMLibTest.Cases
             foreach(FileNode destFileNode in result.DataInfo.EnumerateFileNodes())
             {
                 Test.Assert(TestContentType.Equals(destFileNode.ContentType), "Verify content type: {0}, expected {1}", destFileNode.ContentType, TestContentType);
+
+                if (DMLibTestContext.SourceType != DMLibDataType.Local)
+                {
+                    Test.Assert(SetAttributesTest.TestContentLanguage.Equals(destFileNode.ContentLanguage), "Verify ContentLanguage: {0}, expected {1}", destFileNode.ContentLanguage, SetAttributesTest.TestContentLanguage);
+                }
             }
         }
 

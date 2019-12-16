@@ -467,9 +467,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.hasWork = false;
 
+            StorageCopyState copyState = null;
+
             try
             {
-                this.TransferJob.CopyId = await this.DoStartCopyAsync();
+                copyState = await this.DoStartCopyAsync();
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
@@ -487,7 +489,16 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 return;
             }
 
-            this.HandleStartCopyResult(null);
+            this.TransferJob.CopyId = copyState.CopyId;
+
+            if ((copyState.Status == StorageCopyStatus.Success) && copyState.TotalBytes.HasValue)
+            {
+                await this.HandleFetchCopyStateResultAsync(copyState, false);
+            }
+            else
+            {
+                this.HandleStartCopyResult(null);
+            }
         }
 
         private bool HandleStartCopyResult(StorageException se)
@@ -593,7 +604,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             await this.HandleFetchCopyStateResultAsync(copyState);
         }
 
-        private async Task HandleFetchCopyStateResultAsync(StorageCopyState copyState)
+        // In this method, it may need to set customized properties to destination.
+        // If this method is invoked just after StartCopyAsync, 
+        // properties on destination instance may not be totally the same with the one on server.
+        // If this is the case, it should try to fetch attributes from server first.
+        private async Task HandleFetchCopyStateResultAsync(
+            StorageCopyState copyState, 
+            bool gotDestinationAttributes = true)
         {
             if (null == copyState)
             {
@@ -625,6 +642,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                     if (null != this.TransferContext && null != this.TransferContext.SetAttributesCallbackAsync)
                     {
+                        if (!gotDestinationAttributes)
+                        {
+                            await this.DoFetchDestAttributesAsync();
+                        }
+
                         // If got here, we've done FetchAttributes on destination after copying completed on server,
                         // no need to one more round of FetchAttributes anymore.
                         await this.SetAttributesAsync(this.TransferContext.SetAttributesCallbackAsync);
@@ -780,7 +802,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         }
 
         protected abstract Task DoFetchDestAttributesAsync();
-        protected abstract Task<string> DoStartCopyAsync();
+        protected abstract Task<StorageCopyState> DoStartCopyAsync();
         protected abstract void DoHandleGetDestinationException(StorageException se);
         protected abstract Task<StorageCopyState> FetchCopyStateAsync();
         protected abstract Task SetAttributesAsync(SetAttributesCallbackAsync setAttributes);
