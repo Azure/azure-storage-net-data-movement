@@ -75,7 +75,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.CancellationToken);
         }
 
-        protected override Task<string> DoStartCopyAsync()
+        protected override async Task<StorageCopyState> DoStartCopyAsync()
         {
             // To copy from source to blob, DataMovement Library should overwrite destination's properties and meta datas.
             // Clear destination's meta data here to avoid using destination's meta data.
@@ -85,33 +85,53 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
             if (null != this.SourceUri)
             {
-                return this.destFile.StartCopyAsync(
+                await this.destFile.StartCopyAsync(
                     this.SourceUri,
                     null,
                     null,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
-                    this.CancellationToken);
+                    this.CancellationToken); 
+                
+                return new StorageCopyState(this.destFile.CopyState);
             }
             else if (null != this.SourceBlob)
             {
-                return this.destFile.StartCopyAsync(
+                await this.destFile.StartCopyAsync(
                     this.SourceBlob.GenerateCopySourceUri(),
                     null,
                     null,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
-                    this.CancellationToken);
+                    this.CancellationToken); 
+                
+                var copyState = new StorageCopyState(this.destFile.CopyState);
+
+                if (copyState.Status == StorageCopyStatus.Success)
+                {
+                    copyState.TotalBytes = this.SourceBlob.Properties.Length;
+                    copyState.BytesCopied = this.SourceBlob.Properties.Length;
+                }
+                return copyState;
             }
             else
             {
-                return this.destFile.StartCopyAsync(
+                await this.destFile.StartCopyAsync(
                     this.SourceFile.GenerateCopySourceUri(),
                     null,
                     null,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
-                    this.CancellationToken);
+                    this.CancellationToken); 
+                
+                var copyState = new StorageCopyState(this.destFile.CopyState);
+
+                if (copyState.Status == StorageCopyStatus.Success)
+                {
+                    copyState.TotalBytes = this.SourceFile.Properties.Length;
+                    copyState.BytesCopied = this.SourceFile.Properties.Length;
+                }
+                return copyState;
             }
         }
 

@@ -85,7 +85,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.CancellationToken);
         }
 
-        protected override Task<string> DoStartCopyAsync()
+        protected override async Task<StorageCopyState> DoStartCopyAsync()
         {
             AccessCondition destAccessCondition = Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition);
 
@@ -96,38 +96,58 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             if (null != this.SourceUri)
             {
-                return this.destBlob.StartCopyAsync(
+                await this.destBlob.StartCopyAsync(
                     this.SourceUri,
                     null,
                     destAccessCondition,
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
                     this.CancellationToken);
+
+                return new StorageCopyState(this.destBlob.CopyState);
             }
             else if (null != this.SourceBlob)
             {
                 AccessCondition sourceAccessCondition =
                     AccessCondition.GenerateIfMatchCondition(this.SourceBlob.Properties.ETag);
 
-                return this.destBlob.StartCopyAsync(
+                await this.destBlob.StartCopyAsync(
                          this.SourceBlob.GenerateCopySourceUri(),
                          sourceAccessCondition,
                          destAccessCondition,
                          Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                          Utils.GenerateOperationContext(this.TransferContext),
                          this.CancellationToken);
+
+                var copyState = new StorageCopyState(this.destBlob.CopyState);
+
+                if (copyState.Status == StorageCopyStatus.Success)
+                {
+                    copyState.TotalBytes = this.SourceBlob.Properties.Length;
+                    copyState.BytesCopied = this.SourceBlob.Properties.Length;
+                }
+                return copyState;
             }
             else
             {
                 if (BlobType.BlockBlob == this.destBlob.BlobType)
                 {
-                    return (this.destBlob as CloudBlockBlob).StartCopyAsync(
+                    await (this.destBlob as CloudBlockBlob).StartCopyAsync(
                              this.SourceFile.GenerateCopySourceUri(),
                              null,
                              destAccessCondition,
                              Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                              Utils.GenerateOperationContext(this.TransferContext),
                              this.CancellationToken);
+
+                    var copyState = new StorageCopyState(this.destBlob.CopyState);
+
+                    if (copyState.Status == StorageCopyStatus.Success)
+                    {
+                        copyState.TotalBytes = this.SourceFile.Properties.Length;
+                        copyState.BytesCopied = this.SourceFile.Properties.Length;
+                    }
+                    return copyState;
                 }
                 else if (BlobType.PageBlob == this.destBlob.BlobType)
                 {

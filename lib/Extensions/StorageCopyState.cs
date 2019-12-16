@@ -120,11 +120,11 @@ namespace Microsoft.Azure.Storage.DataMovement.Extensions
         //
         // Summary:
         //     Gets the number of bytes copied in the operation so far.
-        public long? BytesCopied { get; private set; }
+        public long? BytesCopied { get; set; }
         //
         // Summary:
         //     Gets the total number of bytes in the source of the copy.
-        public long? TotalBytes { get; private set; }
+        public long? TotalBytes { get; set; }
         //
         // Summary:
         //     Gets the description of the current status, if any.
