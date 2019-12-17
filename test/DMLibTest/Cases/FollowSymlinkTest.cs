@@ -305,7 +305,7 @@ namespace DMLibTest
 #endif
         }
 
-        /// n >= 40
+        /// n > 40
         /// Symlink_(n-1) -> Folder_n
         ///           -  File_(n-2)
         ///           -  Symlink_(n-2) -> Folder_(n-1)... ... Symlink_0 -> Folder_1
@@ -322,7 +322,7 @@ namespace DMLibTest
             }
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo("rootfolder");
 
-            int level = random.Next(40, 60);
+            int level = random.Next(41, 60);
 
             Test.Info($"Testing {level} levels of symlinked dirs");
 
