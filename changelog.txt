@@ -1,3 +1,12 @@
+2019.12.17 Version 1.2.0
+ * All Service on both .Net Framework and .Net Core
+   - Upgraded Microsoft.Azure.Storage.Blob from 11.1.0 to 11.1.1
+   - Upgraded Microsoft.Azure.Storage.File from 11.1.0 to 11.1.1
+   - Changed to not send request to query copying status when the Service Side Synchronous Copy can be completed when StartCopy request returns.
+ * File Service on both .Net Framework and .Net Core
+   - Added support to preserve file permission when uploading/downloading from/to local file directory to/from Azure File directory on Windows.
+   - Removed client side file size limitation checking and changed to leverage server side file size checking when transferring destination is Azure File.
+
 2019.09.29 Version 1.1.0
  * All Service on both .Net Framework and .Net Core
    - Upgraded Microsoft.Azure.Storage.Blob from 10.0.3 to 11.1.0
