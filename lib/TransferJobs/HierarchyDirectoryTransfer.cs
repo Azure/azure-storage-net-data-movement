@@ -220,6 +220,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             // Constructors and field initializers are not called by DCS, so initialize things here
             progressUpdateLock = new ReaderWriterLockSlim();
             continuationTokenLock = new object();
+            this.azureFileDirectorySDDLCache = new AzureFileDirectorySDDLCache();
 
             if (!IsStreamJournal)
             {
