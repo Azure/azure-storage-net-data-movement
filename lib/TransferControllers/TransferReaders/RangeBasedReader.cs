@@ -545,10 +545,26 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 offset = rangesSpan.EndOffset + 1;
             }
 
-            if (this.rangesSpanList.Any())
+            if (!this.rangesSpanList.Any())
             {
-                this.getRangesCountDownEvent = new CountdownEvent(this.rangesSpanList.Count);
+                return;
             }
+            else if (this.rangesSpanList.Count == 1)
+            {
+                if (this.rangesSpanList[0].EndOffset - this.rangesSpanList[0].StartOffset < blockSize)
+                {
+                    this.rangeList.Add(new Utils.Range()
+                    {
+                        StartOffset = this.rangesSpanList[0].StartOffset,
+                        EndOffset = this.rangesSpanList[0].EndOffset
+                    });
+
+                    this.rangesSpanList.Clear();
+                    return;
+                }
+            }
+
+            this.getRangesCountDownEvent = new CountdownEvent(this.rangesSpanList.Count);
         }
 
         private void ClearForGetRanges()
