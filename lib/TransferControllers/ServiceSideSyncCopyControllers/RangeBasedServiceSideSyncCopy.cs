@@ -41,8 +41,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (this.SourceHandler is ServiceSideSyncCopySource.IRangeBasedSourceHandler)
             {
                 this.rangeBasedSourceHandler = this.SourceHandler as ServiceSideSyncCopySource.IRangeBasedSourceHandler;
-                this.pagesToCopy = new List<long>();
-                this.pageListBag = new ConcurrentBag<List<long>>();
             }
 
             if (0 == this.TransferJob.CheckPoint.EntryTransferOffset)
@@ -60,6 +58,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         protected override async Task DoPreCopyAsync()
         {
             this.hasWork = false;
+            this.pagesToCopy = new List<long>();
+            this.pageListBag = new ConcurrentBag<List<long>>();
             long rangeSpanOffset = this.nextRangesSpanOffset;
             long rangeSpanLength = Math.Min(Constants.PageRangesSpanSize, this.SourceHandler.TotalLength - rangeSpanOffset);
 
@@ -147,6 +147,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     {
                         this.state = State.Copy;
                     }
+                }
+                else if ((this.SourceHandler.TotalLength - this.nextRangesSpanOffset) <= TransferManager.Configurations.BlockSize)
+                {
+                    this.InitializeCopyStatus();
+                    this.state = State.Copy;
                 }
                 else
                 {
