@@ -52,7 +52,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                throw new ArgumentException("transferJob");
+                throw new ArgumentException(
+                    Resources.OnlySupportBlobAzureFileSource,
+                    "transferJob");
             }
 
             this.destLocation = transferJob.Destination as AzureFileLocation;
