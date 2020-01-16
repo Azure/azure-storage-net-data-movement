@@ -392,6 +392,9 @@ MD5 in property: {2}</value>
   <data name="OnlyOneTransferAllowed" xml:space="preserve">
     <value>Only one transfer is allowed with stream journal.</value>
   </data>
+  <data name="OnlySupportBlobAzureFileSource" xml:space="preserve">
+    <value>Copying source must be an Azure Blob or an Azure File. </value>
+  </data>
   <data name="BlockSizeMustBeMultipleOf4MB" xml:space="preserve">
     <value>BlockSize must be multiple of 4MB.</value>
   </data>

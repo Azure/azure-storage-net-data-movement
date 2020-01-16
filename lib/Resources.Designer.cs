@@ -387,6 +387,15 @@ namespace Microsoft.Azure.Storage.DataMovement {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Copying source must be an Azure Blob or an Azure File. .
+        /// </summary>
+        internal static string OnlySupportBlobAzureFileSource {
+            get {
+                return ResourceManager.GetString("OnlySupportBlobAzureFileSource", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Skipped file &quot;{0}&quot; because target &quot;{1}&quot; already exists..
         /// </summary>
         internal static string OverwriteCallbackCancelTransferException {
