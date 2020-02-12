@@ -556,7 +556,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     this.rangeList.Add(new Utils.Range()
                     {
                         StartOffset = this.rangesSpanList[0].StartOffset,
-                        EndOffset = this.rangesSpanList[0].EndOffset
+                        EndOffset = this.rangesSpanList[0].EndOffset,
+                        HasData = true
                     });
 
                     this.rangesSpanList.Clear();
