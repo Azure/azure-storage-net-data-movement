@@ -28,11 +28,15 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
             this.transferContext = this.transferJob.Transfer.Context;
             this.destFile = this.destLocation.AzureFile;
         }
+        public Uri Uri
+        {
+            get { return this.destFile.Uri; }
+        }
 
         public async Task<bool> CheckAndCreateDestinationAsync(
             bool isForceOverwrite,
             long totalLength,
-            Func<bool, Task> checkOverWrite,
+            Func<bool, Task> checkOverwrite,
             CancellationToken cancellationToken)
         {
             bool needCreateDestination = true;
@@ -41,7 +45,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
             {
                 if (this.transferJob.Overwrite.HasValue)
                 {
-                    await checkOverWrite(true);
+                    await checkOverwrite(true);
                 }
                 else 
                 {
@@ -58,7 +62,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                         this.destLocation.CheckedAccessCondition = true;
                         gotDestAttributes = true;
 
-                        await checkOverWrite(true);
+                        await checkOverwrite(true);
                     }
                     catch (StorageException se)
                     {

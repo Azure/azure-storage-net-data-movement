@@ -20,6 +20,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
     internal interface ISourceHandler
     {
         Task FetchAttributesAsync(CancellationToken cancellationToken);
+
         Task DownloadRangeToStreamAsync(Stream stream, 
             long startOffset, 
             long length, 

@@ -72,7 +72,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         protected override Task ClearPagesAsync()
         {
-            return this.destPageBlob.ClearPagesAsync(0, this.SourceHandler.TotalLength,
+            return this.destPageBlob.ClearPagesAsync(
+                0, 
+                this.SourceHandler.TotalLength,
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
@@ -84,10 +86,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             var sourceAccessCondition = this.SourceHandler.NeedToCheckAccessCondition 
                 ? Utils.GenerateIfMatchConditionWithCustomerCondition(this.SourceHandler.ETag, this.SourceHandler.AccessCondition, true)
                 : null;
-            return this.destPageBlob.WritePagesAsync(this.SourceHandler.GetCopySourceUri(),
-                startOffset,
-                length,
-                startOffset,
+
+            return this.destPageBlob.WritePagesAsync(
+                this.SourceHandler.GetCopySourceUri(), 
+                startOffset, // The byte offset in the source at which to begin retrieving content.
+                length, //The number of bytes from the source to copy
+                startOffset, //  The offset in destination at which to begin writing, in bytes.
                 null,
                 sourceAccessCondition,
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
