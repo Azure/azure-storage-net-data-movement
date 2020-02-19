@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -36,9 +37,15 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                 return this.transferContext;
             }
         }
+        public Uri Uri
+        {
+            get { return this.destBlob.Uri; }
+        }
 
         public BlobDestHandler(AzureBlobLocation destLocation, TransferJob transferJob)
         {
+            Debug.Assert(null != destLocation && null != transferJob,
+                "destLocation or transferJob should not be null");
             this.destLocation = destLocation;
             this.transferJob = transferJob;
             this.destBlob = this.destLocation.Blob;
@@ -48,7 +55,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
         public async Task<bool> CheckAndCreateDestinationAsync(
             bool isForceOverwrite, 
             long totalLength,
-            Func<bool, Task> checkOverWrite,
+            Func<bool, Task> checkOverwrite,
             CancellationToken cancellationToken)
         {
             bool needCreateDestination = true;
@@ -57,7 +64,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
             {
                 if (this.transferJob.Overwrite.HasValue)
                 {
-                    await checkOverWrite(true);
+                    await checkOverwrite(true);
                 }
                 else if (!this.destLocation.CheckedAccessCondition && null != this.destLocation.AccessCondition)
                 {
@@ -74,7 +81,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                         this.destLocation.CheckedAccessCondition = true;
                         gotDestAttributes = true;
 
-                        await checkOverWrite(true);
+                        await checkOverwrite(true);
                     }
                     catch (StorageException se)
                     {
@@ -103,7 +110,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                             (((int)HttpStatusCode.Conflict == se.RequestInformation.HttpStatusCode)
                                     && string.Equals(se.RequestInformation.ErrorCode, "BlobAlreadyExists")))
                         {
-                            await checkOverWrite(true);
+                            await checkOverwrite(true);
                         }
                         else
                         {

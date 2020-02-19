@@ -429,9 +429,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 {
                     this.TransferJob.Overwrite = true;
                 }
-            }
-            else
-            {
+
                 this.TransferJob.Transfer.UpdateJournal();
             }
 

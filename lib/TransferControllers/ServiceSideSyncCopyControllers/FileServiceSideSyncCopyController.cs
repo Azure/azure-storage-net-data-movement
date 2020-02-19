@@ -35,9 +35,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (sourceLocation.Type == TransferLocationType.AzureBlob)
             {
                 var blobLocation = sourceLocation as AzureBlobLocation;
-                var pageBlob = blobLocation.Blob as CloudPageBlob;
 
-                if (null != pageBlob)
+                if (blobLocation.Blob is CloudPageBlob)
                 {
                     this.SourceHandler = new ServiceSideSyncCopySource.PageBlobSourceHandler(blobLocation, transferJob);
                 }
@@ -65,7 +64,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         protected override Task ClearPagesAsync()
         {
-            return this.destFile.ClearRangeAsync(0, this.SourceHandler.TotalLength,
+            return this.destFile.ClearRangeAsync(
+                0, 
+                this.SourceHandler.TotalLength,
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                 Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
@@ -74,10 +75,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         protected override Task CopyChunkFromUriAsync(long startOffset, long length)
         {
-            return this.destFile.WriteRangeAsync(this.SourceHandler.GetCopySourceUri(),
-                startOffset,
-                length,
-                startOffset,
+            return this.destFile.WriteRangeAsync(
+                this.SourceHandler.GetCopySourceUri(),
+                startOffset, // The byte offset in the source at which to begin retrieving content.
+                length, //The number of bytes from the source to copy
+                startOffset, //  The offset in destination at which to begin writing, in bytes.
                 null,
                 null,
                 Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),

@@ -20,11 +20,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         /// </summary>
         protected enum State
         {
-            FetchSourceAttributes,
-            GetDestination,
-            PreCopy,
-            Copy,
-            Commit,
+            FetchSourceAttributes, // To fetch source's attributes to check source existence and 
+            GetDestination, // Check destination existence, check overwrite if destination exists, create destination blob/file if needed
+            PreCopy, // Only work for page blob and file copying, to get ranges list to avoid copying empty ranges.
+            Copy, // Copy content
+            Commit, // For block blob, submit block list; For all types of blobs and file, copying source's attributes to destination.
             Finished,
             Error,
         }
@@ -118,7 +118,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.SourceHandler.TotalLength,
                 async (exist) =>
                 {
-                    await this.CheckOverwriteAsync(exist, this.SourceHandler.Uri, "fdsfds");
+                    await this.CheckOverwriteAsync(exist, this.SourceHandler.Uri, this.DestHandler.Uri);
                 },
                 this.CancellationToken);
         }

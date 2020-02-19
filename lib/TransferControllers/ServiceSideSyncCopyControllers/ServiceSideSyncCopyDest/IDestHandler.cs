@@ -18,10 +18,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
     /// </summary>
     internal interface IDestHandler
     {
+        Uri Uri { get; }
+
         Task<bool> CheckAndCreateDestinationAsync(
             bool isForceOverwrite,
             long totalLength,
-            Func<bool, Task> checkOverWrite,
+            Func<bool, Task> checkOverwrite,
             CancellationToken cancellationToken);
 
         Task CommitAsync(
