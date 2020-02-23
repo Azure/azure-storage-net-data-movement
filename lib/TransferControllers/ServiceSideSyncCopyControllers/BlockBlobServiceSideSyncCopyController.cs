@@ -71,6 +71,20 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         protected override void PostFetchSourceAttributes()
         {
+            if (this.SourceHandler.TotalLength > Constants.MaxBlockBlobFileSize)
+            {
+                string exceptionMessage = string.Format(
+                            CultureInfo.CurrentCulture,
+                            Resources.BlobFileSizeTooLargeException,
+                            Utils.BytesToHumanReadableSize(this.SourceHandler.TotalLength),
+                            Resources.BlockBlob,
+                            Utils.BytesToHumanReadableSize(Constants.MaxBlockBlobFileSize));
+
+                throw new TransferException(
+                        TransferErrorCode.UploadSourceFileSizeTooLarge,
+                        exceptionMessage);
+            }
+
             if (this.IsForceOverwrite && null == this.destLocation.AccessCondition)
             {
                 PrepareForCopy();

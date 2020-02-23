@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 {
     using System;
     using System.Diagnostics;
+    using System.Globalization;
     using System.IO;
     using System.Net;
     using System.Threading;
@@ -62,7 +63,21 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         }
 
         protected override void PostFetchSourceAttributes()
-        {            
+        {
+            if (this.SourceHandler.TotalLength > Constants.MaxAppendBlobFileSize)
+            {
+                string exceptionMessage = string.Format(
+                            CultureInfo.CurrentCulture,
+                            Resources.BlobFileSizeTooLargeException,
+                            Utils.BytesToHumanReadableSize(this.SourceHandler.TotalLength),
+                            Resources.AppendBlob,
+                            Utils.BytesToHumanReadableSize(Constants.MaxAppendBlobFileSize));
+
+                throw new TransferException(
+                        TransferErrorCode.UploadSourceFileSizeTooLarge,
+                        exceptionMessage);
+            }
+
             if (0 == this.TransferJob.CheckPoint.EntryTransferOffset)
             {
                 this.state = State.GetDestination;

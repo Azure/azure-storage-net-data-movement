@@ -62,17 +62,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.hasWork = true;
         }
 
-        protected override Task ClearPagesAsync()
-        {
-            return this.destFile.ClearRangeAsync(
-                0, 
-                this.SourceHandler.TotalLength,
-                Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
-                Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
-                Utils.GenerateOperationContext(this.TransferContext),
-                this.CancellationToken);
-        }
-
         protected override Task CopyChunkFromUriAsync(long startOffset, long length)
         {
             return this.destFile.WriteRangeAsync(

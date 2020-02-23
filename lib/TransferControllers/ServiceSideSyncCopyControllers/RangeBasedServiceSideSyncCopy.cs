@@ -198,11 +198,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             await this.CheckAndCreateDestinationAsync();
 
-            if (0 != this.SourceHandler.TotalLength)
-            {
-                await this.ClearPagesAsync();
-            }
-
             PrepareForCopy();
             this.hasWork = true;
         }       
@@ -384,7 +379,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
         }
 
-        protected abstract Task ClearPagesAsync();
         protected abstract Task CopyChunkFromUriAsync(long startOffset, long length);
     }
 }
