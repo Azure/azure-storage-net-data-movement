@@ -1,3 +1,11 @@
+2020.02.26 Version 1.3.0
+ * All Service on both .Net Framework and .Net Core
+   - Upgraded Microsoft.Azure.Storage.Blob from 11.1.1 to 11.1.2
+   - Upgraded Microsoft.Azure.Storage.File from 11.1.1 to 11.1.2
+   - Added a copy method to leverage Service Side Synchronous Copy to copy between Azure Files, or between Blob and Azure File.
+ * Page Blob and File Service on both .Net Framework and .Net Core
+   - Reduce request of ListRanges when source is small Page Blob or Azure File.
+
 2019.12.17 Version 1.2.0
  * All Service on both .Net Framework and .Net Core
    - Upgraded Microsoft.Azure.Storage.Blob from 11.1.0 to 11.1.1
