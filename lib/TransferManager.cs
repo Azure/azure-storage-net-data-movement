@@ -787,7 +787,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
             }
 
-            return CopyInternalAsync(sourceLocation, destLocation, copyMethod, context, cancellationToken);
+            return CopyInternalAsync(sourceLocation, destLocation, copyMethod, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -901,7 +901,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
 
-            return CopyInternalAsync(sourceLocation, destLocation, copyMethod, context, cancellationToken);
+            return CopyInternalAsync(sourceLocation, destLocation, copyMethod, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -1011,7 +1011,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
             }
 
-            return CopyInternalAsync(sourceLocation, destLocation, copyMethod, context, cancellationToken);
+            return CopyInternalAsync(sourceLocation, destLocation, copyMethod, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -1120,7 +1120,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
 
-            return CopyInternalAsync(sourceLocation, destLocation, copyMethod, context, cancellationToken);
+            return CopyInternalAsync(sourceLocation, destLocation, copyMethod, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -1187,7 +1187,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
 
-            return CopyInternalAsync(sourceLocation, destLocation, CopyMethod.ServiceSideAsyncCopy, context, cancellationToken);
+            return CopyInternalAsync(sourceLocation, destLocation, CopyMethod.ServiceSideAsyncCopy, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -1254,7 +1254,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.AccessCondition = options.DestinationAccessCondition;
             }
 
-            return CopyInternalAsync(sourceLocation, destLocation, CopyMethod.ServiceSideAsyncCopy, context, cancellationToken);
+            return CopyInternalAsync(sourceLocation, destLocation, CopyMethod.ServiceSideAsyncCopy, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -1621,9 +1621,22 @@ namespace Microsoft.Azure.Storage.DataMovement
             return DoTransfer(transfer, context, cancellationToken);
         }
 
-        private static Task CopyInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, CopyMethod copyMethod, TransferContext context, CancellationToken cancellationToken)
+        private static Task CopyInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, CopyMethod copyMethod, CopyOptions options, TransferContext context, CancellationToken cancellationToken)
         {
             Transfer transfer = GetOrCreateSingleObjectTransfer(sourceLocation, destLocation, CopyMethodToTransferMethod(copyMethod), context);
+
+            if (null != options)
+            {
+                if ((sourceLocation.Type == TransferLocationType.AzureFile)
+                    && (destLocation.Type == TransferLocationType.AzureFile))
+                {
+                    //By default, copy permissions and SMB attributes for Azure File copying.
+                    transfer.PreserveSMBPermissions = options.PreserveSMBPermissions ? 
+                        PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL : PreserveSMBPermissions.None;
+                    transfer.PreserveSMBAttributes = options.PreserveSMBAttributes;
+                }
+            }
+
             return DoTransfer(transfer, context, cancellationToken);
         }
 
@@ -1723,6 +1736,16 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
                 transfer.BlobType = options.BlobType;
                 transfer.Delimiter = options.Delimiter;
+
+                if ((sourceLocation.Type == TransferLocationType.AzureFileDirectory)
+                    && (destLocation.Type == TransferLocationType.AzureFileDirectory))
+                {
+                    //By default, copy permissions and SMB attributes for Azure File copying.
+                    transfer.PreserveSMBPermissions = 
+                        options.PreserveSMBPermissions ?
+                        PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL : PreserveSMBPermissions.None;
+                    transfer.PreserveSMBAttributes = options.PreserveSMBAttributes;
+                }
             }
 
             await DoTransfer(transfer, context, cancellationToken);

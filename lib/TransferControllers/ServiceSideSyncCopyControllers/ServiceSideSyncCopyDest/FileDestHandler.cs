@@ -114,7 +114,46 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
             var originalMetadata = new Dictionary<string, string>(this.destFile.Metadata);
 
-            Utils.SetAttributes(this.destFile, sourceAttributes, false);
+            SingleObjectTransfer transferInstance = this.transferJob.Transfer;
+
+            Utils.SetAttributes(this.destFile, sourceAttributes, transferInstance.PreserveSMBAttributes);
+
+            if ((PreserveSMBPermissions.None != transferInstance.PreserveSMBPermissions)
+                && !string.IsNullOrEmpty(sourceAttributes.PortableSDDL))
+            {
+                if (sourceAttributes.PortableSDDL.Length >= Constants.MaxSDDLLengthInProperties)
+                {
+                    string permissionKey = null;
+                    var sddlCache = transferInstance.SDDLCache;
+                    if (null != sddlCache)
+                    {
+                        sddlCache.TryGetValue(sourceAttributes.PortableSDDL, out permissionKey);
+
+                        if (null == permissionKey)
+                        {
+                            permissionKey = await this.destFile.Share.CreateFilePermissionAsync(sourceAttributes.PortableSDDL,
+                                fileRequestOptions,
+                                operationContext,
+                                cancellationToken).ConfigureAwait(false);
+
+                            sddlCache.TryAddValue(sourceAttributes.PortableSDDL, permissionKey);
+                        }
+                    }
+                    else
+                    {
+                        permissionKey = await this.destFile.Share.CreateFilePermissionAsync(sourceAttributes.PortableSDDL,
+                            fileRequestOptions,
+                            operationContext,
+                            cancellationToken).ConfigureAwait(false);
+                    }
+
+                    this.destFile.Properties.FilePermissionKey = permissionKey;
+                }
+                else
+                {
+                    this.destFile.FilePermission = sourceAttributes.PortableSDDL;
+                }
+            }
 
             await setCustomAttributes(this.destFile);
 

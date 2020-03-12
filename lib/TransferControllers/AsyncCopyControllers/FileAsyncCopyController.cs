@@ -89,6 +89,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     this.SourceUri,
                     null,
                     null,
+                    null,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
                     this.CancellationToken); 
@@ -99,6 +100,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             {
                 await this.destFile.StartCopyAsync(
                     this.SourceBlob.GenerateCopySourceUri(),
+                    null,
                     null,
                     null,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
@@ -116,10 +118,24 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             else
             {
+                var transfer = this.TransferJob.Transfer;
+                FileCopyOptions fileCopyOptions = new FileCopyOptions();
+
+                if (transfer.PreserveSMBAttributes)
+                {
+                    fileCopyOptions.PreserveCreationTime = transfer.PreserveSMBAttributes;
+                    fileCopyOptions.PreserveLastWriteTime = transfer.PreserveSMBAttributes;
+                    fileCopyOptions.PreserveNtfsAttributes = transfer.PreserveSMBAttributes;
+                    fileCopyOptions.SetArchive = false;
+                }
+
+                fileCopyOptions.PreservePermissions = (transfer.PreserveSMBPermissions != PreserveSMBPermissions.None);
+
                 await this.destFile.StartCopyAsync(
-                    this.SourceFile.GenerateCopySourceUri(),
+                    this.SourceFile.GenerateCopySourceUri(fileCopyOptions.PreservePermissions),
                     null,
                     null,
+                    fileCopyOptions,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
                     this.CancellationToken); 

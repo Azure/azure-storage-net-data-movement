@@ -3,6 +3,10 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
+using System.IO;
+using Microsoft.Azure.Storage.Blob.Protocol;
+using Microsoft.Azure.Storage.File;
+
 namespace Microsoft.Azure.Storage.DataMovement
 {
     /// <summary>
@@ -10,6 +14,20 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// </summary>
     public sealed class CopyOptions
     {
+        /// <summary>
+        /// Gets or sets a flag that indicates whether to preserve SMB attributes during copying.
+        /// If set to true, destination Azure File's attributes will be set as source local file's attributes.
+        /// SMB attributes includes last write time, creation time and <see cref="CloudFileNtfsAttributes"/>.
+        /// This flag only takes effect when copying from Azure File Service to Azure File Service.
+        /// </summary>
+        public bool PreserveSMBAttributes { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag that indicates whether to preserve SMB permissions during copying.
+        /// This flag only takes effect when copying from Azure File Service to Azure File Service.
+        /// </summary>
+        public bool PreserveSMBPermissions { get; set; }
+
         /// <summary>
         /// Gets or sets an <see cref="AccessCondition"/> object that represents the access conditions for the source object. If <c>null</c>, no condition is used.
         /// </summary>

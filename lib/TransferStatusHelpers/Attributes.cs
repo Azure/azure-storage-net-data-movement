@@ -67,10 +67,10 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         public string PortableSDDL { get; set; }
 
-    /// <summary>
-    /// Gets or sets a value to indicate whether to overwrite all attribute on destination,
-    /// or keep its original value if it's not set.
-    /// </summary>
-    public bool OverWriteAll { get; set; }
+        /// <summary>
+        /// Gets or sets a value to indicate whether to overwrite all attribute on destination,
+        /// or keep its original value if it's not set.
+        /// </summary>
+        public bool OverWriteAll { get; set; }
     }
 }

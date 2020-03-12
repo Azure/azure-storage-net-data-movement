@@ -88,10 +88,20 @@ namespace DMLibTest
                 transferContext.ProgressHandler = progressChecker.GetProgressHandler();
                 options.TransferItemModifier = (fileName, item) =>
                     {
+                        dynamic transferOptions = DefaultTransferOptions;
+
+                        if (DMLibTestContext.SourceType == DMLibDataType.CloudFile
+                            && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                        {
+                            transferOptions.PreserveSMBAttributes = true;
+                            transferOptions.PreserveSMBPermissions = true;
+                        }
+
                         item.CancellationToken = tokenSource.Token;
                         item.TransferContext = transferContext;
                         transferItem = item;
                         item.DisableStreamDispose = true;
+                        item.Options = transferOptions;
                     };
 
                 TransferCheckpoint firstCheckpoint = null, secondCheckpoint = null;
@@ -294,6 +304,16 @@ namespace DMLibTest
                         VerificationHelper.VerifySingleObjectResumeResult(result, sourceDataInfo);
                     }
                 }
+
+                if (DMLibTestContext.SourceType == DMLibDataType.CloudFile 
+                    && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                {
+                    Helper.CompareSMBProperties(sourceDataInfo.RootNode, result.DataInfo.RootNode, true);
+                    Helper.CompareSMBPermissions(
+                        sourceDataInfo.RootNode,
+                        result.DataInfo.RootNode,
+                        PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
+                }
             }
         }
 
@@ -343,6 +363,13 @@ namespace DMLibTest
                 {
                     dynamic dirOptions = DefaultTransferDirectoryOptions;
                     dirOptions.Recursive = true;
+
+                    if (DMLibTestContext.SourceType == DMLibDataType.CloudFile
+                        && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                    {
+                        dirOptions.PreserveSMBAttributes = true;
+                        dirOptions.PreserveSMBPermissions = true;
+                    }
 
                     item.Options = dirOptions;
                     item.CancellationToken = tokenSource.Token;
@@ -443,6 +470,16 @@ namespace DMLibTest
                     VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0);
                     VerificationHelper.VerifySingleTransferStatus(result, totalFileNum, 0, 0, totalSizeInBytes);
                     VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
+                }
+
+                if (DMLibTestContext.SourceType == DMLibDataType.CloudFile 
+                    && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                {
+                    Helper.CompareSMBProperties(sourceDataInfo.RootNode, result.DataInfo.RootNode, true);
+                    Helper.CompareSMBPermissions(
+                        sourceDataInfo.RootNode,
+                        result.DataInfo.RootNode,
+                        PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
                 }
             }
         }

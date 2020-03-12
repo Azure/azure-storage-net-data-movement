@@ -191,6 +191,8 @@ namespace DMLibTest.Cases
             options.TransferItemModifier = (node, transferItem) =>
             {
                 dynamic transferOptions = DefaultTransferOptions;
+                transferOptions.PreserveSMBAttributes = true;
+                transferOptions.PreserveSMBPermissions = true;
                 transferItem.Options = transferOptions;
                 transferItem.TransferContext = context;
             };
@@ -207,6 +209,16 @@ namespace DMLibTest.Cases
             if (DMLibTestContext.SourceType != DMLibDataType.Local)
             {
                 Test.Assert(SetAttributesTest.TestContentLanguage.Equals(destFileNode.ContentLanguage), "Verify ContentLanguage: {0}, expected {1}", destFileNode.ContentLanguage, SetAttributesTest.TestContentLanguage);
+            }
+
+            if (DMLibTestContext.SourceType == DMLibDataType.CloudFile
+                && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+            {
+                Helper.CompareSMBProperties(sourceDataInfo.RootNode, result.DataInfo.RootNode, true);
+                Helper.CompareSMBPermissions(
+                    sourceDataInfo.RootNode,
+                    result.DataInfo.RootNode,
+                    PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
             }
         }
 
@@ -250,6 +262,7 @@ namespace DMLibTest.Cases
             {
                 dynamic transferOptions = DefaultTransferDirectoryOptions;
                 transferOptions.Recursive = true;
+
                 transferItem.Options = transferOptions;
                 transferItem.TransferContext = context;
             };
@@ -280,6 +293,8 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile)]
         [DMLibTestMethod(DMLibDataType.CloudBlob)]
         [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectorySetAttribute_Restart_Copy()
         {
             int bigFileSizeInKB = 5 * 1024; // 5 MB

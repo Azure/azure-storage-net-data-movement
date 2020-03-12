@@ -41,14 +41,15 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
         internal static CloudFile GenerateCopySourceFile(
-            this CloudFile file)
+            this CloudFile file,
+            bool preservePermission)
         {
             if (null == file)
             {
                 throw new ArgumentNullException("file");
             }
 
-            string sasToken = GetFileSASToken(file);
+            string sasToken = GetFileSASToken(file, preservePermission);
 
             if (string.IsNullOrEmpty(sasToken))
             {
@@ -58,13 +59,13 @@ namespace Microsoft.Azure.Storage.DataMovement
             return new CloudFile(file.SnapshotQualifiedUri, new StorageCredentials(sasToken));
         }
 
-        internal static Uri GenerateCopySourceUri(this CloudFile file)
+        internal static Uri GenerateCopySourceUri(this CloudFile file, bool preservePermission = false)
         {
-            CloudFile fileForCopy = file.GenerateCopySourceFile();
+            CloudFile fileForCopy = file.GenerateCopySourceFile(preservePermission);
             return fileForCopy.ServiceClient.Credentials.TransformUri(fileForCopy.SnapshotQualifiedUri);
         }
 
-        private static string GetFileSASToken(CloudFile file)
+        private static string GetFileSASToken(CloudFile file, bool preservePermission)
         {
             if (null == file.ServiceClient.Credentials
                 || file.ServiceClient.Credentials.IsAnonymous)
@@ -85,7 +86,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 Permissions = SharedAccessFilePermissions.Read,
             };
 
-            return file.GetSharedAccessSignature(policy);
+            return preservePermission ? file.Share.GetSharedAccessSignature(policy) : file.GetSharedAccessSignature(policy);
         }
 
         /// <summary>
