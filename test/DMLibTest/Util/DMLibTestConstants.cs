@@ -49,6 +49,7 @@ namespace DMLibTest
     {
         public const string ConnStr = "StorageConnectionString";
         public const string ConnStr2 = "StorageConnectionString2";
+        public const string DestEncryptionScope = "DestinationEncryptionScope";
         public static readonly int DefaultNC = TransferManager.Configurations.ParallelOperations;
         public static readonly int DefaultBlockSize = 4 * 1024 * 1024; //4MB
         public static readonly int LimitedSpeedNC = 4;

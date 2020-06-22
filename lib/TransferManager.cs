@@ -93,7 +93,8 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (options != null)
             {
                 destLocation.AccessCondition = options.DestinationAccessCondition;
-            }
+                destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
+            }               
 
             return UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
@@ -143,6 +144,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (options != null)
             {
                 destLocation.AccessCondition = options.DestinationAccessCondition;
+                destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
             }
 
             return UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
@@ -329,6 +331,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 sourceEnumerator.SearchPattern = options.SearchPattern;
                 sourceEnumerator.Recursive = options.Recursive;
+                destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
             }
 
             return UploadDirectoryInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context, cancellationToken);
@@ -781,6 +784,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
                 destLocation.AccessCondition = options.DestinationAccessCondition;
+                destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
             }
 
             return CopyInternalAsync(sourceLocation, destLocation, copyMethod, context, cancellationToken);
@@ -1004,6 +1008,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 sourceLocation.AccessCondition = options.SourceAccessCondition;
                 destLocation.AccessCondition = options.DestinationAccessCondition;
+                destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
             }
 
             return CopyInternalAsync(sourceLocation, destLocation, copyMethod, context, cancellationToken);
@@ -1340,6 +1345,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 sourceEnumerator.SearchPattern = options.SearchPattern;
                 sourceEnumerator.Recursive = options.Recursive;
                 sourceEnumerator.IncludeSnapshots = options.IncludeSnapshots;
+                destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
             }
 
             return CopyDirectoryInternalAsync(sourceLocation, destLocation, CopyMethodToTransferMethod(copyMethod), sourceEnumerator, options, context, cancellationToken);
@@ -1573,6 +1579,11 @@ namespace Microsoft.Azure.Storage.DataMovement
             // Set default request options for source and destination
             SetDefaultRequestOptions(sourceLocation);
             SetDefaultRequestOptions(destLocation);
+
+            if (null != options)
+            {
+                destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
+            }
 
             return CopyDirectoryInternalAsync(sourceLocation, destLocation, CopyMethodToTransferMethod(copyMethod), null, options, context, cancellationToken);
         }

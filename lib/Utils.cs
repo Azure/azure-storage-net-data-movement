@@ -356,6 +356,8 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
 
                 requestOptions.DisableContentMD5Validation = customRequestOptions.DisableContentMD5Validation;
+
+                requestOptions.EncryptionScope = customRequestOptions.EncryptionScope;
             }
 
             return requestOptions;

@@ -278,6 +278,7 @@ namespace DMLibTest
             fileNode.ContentDisposition = cloudBlob.Properties.ContentDisposition;
             fileNode.ContentEncoding = cloudBlob.Properties.ContentEncoding;
             fileNode.ContentLanguage = cloudBlob.Properties.ContentLanguage;
+            fileNode.EncryptionScope = cloudBlob.Properties.EncryptionScope;
             fileNode.Metadata = cloudBlob.Metadata;
 
             DateTimeOffset dateTimeOffset = (DateTimeOffset)cloudBlob.Properties.LastModified;

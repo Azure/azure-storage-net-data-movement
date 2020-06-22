@@ -104,5 +104,11 @@ namespace Microsoft.Azure.Storage.DataMovement
                 this.preserveSMBPermissions = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets a value which specifies the name of the encryption scope to use to encrypt the data provided in the request.
+        /// This value only takes effect when destination is Azure Blob Service.
+        /// </summary>
+        public string EncryptionScope { get; set; }
     }
 }

@@ -145,6 +145,12 @@ namespace DMLibTest
             set;
         }
 
+        public string EncryptionScope
+        {
+            get;
+            set;
+        }
+
         public CloudFileNtfsAttributes? SMBAttributes
         {
             get;

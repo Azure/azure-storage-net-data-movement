@@ -19,5 +19,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Gets or sets an <see cref="AccessCondition"/> object that represents the access conditions for the destination object. If <c>null</c>, no condition is used.
         /// </summary>
         public AccessCondition DestinationAccessCondition { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value which specifies the name of the encryption scope to use to encrypt the data provided in the request.
+        /// This value only takes effect when destination is Azure Blob Service.
+        /// </summary>
+        public string EncryptionScope { get; set; }
     }
 }
