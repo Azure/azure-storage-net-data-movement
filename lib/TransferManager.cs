@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Transfer scheduler that schedules execution of transfer jobs
         /// </summary>
         private static TransferScheduler scheduler = new TransferScheduler(configurations);
-        
+
         /// <summary>
         /// Stores all running transfers
         /// </summary>
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (options != null)
             {
                 destLocation.AccessCondition = options.DestinationAccessCondition;
-            }               
+            }
 
             return UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
         }
@@ -571,7 +571,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             AzureFileLocation sourceLocation = new AzureFileLocation(sourceFile);
             StreamLocation destLocation = new StreamLocation(destStream);
-            
+
             // Set default request options
             SetDefaultRequestOptions(sourceLocation);
 
@@ -611,7 +611,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             AzureBlobDirectoryLocation sourceLocation = new AzureBlobDirectoryLocation(sourceBlobDir);
             DirectoryLocation destLocation = new DirectoryLocation(destPath);
             AzureBlobEnumerator sourceEnumerator = new AzureBlobEnumerator(sourceLocation);
-            
+
             // Set default request options
             SetDefaultRequestOptions(sourceLocation);
 
@@ -659,7 +659,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (options != null)
             {
-                TransferManager.CheckSearchPatternOfAzureFileSource(options);                                
+                TransferManager.CheckSearchPatternOfAzureFileSource(options);
                 sourceLocation.FileRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
                 FileSecurityOperations.EnableRequiredPrivileges(options.PreserveSMBPermissions, true);
             }
@@ -832,11 +832,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <returns>A <see cref="Task"/> object that represents the asynchronous operation.</returns>
         [Obsolete("Replaced by overload that takes CopyMethod", false)]
         public static Task CopyAsync(
-            CloudBlob sourceBlob, 
-            CloudFile destFile, 
-            bool isServiceCopy, 
-            CopyOptions options, 
-            SingleTransferContext context, 
+            CloudBlob sourceBlob,
+            CloudFile destFile,
+            bool isServiceCopy,
+            CopyOptions options,
+            SingleTransferContext context,
             CancellationToken cancellationToken)
         {
             return CopyAsync(sourceBlob, destFile, isServiceCopy ? CopyMethod.ServiceSideAsyncCopy : CopyMethod.SyncCopy, options, context, cancellationToken);
@@ -1294,8 +1294,8 @@ namespace Microsoft.Azure.Storage.DataMovement
                 sourceBlobDir,
                 destBlobDir,
                 isServiceCopy ? CopyMethod.ServiceSideAsyncCopy : CopyMethod.SyncCopy,
-                options, 
-                context, 
+                options,
+                context,
                 cancellationToken);
         }
 
@@ -1673,7 +1673,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     hierarchyDirectoryTransfer.Recursive = options.Recursive;
                 }
             }
-            
+
             if (transfer.SourceEnumerator == null || !AreSameTransferEnumerators(transfer.SourceEnumerator, sourceEnumerator))
             {
                 transfer.SourceEnumerator = sourceEnumerator;
@@ -1685,12 +1685,12 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
         private static async Task<TransferStatus> CopyDirectoryInternalAsync(
-            TransferLocation sourceLocation, 
-            TransferLocation destLocation, 
-            TransferMethod transferMethod, 
-            ITransferEnumerator sourceEnumerator, 
-            CopyDirectoryOptions options, 
-            DirectoryTransferContext context, 
+            TransferLocation sourceLocation,
+            TransferLocation destLocation,
+            TransferMethod transferMethod,
+            ITransferEnumerator sourceEnumerator,
+            CopyDirectoryOptions options,
+            DirectoryTransferContext context,
             CancellationToken cancellationToken)
         {
             DirectoryTransfer transfer = GetOrCreateDirectoryTransfer(sourceLocation, destLocation, transferMethod, context);
@@ -1782,7 +1782,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                 if ((sourceLocation.Type == TransferLocationType.AzureFileDirectory)
                     || ((sourceLocation.Type == TransferLocationType.LocalDirectory) && (destLocation.Type == TransferLocationType.AzureFileDirectory)))
                 {
-                    directoryTransfer = new HierarchyDirectoryTransfer(sourceLocation, destLocation, transferMethod);
+                    directoryTransfer = new HierarchyDirectoryTransfer(sourceLocation, destLocation, transferMethod)
+                    {
+                        MaxListingConcurrency = configurations.MaxListingConcurrency
+                    };
                 }
                 else
                 {

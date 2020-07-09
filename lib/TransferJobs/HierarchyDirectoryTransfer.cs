@@ -24,8 +24,8 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// <summary>
     /// Represents a hierarchy directory transfer operation.
     /// In a flat directory transfer, the enumeration only returns file entries and it only transfers files under the directory.
-    /// 
-    /// In a hierarchy directory transfer, the enumeration also returns directory entries, 
+    ///
+    /// In a hierarchy directory transfer, the enumeration also returns directory entries,
     /// it transfers files under the directory and also handles opertions on directories.
     /// </summary>
 #if BINARY_SERIALIZATION
@@ -63,6 +63,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         private SemaphoreSlim maxConcurrencyControl = null;
 
         private int maxConcurrency = 0;
+        private int maxListingConcurrency = 0;
 
         object continuationTokenLock = new object();
 
@@ -81,7 +82,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private DirectoryListingScheduler directoryListingScheduler = null;
 
-        private AzureFileDirectorySDDLCache azureFileDirectorySDDLCache = new AzureFileDirectorySDDLCache(); 
+        private AzureFileDirectorySDDLCache azureFileDirectorySDDLCache = new AzureFileDirectorySDDLCache();
 
 #if !BINARY_SERIALIZATION
         [DataMember]
@@ -283,6 +284,16 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        public int MaxListingConcurrency
+        {
+            set
+            {
+                Debug.Assert((value > 1), "MaxListingConcurrency cannot be smaller than 1");
+
+                this.maxListingConcurrency = value;
+            }
+        }
+
         public AzureFileDirectorySDDLCache SDDLCache
         {
             get
@@ -390,22 +401,8 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.transfersCompleteSource = new TaskCompletionSource<object>();
             this.subDirTransfersCompleteSource = new TaskCompletionSource<object>();
 
-#if DOTNET5_4
-            int maxListingThreadCount = 6;
-#else
-            int maxListingThreadCount = 2;
-#endif
 
-            if ((this.Destination.Type == TransferLocationType.LocalDirectory) || (this.Source.Type == TransferLocationType.LocalDirectory))
-            {
-#if DOTNET5_4
-                maxListingThreadCount = 4;
-#else
-                maxListingThreadCount = 2;
-#endif
-            }
-
-            directoryListingScheduler = new DirectoryListingScheduler(maxListingThreadCount);
+            directoryListingScheduler = new DirectoryListingScheduler(this.maxListingConcurrency);
         }
 
         public override async Task ExecuteInternalAsync(TransferScheduler scheduler, CancellationToken cancellationToken)
@@ -537,7 +534,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         TransferErrorCode.FailToEnumerateDirectory,
                         string.Format(CultureInfo.CurrentCulture,
                             Resources.EnumerateDirectoryException,
-                            this.Destination.Instance.ConvertToString()), 
+                            this.Destination.Instance.ConvertToString()),
                         ex.InnerException);
                 }
 
@@ -867,7 +864,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             else if (this.Source.Type == TransferLocationType.LocalDirectory)
             {
                 return new DirectoryEntry
-                    (relativePath, 
+                    (relativePath,
                     LongPath.Combine(this.Source.Instance as string, relativePath), null);
             }
             else

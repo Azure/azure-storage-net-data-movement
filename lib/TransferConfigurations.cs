@@ -33,12 +33,17 @@ namespace Microsoft.Azure.Storage.DataMovement
         private long maximumCacheSize;
 
         /// <summary>
+        /// How many listings can be performed in parallel
+        /// </summary>
+        private int maxListingConcurrency;
+
+        /// <summary>
         /// Instance to call native methods to get current memory status.
         /// </summary>
         private GlobalMemoryStatusNativeMethods memStatus = new GlobalMemoryStatusNativeMethods();
 
         /// <summary>
-        /// Initializes a new instance of the 
+        /// Initializes a new instance of the
         /// <see cref="TransferConfigurations" /> class.
         /// </summary>
         public TransferConfigurations()
@@ -48,16 +53,22 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.parallelOperations = Environment.ProcessorCount * 8;
             this.MemoryChunkSize = Constants.DefaultMemoryChunkSize;
 
+#if DOTNET5_4
+            this.maxListingConcurrency = 6;
+#else
+            this.maxListingConcurrency = 2;
+#endif
+
             this.UpdateMaximumCacheSize(this.blockSize);
         }
 
         /// <summary>
-        /// Gets or sets a value indicating how many work items to process 
-        /// concurrently. Downloading or uploading a single blob can consist 
+        /// Gets or sets a value indicating how many work items to process
+        /// concurrently. Downloading or uploading a single blob can consist
         /// of a large number of work items.
         /// </summary>
         /// <value>How many work items to process concurrently.</value>
-        public int ParallelOperations 
+        public int ParallelOperations
         {
             get
             {
@@ -78,10 +89,24 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        public int MaxListingConcurrency
+        {
+            get
+            {
+                return this.maxListingConcurrency;
+            }
+            set
+            {
+                if (value <= 0)
+                    throw new ArgumentException(string.Format((IFormatProvider) CultureInfo.CurrentCulture, Resources.MaxListingConcurrencyNotPositiveException));
+                this.maxListingConcurrency = value;
+            }
+        }
+
         /// <summary>
-        /// Gets or sets the BlockSize to use for Windows Azure Storage transfers to block blob(s). 
+        /// Gets or sets the BlockSize to use for Windows Azure Storage transfers to block blob(s).
         /// It must be between 4MB and 100MB and be multiple of 4MB.
-        /// 
+        ///
         /// Currently, the max block count of a block blob is limited to 50000.
         /// When transfering a big file and the BlockSize provided is smaller than the minimum value - (size/50000),
         /// it'll be reset to a value which is greater than the minimum value and multiple of 4MB for this file.
@@ -123,7 +148,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         public string UserAgentPrefix
         {
             get;
-            set; 
+            set;
         }
 
         /// <summary>
