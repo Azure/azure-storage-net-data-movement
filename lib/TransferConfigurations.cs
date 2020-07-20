@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <summary>
         /// How many listings can be performed in parallel
         /// </summary>
-        private int maxListingConcurrency;
+        private int? maxListingConcurrency;
 
         /// <summary>
         /// Instance to call native methods to get current memory status.
@@ -89,7 +89,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        public int MaxListingConcurrency
+        public int? MaxListingConcurrency
         {
             get
             {

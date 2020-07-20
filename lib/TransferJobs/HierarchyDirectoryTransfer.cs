@@ -63,7 +63,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         private SemaphoreSlim maxConcurrencyControl = null;
 
         private int maxConcurrency = 0;
-        private int maxListingConcurrency = 0;
+        private int? maxListingConcurrency = 0;
 
         object continuationTokenLock = new object();
 
@@ -284,12 +284,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        public int MaxListingConcurrency
+        public int? MaxListingConcurrency
         {
             set
             {
-                Debug.Assert((value > 1), "MaxListingConcurrency cannot be smaller than 1");
-
                 this.maxListingConcurrency = value;
             }
         }
@@ -401,8 +399,23 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.transfersCompleteSource = new TaskCompletionSource<object>();
             this.subDirTransfersCompleteSource = new TaskCompletionSource<object>();
 
+#if DOTNET5_4
+            int maxListingThreadCount = 6;
+#else
+            int maxListingThreadCount = 2;
+#endif
 
-            directoryListingScheduler = new DirectoryListingScheduler(this.maxListingConcurrency);
+            if ((this.Destination.Type == TransferLocationType.LocalDirectory) || (this.Source.Type == TransferLocationType.LocalDirectory))
+            {
+#if DOTNET5_4
+                maxListingThreadCount = 4;
+#else
+                maxListingThreadCount = 2;
+#endif
+            }
+
+
+            directoryListingScheduler = new DirectoryListingScheduler(this.maxListingConcurrency ?? maxListingThreadCount);
         }
 
         public override async Task ExecuteInternalAsync(TransferScheduler scheduler, CancellationToken cancellationToken)
