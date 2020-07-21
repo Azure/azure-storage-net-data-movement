@@ -108,8 +108,10 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         public static string ToUncPath(string path)
         {
+            Console.WriteLine("\n$$$ ToUncPath1, path: " + path + "$$$\n");
             if (IsDevice(path))
             {
+                Console.WriteLine("\n$$$ ToUncPath2, full path: " + LongPath.GetFullPath(path) + "$$$\n");
                 return LongPath.GetFullPath(path);
             }
 
@@ -117,15 +119,24 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 path = LongPath.GetFullPath(path);
                 if (IsDevice(path))
+                {
+                    Console.WriteLine("\n$$$ ToUncPath3, full path (partially qualified): " + path + "$$$\n");
                     return path;
+                }
                 else
+                {
+                    Console.WriteLine("\n$$$ ToUncPath4, ExtendedPathPrefix + full path: " + ExtendedPathPrefix + path + "\n$$$");
                     return ExtendedPathPrefix + path;
+                }
             }
 
             //// Given \\server\share in longpath becomes \\?\UNC\server\share
             if (path.StartsWith(UncPathPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("\n$$$ ToUncPath5, Given \\server\share in longpath becomes \\?\UNC\server\share: " + LongPath.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert)) + "\n$$$");
                 return LongPath.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert));
-
+            }
+            Console.WriteLine("\n$$$ ToUncPath6, before return, Long path (GetFullPath(ExtendedPathPrefix + path)) : " + LongPath.GetFullPath(ExtendedPathPrefix + path) + "\n$$$");
             return LongPath.GetFullPath(ExtendedPathPrefix + path);
         }
 

@@ -223,6 +223,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     streamWriter.EnableSmallFileOptimization = true;
                     return streamWriter;
                 case TransferLocationType.FilePath:
+                    Console.WriteLine("At Case File Path");
                     var fileWriter = new StreamedWriter(this.Scheduler, this, this.CancellationToken);
                     fileWriter.EnableSmallFileOptimization = true;
                     return fileWriter;

@@ -98,6 +98,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             switch (this.state)
             {
                 case State.OpenOutputStream:
+                    Console.WriteLine("At HandleOutputStreamAsync Case");
                     await this.HandleOutputStreamAsync();
                     break;
                 case State.CalculateMD5:
