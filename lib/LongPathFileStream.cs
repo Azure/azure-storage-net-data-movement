@@ -133,7 +133,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             //// Given \\server\share in longpath becomes \\?\UNC\server\share
             if (path.StartsWith(UncPathPrefix, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("\n$$$ ToUncPath5, Given \\server\share in longpath becomes \\?\UNC\server\share: " + LongPath.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert)) + "\n$$$");
+                Console.WriteLine("\n$$$ ToUncPath5: " + LongPath.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert)) + "$$$\n");
                 return LongPath.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert));
             }
             Console.WriteLine("\n$$$ ToUncPath6, before return, Long path (GetFullPath(ExtendedPathPrefix + path)) : " + LongPath.GetFullPath(ExtendedPathPrefix + path) + "\n$$$");
