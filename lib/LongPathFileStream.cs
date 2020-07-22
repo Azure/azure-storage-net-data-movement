@@ -147,10 +147,10 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         public static string GetFullPath(string path)
         {
-            Console.WriteLine("\n$$$ GetFullPath function:" + path + "$$$\n");
+            Console.WriteLine("\n$$$ GetFullPath function $$$" + path + "$$$\n");
 #if DOTNET5_4
-            Console.WriteLine("\n$$$ GetFullPath function DOTNET5_4" + "$$$\n");
-            Console.WriteLine("\n$$$ GetFullPath function" + Path.GetFullPath(path) + "$$$\n");
+            Console.WriteLine("\n$$$ In GetFullPath function DOTNET5_4 version" + "$$$\n");
+            Console.WriteLine("\n$$$ GetFullPath function DOTNET5_4$$$" + Path.GetFullPath(path) + "$$$\n");
             return Path.GetFullPath(path);
 #else
             Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 1" + "$$$\n");
