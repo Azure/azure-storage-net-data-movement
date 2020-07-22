@@ -19,7 +19,6 @@ namespace Microsoft.Azure.Storage.DataMovement.Interop
 
     internal static partial class NativeMethods
     {
-#if !DOTNET5_4
         public const int ERROR_SUCCESS = 0;
         public const int ERROR_FILE_NOT_FOUND = 2;
         public const int ERROR_DIRECTORY_NOT_FOUND = 3;
@@ -60,12 +59,14 @@ namespace Microsoft.Azure.Storage.DataMovement.Interop
             [Out] StringBuilder lpBuffer,
             [Out] StringBuilder lpFilePart);
 
+#if !DOTNET5_4
         [DllImport("kernel32.dll", EntryPoint = "FindFirstFileW", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern SafeFindHandle FindFirstFileW(string lpFileName, out WIN32_FIND_DATA lpFindFileData);
 
         [DllImport("kernel32.dll", EntryPoint = "FindNextFileW", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool FindNextFileW(SafeFindHandle hFindFile, out WIN32_FIND_DATA lpFindFileData);
+#endif
 
         [DllImport("shlwapi.dll", EntryPoint = "PathFileExistsW", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -134,6 +135,5 @@ namespace Microsoft.Azure.Storage.DataMovement.Interop
             }
             throw Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error());
         }
-#endif
     }
 }

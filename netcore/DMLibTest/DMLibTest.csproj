@@ -14,6 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\lib\FileNativeMethods.cs" Link="FileNativeMethods.cs" />
     <Compile Include="..\..\lib\LongPathFileStream.cs" Link="Framework\LongPathFileStream.cs" />
     <Compile Include="..\..\lib\FileSecurityOperations.cs" Link="Framework\FileSecurityOperations.cs" />
     <Compile Include="..\..\lib\FileSecurityNativeMethods.cs" Link="Framework\FileSecurityNativeMethods.cs" />

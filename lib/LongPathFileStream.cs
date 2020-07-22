@@ -141,39 +141,45 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return LongPath.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert));
             }
             Console.WriteLine("\n$$$ At return statement $$$\n");
-            Console.WriteLine("\n$$$ ToUncPath6, before return, Long path (GetFullPath(ExtendedPathPrefix + path))$$$" + LongPath.GetFullPath(ExtendedPathPrefix + path) + "\n$$$");
-            return LongPath.GetFullPath(ExtendedPathPrefix + path);
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? LongPath.GetFullPath(ExtendedPathPrefix + path)
+                : LongPath.GetFullPath(path);
         }
 
         public static string GetFullPath(string path)
         {
             Console.WriteLine("\n$$$ GetFullPath function $$$" + path + "$$$\n");
-#if DOTNET5_4
-            Console.WriteLine("\n$$$ In GetFullPath function DOTNET5_4 version" + "$$$\n");
-            Console.WriteLine("\n$$$ GetFullPath function DOTNET5_4$$$" + Path.GetFullPath(path) + "$$$\n");
-            return Path.GetFullPath(path);
-#else
-            Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 1" + "$$$\n");
-            int buffSize = 260;
-            StringBuilder fullPath = new StringBuilder(buffSize);
-            Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 2" + fullPath + "$$$\n");
-            StringBuilder fileName = new StringBuilder(buffSize);
-            Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 3" + fileName + "$$$\n");
-            uint actualSize = NativeMethods.GetFullPathNameW(path, (uint)buffSize, fullPath, fileName);
-            if (actualSize == 0)
-                NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
-            if (actualSize > buffSize)
+            Console.WriteLine("\nPath Length: " + path.Length);
+
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                buffSize = (int)actualSize + 16;
-                fullPath = new StringBuilder(buffSize);
-                fileName = new StringBuilder(buffSize);
-                actualSize = NativeMethods.GetFullPathNameW(path, (uint)buffSize, fullPath, fileName);
+                Console.WriteLine("\n$$$ In GetFullPath function DOTNET5_4 version" + "$$$\n");
+                Console.WriteLine("\n$$$ GetFullPath function DOTNET5_4$$$" + Path.GetFullPath(path) + "$$$\n");
+                return Path.GetFullPath(path);
+            }
+            else
+            {
+                Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 1" + "$$$\n");
+                int buffSize = 260;
+                StringBuilder fullPath = new StringBuilder(buffSize);
+                Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 2" + fullPath + "$$$\n");
+                StringBuilder fileName = new StringBuilder(buffSize);
+                Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 3" + fileName + "$$$\n");
+                uint actualSize = NativeMethods.GetFullPathNameW(path, (uint)buffSize, fullPath, fileName);
                 if (actualSize == 0)
                     NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
+                if (actualSize > buffSize)
+                {
+                    buffSize = (int)actualSize + 16;
+                    fullPath = new StringBuilder(buffSize);
+                    fileName = new StringBuilder(buffSize);
+                    actualSize = NativeMethods.GetFullPathNameW(path, (uint)buffSize, fullPath, fileName);
+                    if (actualSize == 0)
+                        NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
+                }
+                Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 4" + fullPath.ToString() + "$$$\n");
+                return fullPath.ToString();
             }
-            Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 4" + fullPath.ToString() + "$$$\n");
-            return fullPath.ToString();
-#endif
         }
 
         public static string Combine(string path1, string path2)
