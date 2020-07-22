@@ -33,7 +33,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         private long maximumCacheSize;
 
         /// <summary>
-        /// How many listings can be performed in parallel
+        /// How many listings can be performed in parallel.
         /// </summary>
         private int? maxListingConcurrency;
 
