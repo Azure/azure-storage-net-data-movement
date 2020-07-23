@@ -11,6 +11,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     using System.Globalization;
     using System.IO;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -181,28 +182,35 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     try
                     {
                         FileMode fileMode = 0 == this.expectOffset ? FileMode.OpenOrCreate : FileMode.Open;
-
-#if DOTNET5_4
                         string longFilePath = filePath;
-                        if (Interop.CrossPlatformHelpers.IsWindows)
+                        //#if DOTNET5_4
+                        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) 
                         {
-                            longFilePath = LongPath.ToUncPath(longFilePath);
-                        }
-
-                        // Attempt to open the file first so that we throw an exception before getting into the async work
-                        this.outputStream = new FileStream(
+                            Console.WriteLine("\n$$$ StreamedWriter.cs: Not Windows $$$\n");
+                            // Attempt to open the file first so that we throw an exception before getting into the async work
+                            Console.WriteLine("\n$$$ Is Windows, longFilePath: $$$" + longFilePath + "$$$\n");
+                            this.outputStream = new FileStream(
                             longFilePath,
                             fileMode,
                             FileAccess.ReadWrite,
                             FileShare.None);
-#else
-                        this.outputStream = LongPathFile.Open(
+                        //#else                 
+                        }
+
+                        else {
+                            Console.WriteLine("\n$$$ StreamedWriter.cs: Is Windows $$$\n");
+                            if (Interop.CrossPlatformHelpers.IsWindows)
+                            {
+                                longFilePath = LongPath.ToUncPath(longFilePath);
+                            }
+                            Console.WriteLine("\n$$$ Is Windows, longFilePath: $$$" + longFilePath + "$$$\n");
+                            this.outputStream = LongPathFile.Open(
                             filePath, 
                             fileMode, 
                             FileAccess.ReadWrite, 
                             FileShare.None);
-#endif
-
+                        //#endif                   
+                        }
                         this.ownsStream = true;
                     }
                     catch (Exception ex)
