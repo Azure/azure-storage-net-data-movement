@@ -169,6 +169,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.TransferMethod = other.TransferMethod;
             this.OriginalFormatVersion = other.OriginalFormatVersion;
             this.PreserveSMBAttributes = other.PreserveSMBAttributes;
+            this.AddFileMetadata = other.AddFileMetadata;
         }
 
         /// Used to ensure that deserialized transfers are only used
@@ -238,6 +239,12 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             get;
             set;
+        }
+
+        public bool AddFileMetadata
+        {
+	        get;
+	        set;
         }
 
         /// <summary>

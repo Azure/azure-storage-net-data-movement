@@ -16,12 +16,37 @@ namespace Microsoft.Azure.Storage.DataMovement
     public sealed class UploadOptions
     {
         private bool preserveSMBAttributes = false;
+        private bool addFileMetadata = false;
         private PreserveSMBPermissions preserveSMBPermissions = PreserveSMBPermissions.None;
 
         /// <summary>
         /// Gets or sets an <see cref="AccessCondition"/> object that represents the access conditions for the destination object. If <c>null</c>, no condition is used.
         /// </summary>
         public AccessCondition DestinationAccessCondition { get; set; }
+
+        public bool AddFileMetadata
+        {
+	        get
+	        {
+		        return this.addFileMetadata;
+	        }
+
+	        set
+	        {
+#if DOTNET5_4
+                if (value && !Interop.CrossPlatformHelpers.IsWindows)
+                {
+                    throw new PlatformNotSupportedException();
+                }
+                else
+                {
+                    this.addFileMetadata = value;
+                }
+#else
+                this.addFileMetadata = value;
+#endif
+	        }
+        }
 
         /// <summary>
         /// Gets or sets a flag that indicates whether to preserve SMB attributes during uploading.

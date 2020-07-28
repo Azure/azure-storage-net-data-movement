@@ -439,6 +439,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             TransferLocation destLocation = GetDestinationTransferLocation(this.Destination, entry);
             var transferMethod = IsDummyCopy(entry) ? TransferMethod.DummyCopy : this.TransferMethod;
             SingleObjectTransfer transfer = new SingleObjectTransfer(sourceLocation, destLocation, transferMethod);
+            transfer.AddFileMetadata = this.AddFileMetadata;
             transfer.PreserveSMBAttributes = this.PreserveSMBAttributes;
             transfer.PreserveSMBPermissions = this.PreserveSMBPermissions;
             transfer.Context = this.Context;
@@ -481,6 +482,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             DirectoryTransfer.UpdateCredentials(this.Source, transfer.Source);
             DirectoryTransfer.UpdateCredentials(this.Destination, transfer.Destination);
+            transfer.AddFileMetadata = this.AddFileMetadata;
             transfer.PreserveSMBAttributes = this.PreserveSMBAttributes;
             transfer.PreserveSMBPermissions = this.PreserveSMBPermissions;
         }

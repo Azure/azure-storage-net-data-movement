@@ -602,6 +602,24 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        public static void SetAttributes(CloudBlob blob, SharedTransferData sharedTransferData)
+        {
+            SetAttributes(blob, sharedTransferData.Attributes);
+
+            if (sharedTransferData.TransferJob.Transfer.AddFileMetadata)
+            {
+	            blob.Metadata.Add("Origin", sharedTransferData.TransferJob.Source.Instance.ToString());
+	            blob.Metadata.Add(nameof(Attributes.LastWriteTime), sharedTransferData.Attributes.LastWriteTime.ToString());
+	            blob.Metadata.Add(nameof(Attributes.CreationTime), sharedTransferData.Attributes.CreationTime.ToString());
+	            blob.Metadata.Add(nameof(Attributes.PortableSDDL), sharedTransferData.Attributes.PortableSDDL);
+
+	            if (sharedTransferData.Attributes.CloudFileNtfsAttributes.HasValue)
+	            {
+		            blob.Metadata.Add(nameof(sharedTransferData.Attributes.CloudFileNtfsAttributes), sharedTransferData.Attributes.CloudFileNtfsAttributes.Value.ToString());
+	            }
+            }
+        }
+
         public static void SetAttributes(CloudFile file, Attributes attributes, bool preserveSMBProperties)
         {
             if (attributes.OverWriteAll)

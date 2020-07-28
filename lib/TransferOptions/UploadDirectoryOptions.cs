@@ -17,6 +17,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     public sealed class UploadDirectoryOptions : DirectoryOptions
     {
         private bool preserveSMBAttributes = false;
+        private bool addFileMetadata = false;
         private PreserveSMBPermissions preserveSMBPermissions = PreserveSMBPermissions.None;
         private bool followSymlink = false;
 
@@ -45,6 +46,30 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 this.followSymlink = value;
             }
+        }
+
+        public bool AddFileMetadata
+        {
+	        get
+	        {
+		        return this.addFileMetadata;
+	        }
+
+	        set
+	        {
+#if DOTNET5_4
+                if (value && !Interop.CrossPlatformHelpers.IsWindows)
+                {
+                    throw new PlatformNotSupportedException();
+                }
+                else
+                {
+                    this.addFileMetadata = value;
+                }
+#else
+		        this.addFileMetadata = value;
+#endif
+	        }
         }
 
         /// <summary>

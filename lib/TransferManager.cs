@@ -1587,10 +1587,11 @@ namespace Microsoft.Azure.Storage.DataMovement
             Transfer transfer = GetOrCreateSingleObjectTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 
             if ((null != uploadOptions)
-                && (destLocation.Type == TransferLocationType.AzureFile))
+                && (destLocation.Type == TransferLocationType.AzureFile || uploadOptions.AddFileMetadata))
             {
                 transfer.PreserveSMBAttributes = uploadOptions.PreserveSMBAttributes;
                 transfer.PreserveSMBPermissions = uploadOptions.PreserveSMBPermissions;
+                transfer.AddFileMetadata = uploadOptions.AddFileMetadata;
             }
 
             return DoTransfer(transfer, context, cancellationToken);
@@ -1638,10 +1639,11 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 transfer.BlobType = options.BlobType;
 
-                if (destLocation.Type == TransferLocationType.AzureFileDirectory)
+                if (destLocation.Type == TransferLocationType.AzureFileDirectory || options.AddFileMetadata)
                 {
                     transfer.PreserveSMBAttributes = options.PreserveSMBAttributes;
                     transfer.PreserveSMBPermissions = options.PreserveSMBPermissions;
+                    transfer.AddFileMetadata = options.AddFileMetadata;
                 }
             }
 

@@ -446,7 +446,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
                     }
 
-                    Utils.SetAttributes(this.blockBlob, this.SharedTransferData.Attributes);
+                    Utils.SetAttributes(this.blockBlob, this.SharedTransferData);
 
                     await this.Controller.SetCustomAttributesAsync(this.blockBlob);
 
