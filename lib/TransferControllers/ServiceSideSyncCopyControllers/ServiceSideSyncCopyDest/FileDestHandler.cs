@@ -82,13 +82,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
             if (needCreateDestination)
             {
+                this.transferJob.Overwrite = true;
+                this.transferJob.Transfer.UpdateJournal();
+
                 await this.CreateDestinationAsync(
                     totalLength,
                     null,
-                    cancellationToken);
-
-                this.transferJob.Overwrite = true;
-                this.transferJob.Transfer.UpdateJournal();
+                    CancellationToken.None);
             }
 
             return gotDestAttributes;

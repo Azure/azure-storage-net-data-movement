@@ -60,36 +60,42 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
         {
             bool needCreateDestination = true;
             bool gotDestAttributes = false;
+
+            // Check access condition here no matter whether force overwrite is true.
+            if (!this.destLocation.CheckedAccessCondition && null != this.destLocation.AccessCondition)
+            {
+                try
+                {
+                    await this.destBlob.FetchAttributesAsync(
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, false),
+                        Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
+                        Utils.GenerateOperationContext(this.transferContext),
+                        cancellationToken);
+
+                    // Only try to send the blob creating request, when blob length is not as expected. Otherwise, only need to clear all pages.
+                    needCreateDestination = true;
+                    this.destLocation.CheckedAccessCondition = true;
+                    gotDestAttributes = true;
+
+                    if (!isForceOverwrite)
+                    {
+                        await checkOverwrite(true);
+                    }
+                }
+                catch (StorageException se)
+                {
+                    if ((null == se.RequestInformation) || ((int)HttpStatusCode.NotFound != se.RequestInformation.HttpStatusCode))
+                    {
+                        throw;
+                    }
+                }
+            }
+
             if (!isForceOverwrite)
             {
                 if (this.transferJob.Overwrite.HasValue)
                 {
                     await checkOverwrite(true);
-                }
-                else if (!this.destLocation.CheckedAccessCondition && null != this.destLocation.AccessCondition)
-                {
-                    try
-                    {
-                        await this.destBlob.FetchAttributesAsync(
-                            Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, false),
-                            Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
-                            Utils.GenerateOperationContext(this.transferContext),
-                            cancellationToken);
-
-                        // Only try to send the blob creating request, when blob length is not as expected. Otherwise, only need to clear all pages.
-                        needCreateDestination = (this.destBlob.Properties.Length != totalLength);
-                        this.destLocation.CheckedAccessCondition = true;
-                        gotDestAttributes = true;
-
-                        await checkOverwrite(true);
-                    }
-                    catch (StorageException se)
-                    {
-                        if ((null == se.RequestInformation) || ((int)HttpStatusCode.NotFound != se.RequestInformation.HttpStatusCode))
-                        {
-                            throw;
-                        }
-                    }
                 }
                 else
                 {
@@ -128,14 +134,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
             if (needCreateDestination)
             {
+                this.transferJob.Overwrite = true;
+                this.transferJob.Transfer.UpdateJournal();
+
                 await this.CreateDestinationAsync(
                     totalLength,
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
-                    cancellationToken);
-
-                this.transferJob.Overwrite = true;
-                this.destLocation.CheckedAccessCondition = true;
-                this.transferJob.Transfer.UpdateJournal();
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
+                    CancellationToken.None);
             }
 
             return gotDestAttributes;

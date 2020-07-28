@@ -6,6 +6,7 @@
 
 namespace Microsoft.Azure.Storage.DataMovement
 {
+    using Microsoft.Azure.Storage.File;
     /// <summary>
     /// Represents a set of options that may be specified for copy operation
     /// </summary>
@@ -17,12 +18,14 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// SMB attributes includes last write time, creation time and <see cref="CloudFileNtfsAttributes"/>.
         /// This flag only takes effect when copying from Azure File Service to Azure File Service.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SMB")]
         public bool PreserveSMBAttributes { get; set; }
 
         /// <summary>
         /// Gets or sets a flag that indicates whether to preserve SMB permissions during copying.
         /// This flag only takes effect when copying from Azure File Service to Azure File Service.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1709:IdentifiersShouldBeCasedCorrectly", MessageId = "SMB")]
         public bool PreserveSMBPermissions { get; set; }
 
         /// <summary>
