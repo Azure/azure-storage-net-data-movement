@@ -191,8 +191,13 @@ namespace DMLibTest.Cases
             options.TransferItemModifier = (node, transferItem) =>
             {
                 dynamic transferOptions = DefaultTransferOptions;
-                transferOptions.PreserveSMBAttributes = true;
-                transferOptions.PreserveSMBPermissions = true;
+                if ((DMLibTestContext.SourceType == DMLibDataType.CloudFile)
+                && (DMLibTestContext.DestType == DMLibDataType.CloudFile))
+                {
+                    transferOptions.PreserveSMBPermissions = true;
+                    transferOptions.PreserveSMBAttributes = true;
+                }
+
                 transferItem.Options = transferOptions;
                 transferItem.TransferContext = context;
             };

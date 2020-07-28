@@ -635,21 +635,10 @@ namespace DMLibTest.Cases
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudFile)]
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
         public void TestCopyDirectorySMBPropertiesACL()
         {
-            if (!CrossPlatformHelpers.IsWindows) return;
-
             CloudFileNtfsAttributes[] SMBFileAttributes = {
-                CloudFileNtfsAttributes.ReadOnly,
-                CloudFileNtfsAttributes.Hidden,
-#if DEBUG
-                CloudFileNtfsAttributes.System,
-                CloudFileNtfsAttributes.Archive,
-                CloudFileNtfsAttributes.Normal,
-                CloudFileNtfsAttributes.Offline,
-                CloudFileNtfsAttributes.NotContentIndexed,
-                CloudFileNtfsAttributes.NoScrubData,
-
                 CloudFileNtfsAttributes.ReadOnly | CloudFileNtfsAttributes.Hidden,
                 CloudFileNtfsAttributes.System | CloudFileNtfsAttributes.Archive,
                 CloudFileNtfsAttributes.Offline |CloudFileNtfsAttributes.NotContentIndexed | CloudFileNtfsAttributes.NoScrubData,
@@ -660,7 +649,6 @@ namespace DMLibTest.Cases
                 CloudFileNtfsAttributes.Archive |
                 CloudFileNtfsAttributes.NotContentIndexed |
                 CloudFileNtfsAttributes.NoScrubData
-#endif
             };
 
             string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
@@ -683,6 +671,8 @@ namespace DMLibTest.Cases
 
                     dynamic transferOptions = DefaultTransferDirectoryOptions;
                     transferOptions.Recursive = true;
+                    transferOptions.PreserveSMBAttributes = true;
+                    transferOptions.PreserveSMBPermissions = true;
                     transferItem.Options = transferOptions;
                 };
 
@@ -702,21 +692,10 @@ namespace DMLibTest.Cases
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudFile)]
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
         public void TestCopyDirectorySMBPropertiesACLResume()
         {
-            if (!CrossPlatformHelpers.IsWindows) return;
-
             CloudFileNtfsAttributes[] SMBFileAttributes = {
-                CloudFileNtfsAttributes.ReadOnly,
-                CloudFileNtfsAttributes.Hidden,
-#if DEBUG
-                CloudFileNtfsAttributes.System,
-                CloudFileNtfsAttributes.Archive,
-                CloudFileNtfsAttributes.Normal,
-                CloudFileNtfsAttributes.Offline,
-                CloudFileNtfsAttributes.NotContentIndexed,
-                CloudFileNtfsAttributes.NoScrubData,
-
                 CloudFileNtfsAttributes.ReadOnly | CloudFileNtfsAttributes.Hidden,
                 CloudFileNtfsAttributes.System | CloudFileNtfsAttributes.Archive,
                 CloudFileNtfsAttributes.Offline |CloudFileNtfsAttributes.NotContentIndexed | CloudFileNtfsAttributes.NoScrubData,
@@ -727,7 +706,6 @@ namespace DMLibTest.Cases
                 CloudFileNtfsAttributes.Archive |
                 CloudFileNtfsAttributes.NotContentIndexed |
                 CloudFileNtfsAttributes.NoScrubData
-#endif
             };
 
             string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
@@ -825,8 +803,9 @@ namespace DMLibTest.Cases
         }
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
         public void TestDirectoryMeta()
         {
             // Prepare data

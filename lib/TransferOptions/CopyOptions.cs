@@ -3,9 +3,6 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
-using System.IO;
-using Microsoft.Azure.Storage.Blob.Protocol;
-using Microsoft.Azure.Storage.File;
 
 namespace Microsoft.Azure.Storage.DataMovement
 {

@@ -288,13 +288,13 @@ namespace DMLibTest
                 if ((fileNode.LastWriteTime.Value != fileNode1.LastWriteTime.Value)
                     || (fileNode.CreationTime.Value != fileNode1.CreationTime.Value))
                 {
-                    Test.Error("File node mismatch");
+                    Test.Error($"File node mismatch {fileNode.Name} {fileNode.LastWriteTime.Value} == {fileNode1.LastWriteTime.Value} {fileNode.CreationTime.Value} == {fileNode1.CreationTime.Value}");
                 }
 
                 if (compareFileAttributes
                     && fileNode.SMBAttributes.Value != fileNode1.SMBAttributes.Value)
                 {
-                    Test.Error("File node mismatch");
+                    Test.Error($"File node mismatch {fileNode.SMBAttributes.Value} == {fileNode1.SMBAttributes.Value}");
                 }
             }
 

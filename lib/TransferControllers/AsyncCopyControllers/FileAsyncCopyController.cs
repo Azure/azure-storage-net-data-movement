@@ -89,7 +89,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     this.SourceUri,
                     null,
                     null,
-                    null,
+                    default(FileCopyOptions),
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
                     this.CancellationToken); 
@@ -102,7 +102,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     this.SourceBlob.GenerateCopySourceUri(),
                     null,
                     null,
-                    null,
+                    default(FileCopyOptions),
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
                     this.CancellationToken); 
