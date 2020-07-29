@@ -53,12 +53,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.parallelOperations = Environment.ProcessorCount * 8;
             this.MemoryChunkSize = Constants.DefaultMemoryChunkSize;
 
-#if DOTNET5_4
-            this.maxListingConcurrency = 6;
-#else
-            this.maxListingConcurrency = 2;
-#endif
-
             this.UpdateMaximumCacheSize(this.blockSize);
         }
 
