@@ -199,9 +199,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 return;
             }
-            Console.WriteLine("\nSource & Destination Instance: \n");
-            Console.WriteLine("\n$$$" + this.Source.Instance + "$$$\n");
-            Console.WriteLine("\n$$$" + this.Destination.Instance + "$$$\n");
             TransferEventArgs eventArgs = new TransferEventArgs(this.Source.Instance, this.Destination.Instance);
             eventArgs.StartTime = DateTime.UtcNow;
 

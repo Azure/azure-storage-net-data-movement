@@ -99,7 +99,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             switch (this.state)
             {
                 case State.OpenOutputStream:
-                    Console.WriteLine("At HandleOutputStreamAsync Case");
                     await this.HandleOutputStreamAsync();
                     break;
                 case State.CalculateMD5:
@@ -186,9 +185,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         //#if DOTNET5_4
                         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) 
                         {
-                            Console.WriteLine("\n$$$ StreamedWriter.cs: Not Windows $$$\n");
                             // Attempt to open the file first so that we throw an exception before getting into the async work
-                            Console.WriteLine("\n$$$ Is Windows, longFilePath: $$$" + longFilePath + "$$$\n");
                             this.outputStream = new FileStream(
                             longFilePath,
                             fileMode,
@@ -198,12 +195,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         }
 
                         else {
-                            Console.WriteLine("\n$$$ StreamedWriter.cs: Is Windows $$$\n");
                             if (Interop.CrossPlatformHelpers.IsWindows)
                             {
                                 longFilePath = LongPath.ToUncPath(longFilePath);
                             }
-                            Console.WriteLine("\n$$$ Is Windows, longFilePath: $$$" + longFilePath + "$$$\n");
                             this.outputStream = LongPathFile.Open(
                             filePath, 
                             fileMode, 

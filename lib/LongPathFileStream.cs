@@ -108,11 +108,8 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         public static string ToUncPath(string path)
         {
-            Console.WriteLine("\n$$$ ToUncPath1, path$$$" + path + "$$$\n");
             if (IsDevice(path))
             {
-                Console.WriteLine("\n$$$ IsDevice condition if statement $$$\n");
-                Console.WriteLine("\n$$$ ToUncPath2, full path$$$" + LongPath.GetFullPath(path) + "$$$\n");
                 return LongPath.GetFullPath(path);
             }
 
@@ -121,14 +118,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                 path = LongPath.GetFullPath(path);
                 if (IsDevice(path))
                 {
-                    Console.WriteLine("\n$$$ IsPartiallyQualified: IsDevice condition if statement $$$\n");
-                    Console.WriteLine("\n$$$ ToUncPath3, full path (partially qualified)$$$" + path + "$$$\n");
                     return path;
                 }
                 else
                 {
-                    Console.WriteLine("\n$$$ IsPartiallyQualified: Else statement $$$\n");
-                    Console.WriteLine("\n$$$ ToUncPath4, ExtendedPathPrefix + full path$$$" + ExtendedPathPrefix + path + "\n$$$");
                     return ExtendedPathPrefix + path;
                 }
             }
@@ -136,11 +129,8 @@ namespace Microsoft.Azure.Storage.DataMovement
             //// Given \\server\share in longpath becomes \\?\UNC\server\share
             if (path.StartsWith(UncPathPrefix, StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("\n$$$ In ? if statement $$$\n");
-                Console.WriteLine("\n$$$ ToUncPath5$$$" + LongPath.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert)) + "$$$\n");
                 return LongPath.GetFullPath(path.Insert(2, UncExtendedPrefixToInsert));
             }
-            Console.WriteLine("\n$$$ At return statement $$$\n");
             return RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 ? LongPath.GetFullPath(ExtendedPathPrefix + path)
                 : LongPath.GetFullPath(path);
@@ -148,23 +138,15 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         public static string GetFullPath(string path)
         {
-            Console.WriteLine("\n$$$ GetFullPath function $$$" + path + "$$$\n");
-            Console.WriteLine("\nPath Length: " + path.Length);
-
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                Console.WriteLine("\n$$$ In GetFullPath function DOTNET5_4 version" + "$$$\n");
-                Console.WriteLine("\n$$$ GetFullPath function DOTNET5_4$$$" + Path.GetFullPath(path) + "$$$\n");
                 return Path.GetFullPath(path);
             }
             else
             {
-                Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 1" + "$$$\n");
                 int buffSize = 260;
                 StringBuilder fullPath = new StringBuilder(buffSize);
-                Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 2" + fullPath + "$$$\n");
                 StringBuilder fileName = new StringBuilder(buffSize);
-                Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 3" + fileName + "$$$\n");
                 uint actualSize = NativeMethods.GetFullPathNameW(path, (uint)buffSize, fullPath, fileName);
                 if (actualSize == 0)
                     NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
@@ -177,7 +159,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                     if (actualSize == 0)
                         NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
                 }
-                Console.WriteLine("\n$$$ GetFullPath function not DOTNET5_4 4" + fullPath.ToString() + "$$$\n");
                 return fullPath.ToString();
             }
         }
