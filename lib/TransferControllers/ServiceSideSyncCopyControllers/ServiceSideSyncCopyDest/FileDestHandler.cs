@@ -97,7 +97,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
         public virtual async Task CommitAsync(
             bool gotDestAttributes,
             Attributes sourceAttributes,
-            Func<object, Task> setCustomAttributes,
+            Func<object, object, Task> setCustomAttributes,
             CancellationToken cancellationToken)
         {
             FileRequestOptions fileRequestOptions = Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions);
@@ -155,7 +155,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                 }
             }
 
-            await setCustomAttributes(this.destFile);
+            await setCustomAttributes(this.transferJob.Source.Instance, this.destFile);
 
             await this.destFile.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),

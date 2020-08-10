@@ -170,7 +170,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         }
 
             Utils.SetAttributes(this.cloudFile, this.SharedTransferData.Attributes, this.TransferJob.Transfer.PreserveSMBAttributes);
-            await this.Controller.SetCustomAttributesAsync(this.cloudFile).ConfigureAwait(false);
+            await this.Controller.SetCustomAttributesAsync(this.TransferJob.Source.Instance, this.cloudFile).ConfigureAwait(false);
 
             await this.cloudFile.SetPropertiesAsync(
                 null,

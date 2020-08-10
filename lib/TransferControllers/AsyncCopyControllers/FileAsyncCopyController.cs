@@ -171,7 +171,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             var originalAttributes = Utils.GenerateAttributes(this.destFile, true);
             var originalMetadata = new Dictionary<string, string>(this.destFile.Metadata);
 
-            await setCustomAttributes(this.destFile);
+            await setCustomAttributes(this.TransferJob.Source.Instance, this.destFile);
 
             if (!Utils.CompareProperties(originalAttributes, Utils.GenerateAttributes(this.destFile, true)))
             {

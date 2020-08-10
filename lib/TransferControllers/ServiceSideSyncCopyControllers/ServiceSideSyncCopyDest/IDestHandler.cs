@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
         Task CommitAsync(
             bool gotDestAttributes,
             Attributes sourceAttributes,
-            Func<object, Task> setCustomAttributes,
+            Func<object, object, Task> setCustomAttributes,
             CancellationToken cancellationToken);
     }
 }

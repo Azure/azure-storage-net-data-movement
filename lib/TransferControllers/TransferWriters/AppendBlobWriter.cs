@@ -427,7 +427,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             var originalMetadata = new Dictionary<string, string>(this.appendBlob.Metadata);
             Utils.SetAttributes(this.appendBlob, this.SharedTransferData.Attributes);
-            await this.Controller.SetCustomAttributesAsync(this.appendBlob);
+            await this.Controller.SetCustomAttributesAsync(this.SharedTransferData.TransferJob.Source.Instance, this.appendBlob);
 
             await this.appendBlob.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),

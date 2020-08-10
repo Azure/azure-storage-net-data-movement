@@ -149,7 +149,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
         public virtual async Task CommitAsync(
             bool gotDestAttributes,
             Attributes sourceAttributes,
-            Func<object, Task> setCustomAttributes,
+            Func<object, object, Task> setCustomAttributes,
             CancellationToken cancellationToken)
         {
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
@@ -168,7 +168,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
             Utils.SetAttributes(this.destBlob, sourceAttributes);
 
-            await setCustomAttributes(this.destBlob);
+            await setCustomAttributes(this.transferJob.Source.Instance, this.destBlob);
 
             await this.destBlob.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
