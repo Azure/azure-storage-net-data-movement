@@ -83,6 +83,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating how many listing works to process concurrently.
+        /// When source is an Azure File directory or local file directory, DataMovement Library would list the directory in parallel.
+        /// This value is to indicate the maximum number of listing works to process in parallel.
+        /// </summary>
+        /// <value>How many listing works to process concurrently.</value>
         public int? MaxListingConcurrency
         {
             get

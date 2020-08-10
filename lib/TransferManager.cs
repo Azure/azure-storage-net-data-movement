@@ -1816,10 +1816,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 if ((sourceLocation.Type == TransferLocationType.AzureFileDirectory)
                     || ((sourceLocation.Type == TransferLocationType.LocalDirectory) && (destLocation.Type == TransferLocationType.AzureFileDirectory)))
                 {
-                    directoryTransfer = new HierarchyDirectoryTransfer(sourceLocation, destLocation, transferMethod)
-                    {
-                        MaxListingConcurrency = configurations.MaxListingConcurrency
-                    };
+                    directoryTransfer = new HierarchyDirectoryTransfer(sourceLocation, destLocation, transferMethod);
                 }
                 else
                 {

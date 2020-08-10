@@ -63,7 +63,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         private SemaphoreSlim maxConcurrencyControl = null;
 
         private int maxConcurrency = 0;
-        private int? maxListingConcurrency = 0;
 
         object continuationTokenLock = new object();
 
@@ -284,14 +283,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        public int? MaxListingConcurrency
-        {
-            set
-            {
-                this.maxListingConcurrency = value;
-            }
-        }
-
         public AzureFileDirectorySDDLCache SDDLCache
         {
             get
@@ -399,23 +390,32 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.transfersCompleteSource = new TaskCompletionSource<object>();
             this.subDirTransfersCompleteSource = new TaskCompletionSource<object>();
 
-#if DOTNET5_4
-            int maxListingThreadCount = 6;
-#else
-            int maxListingThreadCount = 2;
-#endif
+            int maxListingThreadCount = 0;
 
-            if ((this.Destination.Type == TransferLocationType.LocalDirectory) || (this.Source.Type == TransferLocationType.LocalDirectory))
+            if (TransferManager.Configurations.MaxListingConcurrency.HasValue)
+            {
+                maxListingThreadCount = TransferManager.Configurations.MaxListingConcurrency.Value;
+            }
+            else
             {
 #if DOTNET5_4
-                maxListingThreadCount = 4;
+                maxListingThreadCount = 6;
 #else
                 maxListingThreadCount = 2;
 #endif
+
+                if ((this.Destination.Type == TransferLocationType.LocalDirectory) || (this.Source.Type == TransferLocationType.LocalDirectory))
+                {
+#if DOTNET5_4
+                    maxListingThreadCount = 4;
+#else
+                    maxListingThreadCount = 2;
+#endif
+                }
             }
 
 
-            directoryListingScheduler = new DirectoryListingScheduler(this.maxListingConcurrency ?? maxListingThreadCount);
+            directoryListingScheduler = new DirectoryListingScheduler(maxListingThreadCount);
         }
 
         public override async Task ExecuteInternalAsync(TransferScheduler scheduler, CancellationToken cancellationToken)
