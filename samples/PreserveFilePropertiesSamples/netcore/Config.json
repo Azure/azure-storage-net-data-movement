@@ -1,0 +1,3 @@
+{
+  "StorageConnectionString": "DefaultEndpointsProtocol=http;AccountName=[AccountName];AccountKey=[AccountKey]"
+}

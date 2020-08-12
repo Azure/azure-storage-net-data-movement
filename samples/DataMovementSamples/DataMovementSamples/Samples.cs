@@ -98,7 +98,7 @@ namespace DataMovementSamples
             UploadOptions options = new UploadOptions();
 
             SingleTransferContext context = new SingleTransferContext();
-            context.SetAttributesCallbackAsync = async (destination) =>
+            context.SetAttributesCallbackAsync = async (source, destination) =>
             {
                 CloudBlob destBlob = destination as CloudBlob;
                 destBlob.Properties.ContentType = "image/png";
@@ -377,7 +377,7 @@ namespace DataMovementSamples
                 context.FileFailed += FileFailedCallback;
                 context.FileSkipped += FileSkippedCallback;
 
-                context.SetAttributesCallbackAsync = async (destination) =>
+                context.SetAttributesCallbackAsync = async (source, destination) =>
                 {
                     CloudBlob destBlob = destination as CloudBlob;
                     destBlob.Properties.ContentType = "image/png";
@@ -420,7 +420,7 @@ namespace DataMovementSamples
                 resumeContext.FileFailed += FileFailedCallback;
                 resumeContext.FileSkipped += FileSkippedCallback;
 
-                resumeContext.SetAttributesCallbackAsync = async (destination) =>
+                resumeContext.SetAttributesCallbackAsync = async (source, destination) =>
                 {
                     CloudBlob destBlob = destination as CloudBlob;
                     destBlob.Properties.ContentType = "image/png";

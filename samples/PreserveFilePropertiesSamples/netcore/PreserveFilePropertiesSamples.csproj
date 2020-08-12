@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DOTNET5_4</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE;DOTNET5_4</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\PreserveFilePropertiesSamples\FileNativeMethods.cs" Link="FileNativeMethods.cs" />
+    <Compile Include="..\PreserveFilePropertiesSamples\FileOperations.cs" Link="FileOperations.cs" />
+    <Compile Include="..\PreserveFilePropertiesSamples\FileSecurityNativeMethods.cs" Link="FileSecurityNativeMethods.cs" />
+    <Compile Include="..\PreserveFilePropertiesSamples\FileSecurityOperations.cs" Link="FileSecurityOperations.cs" />
+    <Compile Include="..\PreserveFilePropertiesSamples\Program.cs" Link="Program.cs" />
+    <Compile Include="..\PreserveFilePropertiesSamples\Util.cs" Link="Util.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.Storage.DataMovement" Version="2.0.0" />
+    <PackageReference Include="System.Security.Principal.Windows" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="azure.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
