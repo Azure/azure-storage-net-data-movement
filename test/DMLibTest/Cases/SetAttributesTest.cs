@@ -19,6 +19,7 @@ namespace DMLibTest.Cases
     using MS.Test.Common.MsTestLib;
     using Microsoft.Azure.Storage.Blob;
     using Microsoft.Azure.Storage.File;
+    using System.Threading.Tasks;
 
     [MultiDirectionTestClass]
     public class SetAttributesTest : DMLibTestBase
@@ -179,48 +180,7 @@ namespace DMLibTest.Cases
 
             TransferContext context = new SingleTransferContext()
             {
-                SetAttributesCallbackAsync = async (sourceObj, destObj) =>
-                {
-                    switch (DMLibTestContext.SourceType)
-                    {
-                        case DMLibDataType.Local:
-                            string path = sourceObj as string;
-                            Test.Assert(null != path, "Source should be a local file path.");
-                            break;
-                        case DMLibDataType.Stream:
-                            Stream stream = sourceObj as Stream;
-                            Test.Assert(null != stream, "Source should be a local stream.");
-                            break;
-                        case DMLibDataType.URI:
-                            Uri URI = sourceObj as Uri;
-                            Test.Assert(null != URI, "Source should be a URI.");
-                            break;
-                        case DMLibDataType.BlockBlob:
-                            CloudBlockBlob blockBlob = sourceObj as CloudBlockBlob;
-                            Test.Assert(null != blockBlob, "Source should be a CloudBlockBlob.");
-                            break;
-                        case DMLibDataType.PageBlob:
-                            CloudPageBlob pageBlob = sourceObj as CloudPageBlob;
-                            Test.Assert(null != pageBlob, "Source should be a CloudPageBlob.");
-                            break;
-                        case DMLibDataType.AppendBlob:
-                            CloudAppendBlob appendBlob = sourceObj as CloudAppendBlob;
-                            Test.Assert(null != appendBlob, "Source should be a CloudAppendBlob.");
-                            break;
-                        case DMLibDataType.CloudFile:
-                            CloudFile cloudFile = sourceObj as CloudFile;
-                            Test.Assert(null != cloudFile, "Source should be a CloudFile.");
-                            break;
-                        default:
-                            break;
-                    }
-
-                    dynamic destCloudObj = destObj;
-
-                    destCloudObj.Properties.ContentType = SetAttributesTest.TestContentType;
-
-                    destCloudObj.Metadata.Add("aa", "bb");
-                }
+                SetAttributesCallbackAsync = SetAttributesCallbackTest
             };
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
@@ -241,6 +201,7 @@ namespace DMLibTest.Cases
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             fileNode.Metadata.Add("aa", "bb");
+            fileNode.Metadata.Add("filelength", fileNode.SizeInByte.ToString());
 
             VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
 
@@ -288,48 +249,7 @@ namespace DMLibTest.Cases
 
             DirectoryTransferContext context = new DirectoryTransferContext()
             {
-                SetAttributesCallbackAsync = async (sourceObj, destObj) =>
-                {
-                    switch (DMLibTestContext.SourceType)
-                    {
-                        case DMLibDataType.Local:
-                            string path = sourceObj as string;
-                            Test.Assert(null != path, "Source should be a local file path.");
-                            break;
-                        case DMLibDataType.Stream:
-                            Stream stream = sourceObj as Stream;
-                            Test.Assert(null != stream, "Source should be a local stream.");
-                            break;
-                        case DMLibDataType.URI:
-                            Uri URI = sourceObj as Uri;
-                            Test.Assert(null != URI, "Source should be a URI.");
-                            break;
-                        case DMLibDataType.BlockBlob:
-                            CloudBlockBlob blockBlob = sourceObj as CloudBlockBlob;
-                            Test.Assert(null != blockBlob, "Source should be a CloudBlockBlob.");
-                            break;
-                        case DMLibDataType.PageBlob:
-                            CloudPageBlob pageBlob = sourceObj as CloudPageBlob;
-                            Test.Assert(null != pageBlob, "Source should be a CloudPageBlob.");
-                            break;
-                        case DMLibDataType.AppendBlob:
-                            CloudAppendBlob appendBlob = sourceObj as CloudAppendBlob;
-                            Test.Assert(null != appendBlob, "Source should be a CloudAppendBlob.");
-                            break;
-                        case DMLibDataType.CloudFile:
-                            CloudFile cloudFile = sourceObj as CloudFile;
-                            Test.Assert(null != cloudFile, "Source should be a CloudFile.");
-                            break;
-                        default:
-                            break;
-                    }
-
-                    dynamic destCloudObj = destObj;
-
-                    destCloudObj.Properties.ContentType = SetAttributesTest.TestContentType;
-
-                    destCloudObj.Metadata.Add("aa", "bb");
-                }
+                SetAttributesCallbackAsync = SetAttributesCallbackTest
             };
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
@@ -348,6 +268,7 @@ namespace DMLibTest.Cases
             foreach (FileNode fileNode in sourceDataInfo.EnumerateFileNodes())
             {
                 fileNode.Metadata.Add("aa", "bb");
+                fileNode.Metadata.Add("filelength", fileNode.SizeInByte.ToString());
             }
 
             VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
@@ -455,38 +376,15 @@ namespace DMLibTest.Cases
                 }, 
                 async (sourceObj, destObj) =>
                 {
-                    switch (DMLibTestContext.SourceType)
+                    long sourceLength = 0;
+                    string path = sourceObj as string;
+                    if (null == path)
                     {
-                        case DMLibDataType.Local:
-                            string path = sourceObj as string;
-                            Test.Assert(null != path, "Source should be a local file path.");
-                            break;
-                        case DMLibDataType.Stream:
-                            Stream stream = sourceObj as Stream;
-                            Test.Assert(null != stream, "Source should be a local stream.");
-                            break;
-                        case DMLibDataType.URI:
-                            Uri URI = sourceObj as Uri;
-                            Test.Assert(null != URI, "Source should be a URI.");
-                            break;
-                        case DMLibDataType.BlockBlob:
-                            CloudBlockBlob blockBlob = sourceObj as CloudBlockBlob;
-                            Test.Assert(null != blockBlob, "Source should be a CloudBlockBlob.");
-                            break;
-                        case DMLibDataType.PageBlob:
-                            CloudPageBlob pageBlob = sourceObj as CloudPageBlob;
-                            Test.Assert(null != pageBlob, "Source should be a CloudPageBlob.");
-                            break;
-                        case DMLibDataType.AppendBlob:
-                            CloudAppendBlob appendBlob = sourceObj as CloudAppendBlob;
-                            Test.Assert(null != appendBlob, "Source should be a CloudAppendBlob.");
-                            break;
-                        case DMLibDataType.CloudFile:
-                            CloudFile cloudFile = sourceObj as CloudFile;
-                            Test.Assert(null != cloudFile, "Source should be a CloudFile.");
-                            break;
-                        default:
-                            break;
+                        Test.Error("Source should be a local file path.");
+                    }
+                    else
+                    {
+                        sourceLength = new System.IO.FileInfo(path).Length;
                     }
 
                     dynamic destCloudObj = destObj;
@@ -501,6 +399,7 @@ namespace DMLibTest.Cases
 
                     destCloudObj.Metadata.Remove(MetadataKey1);
                     destCloudObj.Metadata.Add(MetadataKey1, RandomLongString);
+                    destCloudObj.Metadata["filelength"] = sourceLength.ToString();
                 },
                 sourceDataInfo =>
                 {
@@ -515,9 +414,96 @@ namespace DMLibTest.Cases
                         fileNode.MD5 = invalidMD5;
 
                         fileNode.Metadata = new Dictionary<string, string> { { MetadataKey1, RandomLongString } };
+                        fileNode.Metadata["filelength"] = fileNode.SizeInByte.ToString();
                     }
                 }
             );
+        }
+
+        private async Task SetAttributesCallbackTest(object sourceObj, object destObj)
+        {
+            await Task.Yield();
+            long sourceLength = 0;
+            switch (DMLibTestContext.SourceType)
+            {
+                case DMLibDataType.Local:
+                    string path = sourceObj as string;
+                    if (null == path)
+                    {
+                        Test.Error("Source should be a local file path.");
+                    }
+                    else
+                    {
+                        sourceLength = new System.IO.FileInfo(path).Length;
+                    }
+                    break;
+                case DMLibDataType.Stream:
+                    Stream stream = sourceObj as Stream;
+                    if (null == stream)
+                    {
+                        Test.Error("Source should be a local stream.");
+                    }
+                    else
+                    {
+                        sourceLength = stream.Length;
+                    }
+                    break;
+                case DMLibDataType.BlockBlob:
+                    CloudBlockBlob blockBlob = sourceObj as CloudBlockBlob;
+
+                    if (null == blockBlob)
+                    {
+                        Test.Error("Source should be a CloudBlockBlob.");
+                    }
+                    else
+                    {
+                        sourceLength = blockBlob.Properties.Length;
+                    }
+                    break;
+                case DMLibDataType.PageBlob:
+                    CloudPageBlob pageBlob = sourceObj as CloudPageBlob;
+
+                    if (null == pageBlob)
+                    {
+                        Test.Error("Source should be a CloudPageBlob.");
+                    }
+                    else
+                    {
+                        sourceLength = pageBlob.Properties.Length;
+                    }
+                    break;
+                case DMLibDataType.AppendBlob:
+                    CloudAppendBlob appendBlob = sourceObj as CloudAppendBlob;
+
+                    if (null == appendBlob)
+                    {
+                        Test.Error("Source should be a CloudAppendBlob.");
+                    }
+                    else
+                    {
+                        sourceLength = appendBlob.Properties.Length;
+                    }
+                    break;
+                case DMLibDataType.CloudFile:
+                    CloudFile cloudFile = sourceObj as CloudFile;
+
+                    if (null == cloudFile)
+                    {
+                        Test.Error("Source should be a CloudFile.");
+                    }
+                    else
+                    {
+                        sourceLength = cloudFile.Properties.Length;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            dynamic destCloudObj = destObj;
+            destCloudObj.Properties.ContentType = SetAttributesTest.TestContentType;
+            destCloudObj.Metadata["aa"] = "bb";
+            destCloudObj.Metadata["filelength"] = sourceLength.ToString();
         }
 
         private void TestDirectorySetAttribute_Restart(
