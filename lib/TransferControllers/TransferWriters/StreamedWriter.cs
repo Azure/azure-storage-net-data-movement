@@ -42,6 +42,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private string filePath = null;
 
+        private string longFilePath = null;
+
         private volatile State state;
 
         private volatile bool isStateSwitchedInternal;
@@ -166,11 +168,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 else
                 {
                     this.filePath = (this.TransferJob.Destination as FileLocation).FilePath;
+                    this.longFilePath = this.filePath;
+                    if (TransferManager.Configurations.SupportUncPath)
+                    {
+                        this.longFilePath = LongPath.ToUncPath(this.filePath);
+                    }
+
 
                     if (!this.Controller.IsForceOverwrite)
                     {
                         await this.Controller.CheckOverwriteAsync(
-                            LongPathFile.Exists(this.filePath),
+                            LongPathFile.Exists(this.longFilePath),
                             this.TransferJob.Source.Instance,
                             this.filePath);
                     }
@@ -182,21 +190,16 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         FileMode fileMode = 0 == this.expectOffset ? FileMode.OpenOrCreate : FileMode.Open;
 
 #if DOTNET5_4
-                        string longFilePath = filePath;
-                        if (Interop.CrossPlatformHelpers.IsWindows)
-                        {
-                            longFilePath = LongPath.ToUncPath(longFilePath);
-                        }
 
                         // Attempt to open the file first so that we throw an exception before getting into the async work
                         this.outputStream = new FileStream(
-                            longFilePath,
+                            this.longFilePath,
                             fileMode,
                             FileAccess.ReadWrite,
                             FileShare.None);
 #else
                         this.outputStream = LongPathFile.Open(
-                            filePath, 
+                            this.longFilePath, 
                             fileMode, 
                             FileAccess.ReadWrite, 
                             FileShare.None);
@@ -209,7 +212,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         string exceptionMessage = string.Format(
                                     CultureInfo.CurrentCulture,
                                     Resources.FailedToOpenFileException,
-                                    filePath,
+                                    this.filePath,
                                     ex.Message);
 
                         throw new TransferException(
@@ -383,20 +386,20 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 if (this.TransferJob.Transfer.PreserveSMBAttributes)
                 {
                     if (this.SharedTransferData.Attributes.CloudFileNtfsAttributes.HasValue
-                        && !string.IsNullOrEmpty(this.filePath))
+                        && !string.IsNullOrEmpty(this.longFilePath))
                     {
-                        LongPathFile.SetFileTime(this.filePath, this.SharedTransferData.Attributes.CreationTime.Value, this.SharedTransferData.Attributes.LastWriteTime.Value);
-                        LongPathFile.SetAttributes(this.filePath, Utils.AzureFileNtfsAttributesToLocalAttributes(this.SharedTransferData.Attributes.CloudFileNtfsAttributes.Value));
+                        LongPathFile.SetFileTime(this.longFilePath, this.SharedTransferData.Attributes.CreationTime.Value, this.SharedTransferData.Attributes.LastWriteTime.Value);
+                        LongPathFile.SetAttributes(this.longFilePath, Utils.AzureFileNtfsAttributesToLocalAttributes(this.SharedTransferData.Attributes.CloudFileNtfsAttributes.Value));
                     }
                 }
 
                 if ((PreserveSMBPermissions.None != this.TransferJob.Transfer.PreserveSMBPermissions)
                     && (!string.IsNullOrEmpty(this.SharedTransferData.Attributes.PortableSDDL)))
                 {
-                    if (!string.IsNullOrEmpty(this.filePath))
+                    if (!string.IsNullOrEmpty(this.longFilePath))
                     {
                         FileSecurityOperations.SetFileSecurity(
-                            this.filePath,
+                            this.longFilePath,
                             this.SharedTransferData.Attributes.PortableSDDL,
                             this.TransferJob.Transfer.PreserveSMBPermissions);
                     }

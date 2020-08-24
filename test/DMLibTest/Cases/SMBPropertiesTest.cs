@@ -298,7 +298,9 @@ namespace DMLibTest.Cases
                     options.AfterAllItemAdded = () =>
                     {
                         // Wait until there are data transferred
-                        progressChecker.DataTransferred.WaitOne();
+                        bool gotProgress = progressChecker.DataTransferred.WaitOne(60000);
+
+                        Test.Assert(gotProgress, "Should got progress");
 
                         if (!IsStreamJournal)
                         {
@@ -1151,7 +1153,9 @@ namespace DMLibTest.Cases
                 options.AfterAllItemAdded = () =>
                 {
                     // Wait until there are data transferred
-                    progressChecker.DataTransferred.WaitOne();
+                    bool gotProgress = progressChecker.DataTransferred.WaitOne(60000);
+
+                    Test.Assert(gotProgress, "Should got progress");
 
                     if (!IsStreamJournal)
                     {

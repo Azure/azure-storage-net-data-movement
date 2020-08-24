@@ -177,11 +177,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
 
                     this.filePath = fileLocation.FilePath;
-#if DOTNET5_4
-                    if (Interop.CrossPlatformHelpers.IsWindows)
+                    if (TransferManager.Configurations.SupportUncPath)
                     {
-                        filePath = LongPath.ToUncPath(fileLocation.FilePath);
+                        this.filePath = LongPath.ToUncPath(this.filePath);
                     }
+
+#if DOTNET5_4
                     // Attempt to open the file first so that we throw an exception before getting into the async work
                     this.inputStream = new FileStream(
                         filePath,

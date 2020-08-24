@@ -120,9 +120,15 @@ namespace Microsoft.Azure.Storage.DataMovement
             DirectoryInfo di = new DirectoryInfo(this.DirectoryPath);
             di.Create();
 #else
-            if(!LongPathDirectory.Exists(this.DirectoryPath))
+            string longDirectoryPath = this.DirectoryPath;
+            if (TransferManager.Configurations.SupportUncPath)
             {
-                LongPathDirectory.CreateDirectory(this.DirectoryPath);
+                longDirectoryPath = LongPath.ToUncPath(longDirectoryPath);
+            }
+
+            if (!LongPathDirectory.Exists(longDirectoryPath))
+            {
+                LongPathDirectory.CreateDirectory(longDirectoryPath);
             }
 #endif
         }

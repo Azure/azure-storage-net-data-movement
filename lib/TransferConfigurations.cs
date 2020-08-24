@@ -7,6 +7,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Globalization;
+    using System.IO;
     using System.Reflection;
     using System.Runtime.InteropServices;
     using ClientLibraryConstants = Microsoft.Azure.Storage.Shared.Protocol.Constants;
@@ -54,6 +55,19 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.MemoryChunkSize = Constants.DefaultMemoryChunkSize;
 
             this.UpdateMaximumCacheSize(this.blockSize);
+            this.SupportUncPath = false;
+
+            if (Interop.CrossPlatformHelpers.IsWindows)
+            {
+                try
+                {
+                    LongPath.GetFullPath("\\\\?\\F:");
+                    this.SupportUncPath = true;
+                }
+                catch (Exception)
+                {
+                }
+            }
         }
 
         /// <summary>
@@ -197,6 +211,8 @@ namespace Microsoft.Azure.Storage.DataMovement
                 TransferManager.SetMemoryLimitation(this.maximumCacheSize);
             }
         }
+
+        internal bool SupportUncPath { get; private set; }
 
         /// <summary>
         /// The size of memory chunk of memory pool

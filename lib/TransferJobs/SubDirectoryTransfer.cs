@@ -123,6 +123,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        public TransferLocation Source
+        {
+            get
+            {
+                return this.source;
+            }
+        }
+
         public async Task ExecuteAsync(CancellationToken cancellationToken)
         {
             await Task.Yield();
@@ -203,6 +211,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                 case TransferLocationType.FilePath:
                     var filePath = (transferItem.Destination as FileLocation).FilePath;
                     Utils.ValidateDestinationPath(transferItem.Source.Instance.ConvertToString(), filePath);
+                    if (TransferManager.Configurations.SupportUncPath)
+                    {
+                        filePath = LongPath.ToUncPath(filePath);
+                    }
                     Utils.CreateParentDirectoryIfNotExists(filePath);
                     break;
                 case TransferLocationType.AzureFile:
@@ -273,21 +285,27 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (this.dest.Type == TransferLocationType.LocalDirectory)
             {
-                var localFileDestLocation = this.dest as DirectoryLocation;
-                if (!LongPathDirectory.Exists(localFileDestLocation.DirectoryPath))
+                string directoryPath = (this.dest as DirectoryLocation).DirectoryPath;
+
+                if (TransferManager.Configurations.SupportUncPath)
                 {
-                    LongPathDirectory.CreateDirectory(localFileDestLocation.DirectoryPath);
+                    directoryPath = LongPath.ToUncPath(directoryPath);
+                }
+
+                if (!LongPathDirectory.Exists(directoryPath))
+                {
+                    LongPathDirectory.CreateDirectory(directoryPath);
                 }
 
                 if (fileAttributes.HasValue)
                 {
-                    LongPathFile.SetFileTime(localFileDestLocation.DirectoryPath, creationTime.Value, lastWriteTime.Value, true);
-                    LongPathFile.SetAttributes(localFileDestLocation.DirectoryPath, Utils.AzureFileNtfsAttributesToLocalAttributes(fileAttributes.Value));
+                    LongPathFile.SetFileTime(directoryPath, creationTime.Value, lastWriteTime.Value, true);
+                    LongPathFile.SetAttributes(directoryPath, Utils.AzureFileNtfsAttributesToLocalAttributes(fileAttributes.Value));
                 }
 
                 if (!string.IsNullOrEmpty(portableSDDL))
                 {
-                    FileSecurityOperations.SetFileSecurity(localFileDestLocation.DirectoryPath, portableSDDL, this.baseDirectoryTransfer.PreserveSMBPermissions);
+                    FileSecurityOperations.SetFileSecurity(directoryPath, portableSDDL, this.baseDirectoryTransfer.PreserveSMBPermissions);
                 }
             }
             else if (this.dest.Type == TransferLocationType.AzureFileDirectory)
@@ -350,6 +368,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     var sourceLocalDirLocation = this.source as DirectoryLocation;
                     string directoryPath = sourceLocalDirLocation.DirectoryPath;
+                    if (TransferManager.Configurations.SupportUncPath)
+                    {
+                        directoryPath = LongPath.ToUncPath(directoryPath);
+                    }
 
                     if (this.baseDirectoryTransfer.PreserveSMBAttributes)
                     {

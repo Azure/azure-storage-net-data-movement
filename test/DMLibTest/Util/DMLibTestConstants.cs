@@ -11,6 +11,7 @@ namespace DMLibTest
     using Microsoft.Azure.Storage.RetryPolicies;
     using Microsoft.Azure.Storage.Blob;
     using Microsoft.Azure.Storage.File;
+    using System.IO;
 
     public static class Tag
     {
@@ -56,6 +57,8 @@ namespace DMLibTest
         public static readonly TimeSpan DefaultExecutionTimeOut = TimeSpan.FromMinutes(15);
 
         private static Random random = new Random();
+
+        public static bool SupportUNCPath = true;
         
         public static IRetryPolicy DefaultRetryPolicy
         {
@@ -119,6 +122,21 @@ namespace DMLibTest
 
                 Test.Verbose("Recursive folder depth: {0}", recursiveFolderDepth);
                 return recursiveFolderDepth;
+            }
+        }
+
+        static DMLibTestConstants()
+        {
+            SupportUNCPath = false;
+            if (CrossPlatformHelpers.IsWindows)
+            {
+                try
+                {
+                    LongPath.GetFullPath(LongPath.ToUncPath("F:\\"));
+                    SupportUNCPath = true;
+                }
+                catch (Exception)
+                { }
             }
         }
     }

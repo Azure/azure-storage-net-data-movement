@@ -71,6 +71,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     {
                         // Dummy transfer for downloading dummy blobs.
                         var filePath = (this.TransferJob.Destination as FileLocation).FilePath;
+                        filePath = TransferManager.Configurations.SupportUncPath ? LongPath.ToUncPath(filePath) : filePath;
+
                         if (LongPathFile.Exists(filePath))
                         {
                             string exceptionMessage = string.Format(

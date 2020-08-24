@@ -817,7 +817,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                             TransferErrorCode.FailToEnumerateDirectory,
                             string.Format(CultureInfo.CurrentCulture,
                                 Resources.EnumerateDirectoryException,
-                                this.Destination.Instance.ConvertToString()),
+                                subDirTransfer.Source.Instance.ConvertToString()),
                             ex);
                     }
 

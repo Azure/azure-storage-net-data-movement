@@ -75,7 +75,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             string fullPath = null;
             if (Interop.CrossPlatformHelpers.IsWindows)
             {
-                fullPath = LongPath.ToUncPath(this.location.DirectoryPath);
+                fullPath = TransferManager.Configurations.SupportUncPath ? 
+                    LongPath.ToUncPath(this.location.DirectoryPath)
+                    : LongPath.GetFullPath(this.location.DirectoryPath);
             }
             else
             {
