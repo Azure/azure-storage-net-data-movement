@@ -70,8 +70,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         && this.TransferJob.Destination.Type == TransferLocationType.FilePath)
                     {
                         // Dummy transfer for downloading dummy blobs.
-                        var filePath = (this.TransferJob.Destination as FileLocation).FilePath;
-                        filePath = TransferManager.Configurations.SupportUncPath ? LongPath.ToUncPath(filePath) : filePath;
+                        var filePath = (this.TransferJob.Destination as FileLocation).FilePath.ToLongPath();
 
                         if (LongPathFile.Exists(filePath))
                         {

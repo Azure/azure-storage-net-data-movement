@@ -176,11 +176,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         throw new TransferException(TransferErrorCode.OpenFileFailed, errorMessage);
                     }
 
-                    this.filePath = fileLocation.FilePath;
-                    if (TransferManager.Configurations.SupportUncPath)
-                    {
-                        this.filePath = LongPath.ToUncPath(this.filePath);
-                    }
+                    this.filePath = fileLocation.FilePath.ToLongPath();
 
 #if DOTNET5_4
                     // Attempt to open the file first so that we throw an exception before getting into the async work

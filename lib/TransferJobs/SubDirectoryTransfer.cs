@@ -211,11 +211,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 case TransferLocationType.FilePath:
                     var filePath = (transferItem.Destination as FileLocation).FilePath;
                     Utils.ValidateDestinationPath(transferItem.Source.Instance.ConvertToString(), filePath);
-                    if (TransferManager.Configurations.SupportUncPath)
-                    {
-                        filePath = LongPath.ToUncPath(filePath);
-                    }
-                    Utils.CreateParentDirectoryIfNotExists(filePath);
+                    Utils.CreateParentDirectoryIfNotExists(filePath.ToLongPath());
                     break;
                 case TransferLocationType.AzureFile:
                     var parent = (transferItem.Destination as AzureFileLocation).AzureFile.Parent;
@@ -285,13 +281,8 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (this.dest.Type == TransferLocationType.LocalDirectory)
             {
-                string directoryPath = (this.dest as DirectoryLocation).DirectoryPath;
-
-                if (TransferManager.Configurations.SupportUncPath)
-                {
-                    directoryPath = LongPath.ToUncPath(directoryPath);
-                }
-
+                string directoryPath = (this.dest as DirectoryLocation).DirectoryPath.ToLongPath();
+                
                 if (!LongPathDirectory.Exists(directoryPath))
                 {
                     LongPathDirectory.CreateDirectory(directoryPath);
@@ -367,11 +358,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     || (PreserveSMBPermissions.None != this.baseDirectoryTransfer.PreserveSMBPermissions))
                 {
                     var sourceLocalDirLocation = this.source as DirectoryLocation;
-                    string directoryPath = sourceLocalDirLocation.DirectoryPath;
-                    if (TransferManager.Configurations.SupportUncPath)
-                    {
-                        directoryPath = LongPath.ToUncPath(directoryPath);
-                    }
+                    string directoryPath = sourceLocalDirLocation.DirectoryPath.ToLongPath();
 
                     if (this.baseDirectoryTransfer.PreserveSMBAttributes)
                     {

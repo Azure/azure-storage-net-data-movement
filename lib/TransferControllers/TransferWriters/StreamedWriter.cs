@@ -168,12 +168,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 else
                 {
                     this.filePath = (this.TransferJob.Destination as FileLocation).FilePath;
-                    this.longFilePath = this.filePath;
-                    if (TransferManager.Configurations.SupportUncPath)
-                    {
-                        this.longFilePath = LongPath.ToUncPath(this.filePath);
-                    }
-
+                    this.longFilePath = this.filePath.ToLongPath();
 
                     if (!this.Controller.IsForceOverwrite)
                     {

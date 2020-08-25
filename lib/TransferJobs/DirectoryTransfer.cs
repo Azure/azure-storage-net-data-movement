@@ -392,7 +392,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 case TransferLocationType.FilePath:
                     var filePath = (transfer.Destination as FileLocation).FilePath;
                     Utils.ValidateDestinationPath(transfer.Source.Instance.ConvertToString(), filePath);
-                    filePath = TransferManager.Configurations.SupportUncPath ? LongPath.ToUncPath(filePath) : filePath;
+                    filePath = filePath.ToLongPath();
                     Utils.CreateParentDirectoryIfNotExists(filePath);
                     break;
                 case TransferLocationType.AzureFile:

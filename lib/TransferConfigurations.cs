@@ -212,6 +212,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        /// <summary>
+        /// To indicate whether the process environment supports UNC path.
+        /// 
+        /// On Windows, it requires to use UNC path to access files/directories with long path. 
+        /// In some environment, the .Net Framework only supports legacy path without UNC path support.
+        /// DataMovement Library will detect whether .Net Framework supports UNC path in the process environment 
+        /// to determine whether to use UNC path in the following transfers.
+        /// </summary>
         internal bool SupportUncPath { get; private set; }
 
         /// <summary>

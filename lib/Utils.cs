@@ -876,6 +876,11 @@ namespace Microsoft.Azure.Storage.DataMovement
             return cloudFileNtfsAttributes;
         }
 
+        public static string ToLongPath(this string originPath)
+        {
+            return TransferManager.Configurations.SupportUncPath ? LongPath.ToUncPath(originPath) : originPath;
+        }
+
         private static bool IsValidWindowsFileName(string fileName)
         {
             string fileNameNoExt = LongPath.GetFileNameWithoutExtension(fileName);
