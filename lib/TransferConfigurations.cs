@@ -47,6 +47,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Initializes a new instance of the
         /// <see cref="TransferConfigurations" /> class.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         public TransferConfigurations()
         {
             // setup default values.
