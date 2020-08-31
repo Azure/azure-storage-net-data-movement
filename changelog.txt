@@ -1,3 +1,15 @@
+2020.08.31 Version 2.0.0
+ * All Service on both .Net Framework and .Net Core
+   - Upgraded Microsoft.Azure.Storage.Blob from 11.1.2 to 11.2.2
+   - Upgraded Microsoft.Azure.Storage.File from 11.1.2 to 11.2.2
+   - Added a parameter in SetAttributesCallbackAsync to represent source instance.
+ * Blob Service on both .Net Framework and .Net Core
+   - Added support to set encryption scope when destination is Azure Blob Service.
+ * File Service on both .Net Framework and .Net Core
+   - Added support to preserve preserve file permissions and SMB attributes when copying between Azure File Services.
+ * All Service on .Net Core
+   - Fix an issue of throwing out "illegal character" in some environment without UNC path support.
+
 2020.02.26 Version 1.3.0
  * All Service on both .Net Framework and .Net Core
    - Upgraded Microsoft.Azure.Storage.Blob from 11.1.1 to 11.1.2
