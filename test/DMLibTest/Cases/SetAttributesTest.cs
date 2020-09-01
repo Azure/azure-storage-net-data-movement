@@ -17,6 +17,9 @@ namespace DMLibTest.Cases
     using Microsoft.Azure.Storage.DataMovement;
 
     using MS.Test.Common.MsTestLib;
+    using Microsoft.Azure.Storage.Blob;
+    using Microsoft.Azure.Storage.File;
+    using System.Threading.Tasks;
 
     [MultiDirectionTestClass]
     public class SetAttributesTest : DMLibTestBase
@@ -118,7 +121,7 @@ namespace DMLibTest.Cases
             {
                 context = new DirectoryTransferContext()
                 {
-                    SetAttributesCallbackAsync = async (destObj) =>
+                    SetAttributesCallbackAsync = async (sourceObj, destObj) =>
                     {
                         Test.Error("SetAttributes callback should not be invoked when destination is local");
                     }
@@ -128,7 +131,7 @@ namespace DMLibTest.Cases
             {
                 context = new SingleTransferContext()
                 {
-                    SetAttributesCallbackAsync = async (destObj) =>
+                    SetAttributesCallbackAsync = async (sourceObj, destObj) =>
                     {
                         Test.Error("SetAttributes callback should not be invoked when destination is local");
                     }
@@ -177,20 +180,20 @@ namespace DMLibTest.Cases
 
             TransferContext context = new SingleTransferContext()
             {
-                SetAttributesCallbackAsync = async (destObj) =>
-                {
-                    dynamic destCloudObj = destObj;
-
-                    destCloudObj.Properties.ContentType = SetAttributesTest.TestContentType;
-
-                    destCloudObj.Metadata.Add("aa", "bb");
-                }
+                SetAttributesCallbackAsync = SetAttributesCallbackTest
             };
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
             options.TransferItemModifier = (node, transferItem) =>
             {
                 dynamic transferOptions = DefaultTransferOptions;
+                if ((DMLibTestContext.SourceType == DMLibDataType.CloudFile)
+                && (DMLibTestContext.DestType == DMLibDataType.CloudFile))
+                {
+                    transferOptions.PreserveSMBPermissions = true;
+                    transferOptions.PreserveSMBAttributes = true;
+                }
+
                 transferItem.Options = transferOptions;
                 transferItem.TransferContext = context;
             };
@@ -198,6 +201,7 @@ namespace DMLibTest.Cases
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             fileNode.Metadata.Add("aa", "bb");
+            fileNode.Metadata.Add("filelength", fileNode.SizeInByte.ToString());
 
             VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
 
@@ -207,6 +211,16 @@ namespace DMLibTest.Cases
             if (DMLibTestContext.SourceType != DMLibDataType.Local)
             {
                 Test.Assert(SetAttributesTest.TestContentLanguage.Equals(destFileNode.ContentLanguage), "Verify ContentLanguage: {0}, expected {1}", destFileNode.ContentLanguage, SetAttributesTest.TestContentLanguage);
+            }
+
+            if (DMLibTestContext.SourceType == DMLibDataType.CloudFile
+                && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+            {
+                Helper.CompareSMBProperties(sourceDataInfo.RootNode, result.DataInfo.RootNode, true);
+                Helper.CompareSMBPermissions(
+                    sourceDataInfo.RootNode,
+                    result.DataInfo.RootNode,
+                    PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
             }
         }
 
@@ -235,14 +249,7 @@ namespace DMLibTest.Cases
 
             DirectoryTransferContext context = new DirectoryTransferContext()
             {
-                SetAttributesCallbackAsync = async (destObj) =>
-                {
-                    dynamic destCloudObj = destObj;
-
-                    destCloudObj.Properties.ContentType = SetAttributesTest.TestContentType;
-
-                    destCloudObj.Metadata.Add("aa", "bb");
-                }
+                SetAttributesCallbackAsync = SetAttributesCallbackTest
             };
 
             var options = new TestExecutionOptions<DMLibDataInfo>();
@@ -250,6 +257,7 @@ namespace DMLibTest.Cases
             {
                 dynamic transferOptions = DefaultTransferDirectoryOptions;
                 transferOptions.Recursive = true;
+
                 transferItem.Options = transferOptions;
                 transferItem.TransferContext = context;
             };
@@ -260,6 +268,7 @@ namespace DMLibTest.Cases
             foreach (FileNode fileNode in sourceDataInfo.EnumerateFileNodes())
             {
                 fileNode.Metadata.Add("aa", "bb");
+                fileNode.Metadata.Add("filelength", fileNode.SizeInByte.ToString());
             }
 
             VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
@@ -280,6 +289,8 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibDataType.CloudFile)]
         [DMLibTestMethod(DMLibDataType.CloudBlob)]
         [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectorySetAttribute_Restart_Copy()
         {
             int bigFileSizeInKB = 5 * 1024; // 5 MB
@@ -363,8 +374,19 @@ namespace DMLibTest.Cases
                     smallFileNum, 
                     smallFileSizeInKB);
                 }, 
-                async (destObj) =>
+                async (sourceObj, destObj) =>
                 {
+                    long sourceLength = 0;
+                    string path = sourceObj as string;
+                    if (null == path)
+                    {
+                        Test.Error("Source should be a local file path.");
+                    }
+                    else
+                    {
+                        sourceLength = new System.IO.FileInfo(path).Length;
+                    }
+
                     dynamic destCloudObj = destObj;
 
                     destCloudObj.Properties.ContentType = RandomLongString;
@@ -377,6 +399,7 @@ namespace DMLibTest.Cases
 
                     destCloudObj.Metadata.Remove(MetadataKey1);
                     destCloudObj.Metadata.Add(MetadataKey1, RandomLongString);
+                    destCloudObj.Metadata["filelength"] = sourceLength.ToString();
                 },
                 sourceDataInfo =>
                 {
@@ -391,9 +414,96 @@ namespace DMLibTest.Cases
                         fileNode.MD5 = invalidMD5;
 
                         fileNode.Metadata = new Dictionary<string, string> { { MetadataKey1, RandomLongString } };
+                        fileNode.Metadata["filelength"] = fileNode.SizeInByte.ToString();
                     }
                 }
             );
+        }
+
+        private async Task SetAttributesCallbackTest(object sourceObj, object destObj)
+        {
+            await Task.Yield();
+            long sourceLength = 0;
+            switch (DMLibTestContext.SourceType)
+            {
+                case DMLibDataType.Local:
+                    string path = sourceObj as string;
+                    if (null == path)
+                    {
+                        Test.Error("Source should be a local file path.");
+                    }
+                    else
+                    {
+                        sourceLength = new System.IO.FileInfo(path).Length;
+                    }
+                    break;
+                case DMLibDataType.Stream:
+                    Stream stream = sourceObj as Stream;
+                    if (null == stream)
+                    {
+                        Test.Error("Source should be a local stream.");
+                    }
+                    else
+                    {
+                        sourceLength = stream.Length;
+                    }
+                    break;
+                case DMLibDataType.BlockBlob:
+                    CloudBlockBlob blockBlob = sourceObj as CloudBlockBlob;
+
+                    if (null == blockBlob)
+                    {
+                        Test.Error("Source should be a CloudBlockBlob.");
+                    }
+                    else
+                    {
+                        sourceLength = blockBlob.Properties.Length;
+                    }
+                    break;
+                case DMLibDataType.PageBlob:
+                    CloudPageBlob pageBlob = sourceObj as CloudPageBlob;
+
+                    if (null == pageBlob)
+                    {
+                        Test.Error("Source should be a CloudPageBlob.");
+                    }
+                    else
+                    {
+                        sourceLength = pageBlob.Properties.Length;
+                    }
+                    break;
+                case DMLibDataType.AppendBlob:
+                    CloudAppendBlob appendBlob = sourceObj as CloudAppendBlob;
+
+                    if (null == appendBlob)
+                    {
+                        Test.Error("Source should be a CloudAppendBlob.");
+                    }
+                    else
+                    {
+                        sourceLength = appendBlob.Properties.Length;
+                    }
+                    break;
+                case DMLibDataType.CloudFile:
+                    CloudFile cloudFile = sourceObj as CloudFile;
+
+                    if (null == cloudFile)
+                    {
+                        Test.Error("Source should be a CloudFile.");
+                    }
+                    else
+                    {
+                        sourceLength = cloudFile.Properties.Length;
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            dynamic destCloudObj = destObj;
+            destCloudObj.Properties.ContentType = SetAttributesTest.TestContentType;
+            destCloudObj.Metadata["aa"] = "bb";
+            destCloudObj.Metadata["filelength"] = sourceLength.ToString();
         }
 
         private void TestDirectorySetAttribute_Restart(

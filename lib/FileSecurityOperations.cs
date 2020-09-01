@@ -320,9 +320,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return;
             }
 #endif
-
-            filePath = LongPath.ToUncPath(filePath);
-
             if (PreserveSMBPermissions.None == preserveSMBPermissions) return;
 
             if (string.IsNullOrEmpty(portableSDDL)) return;
@@ -621,8 +618,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             string filePath,
             NativeMethods.SECURITY_INFORMATION securityInfo)
         {
-            filePath = LongPath.ToUncPath(filePath);
-
             // Note: to get the SACL, special permissions are needed. Refer https://docs.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-getsecurityinfo
             IntPtr pZero = IntPtr.Zero;
             IntPtr pSid = pZero;

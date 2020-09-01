@@ -32,6 +32,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// Callback invoked to set destination's attributes in memory. 
     /// The attributes set in this callback will be sent to azure storage service. 
     /// </summary>
+    /// <param name="source">Source instance in the transfer.</param>
     /// <param name="destination">Instance of destination to be overwritten.</param>
-    public delegate Task SetAttributesCallbackAsync(object destination);
+    public delegate Task SetAttributesCallbackAsync(object source, object destination);
 }

@@ -188,6 +188,10 @@ namespace DMLibTest.Framework
 #if DOTNET5_4
             return Directory.Exists(path);
 #else
+            if (DMLibTestConstants.SupportUNCPath)
+            {
+                path = LongPath.ToUncPath(path);
+            }
             return LongPathDirectory.Exists(path);
 #endif
         }
@@ -216,6 +220,15 @@ namespace DMLibTest.Framework
         /// <param name="path">The directory to create.</param>
         public static void CreateDirectory(string path)
         {
+            try
+            {
+                path = DMLibTestConstants.SupportUNCPath ?
+                    LongPath.GetFullPath(LongPath.ToUncPath(path)) :
+                    LongPath.GetFullPath(path);
+            }
+            catch (Exception)
+            { }
+
 #if DOTNET5_4
             Directory.CreateDirectory(path);
 #else
@@ -346,17 +359,42 @@ namespace DMLibTest.Framework
 
         public static FileStream Open(string path, FileMode mode, FileAccess access, FileShare share)
         {
+            try
+            {
+                path = DMLibTestConstants.SupportUNCPath ?
+                    LongPath.GetFullPath(LongPath.ToUncPath(path)) :
+                    LongPath.GetFullPath(path);
+            }
+            catch (Exception)
+            { }
+
             return LongPathFile.Open(path, mode, access, share);
         }
 
         public static FileStream Open(string path, FileMode mode)
         {
+            try
+            {
+                path = DMLibTestConstants.SupportUNCPath ?
+                    LongPath.GetFullPath(LongPath.ToUncPath(path)) :
+                    LongPath.GetFullPath(path);
+            }
+            catch (Exception)
+            { }
+
             return LongPathFile.Open(path, mode, FileAccess.ReadWrite, FileShare.ReadWrite);
         }
 
         public static void SetAttributes(string path, FileAttributes fileAttributes)
         {
-            path = LongPath.ToUncPath(path);
+            try
+            {
+                path = DMLibTestConstants.SupportUNCPath ?
+                    LongPath.GetFullPath(LongPath.ToUncPath(path)) :
+                    LongPath.GetFullPath(path);
+            }
+            catch (Exception)
+            { }
             LongPathFile.SetAttributes(path, fileAttributes);
         }
 
@@ -366,21 +404,45 @@ namespace DMLibTest.Framework
 #endif
             )
         {
+            try
+            {
+                path = DMLibTestConstants.SupportUNCPath ?
+                    LongPath.GetFullPath(LongPath.ToUncPath(path)) :
+                    LongPath.GetFullPath(path);
+            }
+            catch (Exception)
+            { }
+
 #if DOTNET5_4
             LongPathFile.GetFileProperties(path, out creationTime, out lastWriteTime, out fileAttributes, isDirectory);
 #else
-            path = LongPath.ToUncPath(path);
             LongPathFile.GetFileProperties(path, out creationTime, out lastWriteTime, out fileAttributes);
 #endif
         }
 
         public static string GetFilePortableSDDL(string path, PreserveSMBPermissions preserveSMBPermissions)
         {
+            try
+            {
+                path = DMLibTestConstants.SupportUNCPath ?
+                    LongPath.GetFullPath(LongPath.ToUncPath(path)) :
+                    LongPath.GetFullPath(path);
+            }
+            catch (Exception)
+            { }
             return FileSecurityOperations.GetFilePortableSDDL(path, preserveSMBPermissions);
         }
 
         public static void SetFileSecurityInfo(string path, string portableSDDL, PreserveSMBPermissions preserveSMBPermissions)
         {
+            try
+            {
+                path = DMLibTestConstants.SupportUNCPath ?
+                    LongPath.GetFullPath(LongPath.ToUncPath(path)) :
+                    LongPath.GetFullPath(path);
+            }
+            catch (Exception)
+            { }
             FileSecurityOperations.SetFileSecurity(path, portableSDDL, preserveSMBPermissions);
         }
     }

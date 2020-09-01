@@ -145,6 +145,12 @@ namespace DMLibTest
             set;
         }
 
+        public string EncryptionScope
+        {
+            get;
+            set;
+        }
+
         public CloudFileNtfsAttributes? SMBAttributes
         {
             get;
@@ -240,7 +246,8 @@ namespace DMLibTest
                 AbsolutePath = this.AbsolutePath,
                 SMBAttributes = this.SMBAttributes,
                 CreationTime = this.CreationTime,
-                LastWriteTime = this.LastWriteTime
+                LastWriteTime = this.LastWriteTime,
+                PortableSDDL = this.PortableSDDL,
             };
         }
     }
@@ -502,6 +509,7 @@ namespace DMLibTest
             newDirNode.SMBAttributes = this.SMBAttributes;
             newDirNode.CreationTime = this.CreationTime;
             newDirNode.LastWriteTime = this.LastWriteTime;
+            newDirNode.PortableSDDL = this.PortableSDDL;
 
             if (null != this.Metadata)
             {

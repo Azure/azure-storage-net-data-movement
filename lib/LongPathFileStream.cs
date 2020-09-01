@@ -313,7 +313,6 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 if (String.IsNullOrEmpty(path))
                     return false;
-                path = LongPath.ToUncPath(path);
                 bool success = NativeMethods.PathFileExistsW(path);
                 if (!success)
                 {
@@ -357,8 +356,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 LongPathDirectory.CreateDirectory(dir);
             }
-
-            path = LongPath.ToUncPath(path);
 
             if (!NativeMethods.CreateDirectoryW(path, IntPtr.Zero))
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists(new int[] {
@@ -512,7 +509,6 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if DOTNET5_4
             return new FileStream(filePath, mode, access, share);
 #else
-            filePath = LongPath.ToUncPath(filePath);
             SafeFileHandle fileHandle = GetFileHandle(filePath, mode, access, share);
             return new FileStream(fileHandle, access);
 #endif
@@ -573,7 +569,6 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if DOTNET5_4
             File.SetAttributes(path, fileAttributes);
 #else
-            path = LongPath.ToUncPath(path);
             if (!NativeMethods.SetFileAttributesW(path, (uint)(fileAttributes)))
             {
                 NativeMethods.ThrowExceptionForLastWin32ErrorIfExists();
@@ -609,8 +604,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             )
         {
 #if !DOTNET5_4
-            path = LongPath.ToUncPath(path);
-
             if (path.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
             {
                 path = path.Substring(0, path.Length - 1);
@@ -666,7 +659,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         public static void SetFileTime(string path, DateTimeOffset creationTimeUtc, DateTimeOffset lastWriteTimeUtc, bool isDirectory = false)
         {
 #if !DOTNET5_4
-            path = LongPath.ToUncPath(path);
             SafeFileHandle fileHandle = GetFileHandle(path, FileMode.Open, FileAccess.Write, FileShare.None, isDirectory);
 
             try

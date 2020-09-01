@@ -1,0 +1,368 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="FullBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{2A4656A4-F744-4653-A9D6-15112E9AB352}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>DMLibTest</RootNamespace>
+    <AssemblyName>DMLibTest</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <ReferencePath>$(ProgramFiles)\Common Files\microsoft shared\VSTT\$(VisualStudioVersion)\UITestExtensionPackages</ReferencePath>
+    <IsCodedUITest>False</IsCodedUITest>
+    <TestProjectType>UnitTest</TestProjectType>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;DMLIB_TEST</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;BINARY_SERIALIZATION;DMLIB_TEST</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DelaySign>true</DelaySign>
+  </PropertyGroup>
+  <PropertyGroup>
+    <CodeGenPath>..\DMLibTestCodeGen\</CodeGenPath>
+    <CodeGenProjFile>$(CodeGenPath)DMLibTestCodeGen.csproj</CodeGenProjFile>
+    <SourceCodeOuputFolder>Generated</SourceCodeOuputFolder>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>..\..\tools\strongnamekeys\fake\windows.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Azure.KeyVault.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.Azure.KeyVault.Core.1.0.0\lib\net40\Microsoft.Azure.KeyVault.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Azure.Storage.Blob, Version=11.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.Azure.Storage.Blob.11.2.2\lib\net452\Microsoft.Azure.Storage.Blob.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Azure.Storage.Common, Version=11.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.Azure.Storage.Common.11.2.2\lib\net452\Microsoft.Azure.Storage.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Azure.Storage.File, Version=11.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.Azure.Storage.File.11.2.2\lib\net452\Microsoft.Azure.Storage.File.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.WindowsAzure.Configuration, Version=1.8.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Microsoft.WindowsAzure.ConfigurationManager.1.8.0.0\lib\net35-full\Microsoft.WindowsAzure.Configuration.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <Choose>
+    <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
+      <ItemGroup>
+        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+  <ItemGroup>
+    <GeneratedSourceFile Include="$(SourceCodeOuputFolder)\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\lib\FileNativeMethods.cs">
+      <Link>Framework\FileNativeMethods.cs</Link>
+    </Compile>
+    <Compile Include="..\..\lib\FileSecurityNativeMethods.cs">
+      <Link>Framework\FileSecurityNativeMethods.cs</Link>
+    </Compile>
+    <Compile Include="..\..\lib\FileSecurityOperations.cs">
+      <Link>Framework\FileSecurityOperations.cs</Link>
+    </Compile>
+    <Compile Include="..\..\lib\Interop\Interop.Windows.cs">
+      <Link>Framework\Interop.Windows.cs</Link>
+    </Compile>
+    <Compile Include="..\..\lib\LongPathFileStream.cs">
+      <Link>Framework\LongPathFileStream.cs</Link>
+    </Compile>
+    <Compile Include="..\..\netcore\DMLibTest\DataContractSerializerExtensions.cs">
+      <Link>DataContractSerializerExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\..\tools\AssemblyInfo\SharedAssemblyInfo.cs">
+      <Link>SharedAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\AccessConditionTest.cs">
+      <Link>Cases\AccessConditionTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\AllTransferDirectionTest.cs">
+      <Link>Cases\AllTransferDirectionTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\BigFileTest.cs">
+      <Link>Cases\BigFileTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\BlockSizeTest.cs">
+      <Link>Cases\BlockSizeTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\BVT.cs">
+      <Link>Cases\BVT.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\CheckContentMD5Test.cs">
+      <Link>Cases\CheckContentMD5Test.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\ChunkedMemoryStreamTests.cs">
+      <Link>Cases\ChunkedMemoryStreamTests.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\DelimiterTest.cs">
+      <Link>Cases\DelimiterTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\DummyTransferTest.cs">
+      <Link>Cases\DummyTransferTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\EncryptionScopeTest.cs">
+      <Link>Cases\EncryptionScopeTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\FollowSymlinkTest.cs">
+      <Link>Cases\FollowSymlinkTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\LongFilePathTest.cs">
+      <Link>Cases\LongFilePathTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\MetadataTest.cs">
+      <Link>Cases\MetadataTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\OverwriteTest.cs">
+      <Link>Cases\OverwriteTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\ProgressHandlerTest.cs">
+      <Link>Cases\ProgressHandlerTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\ResumeTest.cs">
+      <Link>Cases\ResumeTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\SASTokenVersionTest.cs">
+      <Link>Cases\SASTokenVersionTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\SearchPatternTest.cs">
+      <Link>Cases\SearchPatternTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\SetAttributesTest.cs">
+      <Link>Cases\SetAttributesTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\ShouldTransferTest.cs">
+      <Link>Cases\ShouldTransferTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\SMBPropertiesTest.cs">
+      <Link>Cases\SMBPropertiesTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\SnapshotTest.cs">
+      <Link>Cases\SnapshotTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\StreamTest.cs">
+      <Link>Cases\StreamTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Cases\UnsupportedDirectionTest.cs">
+      <Link>Cases\UnsupportedDirectionTest.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\AssemblyInitCleanup.cs">
+      <Link>Framework\AssemblyInitCleanup.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\BlobDataAdaptorBase.cs">
+      <Link>Framework\BlobDataAdaptorBase.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\CloudBlobDataAdaptor.cs">
+      <Link>Framework\CloudBlobDataAdaptor.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\CloudFileDataAdaptor.cs">
+      <Link>Framework\CloudFileDataAdaptor.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\CloudObjectExtensions.cs">
+      <Link>Framework\CloudObjectExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\CopyWrapper.cs">
+      <Link>Framework\CopyWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\DataAdaptor.cs">
+      <Link>Framework\DataAdaptor.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\DMLibDataHelper.cs">
+      <Link>Framework\DMLibDataHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\DMLibDataInfo.cs">
+      <Link>Framework\DMLibDataInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\DMLibDataPreparedTestBase.cs">
+      <Link>Framework\DMLibDataPreparedTestBase.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\DMLibInputHelper.cs">
+      <Link>Framework\DMLibInputHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\DMLibTestBase.cs">
+      <Link>Framework\DMLibTestBase.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\DMLibWrapper.cs">
+      <Link>Framework\DMLibWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\DownloadWrapper.cs">
+      <Link>Framework\DownloadWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\FileNativeMethodsExtension.cs">
+      <Link>Framework\FileNativeMethodsExtension.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\IDataInfo.cs">
+      <Link>Framework\IDataInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\LocalDataAdaptor.cs">
+      <Link>Framework\LocalDataAdaptor.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\LocalDataAdaptorBase.cs">
+      <Link>Framework\LocalDataAdaptorBase.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\LongPathFileStreamExtension.cs">
+      <Link>Framework\LongPathFileStreamExtension.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\MultiDirectionTestBase.cs">
+      <Link>Framework\MultiDirectionTestBase.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\MultiDirectionTestHelper.cs">
+      <Link>Framework\MultiDirectionTestHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\MultiDirectionTestInfo.cs">
+      <Link>Framework\MultiDirectionTestInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\ProgressChecker.cs">
+      <Link>Framework\ProgressChecker.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\SharedAccessPermissions.cs">
+      <Link>Framework\SharedAccessPermissions.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\TestExecutionOptions.cs">
+      <Link>Framework\TestExecutionOptions.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\TestResult.cs">
+      <Link>Framework\TestResult.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\TransferEventChecker.cs">
+      <Link>Framework\TransferEventChecker.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\TransferItem.cs">
+      <Link>Framework\TransferItem.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\UploadWrapper.cs">
+      <Link>Framework\UploadWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\URIBlobDataAdaptor.cs">
+      <Link>Framework\URIBlobDataAdaptor.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Framework\VerificationHelper.cs">
+      <Link>Framework\VerificationHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Util\DMLibTestConstants.cs">
+      <Link>Util\DMLibTestConstants.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Util\DMLibTestHelper.cs">
+      <Link>Util\DMLibTestHelper.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Util\DMLibTestStream.cs">
+      <Link>Util\DMLibTestStream.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Util\Helpers.cs">
+      <Link>Util\Helpers.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Util\SASGenerator.cs">
+      <Link>Util\SASGenerator.cs</Link>
+    </Compile>
+    <Compile Include="..\DMLibTest\Util\TestAccounts.cs">
+      <Link>Util\TestAccounts.cs</Link>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="@(GeneratedSourceFile)" Condition=" '$(Mode)' == 'Full' " />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\netcore\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj">
+      <Project>{ec084ea8-ea44-45ae-9c75-2183ade14a41}</Project>
+      <Name>Microsoft.Azure.Storage.DataMovement</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DMLibTestCodeGen\DMLibTestCodeGen.csproj">
+      <Project>{7018ee4e-d389-424e-a8dd-f9b4ffda5194}</Project>
+      <Name>DMLibTestCodeGen</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DMTestLib\DMTestLib.csproj">
+      <Project>{2c79e154-efd2-4ffd-8a73-5a62a61bc6e5}</Project>
+      <Name>DMTestLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MsTestLib\MsTestLib.csproj">
+      <Project>{ac39b50f-dc27-4411-9ed4-a4a137190acb}</Project>
+      <Name>MsTestLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\DMLibTest\TestData.xml">
+      <Link>TestData.xml</Link>
+    </Content>
+  </ItemGroup>
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
+      <ItemGroup>
+        <Reference Include="Microsoft.VisualStudio.QualityTools.CodedUITestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Microsoft.VisualStudio.TestTools.UITest.Common, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Microsoft.VisualStudio.TestTools.UITest.Extension, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="Microsoft.VisualStudio.TestTools.UITesting, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+          <Private>False</Private>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <Target Name="FullBuild" Outputs="$(MSBuildProjectDirectory)\$(OutputPath)$(AssemblyName).dll">
+    <MSBuild Projects="$(MSBuildProjectFile)" Targets="Build" />
+    <MSBuild Projects="$(CodeGenProjFile)" Targets="Build" />
+    <MakeDir Condition="!Exists('$(SourceCodeOuputFolder)')" Directories="$(SourceCodeOuputFolder)" />
+    <Delete Files="@(GeneratedSourceFile)" />
+    <Exec Command="$(CodeGenPath)$(OutputPath)DMLibTestCodeGen.exe $(OutputPath)$(AssemblyName).dll $(SourceCodeOuputFolder)" />
+    <MSBuild Projects="$(MSBuildProjectFile)" Targets="Build" Properties="Mode=Full" />
+  </Target>
+</Project>

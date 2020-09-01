@@ -170,7 +170,7 @@ namespace DMLibTest.Cases
         [DMLibTestMethod(DMLibDataType.CloudBlob, DMLibCopyMethod.ServiceSideSyncCopy)]
         public void TestDirectoryWithSpecialCharNamedBlobs()
         {
-#if DNXCORE50
+#if DOTNET5_4
             // TODO: There's a known issue that signature for URI with '[' or ']' doesn't work.
             string specialChars = "~`!@#$%()-_+={};?.^&";
 #else

@@ -108,6 +108,19 @@ namespace DMLibTest
         }
     }
 
+    public class EncryptionScopeTestFixture : IDisposable
+    {
+        public EncryptionScopeTestFixture()
+        {
+            EncryptionScopeTest.MyClassInitialize(null);
+        }
+
+        public void Dispose()
+        {
+            EncryptionScopeTest.MyClassCleanup();
+        }
+    }
+
     public class FollowSymlinkTestFixture : IDisposable
     {
         public FollowSymlinkTestFixture()

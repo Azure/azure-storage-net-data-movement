@@ -159,7 +159,21 @@ namespace DMLibTest
 
             if ((preserveSMBPermissions & PreserveSMBPermissions.SACL) == PreserveSMBPermissions.SACL)
             {
-                Test.Assert(string.Equals(sourcesddlStrings[3], destsddlStrings[3]), "SDDL Value should  be expected.");
+                bool sddlExpected = false; 
+                if (string.IsNullOrEmpty(sourcesddlStrings[3]))
+                {
+                    sddlExpected = string.IsNullOrEmpty(destsddlStrings[3]) || string.Equals(destsddlStrings[3], "S:NO_ACCESS_CONTROL");
+                }
+                else if (string.IsNullOrEmpty(destsddlStrings[3]))
+                {
+                    sddlExpected = string.IsNullOrEmpty(sourcesddlStrings[3]) || string.Equals(sourcesddlStrings[3], "S:NO_ACCESS_CONTROL");
+                }
+                else
+                {
+                    sddlExpected = string.Equals(sourcesddlStrings[3], destsddlStrings[3]);
+                }
+
+                Test.Assert(sddlExpected, "SDDL Value should  be expected.");
             }
         }
 
@@ -274,13 +288,13 @@ namespace DMLibTest
                 if ((fileNode.LastWriteTime.Value != fileNode1.LastWriteTime.Value)
                     || (fileNode.CreationTime.Value != fileNode1.CreationTime.Value))
                 {
-                    Test.Error("File node mismatch");
+                    Test.Error($"File node mismatch {fileNode.Name} {fileNode.LastWriteTime.Value} == {fileNode1.LastWriteTime.Value} {fileNode.CreationTime.Value} == {fileNode1.CreationTime.Value}");
                 }
 
                 if (compareFileAttributes
                     && fileNode.SMBAttributes.Value != fileNode1.SMBAttributes.Value)
                 {
-                    Test.Error("File node mismatch");
+                    Test.Error($"File node mismatch {fileNode.SMBAttributes.Value} == {fileNode1.SMBAttributes.Value}");
                 }
             }
 

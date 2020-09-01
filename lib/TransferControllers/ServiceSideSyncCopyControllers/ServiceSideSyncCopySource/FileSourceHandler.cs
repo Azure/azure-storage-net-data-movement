@@ -105,7 +105,50 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                 throw new InvalidOperationException(Resources.RestartableInfoCorruptedException);
             }
 
-            this.sourceAttributes = Utils.GenerateAttributes(this.sourceFile, true);
+            SingleObjectTransfer transferInstance = this.transferJob.Transfer;
+
+            this.sourceAttributes = Utils.GenerateAttributes(this.sourceFile, transferInstance.PreserveSMBAttributes);
+
+            if (transferInstance.PreserveSMBPermissions != PreserveSMBPermissions.None)
+            {
+                if (!string.IsNullOrEmpty(this.sourceFile.FilePermission))
+                {
+                    this.sourceAttributes.PortableSDDL = this.sourceFile.FilePermission;
+                }
+                else if (!string.IsNullOrEmpty(this.sourceFile.Properties.FilePermissionKey))
+                {
+                    var sddlCache = transferInstance.SDDLCache;
+
+                    if (null != sddlCache)
+                    {
+                        string portableSDDL = null;
+                        sddlCache.TryGetValue(this.sourceFile.Properties.FilePermissionKey, out portableSDDL);
+
+                        if (null == portableSDDL)
+                        {
+                            portableSDDL = await this.sourceFile.Share.GetFilePermissionAsync(this.sourceFile.Properties.FilePermissionKey,
+                                Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
+                                Utils.GenerateOperationContext(this.transferContext),
+                                cancellationToken).ConfigureAwait(false);
+
+                            sddlCache.TryAddValue(this.sourceFile.Properties.FilePermissionKey, portableSDDL);
+                        }
+
+                        this.sourceAttributes.PortableSDDL = portableSDDL;
+                    }
+                    else
+                    {
+                        this.sourceAttributes.PortableSDDL = await this.sourceFile.Share.GetFilePermissionAsync(this.sourceFile.Properties.FilePermissionKey,
+                            Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
+                            Utils.GenerateOperationContext(this.transferContext),
+                            cancellationToken).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    this.sourceAttributes.PortableSDDL = null;
+                }
+            }
 
             this.totalLength = this.sourceFile.Properties.Length;
         }

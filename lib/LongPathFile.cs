@@ -15,12 +15,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         public static bool Exists(string path)
         {
 #if DOTNET5_4
-            string longFilePath = path;
-            if (Interop.CrossPlatformHelpers.IsWindows)
-            {
-                longFilePath = LongPath.ToUncPath(longFilePath);
-            }
-            return File.Exists(longFilePath);
+            return File.Exists(path);
 #else
             try
             {
@@ -28,7 +23,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
                     return false;
                 }
-                path = LongPath.ToUncPath(path);
                 bool success = NativeMethods.PathFileExistsW(path);
                 if (!success)
                 {

@@ -392,7 +392,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
 
             Utils.SetAttributes(this.blockBlob, this.SharedTransferData.Attributes);
-            await this.Controller.SetCustomAttributesAsync(this.blockBlob);
+            await this.Controller.SetCustomAttributesAsync(this.SharedTransferData.TransferJob.Source.Instance, this.blockBlob);
 
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
@@ -448,7 +448,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                     Utils.SetAttributes(this.blockBlob, this.SharedTransferData.Attributes);
 
-                    await this.Controller.SetCustomAttributesAsync(this.blockBlob);
+                    await this.Controller.SetCustomAttributesAsync(this.SharedTransferData.TransferJob.Source.Instance, this.blockBlob);
 
                     await this.DoUploadAndSetBlobAttributes(transferData.Stream);
                 }

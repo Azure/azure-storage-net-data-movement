@@ -440,11 +440,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
         }
 
-        public async Task SetCustomAttributesAsync(object dest)
+        public async Task SetCustomAttributesAsync(object source, object dest)
         {
             if (null != this.TransferContext && null != this.TransferContext.SetAttributesCallbackAsync)
             {
-                await this.TransferContext.SetAttributesCallbackAsync(dest);
+                await this.TransferContext.SetAttributesCallbackAsync(source, dest);
             }
         }
     }

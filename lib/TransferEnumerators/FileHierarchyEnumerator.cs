@@ -75,23 +75,22 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
             Utils.CheckCancellation(cancellationToken);
 
-#if DOTNET5_4
             string fullPath = null;
             string baseFullPath = null;
             if (Interop.CrossPlatformHelpers.IsWindows)
             {
-                fullPath = LongPath.ToUncPath(this.location.DirectoryPath);
-                baseFullPath = LongPath.ToUncPath(this.baseDirectory);
+                fullPath = TransferManager.Configurations.SupportUncPath ?
+                    LongPath.ToUncPath(this.location.DirectoryPath) :
+                    LongPath.GetFullPath(this.location.DirectoryPath);
+                baseFullPath = TransferManager.Configurations.SupportUncPath ?
+                    LongPath.ToUncPath(this.baseDirectory) :
+                    LongPath.GetFullPath(this.baseDirectory);
             }
             else
             {
                 fullPath = Path.GetFullPath(this.location.DirectoryPath);
                 baseFullPath = Path.GetFullPath(this.baseDirectory);
             }
-#else
-            string fullPath = LongPath.ToUncPath(this.location.DirectoryPath);
-            string baseFullPath = LongPath.ToUncPath(this.baseDirectory);
-#endif
 
             fullPath = AppendDirectorySeparator(fullPath);
             baseFullPath = AppendDirectorySeparator(baseFullPath);

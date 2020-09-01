@@ -20,6 +20,7 @@ namespace DMLibTest.Cases
     using MS.Test.Common.MsTestLib;
     using DMLibTest.Framework;
     using System.Threading.Tasks;
+    using System.Linq.Expressions;
 #if DNXCORE50
     using Xunit;
     using System.Threading.Tasks;
@@ -1028,6 +1029,16 @@ namespace DMLibTest.Cases
                 eventChecker.Apply(resumeContext);
 
                 resumeItem.TransferContext = resumeContext;
+
+                resumeContext.FileSkipped += (sender, eventArgs) =>
+                {
+                    Test.Error(eventArgs.Exception.ToString());
+                };
+
+                resumeContext.FileFailed += (sender, eventArgs) =>
+                {
+                    Test.Error(eventArgs.Exception.ToString());
+                };
 
                 result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
 

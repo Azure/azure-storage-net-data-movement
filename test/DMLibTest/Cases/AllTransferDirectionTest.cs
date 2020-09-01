@@ -245,6 +245,11 @@ namespace DMLibTest
             List<TransferItem> allItems = new List<TransferItem>();
             foreach (DMLibTransferDirection direction in GetAllDirectoryValidDirections())
             {
+                if ((direction.SourceType != DMLibDataType.CloudFile)
+                    || (direction.DestType != DMLibDataType.Local))
+                {
+                    continue;
+                }
                 string dirName = GetTransferDirName(direction);
                 DataAdaptor<DMLibDataInfo> sourceAdaptor = GetSourceAdaptor(direction.SourceType);
                 DataAdaptor<DMLibDataInfo> destAdaptor = GetDestAdaptor(direction.DestType);
@@ -493,7 +498,7 @@ namespace DMLibTest
             }
         }
 
-        private static async Task SetAttributesCallbackMethodAsync(object destObj)
+        private static async Task SetAttributesCallbackMethodAsync(object sourceObj, object destObj)
         {
             await Task.Run(() =>
             {

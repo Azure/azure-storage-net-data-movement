@@ -82,13 +82,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
             if (needCreateDestination)
             {
+                this.transferJob.Overwrite = true;
+                this.transferJob.Transfer.UpdateJournal();
+
                 await this.CreateDestinationAsync(
                     totalLength,
                     null,
-                    cancellationToken);
-
-                this.transferJob.Overwrite = true;
-                this.transferJob.Transfer.UpdateJournal();
+                    CancellationToken.None);
             }
 
             return gotDestAttributes;
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
         public virtual async Task CommitAsync(
             bool gotDestAttributes,
             Attributes sourceAttributes,
-            Func<object, Task> setCustomAttributes,
+            Func<object, object, Task> setCustomAttributes,
             CancellationToken cancellationToken)
         {
             FileRequestOptions fileRequestOptions = Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions);
@@ -114,9 +114,48 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
             var originalMetadata = new Dictionary<string, string>(this.destFile.Metadata);
 
-            Utils.SetAttributes(this.destFile, sourceAttributes, false);
+            SingleObjectTransfer transferInstance = this.transferJob.Transfer;
 
-            await setCustomAttributes(this.destFile);
+            Utils.SetAttributes(this.destFile, sourceAttributes, transferInstance.PreserveSMBAttributes);
+
+            if ((PreserveSMBPermissions.None != transferInstance.PreserveSMBPermissions)
+                && !string.IsNullOrEmpty(sourceAttributes.PortableSDDL))
+            {
+                if (sourceAttributes.PortableSDDL.Length >= Constants.MaxSDDLLengthInProperties)
+                {
+                    string permissionKey = null;
+                    var sddlCache = transferInstance.SDDLCache;
+                    if (null != sddlCache)
+                    {
+                        sddlCache.TryGetValue(sourceAttributes.PortableSDDL, out permissionKey);
+
+                        if (null == permissionKey)
+                        {
+                            permissionKey = await this.destFile.Share.CreateFilePermissionAsync(sourceAttributes.PortableSDDL,
+                                fileRequestOptions,
+                                operationContext,
+                                cancellationToken).ConfigureAwait(false);
+
+                            sddlCache.TryAddValue(sourceAttributes.PortableSDDL, permissionKey);
+                        }
+                    }
+                    else
+                    {
+                        permissionKey = await this.destFile.Share.CreateFilePermissionAsync(sourceAttributes.PortableSDDL,
+                            fileRequestOptions,
+                            operationContext,
+                            cancellationToken).ConfigureAwait(false);
+                    }
+
+                    this.destFile.Properties.FilePermissionKey = permissionKey;
+                }
+                else
+                {
+                    this.destFile.FilePermission = sourceAttributes.PortableSDDL;
+                }
+            }
+
+            await setCustomAttributes(this.transferJob.Source.Instance, this.destFile);
 
             await this.destFile.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),

@@ -145,7 +145,7 @@ namespace DMLibTest.Cases
             }
 
             Exception exception = result.Exceptions[0];
-#if DNXCORE50
+#if DOTNET5_4
             VerificationHelper.VerifyTransferException(exception, TransferErrorCode.Unknown);
             
             // Verify innner StorageException

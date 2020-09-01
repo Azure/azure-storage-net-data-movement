@@ -97,7 +97,7 @@ namespace DMLibTest.Cases
                 Test.Info("Testing setting attributes {0} to directories", SMBFileAttributes[i]);
                 // Prepare data
                 DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
-                GenerateDirNodeWithAttributes(sourceDataInfo.RootNode, 2, SMBFileAttributes[i]);
+                GenerateDirNodeWithAttributes(sourceDataInfo.RootNode, 2, SMBFileAttributes[i], null);
 
                 DirectoryTransferContext dirTransferContext = new DirectoryTransferContext();
 
@@ -262,7 +262,7 @@ namespace DMLibTest.Cases
                     Test.Info("Testing setting attributes {0} to directories", SMBFileAttributes[i]);
                     // Prepare data
                     DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
-                    GenerateDirNodeWithAttributes(sourceDataInfo.RootNode, 2, SMBFileAttributes[i]);
+                    GenerateDirNodeWithAttributes(sourceDataInfo.RootNode, 2, SMBFileAttributes[i], null);
 
                     DirectoryTransferContext dirTransferContext = null;
 
@@ -298,7 +298,9 @@ namespace DMLibTest.Cases
                     options.AfterAllItemAdded = () =>
                     {
                         // Wait until there are data transferred
-                        progressChecker.DataTransferred.WaitOne();
+                        bool gotProgress = progressChecker.DataTransferred.WaitOne(60000);
+
+                        Test.Assert(gotProgress, "Should got progress");
 
                         if (!IsStreamJournal)
                         {
@@ -561,8 +563,251 @@ namespace DMLibTest.Cases
         }
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        public void TestCopySMBPropertiesACL()
+        {
+            CloudFileNtfsAttributes[] SMBFileAttributes = {
+                CloudFileNtfsAttributes.ReadOnly,
+                CloudFileNtfsAttributes.Hidden,
+
+                CloudFileNtfsAttributes.System,
+                CloudFileNtfsAttributes.Archive,
+                CloudFileNtfsAttributes.Normal,
+                CloudFileNtfsAttributes.Temporary,
+                CloudFileNtfsAttributes.Offline,
+                CloudFileNtfsAttributes.NotContentIndexed,
+                CloudFileNtfsAttributes.NoScrubData,
+
+                CloudFileNtfsAttributes.ReadOnly | CloudFileNtfsAttributes.Hidden,
+                CloudFileNtfsAttributes.System | CloudFileNtfsAttributes.Archive,
+                CloudFileNtfsAttributes.Temporary | CloudFileNtfsAttributes.Offline,
+                CloudFileNtfsAttributes.NotContentIndexed | CloudFileNtfsAttributes.NoScrubData,
+
+                CloudFileNtfsAttributes.ReadOnly |
+                CloudFileNtfsAttributes.Hidden |
+                CloudFileNtfsAttributes.System |
+                CloudFileNtfsAttributes.Archive |
+                CloudFileNtfsAttributes.Temporary |
+                CloudFileNtfsAttributes.NotContentIndexed |
+                CloudFileNtfsAttributes.NoScrubData
+            };
+
+            string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
+
+            for (int i = 0; i < SMBFileAttributes.Length; ++i)
+            {
+                // Prepare data
+                DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
+                FileNode fileNode = new FileNode(DMLibTestBase.FileName);
+                fileNode.SizeInByte = 1024;
+                fileNode.SMBAttributes = SMBFileAttributes[i];
+                fileNode.PortableSDDL = sampleSDDL;
+                sourceDataInfo.RootNode.AddFileNode(fileNode);
+
+                SingleTransferContext transferContext = new SingleTransferContext();
+
+                var options = new TestExecutionOptions<DMLibDataInfo>();
+
+                options.TransferItemModifier = (fileNodeVar, transferItem) =>
+                {
+                    transferItem.TransferContext = transferContext;
+
+                    dynamic transferOptions = DefaultTransferOptions;
+                    transferOptions.PreserveSMBAttributes = true;
+                    transferOptions.PreserveSMBPermissions = true;
+                    transferItem.Options = transferOptions;
+                };
+
+                // Execute test case
+                var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+                VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
+
+                Helper.CompareSMBProperties(sourceDataInfo.RootNode, result.DataInfo.RootNode, true);
+                Helper.CompareSMBPermissions(
+                    sourceDataInfo.RootNode, 
+                    result.DataInfo.RootNode, 
+                    PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
+            }
+        }
+
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        public void TestCopyDirectorySMBPropertiesACL()
+        {
+            CloudFileNtfsAttributes[] SMBFileAttributes = {
+                CloudFileNtfsAttributes.ReadOnly | CloudFileNtfsAttributes.Hidden,
+                CloudFileNtfsAttributes.System | CloudFileNtfsAttributes.Archive,
+                CloudFileNtfsAttributes.Offline |CloudFileNtfsAttributes.NotContentIndexed | CloudFileNtfsAttributes.NoScrubData,
+
+                CloudFileNtfsAttributes.ReadOnly |
+                CloudFileNtfsAttributes.Hidden |
+                CloudFileNtfsAttributes.System |
+                CloudFileNtfsAttributes.Archive |
+                CloudFileNtfsAttributes.NotContentIndexed |
+                CloudFileNtfsAttributes.NoScrubData
+            };
+
+            string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
+
+            for (int i = 0; i < SMBFileAttributes.Length; ++i)
+            {
+                Test.Info("Testing setting attributes {0} to directories", SMBFileAttributes[i]);
+                // Prepare data
+                DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
+                GenerateDirNodeWithAttributes(sourceDataInfo.RootNode, 2, SMBFileAttributes[i], sampleSDDL);
+
+                DirectoryTransferContext dirTransferContext = new DirectoryTransferContext();
+
+                var options = new TestExecutionOptions<DMLibDataInfo>();
+                options.IsDirectoryTransfer = true;
+
+                options.TransferItemModifier = (fileNode, transferItem) =>
+                {
+                    transferItem.TransferContext = dirTransferContext;
+
+                    dynamic transferOptions = DefaultTransferDirectoryOptions;
+                    transferOptions.Recursive = true;
+                    transferOptions.PreserveSMBAttributes = true;
+                    transferOptions.PreserveSMBPermissions = true;
+                    transferItem.Options = transferOptions;
+                };
+
+                // Execute test case
+                var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+                VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
+
+                Helper.CompareSMBProperties(sourceDataInfo.RootNode, result.DataInfo.RootNode, true);
+                Helper.CompareSMBPermissions(
+                    sourceDataInfo.RootNode,
+                    result.DataInfo.RootNode,
+                    PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
+            }
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        public void TestCopyDirectorySMBPropertiesACLResume()
+        {
+            CloudFileNtfsAttributes[] SMBFileAttributes = {
+                CloudFileNtfsAttributes.ReadOnly | CloudFileNtfsAttributes.Hidden,
+                CloudFileNtfsAttributes.System | CloudFileNtfsAttributes.Archive,
+                CloudFileNtfsAttributes.Offline |CloudFileNtfsAttributes.NotContentIndexed | CloudFileNtfsAttributes.NoScrubData,
+
+                CloudFileNtfsAttributes.ReadOnly |
+                CloudFileNtfsAttributes.Hidden |
+                CloudFileNtfsAttributes.System |
+                CloudFileNtfsAttributes.Archive |
+                CloudFileNtfsAttributes.NotContentIndexed |
+                CloudFileNtfsAttributes.NoScrubData
+            };
+
+            string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
+
+            for (int i = 0; i < SMBFileAttributes.Length; ++i)
+            {
+                Test.Info("Testing setting attributes {0} to directories", SMBFileAttributes[i]);
+                // Prepare data
+                DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
+                GenerateDirNodeWithAttributes(sourceDataInfo.RootNode, 2, SMBFileAttributes[i], sampleSDDL);
+
+                CancellationTokenSource tokenSource = new CancellationTokenSource();
+                TransferItem transferItem = null;
+
+                bool IsStreamJournal = random.Next(0, 2) == 0;
+                using (Stream journalStream = new MemoryStream())
+                {
+                    DirectoryTransferContext dirTransferContext = null;
+
+                    if (IsStreamJournal)
+                    {
+                        dirTransferContext = new DirectoryTransferContext(journalStream);
+                    }
+                    else
+                    {
+                        dirTransferContext = new DirectoryTransferContext();
+                    }
+
+                    var progressChecker = new ProgressChecker(14, 14 * 1024);
+                    dirTransferContext.ProgressHandler = progressChecker.GetProgressHandler();
+
+                    var options = new TestExecutionOptions<DMLibDataInfo>();
+                    options.IsDirectoryTransfer = true;
+
+                    options.TransferItemModifier = (fileNode, item) =>
+                    {
+                        item.TransferContext = dirTransferContext;
+
+                        dynamic transferOptions = DefaultTransferDirectoryOptions;
+                        transferOptions.Recursive = true;
+                        transferOptions.PreserveSMBPermissions = true;
+                        transferOptions.PreserveSMBAttributes = true;
+                        item.Options = transferOptions;
+                        item.CancellationToken = tokenSource.Token;
+                        transferItem = item;
+                    };
+
+                    TransferCheckpoint checkpoint = null;
+
+                    options.AfterAllItemAdded = () =>
+                    {
+                        // Wait until there are data transferred
+                        progressChecker.DataTransferred.WaitOne();
+
+                        if (!IsStreamJournal)
+                        {
+                            checkpoint = dirTransferContext.LastCheckpoint;
+                        }
+
+                        // Cancel the transfer and store the second checkpoint
+                        tokenSource.Cancel();
+                    };
+
+                    // Execute test case
+                    var result = this.ExecuteTestCase(sourceDataInfo, options);
+
+                    Test.Assert(result.Exceptions.Count == 1, "Verify job is cancelled");
+                    Exception exception = result.Exceptions[0];
+                    Helper.VerifyCancelException(exception);
+
+                    TransferItem resumeItem = transferItem.Clone();
+                    DirectoryTransferContext resumeContext = null;
+                    journalStream.Position = 0;
+                    if (IsStreamJournal)
+                    {
+                        resumeContext = new DirectoryTransferContext(journalStream);
+                    }
+                    else
+                    {
+                        resumeContext = new DirectoryTransferContext(DMLibTestHelper.RandomReloadCheckpoint(checkpoint));
+                    }
+
+                    resumeItem.TransferContext = resumeContext;
+
+                    result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
+                    VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
+
+                    Helper.CompareSMBProperties(sourceDataInfo.RootNode, result.DataInfo.RootNode, true);
+                    Helper.CompareSMBPermissions(
+                        sourceDataInfo.RootNode,
+                        result.DataInfo.RootNode,
+                        PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
+                }
+            }
+        }
+
+        [TestCategory(Tag.Function)]
+        [DMLibTestMethod(DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
         public void TestDirectoryMeta()
         {
             // Prepare data
@@ -720,7 +965,7 @@ namespace DMLibTest.Cases
             // Prepare data
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
             string sampleSDDL = "O:S-1-5-21-2146773085-903363285-719344707-1375029G:S-1-5-21-2146773085-903363285-719344707-513D:(A;ID;FA;;;BA)(A;OICIIOID;GA;;;BA)(A;ID;FA;;;SY)(A;OICIIOID;GA;;;SY)(A;ID;0x1301bf;;;AU)(A;OICIIOID;SDGXGWGR;;;AU)(A;ID;0x1200a9;;;BU)(A;OICIIOID;GXGR;;;BU)";
-            GenerateDirNodeWithPermissions(sourceDataInfo.RootNode, 2, sampleSDDL);
+            GenerateDirNodeWithAttributes(sourceDataInfo.RootNode, 2, null, sampleSDDL);
 
             DirectoryTransferContext dirTransferContext = new DirectoryTransferContext();
 
@@ -872,7 +1117,7 @@ namespace DMLibTest.Cases
             {
                 // Prepare data
                 DMLibDataInfo sourceDataInfo = new DMLibDataInfo("");
-                GenerateDirNodeWithPermissions(sourceDataInfo.RootNode, 2, sampleSDDL);
+                GenerateDirNodeWithAttributes(sourceDataInfo.RootNode, 2, null, sampleSDDL);
 
                 DirectoryTransferContext dirTransferContext = null;
 
@@ -908,7 +1153,9 @@ namespace DMLibTest.Cases
                 options.AfterAllItemAdded = () =>
                 {
                     // Wait until there are data transferred
-                    progressChecker.DataTransferred.WaitOne();
+                    bool gotProgress = progressChecker.DataTransferred.WaitOne(60000);
+
+                    Test.Assert(gotProgress, "Should got progress");
 
                     if (!IsStreamJournal)
                     {
@@ -1008,18 +1255,21 @@ namespace DMLibTest.Cases
             parent.AddDirNode(dirNode);
         }
 
-        private void GenerateDirNodeWithPermissions(
+        private void GenerateDirNodeWithAttributes(
             DirNode parent,
             int dirLevel,
+            CloudFileNtfsAttributes? smbAttributes,
             string permissions)
         {
             FileNode fileNode = new FileNode(DMLibTestBase.FileName + "_0");
             fileNode.SizeInByte = 1024;
+            fileNode.SMBAttributes = smbAttributes;
             fileNode.PortableSDDL = permissions;
             parent.AddFileNode(fileNode);
 
             fileNode = new FileNode(DMLibTestBase.FileName + "_1");
             fileNode.SizeInByte = 1024;
+            fileNode.SMBAttributes = smbAttributes;
             fileNode.PortableSDDL = permissions;
             parent.AddFileNode(fileNode);
 
@@ -1030,39 +1280,7 @@ namespace DMLibTest.Cases
 
             --dirLevel;
             DirNode dirNode = new DirNode(DMLibTestBase.DirName + "_0");
-            dirNode.PortableSDDL = permissions;
-            this.GenerateDirNodeWithPermissions(dirNode, dirLevel, permissions);
-            parent.AddDirNode(dirNode);
-
-            dirNode = new DirNode(DMLibTestBase.DirName + "_1");
-            dirNode.PortableSDDL = permissions;
-            this.GenerateDirNodeWithPermissions(dirNode, dirLevel, permissions);
-            parent.AddDirNode(dirNode);
-        }
-
-        private void GenerateDirNodeWithAttributes(
-            DirNode parent,
-            int dirLevel,
-            CloudFileNtfsAttributes smbAttributes)
-        {
-            FileNode fileNode = new FileNode(DMLibTestBase.FileName + "_0");
-            fileNode.SizeInByte = 1024;
-            fileNode.SMBAttributes = smbAttributes;
-            parent.AddFileNode(fileNode);
-
-            fileNode = new FileNode(DMLibTestBase.FileName + "_1");
-            fileNode.SizeInByte = 1024;
-            fileNode.SMBAttributes = smbAttributes;
-            parent.AddFileNode(fileNode);
-
-            if (dirLevel <= 0)
-            {
-                return;
-            }
-
-            --dirLevel;
-            DirNode dirNode = new DirNode(DMLibTestBase.DirName + "_0");
-            this.GenerateDirNodeWithAttributes(dirNode, dirLevel, smbAttributes);
+            this.GenerateDirNodeWithAttributes(dirNode, dirLevel, smbAttributes, permissions);
             if (smbAttributes == CloudFileNtfsAttributes.Normal)
             {
                 dirNode.SMBAttributes = CloudFileNtfsAttributes.Directory;
@@ -1071,10 +1289,11 @@ namespace DMLibTest.Cases
             {
                 dirNode.SMBAttributes = CloudFileNtfsAttributes.Directory | smbAttributes;
             }
+            dirNode.PortableSDDL = permissions;
             parent.AddDirNode(dirNode);
 
             dirNode = new DirNode(DMLibTestBase.DirName + "_1");
-            this.GenerateDirNodeWithAttributes(dirNode, dirLevel, smbAttributes);
+            this.GenerateDirNodeWithAttributes(dirNode, dirLevel, smbAttributes, permissions);
             if (smbAttributes == CloudFileNtfsAttributes.Normal)
             {
                 dirNode.SMBAttributes = CloudFileNtfsAttributes.Directory;
@@ -1083,6 +1302,7 @@ namespace DMLibTest.Cases
             {
                 dirNode.SMBAttributes = CloudFileNtfsAttributes.Directory | smbAttributes;
             }
+            dirNode.PortableSDDL = permissions;
             parent.AddDirNode(dirNode);
         }
     }

@@ -101,7 +101,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             string fullPath = null;
             if (Interop.CrossPlatformHelpers.IsWindows)
             {
-                fullPath = LongPath.ToUncPath(path);
+                fullPath = TransferManager.Configurations.SupportUncPath ? 
+                    LongPath.ToUncPath(path) :
+                    LongPath.GetFullPath(path);
             }
             else
             {
@@ -235,7 +237,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             string fullPath = null;
             if(Interop.CrossPlatformHelpers.IsWindows)
             {
-                fullPath = LongPath.ToUncPath(path);
+                fullPath = TransferManager.Configurations.SupportUncPath ?
+                    LongPath.ToUncPath(path) :
+                    LongPath.GetFullPath(path);
             }
             else
             {
@@ -441,8 +445,20 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                         }
                         // Cross-plat file system accessibility settings may cause exceptions while
                         // retrieving attributes from inaccessible paths. These paths shold be skipped.
-                        catch (FileNotFoundException) { }
-                        catch (IOException) { }
+                        catch (FileNotFoundException ex)
+                        {
+                            if (!TransferManager.Configurations.SupportUncPath)
+                            {
+                                throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.FailedToGetFileInfoException, filePath), ex);
+                            }
+                        }
+                        catch (IOException ex)
+                        {
+                            if (!TransferManager.Configurations.SupportUncPath)
+                            {
+                                throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.FailedToGetFileInfoException, filePath), ex);
+                            }
+                        }
                         catch (UnauthorizedAccessException) { }
                         catch (Exception ex)
                         {

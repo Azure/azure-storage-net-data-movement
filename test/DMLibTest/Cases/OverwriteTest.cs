@@ -106,6 +106,17 @@ namespace DMLibTest.Cases
                 }
 
                 transferItem.TransferContext = transferContext;
+
+                dynamic transferOptions = DefaultTransferOptions;
+
+                if (DMLibTestContext.SourceType == DMLibDataType.CloudFile
+                    && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                {
+                    transferOptions.PreserveSMBAttributes = true;
+                    transferOptions.PreserveSMBPermissions = true;
+                }
+
+                transferItem.Options = transferOptions;
             };
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
@@ -134,6 +145,16 @@ namespace DMLibTest.Cases
 
                 VerificationHelper.VerifyTransferException(transferException, TransferErrorCode.NotOverwriteExistingDestination,
                     "Skipped file", destExistNName);
+            }
+
+            if (DMLibTestContext.SourceType == DMLibDataType.CloudFile 
+                && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+            {
+                Helper.CompareSMBProperties(expectedDataInfo.RootNode, result.DataInfo.RootNode, true);
+                Helper.CompareSMBPermissions(
+                    expectedDataInfo.RootNode,
+                    result.DataInfo.RootNode,
+                    PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
             }
         }
 
@@ -197,7 +218,16 @@ namespace DMLibTest.Cases
 
                 dynamic transferOptions = DefaultTransferDirectoryOptions;
                 transferOptions.Recursive = true;
+
+                if (DMLibTestContext.SourceType == DMLibDataType.CloudFile
+                    && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                {
+                    transferOptions.PreserveSMBAttributes = true;
+                    transferOptions.PreserveSMBPermissions = true;
+                }
+
                 transferItem.Options = transferOptions;
+                transferItem.TransferContext = transferContext;
             };
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
@@ -229,6 +259,16 @@ namespace DMLibTest.Cases
                 VerificationHelper.VerifySingleTransferStatus(result, 3, 0, 0, 1024 * 3);
                 Test.Assert(successCount == 3, "Very all transfers are success");
                 Test.Assert(skipCount == 0, "Very no transfer is skipped");
+            }
+
+            if (DMLibTestContext.SourceType == DMLibDataType.CloudFile 
+                && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+            {
+                Helper.CompareSMBProperties(expectedDataInfo.RootNode, result.DataInfo.RootNode, true);
+                Helper.CompareSMBPermissions(
+                    expectedDataInfo.RootNode,
+                    result.DataInfo.RootNode,
+                    PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
             }
         }
 
@@ -287,6 +327,16 @@ namespace DMLibTest.Cases
             options.TransferItemModifier = (fileNode, transferItem) =>
             {
                 transferItem.TransferContext = transferContext;
+
+                dynamic transferOptions = DefaultTransferOptions;
+                if (DMLibTestContext.SourceType == DMLibDataType.CloudFile
+                    && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                {
+                    transferOptions.PreserveSMBAttributes = true;
+                    transferOptions.PreserveSMBPermissions = true;
+                }
+
+                transferItem.Options = transferOptions;
             };
 
             var result = this.ExecuteTestCase(sourceDataInfo, options);
@@ -295,6 +345,16 @@ namespace DMLibTest.Cases
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
             Test.Assert(successCount == 2, "Verify success transfers");
             Test.Assert(skipCount == 0, "Verify skipped transfer");
+
+            if (DMLibTestContext.SourceType == DMLibDataType.CloudFile 
+                && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+            {
+                Helper.CompareSMBProperties(sourceDataInfo.RootNode, result.DataInfo.RootNode, true);
+                Helper.CompareSMBPermissions(
+                    sourceDataInfo.RootNode,
+                    result.DataInfo.RootNode,
+                    PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
+            }
         }
 
         [TestCategory(Tag.Function)]
@@ -319,6 +379,11 @@ namespace DMLibTest.Cases
             transferContext.FileSkipped += (object sender, TransferEventArgs args) =>
             {
                 Interlocked.Increment(ref skipCount);
+            };
+
+            transferContext.FileFailed += (object sender, TransferEventArgs args) =>
+            {
+                Test.Error("Transfer failed {0}", args.Exception);
             };
 
             transferContext.FileTransferred += (object sender, TransferEventArgs args) =>
@@ -356,6 +421,13 @@ namespace DMLibTest.Cases
 
                 dynamic transferOptions = DefaultTransferDirectoryOptions;
                 transferOptions.Recursive = true;
+                if (DMLibTestContext.SourceType == DMLibDataType.CloudFile
+                    && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+                {
+                    transferOptions.PreserveSMBAttributes = true;
+                    transferOptions.PreserveSMBPermissions = true;
+                }
+
                 transferItem.Options = transferOptions;
             };
 
@@ -366,6 +438,16 @@ namespace DMLibTest.Cases
             VerificationHelper.VerifySingleTransferStatus(result, 2, 0, 0, 1024 * 2);
             Test.Assert(successCount == 2, "Verify success transfers");
             Test.Assert(skipCount == 0, "Verify skipped transfer");
+
+            if (DMLibTestContext.SourceType == DMLibDataType.CloudFile 
+                && DMLibTestContext.DestType == DMLibDataType.CloudFile)
+            {
+                Helper.CompareSMBProperties(sourceDataInfo.RootNode, result.DataInfo.RootNode, true);
+                Helper.CompareSMBPermissions(
+                    sourceDataInfo.RootNode,
+                    result.DataInfo.RootNode,
+                    PreserveSMBPermissions.Owner | PreserveSMBPermissions.Group | PreserveSMBPermissions.DACL | PreserveSMBPermissions.SACL);
+            }
         }
     }
 }

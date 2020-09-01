@@ -7,6 +7,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Globalization;
+    using System.IO;
     using System.Reflection;
     using System.Runtime.InteropServices;
     using ClientLibraryConstants = Microsoft.Azure.Storage.Shared.Protocol.Constants;
@@ -46,6 +47,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Initializes a new instance of the
         /// <see cref="TransferConfigurations" /> class.
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         public TransferConfigurations()
         {
             // setup default values.
@@ -54,6 +56,19 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.MemoryChunkSize = Constants.DefaultMemoryChunkSize;
 
             this.UpdateMaximumCacheSize(this.blockSize);
+            this.SupportUncPath = false;
+
+            if (Interop.CrossPlatformHelpers.IsWindows)
+            {
+                try
+                {
+                    LongPath.GetFullPath("\\\\?\\F:");
+                    this.SupportUncPath = true;
+                }
+                catch (Exception)
+                {
+                }
+            }
         }
 
         /// <summary>
@@ -83,6 +98,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating how many listing works to process concurrently.
+        /// When source is an Azure File directory or local file directory, DataMovement Library would list the directory in parallel.
+        /// This value is to indicate the maximum number of listing works to process in parallel.
+        /// </summary>
+        /// <value>How many listing works to process concurrently.</value>
         public int? MaxListingConcurrency
         {
             get
@@ -191,6 +212,16 @@ namespace Microsoft.Azure.Storage.DataMovement
                 TransferManager.SetMemoryLimitation(this.maximumCacheSize);
             }
         }
+
+        /// <summary>
+        /// To indicate whether the process environment supports UNC path.
+        /// 
+        /// On Windows, it requires to use UNC path to access files/directories with long path. 
+        /// In some environment, the .Net Framework only supports legacy path without UNC path support.
+        /// DataMovement Library will detect whether .Net Framework supports UNC path in the process environment 
+        /// to determine whether to use UNC path in the following transfers.
+        /// </summary>
+        internal bool SupportUncPath { get; private set; }
 
         /// <summary>
         /// The size of memory chunk of memory pool

@@ -139,7 +139,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             var originalMetadata = new Dictionary<string, string>(this.pageBlob.Metadata);
             Utils.SetAttributes(this.pageBlob, this.SharedTransferData.Attributes);
-            await this.Controller.SetCustomAttributesAsync(this.pageBlob);
+            await this.Controller.SetCustomAttributesAsync(this.TransferJob.Source.Instance, this.pageBlob);
 
             await this.pageBlob.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),

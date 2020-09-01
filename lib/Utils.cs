@@ -356,6 +356,8 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
 
                 requestOptions.DisableContentMD5Validation = customRequestOptions.DisableContentMD5Validation;
+
+                requestOptions.EncryptionScope = customRequestOptions.EncryptionScope;
             }
 
             return requestOptions;
@@ -872,6 +874,11 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (cloudFileNtfsAttributes == CloudFileNtfsAttributes.None) cloudFileNtfsAttributes = CloudFileNtfsAttributes.Normal;
 
             return cloudFileNtfsAttributes;
+        }
+
+        public static string ToLongPath(this string originPath)
+        {
+            return TransferManager.Configurations.SupportUncPath ? LongPath.ToUncPath(originPath) : originPath;
         }
 
         private static bool IsValidWindowsFileName(string fileName)

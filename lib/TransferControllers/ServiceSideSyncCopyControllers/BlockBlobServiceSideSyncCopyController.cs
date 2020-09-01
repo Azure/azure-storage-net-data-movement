@@ -256,7 +256,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     OverWriteAll = true
                 });
 
-            await this.SetCustomAttributesAsync(this.destBlockBlob);
+            await this.SetCustomAttributesAsync(this.TransferJob.Source.Instance, this.destBlockBlob);
 
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
