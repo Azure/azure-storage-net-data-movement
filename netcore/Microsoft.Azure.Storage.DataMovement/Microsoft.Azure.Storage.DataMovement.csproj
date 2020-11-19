@@ -26,7 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\lib\**\*.cs;..\..\tools\AssemblyInfo\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+    <Compile Include="..\..\lib\**\*.cs;..\..\tools\AssemblyInfo\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**;..\..\lib\obj\**" />
   </ItemGroup>
 
   <ItemGroup>
