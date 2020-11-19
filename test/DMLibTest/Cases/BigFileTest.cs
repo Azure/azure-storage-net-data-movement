@@ -70,10 +70,12 @@ namespace DMLibTest
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
             DMLibDataHelper.AddMultipleFilesBigSize(sourceDataInfo.RootNode, DMLibTestBase.FileName);
 
-            var result = this.ExecuteTestCase(sourceDataInfo, new TestExecutionOptions<DMLibDataInfo>());
+            var option = new TestExecutionOptions<DMLibDataInfo>();
+            var result = this.ExecuteTestCase(sourceDataInfo, option);
 
             Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
             Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+            this.ValidateDestinationMD5ByDownloading(result.DataInfo, option);
         }
     }
 }
