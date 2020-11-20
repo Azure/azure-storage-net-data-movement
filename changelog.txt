@@ -1,3 +1,7 @@
+2020.11.20 Version 2.0.1
+ * All Service on both .Net Framework and .Net Core
+   - Fixed an issue which may cause data loss in copying with ServiceSideSyncCopy, when source and destination are both Page Blob or Azure File.
+
 2020.08.31 Version 2.0.0
  * All Service on both .Net Framework and .Net Core
    - Upgraded Microsoft.Azure.Storage.Blob from 11.1.2 to 11.2.2
