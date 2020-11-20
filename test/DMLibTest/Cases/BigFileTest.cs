@@ -80,7 +80,11 @@ namespace DMLibTest
 
                 Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
                 Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
-                this.ValidateDestinationMD5ByDownloading(result.DataInfo, option);
+
+                if (!(DMLibTestContext.DestType == DMLibDataType.Local || DMLibTestContext.DestType == DMLibDataType.Stream))
+                {
+                    this.ValidateDestinationMD5ByDownloading(result.DataInfo, option);
+                }
             }
             finally
             {
