@@ -58,8 +58,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         protected override async Task DoPreCopyAsync()
         {
             this.hasWork = false;
-            this.pagesToCopy = new List<long>();
-            this.pageListBag = new ConcurrentBag<List<long>>();
             long rangeSpanOffset = this.nextRangesSpanOffset;
             long rangeSpanLength = Math.Min(Constants.PageRangesSpanSize, this.SourceHandler.TotalLength - rangeSpanOffset);
 
@@ -95,6 +93,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             if (this.getRangesCountdownEvent.Signal())
             {
+                this.pagesToCopy = new List<long>();
                 foreach (var pageListInARange in this.pageListBag)
                 {
                     this.pagesToCopy.AddRange(pageListInARange);
@@ -157,6 +156,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 {
                     int rangeSpanCount = (int)Math.Ceiling(((double)(this.SourceHandler.TotalLength - this.nextRangesSpanOffset)) / Constants.PageRangesSpanSize);
                     this.getRangesCountdownEvent = new CountdownEvent(rangeSpanCount);
+                    this.pageListBag = new ConcurrentBag<List<long>>();
                     this.state = State.PreCopy;
                 }
             }

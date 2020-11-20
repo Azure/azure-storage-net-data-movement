@@ -10,6 +10,7 @@ namespace DMLibTest
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using DMLibTestCodeGen;
+    using Microsoft.Azure.Storage.DataMovement;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using MS.Test.Common.MsTestLib;
 
@@ -67,13 +68,28 @@ namespace DMLibTest
         [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirection)]
         public void TransferBigSizeObject()
         {
-            DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
-            DMLibDataHelper.AddMultipleFilesBigSize(sourceDataInfo.RootNode, DMLibTestBase.FileName);
+            int originParallel = TransferManager.Configurations.ParallelOperations;
+            TransferManager.Configurations.ParallelOperations = 4;
+            try
+            {
+                DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
+                DMLibDataHelper.AddMultipleFilesBigSize(sourceDataInfo.RootNode, DMLibTestBase.FileName);
 
-            var result = this.ExecuteTestCase(sourceDataInfo, new TestExecutionOptions<DMLibDataInfo>());
+                var option = new TestExecutionOptions<DMLibDataInfo>();
+                var result = this.ExecuteTestCase(sourceDataInfo, option);
 
-            Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
-            Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+                Test.Assert(result.Exceptions.Count == 0, "Verify no exception is thrown.");
+                Test.Assert(DMLibDataHelper.Equals(sourceDataInfo, result.DataInfo), "Verify transfer result.");
+
+                if (!(DMLibTestContext.DestType == DMLibDataType.Local || DMLibTestContext.DestType == DMLibDataType.Stream))
+                {
+                    this.ValidateDestinationMD5ByDownloading(result.DataInfo, option);
+                }
+            }
+            finally
+            {
+                TransferManager.Configurations.ParallelOperations = originParallel;
+            }
         }
     }
 }

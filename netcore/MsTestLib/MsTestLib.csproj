@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\test\MsTestLib\**\*.cs" Exclude="bin\**;obj\**;**\*.xproj;packages\**" />
+    <Compile Include="..\..\test\MsTestLib\**\*.cs" Exclude="bin\**;obj\**;..\..\test\MsTestLib\obj\**;**\*.xproj;packages\**" />
   </ItemGroup>
 
   <ItemGroup>

@@ -88,7 +88,7 @@ namespace DMLibTest
 
         public static void AddMultipleFilesBigSize(DirNode dirNode, string filePrefix)
         {
-            int[] fileSizes = new int[] { 32000, 64 * 1024 };
+            int[] fileSizes = new int[] { 32000, 64 * 1024, 257 * 1024,  1024 * 1024};
             AddMultipleFilesDifferentSize(dirNode, filePrefix, fileSizes);
         }
 
