@@ -1962,7 +1962,8 @@ namespace Microsoft.Azure.Storage.DataMovement
                 BytesTransferred = progress.BytesTransferred,
                 NumberOfFilesTransferred = progress.NumberOfFilesTransferred,
                 NumberOfFilesSkipped = progress.NumberOfFilesSkipped,
-                NumberOfFilesFailed = progress.NumberOfFilesFailed
+                NumberOfFilesFailed = progress.NumberOfFilesFailed,
+                NumberOfDirectoriesCreated = progress.NumberOfDirectoriesCreated
             };
         }
 

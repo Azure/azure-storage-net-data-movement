@@ -16,19 +16,20 @@ namespace DMLibTest
         private ProgressValue<long> failedNumber;
         private ProgressValue<long> skippedNumber;
         private ProgressValue<long> transferedBytes;
+        private ProgressValue<long> directoriesCreated;
         private long totalNumber = 0;
         private long totalBytes = 0;
         private ManualResetEvent dataTransferred;
 
-        public ProgressChecker() : this(0, 0, null, null, null, null)
+        public ProgressChecker() : this(0, 0, null, null, null, null, null)
         {
         }
 
-        public ProgressChecker(long totalNumber, long totalBytes) : this(totalNumber, totalBytes, null, null, null, null)
+        public ProgressChecker(long totalNumber, long totalBytes) : this(totalNumber, totalBytes, null, null, null, null, null)
         {
         }
 
-        public ProgressChecker(long totalNumber, long totalBytes, long? transferedNumber, long? failedNumber, long? skippedNumber, long? transferedBytes)
+        public ProgressChecker(long totalNumber, long totalBytes, long? transferedNumber, long? failedNumber, long? skippedNumber, long? transferedBytes, long? directoriesCreated)
         {
             this.totalNumber = totalNumber;
             this.totalBytes = totalBytes;
@@ -37,6 +38,7 @@ namespace DMLibTest
             this.failedNumber = this.CreateProgressValue(failedNumber);
             this.skippedNumber = this.CreateProgressValue(skippedNumber);
             this.transferedBytes = this.CreateProgressValue(transferedBytes);
+            this.directoriesCreated = this.CreateProgressValue(directoriesCreated);
 
             this.dataTransferred = new ManualResetEvent(false);
         }
@@ -62,6 +64,14 @@ namespace DMLibTest
             get
             {
                 return this.failedNumber.PreviousValue;
+            }
+        }
+
+        public long DirectoriesCreated
+        {
+            get
+            {
+                return this.directoriesCreated.PreviousValue;
             }
         }
 
@@ -92,6 +102,7 @@ namespace DMLibTest
             this.CheckIncrease(this.transferedNumber, progress.NumberOfFilesTransferred, "NumberOfFilesTransferred");
             this.CheckIncrease(this.failedNumber, progress.NumberOfFilesFailed, "NumberOfFilesFailed");
             this.CheckIncrease(this.skippedNumber, progress.NumberOfFilesSkipped, "NumberOfFilesSkipped");
+            this.CheckIncrease(this.directoriesCreated, progress.NumberOfDirectoriesCreated, "NumberofDirectoriesCreated");
         }
 
         public void Reset()
@@ -100,6 +111,7 @@ namespace DMLibTest
             this.Reset(this.skippedNumber);
             this.Reset(this.failedNumber);
             this.Reset(this.transferedBytes);
+            this.Reset(this.directoriesCreated);
             this.dataTransferred.Reset();
         }
 

@@ -79,11 +79,24 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             try
             {
+                var operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
+                operationContext.SendingRequest += (sender, eventArgs) =>
+                {
+                    eventArgs.Request.Headers.Remove(Constants.MSVersionHeaderName);
+                    eventArgs.Request.Headers.Add(Constants.MSVersionHeaderName, Constants.LargeSMBFileVersion);
+                };
+
+                operationContext.Retrying += (sender, eventArgs) =>
+                {
+                    eventArgs.Request.Headers.Remove(Constants.MSVersionHeaderName);
+                    eventArgs.Request.Headers.Add(Constants.MSVersionHeaderName, Constants.LargeSMBFileVersion);
+                };
+
                 await this.cloudFile.CreateAsync(
                     size,
                     null,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions, true),
-                    Utils.GenerateOperationContext(this.Controller.TransferContext),
+                    operationContext,
                     this.CancellationToken).ConfigureAwait(false);
             }
             catch (StorageException ex)

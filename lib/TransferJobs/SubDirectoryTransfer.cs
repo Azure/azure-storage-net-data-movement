@@ -137,6 +137,8 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             this.CreateDestinationDirectory(cancellationToken);
 
+            this.baseDirectoryTransfer.ProgressTracker.AddNumberOfDirectoriesCreated(1);
+
             var enumerator = this.transferEnumerator.EnumerateLocation(cancellationToken).GetEnumerator();
 
             while (true)

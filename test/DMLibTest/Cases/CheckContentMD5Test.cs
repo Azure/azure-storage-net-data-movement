@@ -120,6 +120,7 @@ namespace DMLibTest.Cases
         {
             long fileSize = 5 * 1024 * 1024;
             long totalSize = fileSize * 4;
+            int numberOfDirectories = 2;
             string wrongMD5 = "wrongMD5";
 
             string checkWrongMD5File = "checkWrongMD5File";
@@ -159,7 +160,7 @@ namespace DMLibTest.Cases
                 }
             };
 
-            ProgressChecker progressChecker = new ProgressChecker(4, totalSize, 3, 1, 0, totalSize);
+            ProgressChecker progressChecker = new ProgressChecker(4, totalSize, 3, 1, 0, totalSize, 1);
             context.ProgressHandler = progressChecker.GetProgressHandler();
             List<Exception> transferExceptions = new List<Exception>();
             context.FileFailed += (eventSource, eventArgs) =>
@@ -211,7 +212,7 @@ namespace DMLibTest.Cases
 
             Test.Assert(DMLibDataHelper.Equals(expectedDataInfo, actualDataInfo), "Verify transfer result.");
             Test.Assert(failureReported, "Verify md5 check failure is reported.");
-            VerificationHelper.VerifyFinalProgress(progressChecker, 3, 0, 1);
+            VerificationHelper.VerifyFinalProgress(progressChecker, 3, 0, 1, numberOfDirectories);
 
             if (testResult.Exceptions.Count != 0 || transferExceptions.Count != 1)
             {
@@ -229,6 +230,7 @@ namespace DMLibTest.Cases
         {
             long fileSize = 5 * 1024;
             int fileCountMulti = 32;
+            int numberOfDirectories = 2;
             long totalSize = fileSize * 4 * fileCountMulti;
             string wrongMD5 = "wrongMD5";
 
@@ -279,7 +281,7 @@ namespace DMLibTest.Cases
             TransferContext context = new DirectoryTransferContext();
             eventChecker.Apply(context);
             
-            ProgressChecker progressChecker = new ProgressChecker(4 * fileCountMulti, totalSize, 3 * fileCountMulti, null, 0, totalSize);
+            ProgressChecker progressChecker = new ProgressChecker(4 * fileCountMulti, totalSize, 3 * fileCountMulti, null, 0, totalSize, numberOfDirectories);
             context.ProgressHandler = progressChecker.GetProgressHandler();
             List<Exception> transferExceptions = new List<Exception>();
            
@@ -371,7 +373,7 @@ namespace DMLibTest.Cases
 
             Test.Assert(DMLibDataHelper.Equals(expectedDataInfo, actualDataInfo), "Verify transfer result.");
             Test.Assert(failureReported, "Verify md5 check failure is reported.");
-            VerificationHelper.VerifyFinalProgress(progressChecker, 3 * fileCountMulti, 0, fileCountMulti);
+            VerificationHelper.VerifyFinalProgress(progressChecker, 3 * fileCountMulti, 0, fileCountMulti, numberOfDirectories);
 
             if (testResult.Exceptions.Count != 0 || transferExceptions.Count != fileCountMulti)
             {
@@ -398,6 +400,7 @@ namespace DMLibTest.Cases
         {
             long fileSize = 5 * 1024;
             int fileCountMulti = 32;
+            int numberOfDirectories = 1;
             long totalSize = fileSize * 4 * fileCountMulti;
             string wrongMD5 = "wrongMD5";
 
@@ -432,7 +435,7 @@ namespace DMLibTest.Cases
                 eventChecker.Apply(context);
 
                 ProgressChecker progressChecker = new ProgressChecker(2 * fileCountMulti,
-                    totalSize, checkMD5 ? fileCountMulti : 2 * fileCountMulti, null, 0, totalSize);
+                    totalSize, checkMD5 ? fileCountMulti : 2 * fileCountMulti, null, 0, totalSize, numberOfDirectories);
 
                 context.ProgressHandler = progressChecker.GetProgressHandler();
                 List<Exception> transferExceptions = new List<Exception>();
@@ -513,7 +516,7 @@ namespace DMLibTest.Cases
 
                 Test.Assert(DMLibDataHelper.Equals(expectedDataInfo, actualDataInfo), "Verify transfer result.");
                 Test.Assert(checkMD5 ? failureReported : !failureReported, "Verify md5 check failure is expected.");
-                VerificationHelper.VerifyFinalProgress(progressChecker, checkMD5 ? fileCountMulti : 2 * fileCountMulti, 0, checkMD5 ? fileCountMulti : 0);
+                VerificationHelper.VerifyFinalProgress(progressChecker, checkMD5 ? fileCountMulti : 2 * fileCountMulti, 0, checkMD5 ? fileCountMulti : 0, numberOfDirectories);
 
                 if (checkMD5)
                 {

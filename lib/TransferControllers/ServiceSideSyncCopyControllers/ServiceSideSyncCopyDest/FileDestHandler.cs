@@ -175,11 +175,24 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
         private Task CreateDestinationAsync(long totalLength, AccessCondition accessCondition, CancellationToken cancellationToken)
         {
+            var operationContext = Utils.GenerateOperationContext(this.transferContext);
+            operationContext.SendingRequest += (sender, eventArgs) =>
+            {
+                eventArgs.Request.Headers.Remove(Constants.MSVersionHeaderName);
+                eventArgs.Request.Headers.Add(Constants.MSVersionHeaderName, Constants.LargeSMBFileVersion);
+            };
+
+            operationContext.Retrying += (sender, eventArgs) =>
+            {
+                eventArgs.Request.Headers.Remove(Constants.MSVersionHeaderName);
+                eventArgs.Request.Headers.Add(Constants.MSVersionHeaderName, Constants.LargeSMBFileVersion);
+            };
+
             return this.destFile.CreateAsync(
                     totalLength,
                     accessCondition,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
-                    Utils.GenerateOperationContext(this.transferContext),
+                    operationContext,
                     cancellationToken);
         }
     }

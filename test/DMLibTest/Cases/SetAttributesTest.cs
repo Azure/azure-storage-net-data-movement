@@ -516,6 +516,7 @@ namespace DMLibTest.Cases
             SetAttributesCallbackAsync setAttributesCallback = null, 
             Action<DMLibDataInfo> sourceDataInfoDecorator = null)
         {
+            int numberOfDirectories = 2;
             int totalFileNum = bigFileNum + smallFileNum;
             long totalSizeInBytes = ((bigFileSizeInKB * bigFileNum) + (smallFileSizeInKB * smallFileNum)) * 1024;
 
@@ -540,7 +541,7 @@ namespace DMLibTest.Cases
                 var transferContext = isStreamJournal ? new DirectoryTransferContext(journalStream) : new DirectoryTransferContext();
                 transferContext.SetAttributesCallbackAsync = setAttributesCallback;
 
-                var progressChecker = new ProgressChecker(totalFileNum, totalSizeInBytes, totalFileNum, null, 0, totalSizeInBytes);
+                var progressChecker = new ProgressChecker(totalFileNum, totalSizeInBytes, totalFileNum, null, 0, totalSizeInBytes, numberOfDirectories);
                 transferContext.ProgressHandler = progressChecker.GetProgressHandler();
                 
                 var eventChecker = new TransferEventChecker();
@@ -631,7 +632,7 @@ namespace DMLibTest.Cases
 
                 sourceDataInfoDecorator?.Invoke(sourceDataInfo);
 
-                VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0);
+                VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0, numberOfDirectories);
                 VerificationHelper.VerifySingleTransferStatus(result, totalFileNum, 0, 0, totalSizeInBytes);
                 VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
 
@@ -658,7 +659,7 @@ namespace DMLibTest.Cases
 
                     result = this.RunTransferItems(new List<TransferItem>() { resumeItem }, new TestExecutionOptions<DMLibDataInfo>());
 
-                    VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0);
+                    VerificationHelper.VerifyFinalProgress(progressChecker, totalFileNum, 0, 0, numberOfDirectories);
                     VerificationHelper.VerifySingleTransferStatus(result, totalFileNum, 0, 0, totalSizeInBytes);
                     VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
                 }

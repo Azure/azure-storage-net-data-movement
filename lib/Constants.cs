@@ -40,6 +40,17 @@ namespace Microsoft.Azure.Storage.DataMovement
         public const string DirectoryBlobMetadataKey = "hdi_isfolder";
 
         /// <summary>
+        /// The storage service version header
+        /// </summary>
+        internal const string MSVersionHeaderName = "x-ms-version";
+
+        /// <summary>
+        /// The storage service version that supports Large SMB File
+        /// </summary>
+        internal const string LargeSMBFileVersion = "2020-02-10";
+
+
+        /// <summary>
         /// Maximum length for SDDL string to be set in x-ms-permission header. 
         /// For SDDL string longer than this value, should invoke CreatePermission on Share first and then set permission-key to x-ms-permission-key header.
         /// It allows at most 8KB length for a header value. 

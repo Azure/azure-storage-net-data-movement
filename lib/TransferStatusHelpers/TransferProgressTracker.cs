@@ -26,6 +26,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         private const string FilesTransferredName = "FilesTransferred";
         private const string FilesSkippedName = "FilesSkipped";
         private const string FilesFailedName = "FilesFailed";
+        private const string DirectoryCreatedName = "DirectoryCreated";
 
         /// <summary>
         /// Stores the number of bytes that have been transferred.
@@ -60,6 +61,14 @@ namespace Microsoft.Azure.Storage.DataMovement
         private long numberOfFilesFailed;
 
         /// <summary>
+        /// Stores number of directories created
+        /// </summary>
+#if !BINARY_SERIALIZATION
+        [DataMember]
+#endif
+        private long numberOfDirectoriesCreated;
+
+        /// <summary>
         /// A flag indicating whether the progress handler is being invoked
         /// </summary>
         private int invokingProgressHandler;
@@ -73,6 +82,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.numberOfFilesTransferred = 0;
             this.numberOfFilesSkipped = 0;
             this.numberOfFilesFailed = 0;
+            this.numberOfDirectoriesCreated = 0;
         }
 
 #if BINARY_SERIALIZATION
@@ -92,6 +102,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.numberOfFilesTransferred = info.GetInt64(FilesTransferredName);
             this.numberOfFilesSkipped = info.GetInt64(FilesSkippedName);
             this.numberOfFilesFailed = info.GetInt64(FilesFailedName);
+            this.numberOfDirectoriesCreated = info.GetInt64(DirectoryCreatedName);
         }
 #endif // BINARY_SERIALIZATION
 
@@ -104,6 +115,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.numberOfFilesTransferred = other.NumberOfFilesTransferred;
             this.numberOfFilesSkipped = other.NumberOfFilesSkipped;
             this.numberOfFilesFailed = other.NumberOfFilesFailed;
+            this.numberOfDirectoriesCreated = other.numberOfDirectoriesCreated;
         }
 
         /// <summary>
@@ -166,6 +178,17 @@ namespace Microsoft.Azure.Storage.DataMovement
             get
             {
                 return Interlocked.Read(ref this.numberOfFilesFailed);
+            }
+        }
+        
+        /// <summary>
+        /// Gets number of direcotries created.
+        /// </summary>
+        public long NumberOfDirectoriesCreated
+        {
+            get
+            {
+                return Interlocked.Read(ref this.numberOfDirectoriesCreated);
             }
         }
 
@@ -244,12 +267,28 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.InvokeProgressHandler();
         }
 
+        public void AddNumberOfDirectoriesCreated(long numberOfDirectoriesToIncrease)
+        {
+            if (numberOfDirectoriesToIncrease != 0)
+            {
+                Interlocked.Add(ref this.numberOfDirectoriesCreated, numberOfDirectoriesToIncrease);
+
+                if (this.Parent != null)
+                {
+                    this.Parent.AddNumberOfDirectoriesCreated(numberOfDirectoriesToIncrease);
+                }
+            }
+
+            this.InvokeProgressHandler();
+        }
+
         public void AddProgress(TransferProgressTracker progressTracker)
         {
             this.AddBytesTransferred(progressTracker.BytesTransferred);
             this.AddNumberOfFilesFailed(progressTracker.NumberOfFilesFailed);
             this.AddNumberOfFilesSkipped(progressTracker.NumberOfFilesSkipped);
             this.AddNumberOfFilesTransferred(progressTracker.NumberOfFilesTransferred);
+            this.AddNumberOfDirectoriesCreated(progressTracker.numberOfDirectoriesCreated);
         }
 
         /// <summary>
@@ -278,6 +317,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             info.AddValue(FilesTransferredName, this.NumberOfFilesTransferred);
             info.AddValue(FilesSkippedName, this.NumberOfFilesSkipped);
             info.AddValue(FilesFailedName, this.NumberOfFilesFailed);
+            info.AddValue(DirectoryCreatedName, this.numberOfDirectoriesCreated);
         }
 #endif // BINARY_SERIALIZATION
 
@@ -300,6 +340,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                                 NumberOfFilesTransferred = this.NumberOfFilesTransferred,
                                 NumberOfFilesSkipped = this.NumberOfFilesSkipped,
                                 NumberOfFilesFailed = this.NumberOfFilesFailed,
+                                NumberOfDirectoriesCreated = this.NumberOfDirectoriesCreated
                             });
                     }
                 }
