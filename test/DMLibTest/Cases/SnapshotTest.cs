@@ -323,6 +323,7 @@ namespace DMLibTest.Cases
             Test.Assert(task.Wait(15 * 60 * 100), "Tansfer finished in time.");
             Test.Assert(task.Result.NumberOfFilesFailed == 0, "No Failed File.");
             Test.Assert(task.Result.NumberOfFilesSkipped == 0, "No Skipped File.");
+            Test.Assert(task.Result.NumberOfDirectoriesCreated == 0, "Number of directories created: {0}", task.Result.NumberOfDirectoriesCreated);
             Test.Assert(task.Result.NumberOfFilesTransferred == fileCount, string.Format("Transferred file :{0} == {1}", task.Result.NumberOfFilesTransferred, fileCount));
 
             // verify that Files in Share Snapshot is transferred

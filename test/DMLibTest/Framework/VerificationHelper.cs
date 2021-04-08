@@ -61,7 +61,7 @@ namespace DMLibTest
             }
         }
 
-        public static void VerifyFinalProgress(ProgressChecker progressChecker, long? transferredFilesNum, long? skippedFilesNum, long? failedFilesNum)
+        public static void VerifyFinalProgress(ProgressChecker progressChecker, long? transferredFilesNum, long? skippedFilesNum, long? failedFilesNum, long? directoriesCreated)
         {
             if (transferredFilesNum != null)
             {
@@ -77,13 +77,18 @@ namespace DMLibTest
             {
                 Test.Assert(progressChecker.FailedFilesNumber == (int)failedFilesNum, "Verify failed files number: expected {0}, actual {1}.", failedFilesNum, progressChecker.FailedFilesNumber);
             }
+
+            if (directoriesCreated != null)
+            {
+                Test.Assert(progressChecker.DirectoriesCreated == (int)directoriesCreated, "Verify failed files number: expected {0}, actual {1}.", failedFilesNum, progressChecker.FailedFilesNumber);
+            }
         }
 
         public static void VerifySingleTransferStatus(TestResult<DMLibDataInfo> result, long? transferredFilesNum, long? skippedFilesNum, long? failedFilesNum, long? transferredBytes)
         {
             if (result.TransferItems.Count != 1)
             {
-                Test.Error(string.Format("Expect exact one transfer item. Actaul {0}", result.TransferItems.Count));
+                Test.Error(string.Format("Expect exact one transfer item. Actual {0}", result.TransferItems.Count));
                 return;
             }
 
