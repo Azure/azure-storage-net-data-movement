@@ -1,3 +1,18 @@
+## Support Statement
+
+- We will be making only fixes related data integrity and security for 2.0.XX.
+- We will not be adding new storage service version support for this SDK. 
+- We will not be back porting fixes and features added to the current version to the versions in this repo
+- We will not be making any changes to the performance characteristics of this SDK.
+    
+If you are looking for support for any feature in our new storage service versions (e.g. Blob, File, DataLake) please look to our V12 releases. 
+| SDK Name      | Version       | Description | NuGet/API Reference Links |
+| ------------- | ------------- | ----------- | ----- |
+| [Blob Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Blobs) | v12.0.0 | The next generation Blob Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Blobs/) - [Reference](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-dotnet)
+| [File Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Files.Shares) | 12.0.0-preview.5 | The next generation File Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Files.Shares) - [Reference](https://docs.microsoft.com/en-us/dotnet/api/azure.storage.files?view=azure-dotnet-preview)
+| [Data Lake Storage SDK v12 for .NET](https://github.com/Azure/azure-sdk-for-net/tree/master/sdk/storage/Azure.Storage.Files.DataLake) | 12.0.0-preview.6 | The next generation Data Lake Storage SDK. Supports sync and async IO. | [NuGet](https://www.nuget.org/packages/Azure.Storage.Files.DataLake)
+
+
 # Microsoft Azure Storage Data Movement Library (2.0.1)
 
 The Microsoft Azure Storage Data Movement Library designed for high-performance uploading, downloading and copying Azure Storage Blob and File. This library is based on the core data movement framework that powers [AzCopy](https://azure.microsoft.com/documentation/articles/storage-use-azcopy/).
