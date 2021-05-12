@@ -1,3 +1,12 @@
+2021.05.12 Version 2.0.4
+ * Resolves issue of pointing to incorrect version of Microsoft.Azure.Storage.Blob and File libraries
+ * Upgraded to Microsoft.Azure.Storage.Blob to 11.2.3
+ * Upgraded to Microsoft.Azure.Storage.File to 11.2.3
+ * Upgraded to Microsoft.Azure.Storage.Common to 11.2.3
+ 
+2021.04.15 Version 2.0.3
+ * Nuget Release resolves warning of compatibility issues when Target Framework is using Net Core
+
 2021.04.14 Version 2.0.2
  * Upgraded Dependency System.Net.Http to v4.3.4 due to vulnerability in v4.3.0 on .Net Core
 
