@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             return true;
         }
-        
+
         /// <summary>
         /// Initializes a new instance of the <see cref="TransferContext" /> class.
         /// </summary>
@@ -123,6 +123,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             get;
             set;
         }
+
+
+        public IsPathValidAsync IsSourcePathValidAsync
+        {
+            get;
+            set;
+        }
+
 
         /// <summary>
         /// Gets or sets the progress update handler.

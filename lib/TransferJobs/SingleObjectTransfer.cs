@@ -46,7 +46,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         private TransferJob transferJob;
 
         private bool shouldTransferChecked = false;
-
+        private bool shouldValidateSource = true;
         /// <summary>
         /// Initializes a new instance of the <see cref="SingleObjectTransfer"/> class.
         /// This constructor will check whether source and destination is valid for the operation:
@@ -166,6 +166,20 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        public bool ShouldValidateSource
+        {
+	        get
+	        {
+		        return this.shouldValidateSource;
+	        }
+
+	        set
+	        {
+		        this.shouldValidateSource = value;
+
+	        }
+        }
+
         public AzureFileDirectorySDDLCache SDDLCache
         {
             get;
@@ -236,9 +250,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                 eventArgs.EndTime = DateTime.UtcNow;
                 eventArgs.Exception = exception;
 
-                if (exception.ErrorCode == TransferErrorCode.NotOverwriteExistingDestination)
+                if (exception.ErrorCode == TransferErrorCode.NotOverwriteExistingDestination 
+                    || exception.ErrorCode == TransferErrorCode.FailToValidateSource)
                 {
-                    // transfer skipped
+                    // transfer skipped due to either already existing on destination side or source path does not meet validation
                     this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Skipped);
                     if (this.Context != null)
                     {

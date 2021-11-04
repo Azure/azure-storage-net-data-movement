@@ -144,6 +144,16 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
             }
 
+            if (this.TransferJob.Transfer.ShouldValidateSource)
+            {
+	            var sourcePath = this.TransferJob.Source.Instance;
+	            var isValid = await IsSourcePathValidAsync(sourcePath);
+	            if (!isValid)
+	            {
+		            throw new TransferInvalidPathException();
+	            }
+            }
+            
             if (!this.reader.PreProcessed && this.reader.HasWork)
             {
                 await this.reader.DoWorkInternalAsync();
@@ -163,6 +173,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         protected override void SetErrorState(Exception ex)
         {
             this.ErrorOccurred = true;
+        }
+
+
+        private async Task<bool> IsSourcePathValidAsync(object source)
+        {
+	        if (null != this.TransferContext && null != this.TransferContext.IsSourcePathValidAsync)
+	        {
+		        return await this.TransferContext.IsSourcePathValidAsync(source);
+	        }
+
+	        return true;
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
