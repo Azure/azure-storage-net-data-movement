@@ -25,6 +25,7 @@ namespace DMLibTest.Cases
     using Xunit;
     using System.Threading.Tasks;
 
+    [Collection(Collections.Global)]
     [MultiDirectionTestClass]
     public class LongFilePathTest : DMLibTestBase, IClassFixture<LongFilePathTestFixture>, IDisposable
     {

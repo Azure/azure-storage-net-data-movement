@@ -13,8 +13,9 @@ namespace DMLibTestCodeGen
             DMLibDataType sourceType,
             DMLibDataType destType,
             DMLibCopyMethod copyMethod,
-            List<string> tags)
-            : base(tags)
+            List<string> tags,
+            bool ignore = false)
+            : base(tags, ignore)
         {
             this.SourceType = sourceType;
             this.DestType = destType;

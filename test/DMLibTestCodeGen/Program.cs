@@ -3,11 +3,11 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
+
 namespace DMLibTestCodeGen
 {
     using System;
     using System.Reflection;
-    using System.Threading;
 
     public enum FrameworkType
     { 
@@ -46,9 +46,11 @@ namespace DMLibTestCodeGen
 
             foreach (Type type in assembly.GetTypes())
             {
-                if (null != type.GetCustomAttribute(typeof(MultiDirectionTestClassAttribute)))
+                var multiDirectionTestClassAttribute = type.GetCustomAttribute(typeof(MultiDirectionTestClassAttribute)) as MultiDirectionTestClassAttribute;
+
+                if (null != multiDirectionTestClassAttribute)
                 {
-                    MultiDirectionTestClass testClass = new MultiDirectionTestClass(type);
+                    var testClass = new MultiDirectionTestClass(type, multiDirectionTestClassAttribute.Ignore);
                     codeGen.GenerateSourceCode(testClass);
                 }
             }
@@ -56,7 +58,7 @@ namespace DMLibTestCodeGen
 
         private static void PrintHelp()
         {
-            Console.WriteLine("Usage: DMLibTestCodeGen.exe [InputDll] [OutputSourceFolder] [FramworkType]");
+            Console.WriteLine("Usage: DMLibTestCodeGen.exe [InputDll] [OutputSourceFolder] [FrameworkType]");
         }
     }
 }

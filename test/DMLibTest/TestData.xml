@@ -8,8 +8,6 @@
   <logwarning>true</logwarning>
   <logerror>true</logerror>
   <TestAgainst>DevFabric</TestAgainst>
-  <StorageConnectionString>DefaultEndpointsProtocol=https;AccountName=testaccount1;AccountKey=FjUfNl1KiJttbXlsdkMzBTC7WagvrRM9/g6UPBuy0ypCpAbYTL6/KA+dI/7gyoWvLFYmah3IviUP1jykOHHOlA==;BlobEndpoint=http://127.0.0.1:10000/testaccount1;QueueEndpoint=http://127.0.0.1:10001/testaccount1;TableEndpoint=http://127.0.0.1:10002/testaccount1;FileEndpoint=http://127.0.0.1:10004/testaccount1</StorageConnectionString>
-  <StorageConnectionString2>DefaultEndpointsProtocol=https;AccountName=dmtestaccount1;AccountKey=FjUfNl1KiJttbXlsdkMzBTC7WagvrRM9/g6UPBuy0ypCpAbYTL6/KA+dI/7gyoWvLFYmah3IviUP1jykOHHOlA==;BlobEndpoint=http://127.0.0.1:10000/dmtestaccount1;QueueEndpoint=http://127.0.0.1:10001/dmtestaccount1;TableEndpoint=http://127.0.0.1:10002/dmtestaccount1;FileEndpoint=http://127.0.0.1:10004/dmtestaccount1</StorageConnectionString2>
   <FileName>testfile</FileName>
   <FileSize>1024</FileSize>
   <FolderName>testfolder</FolderName>

@@ -64,7 +64,8 @@ namespace DMLibTestCodeGen
                             sourceType,
                             sourceType,
                             this.CopyMethod,
-                            new List<string>(this.Tags));
+                            new List<string>(this.Tags),
+                            Ignore);
                     yield return transferDirection;
                 }
             }
@@ -79,7 +80,8 @@ namespace DMLibTestCodeGen
                                 sourceType,
                                 destType,
                                 this.CopyMethod,
-                                new List<string>(this.Tags));
+                                new List<string>(this.Tags),
+                                Ignore);
                         yield return transferDirection;
                     }
                 }

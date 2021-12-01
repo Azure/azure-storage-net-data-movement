@@ -177,15 +177,36 @@ namespace MS.Test.Common.MsTestLib
 
             if (TestParams.ContainsKey(paramName))
             {
-                return TestParams[paramName].Trim();
+                if (!String.IsNullOrWhiteSpace(TestParams[paramName]))
+                {
+                    return TestParams[paramName].Trim();
+                }
+            }
+
+            var paramValue = GetEnvironmentalVariable(paramName);
+
+            if (paramValue != null)
+            {
+                return paramValue.Trim();
             }
 
             throw new ArgumentException("The test param does not exist.", paramName);
-
-            //return null;
-            
         }
 
+        private string GetEnvironmentalVariable(string paramName)
+        {
+            switch (paramName)
+            {
+                case "StorageConnectionString":
+                    return Environment.GetEnvironmentVariable("DM_LIB_CONNECTION_STRING_SOURCE");
+                case "StorageConnectionString2":
+                    return Environment.GetEnvironmentVariable("DM_LIB_CONNECTION_STRING_DESTINATION");
+                case "DestinationEncryptionScope":
+                    return Environment.GetEnvironmentVariable("DESTINATION_ENCRYPTION_SCOPE");
+                default:
+                    return Environment.GetEnvironmentVariable(paramName);
+            }
+        }
     }
 
 }

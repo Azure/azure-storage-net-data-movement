@@ -10,6 +10,8 @@ namespace DMLibTestCodeGen
 
     public abstract class MultiDirectionTestMethodAttribute : Attribute
     {
+        public bool Ignore { get; set; }
+
         protected string[] Tags
         {
             get;

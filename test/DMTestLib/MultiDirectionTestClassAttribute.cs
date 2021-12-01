@@ -10,6 +10,8 @@ namespace DMLibTestCodeGen
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public class MultiDirectionTestClassAttribute : Attribute
     {
+        public bool Ignore { get; set; }
+
         public MultiDirectionTestClassAttribute()
         {
         }

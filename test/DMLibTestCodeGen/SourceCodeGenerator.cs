@@ -19,13 +19,13 @@ namespace DMLibTestCodeGen
         public const string ClassCleanupMethodName = "GeneratedClassCleanup";
         public const string TestInitMethodName = "GeneratedTestInit";
         public const string TestCleanupMethodName = "GeneratedTestCleanup";
+        public const string IgnoreMessage = "IgnoredByTapi";
     }
 
     internal class SourceCodeGenerator
     {
         private const string SourceFileExtention = ".cs";
         private const string GeneratedSuffix = "_Generated";
-
         private string outputPath;
 
         public SourceCodeGenerator(string outputPath)
@@ -90,8 +90,8 @@ namespace DMLibTestCodeGen
 
             // Expand multiple direction test case
             foreach (MultiDirectionTestMethod testMethod in testClass.MultiDirectionMethods)
-            {
-                this.AddGeneratedMethod(result, testMethod);
+            { 
+                this.AddGeneratedMethod(result, testMethod, testClass.Ignore);
             }
 
             return result;
@@ -217,10 +217,11 @@ namespace DMLibTestCodeGen
             return result;
         }
 
-        private void AddGeneratedMethod(CodeTypeDeclaration generatedClass, MultiDirectionTestMethod testMethod)
+        private void AddGeneratedMethod(CodeTypeDeclaration generatedClass, MultiDirectionTestMethod testMethod, bool testClassIgnored)
         {
             foreach (var transferDirection in testMethod.GetTransferDirections())
             {
+                
                 string generatedMethodName = this.GetGeneratedMethodName(testMethod, transferDirection);
 
                 CodeMemberMethod generatedMethod = new CodeMemberMethod();
@@ -239,8 +240,10 @@ namespace DMLibTestCodeGen
 
                 testMethodAttribute = new CodeAttributeDeclaration(
                     new CodeTypeReference(typeof(MSUnittest.TestMethodAttribute)));
-
+                    
                 generatedMethod.CustomAttributes.Add(testMethodAttribute);
+
+                IgnoreIfExpected(generatedMethod, testMethodAttribute, transferDirection.Ignore || testMethod.Ignore || testClassIgnored);
 
                 if (Program.FrameWorkType == FrameworkType.DNetCore)
                 {
@@ -258,6 +261,31 @@ namespace DMLibTestCodeGen
                 CodeMethodInvokeExpression invokeExp = new CodeMethodInvokeExpression(callee);
                 generatedMethod.Statements.Add(invokeExp);
                 generatedClass.Members.Add(generatedMethod);
+                
+            }
+        }
+
+        private void IgnoreIfExpected(CodeMemberMethod generatedMethod, CodeAttributeDeclaration testMethodAttribute, bool ignored)
+        {
+            if (ignored)
+            {
+                if (Program.FrameWorkType == FrameworkType.DNetCore)
+                {
+                    var skipArgument = new CodeAttributeArgument("Skip", new CodePrimitiveExpression(GodeGeneratorConst.IgnoreMessage));
+
+                    testMethodAttribute.Arguments.Add(skipArgument);
+                }
+                else
+                {
+                    var ignoreAttribute = new CodeAttributeDeclaration(
+                        new CodeTypeReference("Microsoft.VisualStudio.TestTools.UnitTesting.Ignore"));
+
+                    var ignoreAttributeArgument = new CodeAttributeArgument(new CodePrimitiveExpression(GodeGeneratorConst.IgnoreMessage));
+
+                    ignoreAttribute.Arguments.Add(ignoreAttributeArgument);
+
+                    generatedMethod.CustomAttributes.Add(ignoreAttribute);
+                }
             }
         }
 

@@ -12,6 +12,8 @@ namespace DMLibTestCodeGen
 
     internal class MultiDirectionTestClass
     {
+        public bool Ignore { private set; get; }
+
         public Type ClassType
         {
             private set;
@@ -48,9 +50,10 @@ namespace DMLibTestCodeGen
             get;
         }
 
-        public MultiDirectionTestClass(Type type)
+        public MultiDirectionTestClass(Type type, bool ignore = false)
         {
             this.ClassType = type;
+            Ignore = ignore;
             this.MultiDirectionMethods = new List<MultiDirectionTestMethod>();
 
             this.ParseTestMethods(type);
@@ -67,6 +70,8 @@ namespace DMLibTestCodeGen
         private void ParseTestMethod(MethodInfo methodInfo)
         {
             bool isMultiDirectionMethod = false;
+            bool ignore = false;
+
             foreach (Attribute attribute in methodInfo.GetCustomAttributes(true))
             {
                 if (attribute is ClassInitializeAttribute)
@@ -88,16 +93,19 @@ namespace DMLibTestCodeGen
                 else if (attribute is MultiDirectionTestMethodAttribute)
                 {
                     isMultiDirectionMethod = true;
+                    ignore = (attribute as MultiDirectionTestMethodAttribute).Ignore;
                 }
                 else if (attribute is MultiDirectionTestMethodSetAttribute)
                 {
                     isMultiDirectionMethod = true;
+                    ignore = (attribute as MultiDirectionTestMethodSetAttribute).Ignore;
+
                 }
             }
 
             if (isMultiDirectionMethod)
             {
-                this.MultiDirectionMethods.Add(new MultiDirectionTestMethod(methodInfo));
+                this.MultiDirectionMethods.Add(new MultiDirectionTestMethod(methodInfo, ignore));
             }
         }
     }

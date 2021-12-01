@@ -14,14 +14,18 @@ namespace DMLibTestCodeGen
     {
         private HashSet<TestMethodDirection> transferDirections;
 
+        public bool Ignore { get; private set; }
+
         public MethodInfo MethodInfoObj
         {
             get;
             private set;
         }
 
-        public MultiDirectionTestMethod(MethodInfo methodInfo)
+        public MultiDirectionTestMethod(MethodInfo methodInfo, bool ignore = false)
         {
+            Ignore = ignore;
+
             this.MethodInfoObj = methodInfo;
             transferDirections = new HashSet<TestMethodDirection>();
 

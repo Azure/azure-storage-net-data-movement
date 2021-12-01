@@ -6,13 +6,13 @@
 
 namespace DMLibTest.Cases
 {
-    using System;
-    using System.Net;
     using DMLibTestCodeGen;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Microsoft.Azure.Storage;
     using Microsoft.Azure.Storage.DataMovement;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using MS.Test.Common.MsTestLib;
+    using System;
+    using System.Net;
 
     [MultiDirectionTestClass]
     public class AccessConditionTest : DMLibTestBase

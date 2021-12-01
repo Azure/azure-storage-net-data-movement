@@ -9,14 +9,18 @@ namespace DMLibTestCodeGen
 
     public abstract class TestMethodDirection
     {
+        public bool Ignore { get; private set; }
+
         public List<string> Tags
         {
             get;
             private set;
         }
 
-        public TestMethodDirection(List<string> tags)
+        public TestMethodDirection(List<string> tags, bool ignore = false)
         {
+            Ignore = ignore;
+
             if (null != tags)
             {
                 this.Tags = new List<string>(tags);

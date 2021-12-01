@@ -10,7 +10,7 @@
     <DelaySign>true</DelaySign>
     <AssemblyName>Microsoft.Azure.Storage.DataMovement</AssemblyName>
     <AssemblyOriginatorKeyFile>../../tools/strongnamekeys/fake/windows.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <PackageId>Microsoft.WindowsAzure.Storage.DataMovement</PackageId>
     <AssetTargetFallback>$(AssetTargetFallback);dnxcore50;portable-net451+win8</AssetTargetFallback>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>

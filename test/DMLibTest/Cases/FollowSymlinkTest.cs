@@ -16,7 +16,7 @@ namespace DMLibTest
     using Microsoft.Azure.Storage.DataMovement;
     using MS.Test.Common.MsTestLib;
 
-    [MultiDirectionTestClass]
+    [MultiDirectionTestClass()]
     public class FollowSymlinkTest : DMLibTestBase
 #if DNXCORE50
         , IDisposable
@@ -77,7 +77,7 @@ namespace DMLibTest
         #endregion
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalSource)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalSource, Ignore = true)]
         public void FollowSymlink_Set_True()
         {
 #if DNXCORE50

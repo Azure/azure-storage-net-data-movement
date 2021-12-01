@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="MSTest.TestAdapter" Version="2.2.7" />
+    <PackageReference Include="MSTest.TestFramework" Version="2.2.7" />
+    <PackageReference Include="System.CodeDom" Version="6.0.0" />
+    <PackageReference Include="xunit" Version="2.2.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="..\..\test\DMLibTestCodeGen\*.cs">
+      <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\DMTestLib\DMTestLib.csproj" />
+    <ProjectReference Include="..\MsTestLib\MsTestLib.csproj" />
+  </ItemGroup>
+
+</Project>
