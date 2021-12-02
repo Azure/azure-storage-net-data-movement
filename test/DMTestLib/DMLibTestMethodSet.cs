@@ -11,6 +11,7 @@ namespace DMLibTestCodeGen
     public enum DMLibTestMethodSet
     {
         AllValidDirection,
+        AllValidDirectionExcludingCloudFileDest,
         Cloud2Cloud,
         AllAsync,
         AllSync,
@@ -19,6 +20,7 @@ namespace DMLibTestCodeGen
         CloudBlobSource,
         CloudFileSource,
         LocalSource,
+        LocalSourceExcludingCloudFileDest,
         CloudDest,
         CloudBlobDest,
         CloudFileDest,
@@ -36,7 +38,7 @@ namespace DMLibTestCodeGen
         DirCloudDest,
         DirCloudBlobDest,
         DirCloudFileDest,
-        DirLocalDest,
+        DirLocalDest
     }
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true, Inherited = false)]
@@ -117,6 +119,13 @@ namespace DMLibTestCodeGen
                 case DMLibTestMethodSet.AllValidDirection:
                     this.AddTestMethodAttribute(AllValidDirectionSet);
                     break;
+                case DMLibTestMethodSet.AllValidDirectionExcludingCloudFileDest:
+                    this.AddTestMethodAttribute(AllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        DestType = DMLibDataType.CloudBlob | DMLibDataType.Local | DMLibDataType.Stream | DMLibDataType.URI
+                    });
+                    break;
                 case DMLibTestMethodSet.Cloud2Cloud:
                     this.AddTestMethodAttribute(AllValidDirectionSet);
                     this.AddDirectionFilter(new DMLibDirectionFilter()
@@ -153,6 +162,7 @@ namespace DMLibTestCodeGen
                         SourceType = DMLibDataType.Cloud,
                     });
                     break;
+
                 case DMLibTestMethodSet.CloudBlobSource:
                     this.AddTestMethodAttribute(AllValidDirectionSet);
                     this.AddDirectionFilter(new DMLibDirectionFilter()
@@ -172,6 +182,14 @@ namespace DMLibTestCodeGen
                     this.AddDirectionFilter(new DMLibDirectionFilter()
                     {
                         SourceType = DMLibDataType.Local,
+                    });
+                    break;
+                case DMLibTestMethodSet.LocalSourceExcludingCloudFileDest:
+                    this.AddTestMethodAttribute(AllValidDirectionSet);
+                    this.AddDirectionFilter(new DMLibDirectionFilter()
+                    {
+                        SourceType = DMLibDataType.Local,
+                        DestType = DMLibDataType.CloudBlob | DMLibDataType.Local | DMLibDataType.Stream | DMLibDataType.URI
                     });
                     break;
                 case DMLibTestMethodSet.CloudDest:

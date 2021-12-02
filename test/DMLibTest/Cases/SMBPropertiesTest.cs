@@ -441,7 +441,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.Local)]
-        [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile, Ignore = true)]
         public void TestPreserveSMBProperties()
         {
             if (!CrossPlatformHelpers.IsWindows) return;
@@ -563,9 +563,9 @@ namespace DMLibTest.Cases
         }
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethod(DMLibDataType.CloudFile)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, Ignore = true)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy, Ignore = true)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy, Ignore = true)]
         public void TestCopySMBPropertiesACL()
         {
             CloudFileNtfsAttributes[] SMBFileAttributes = {
@@ -635,9 +635,9 @@ namespace DMLibTest.Cases
 
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethod(DMLibDataType.CloudFile)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, Ignore = true)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy, Ignore = true)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy, Ignore = true)]
         public void TestCopyDirectorySMBPropertiesACL()
         {
             CloudFileNtfsAttributes[] SMBFileAttributes = {
@@ -692,9 +692,9 @@ namespace DMLibTest.Cases
         }
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethod(DMLibDataType.CloudFile)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, Ignore = true)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideSyncCopy, Ignore = true)]
+        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibCopyMethod.ServiceSideAsyncCopy, Ignore = true)]
         public void TestCopyDirectorySMBPropertiesACLResume()
         {
             CloudFileNtfsAttributes[] SMBFileAttributes = {
@@ -1027,7 +1027,7 @@ namespace DMLibTest.Cases
 
         [TestCategory(Tag.Function)]
         [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.Local)]
-        [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile)]
+        [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile, Ignore = true)]
         public void TestPreserveSMBPermissions()
         {
             if (!CrossPlatformHelpers.IsWindows) return;

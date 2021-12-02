@@ -103,7 +103,8 @@ namespace DMLibTest
         }
 
         [TestCategory(Tag.BVT)]
-        [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirection)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirectionExcludingCloudFileDest)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.CloudFileDest, Ignore = true)]
         public void TransferDifferentSizeObject()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
