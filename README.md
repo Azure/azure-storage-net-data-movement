@@ -3,7 +3,7 @@ This is a fork from Microsoft Azure Data Movement Library located here: https://
 
 Security fixes made on the original will be merged to this repository.
 
-This library is used by the **Relativity.TransferApi** made by Unarmed Tapirs Team, and you should not neet to use this library directly. Try checking **Relativity.TransferApi** for code samples.
+This library is used by the **Relativity.TransferApi** made by Unarmed Tapirs Team, and you should not need to use this library directly. Try checking **Relativity.TransferApi** for code samples.
 
 Required frameworks for developement of this fork:
 - .Net Framework 4.5.2+
