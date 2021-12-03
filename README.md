@@ -1,3 +1,36 @@
+## Relativity Azure Data Movement Library
+This is a fork from Microsoft Azure Data Movement Library located here: https://github.com/Azure/azure-storage-net-data-movement
+
+Security fixes made on the original will be merged to this repository.
+
+This library is used by the **Relativity.TransferApi** made by Unarmed Tapirs Team, and you should not neet to use this library directly. Try checking **Relativity.TransferApi** for code samples.
+
+Required frameworks for developement of this fork:
+- .Net Framework 4.5.2+
+- .Net Core 2.0.9+
+- .Net Core 3.1.0+
+
+For more information about this fork, please visit **Relativity Data Movement library** page on Einstein
+
+## Building 
+
+To build this solution open powershell, navigate to repository directory and type in the following command:
+
+`./build.ps1 compile`
+
+To run tests run following command in powershell:
+
+`./build.ps1 test`
+
+**REMARKS**
+- building this solution requires access to Artifactory which is recommended NuGet feed for working with Relativity packages
+- we highly suggest using Relativity VPN
+- To run the tests proper environment variables should be created, or required data should be filled in the TestData.xml file. For valid configuration of env variables please consult Einstein page
+
+
+
+# Original Microsofts Azure Data Movement Library readme starts here
+
 ## Support Statement
 
 - We will be making only fixes related data integrity and security for 2.0.XX.
