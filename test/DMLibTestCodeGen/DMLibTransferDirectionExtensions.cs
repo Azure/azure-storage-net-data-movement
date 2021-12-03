@@ -9,6 +9,11 @@ namespace DMLibTestCodeGen
 
         public static bool IsCopyTest(this DMLibTransferDirection transferDirection)
         {
+            return !transferDirection.IsUploadOrDownloadTest();
+        }
+
+        public static bool IsUploadOrDownloadTest(this DMLibTransferDirection transferDirection)
+        {
             return transferDirection.SourceType.IsLocal() || transferDirection.DestType.IsLocal();
         }
 
