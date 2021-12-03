@@ -76,11 +76,13 @@
     <Compile Include="..\..\tools\AssemblyInfo\SharedAssemblyInfo.cs">
       <Link>SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="DMLibDataTypeExtentions.cs" />
     <Compile Include="MultiDirectionTestClass.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SourceCodeGenerator.cs" />
     <Compile Include="TransferDirectionExtensions.cs" />
+    <Compile Include="DMLibTransferDirectionExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

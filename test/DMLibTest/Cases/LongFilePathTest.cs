@@ -93,7 +93,8 @@ namespace DMLibTest.Cases
         #endregion
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethodSet(DMLibTestMethodSet.LocalSource)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.LocalSourceExcludingCloudFileDest)]
+        [DMLibTestMethod(DMLibDataType.Local, DMLibDataType.CloudFile, Ignore = true)]
         public void LongFilePathSingleUpload()
         {
             int fileSizeInKB = 1;

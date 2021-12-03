@@ -160,7 +160,8 @@ namespace DMLibTest.Cases
         }
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudDest)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudBlobDest)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirCloudFileDest, Ignore = true)]
         public void TestSetAttributes()
         {
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);

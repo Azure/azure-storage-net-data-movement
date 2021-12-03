@@ -77,7 +77,7 @@ namespace DMLibTest
         #endregion
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalSource, Ignore = true)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.DirLocalSource)]
         public void FollowSymlink_Set_True()
         {
 #if DNXCORE50

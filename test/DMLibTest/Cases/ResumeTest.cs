@@ -67,7 +67,8 @@ namespace DMLibTest
         #endregion
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirection)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirectionExcludingCloudFileDest)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.CloudFileDest, Ignore = true)]
         public void TestResume()
         {
             int fileSizeInKB = 100 * 1024;

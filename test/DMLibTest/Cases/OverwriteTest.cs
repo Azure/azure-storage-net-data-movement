@@ -65,7 +65,8 @@ namespace DMLibTest.Cases
         #endregion
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirection)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirectionExcludingCloudFileDest)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.CloudFileDest, Ignore = true)]
         public void OverwriteDestination()
         {
             string destExistYName = "destExistY";
@@ -273,7 +274,8 @@ namespace DMLibTest.Cases
         }
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirection)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.AllValidDirectionExcludingCloudFileDest)]
+        [DMLibTestMethodSet(DMLibTestMethodSet.CloudFileDest, Ignore = true)]
         public void ForceOverwriteTest()
         {
             string destExistName = "destExist";
