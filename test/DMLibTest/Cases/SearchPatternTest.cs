@@ -121,6 +121,8 @@ namespace DMLibTest
                 nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "TestFile2"));
 
                 // Moved to Windows only case, because "?" doesn't work as test expects on Linux.
+                // On Windows "?" wildcard matches any or no character.
+                // On Linux "?" wildcard matches any character, but no character results in no match.
                 nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile"));
             }
 
