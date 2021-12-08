@@ -1,3 +1,4 @@
+set version=%1
 pushd %~dp0
 rmdir /s /q .\workspace
 mkdir .\workspace
@@ -12,7 +13,7 @@ copy .\lib\bin\Release\Microsoft.Azure.Storage.DataMovement.XML .\tools\nupkg\wo
 copy .\netcore\Microsoft.Azure.Storage.DataMovement\bin\Release\netstandard2.0\Microsoft.Azure.Storage.DataMovement.dll .\tools\nupkg\workspace\lib\netstandard2.0
 copy .\netcore\Microsoft.Azure.Storage.DataMovement\bin\Release\netstandard2.0\Microsoft.Azure.Storage.DataMovement.pdb .\tools\nupkg\workspace\lib\netstandard2.0
 copy .\netcore\Microsoft.Azure.Storage.DataMovement\bin\Release\netstandard2.0\Microsoft.Azure.Storage.DataMovement.xml .\tools\nupkg\workspace\lib\netstandard2.0
-.\.nuget\nuget.exe pack .\tools\nupkg\workspace\Microsoft.Azure.Storage.DataMovement.nuspec
+.\.nuget\nuget.exe pack .\tools\nupkg\workspace\Microsoft.Azure.Storage.DataMovement.nuspec -Prop version=%version%
 popd
 rmdir /s /q .\workspace
 popd

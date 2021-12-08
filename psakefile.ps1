@@ -7,43 +7,33 @@ properties {
 	$PDBsDir = Join-Path $ArtifactsDir "PDBs"
 	$NuGetDir = Join-Path $ArtifactsDir "NuGet"
 	$TestsArtifactsDir = Join-Path $ArtifactsDir "Tests"
-	$CliArtifactsDir = Join-Path $ArtifactsDir "CLI"
 	$LogsDir = Join-Path $ArtifactsDir "Logs"
 	$LogFilePath = Join-Path $LogsDir "buildsummary.log"
 	$ErrorLogFilePath = Join-Path $LogsDir "builderrors.log"
+	$VersionFilePath = Join-Path $PSScriptRoot "version.txt"
+	$NugetPublishUrl = "https://relativity.jfrog.io/relativity/api/nuget/nuget-local"
+
 }
 
 Task default -Depends Compile, Test -Description "Build and run unit tests. All the steps for a local build.";
 
 Task Restore -Description "Restores package dependencies" {
-    # why not dotnet restore?
-    # https://stackoverflow.com/a/69524636/17394184
-    # packages.config are not supported by dotnet restore (which supports new format of csproj files)
-    exec { .\.nuget\NuGet.exe @("restore")
+	# Why not dotnet restore?
+	# https://stackoverflow.com/a/69524636/17394184
+	# Some of DMLib's projects are in old format (with packages.config), which is not supported by dotnet restore
+	exec { .\.nuget\NuGet.exe @("restore")
 	}
 }
 
 Task Compile -Depends Restore -Description "Compile code for this repo" {
-	Initialize-Folder $ArtifactsDir -Safe
-	Initialize-Folder $LogsDir -Safe
-
-	exec { dotnet @("build", $Solution,
-			("/property:Configuration=$BuildConfig"),
-			("/consoleloggerparameters:Summary"),
-			("/nodeReuse:False"),
-			("/maxcpucount"),
-			("-verbosity:quiet"),
-			("/nologo"),
-			("/fileloggerparameters1:LogFile=`"$LogFilePath`""),
-			("/fileloggerparameters2:errorsonly;LogFile=`"$ErrorLogFilePath`""))
-	}
+	Compile
 }
 
 Task Test -Depends TestDMTestLib;
 
 Task TestDMTestLib {
-    RunTests "DMLibTest"
-    RunTests "DMLibTest_NetStandard"
+	RunTests "DMLibTest"
+	RunTests "DMLibTest_NetStandard"
 }
 
 Task PublishTests -Depends PublishTestsForLinux, PublishTestsForWindows -Description "Publish test DLLs for Windows and Linux runtime"
@@ -59,6 +49,68 @@ Task PublishTestsForWindows -Description "Publish test DLLs for Windows runtime"
 
 	$netFrameworkTestProject = Get-ChildItem $SourceDir\test\DMLibTest\*.csproj | Select-Object -First 1
 	PublishTestsNetFramework "$netFrameworkTestProject" "Windows"
+}
+
+Task Clean -Description "Delete build artifacts" {
+	Initialize-Folder $ArtifactsDir
+
+	Write-Verbose "Running Clean target on $Solution"
+	exec { dotnet @("msbuild", $Solution,
+			("/target:Clean"),
+			("/property:Configuration=$BuildConfig"),
+			("/consoleloggerparameters:Summary"),
+			("/nodeReuse:False"),
+			("/maxcpucount"),
+			("/nologo"))
+	}
+}
+
+Task Rebuild -Description "Do a rebuild" {
+	Initialize-Folder $ArtifactsDir
+
+	Write-Verbose "Running Rebuild target on $Solution"
+	exec { dotnet @("msbuild", $Solution,
+			("/target:Rebuild"),
+			("/property:Configuration=$BuildConfig"),
+			("/consoleloggerparameters:Summary"),
+			("/nodeReuse:False"),
+			("/maxcpucount"),
+			("/nologo"),
+			("/fileloggerparameters1:LogFile=`"$LogFilePath`""),
+			("/fileloggerparameters2:errorsonly;LogFile=`"$ErrorLogFilePath`""))
+	}
+}
+
+Task Help -Alias ? -Description "Display task information" {
+	WriteDocumentation
+}
+
+Task Package -Description "Package up the build artifacts" {
+	Initialize-Folder $NuGetDir -Safe
+
+	$version = Get-Content $VersionFilePath -First 1
+	& "$PSScriptRoot\tools\scripts\InjectBuildNumber.ps1" $version
+	Compile
+
+	$nuGet = CreateNuGet $version
+	MoveNuGetToArtifacts $nuGet
+	SavePDBs
+}
+
+function Compile() {
+	Initialize-Folder $ArtifactsDir -Safe
+	Initialize-Folder $LogsDir -Safe
+
+	exec { dotnet @("build", $Solution,
+			("/property:Configuration=$BuildConfig"),
+			("/consoleloggerparameters:Summary"),
+			("/nodeReuse:False"),
+			("/maxcpucount"),
+			("-verbosity:quiet"),
+			("/nologo"),
+			("/fileloggerparameters1:LogFile=`"$LogFilePath`""),
+			("/fileloggerparameters2:errorsonly;LogFile=`"$ErrorLogFilePath`""))
+	}
 }
 
 function PublishTestsNetCore($TestProject, $TargetDirectory, $TargetRuntime, $Framework = "netcoreapp2.0") {
@@ -97,7 +149,7 @@ function RunTests([string] $testProjectName) {
 	EnsureRequiredEnvVariables
 
 	$TestResultsPath = Join-Path $LogsDir "{assembly}.{framework}.TestResults.xml"
-	cd $SourceDir\test\$testProjectName
+	Set-Location $SourceDir\test\$testProjectName
 	exec { & dotnet @("test", "$testProjectName.csproj",
 			"--verbosity:minimal",
 			"--no-build",
@@ -111,7 +163,7 @@ function RunTests([string] $testProjectName) {
 }
 
 function Get-ProjectFiles {
-    return dotnet sln "$Solution" list | Select-Object -Skip 2
+	return dotnet sln "$Solution" list | Select-Object -Skip 2
 }
 
 # this will be used in the future when we will figure out how to safely use the certificate
@@ -145,56 +197,20 @@ function FormatEnvVariable([string] $variableName, [bool] $addExportPrefix) {
 	}
 }
 
-Task Clean -Description "Delete build artifacts" {
-	Initialize-Folder $ArtifactsDir
+function CreateNuGet($version) {
+	$buildNupkg = $BuildConfig -eq "Release" ? "BuildNupkg.cmd" : "buildDebugNupkg.cmd"
+	exec { & .\tools\nupkg\$buildNupkg $version } | Out-Null
 
-	Write-Verbose "Running Clean target on $Solution"
-	exec { dotnet @("msbuild", $Solution,
-			("/target:Clean"),
-			("/property:Configuration=$BuildConfig"),
-			("/consoleloggerparameters:Summary"),
-			("/nodeReuse:False"),
-			("/maxcpucount"),
-			("/nologo"))
-	}
+	$nupkg = (Get-ChildItem -Filter ".\*.nupkg" | Select-Object -First 1)
+	if ($null -eq $nupkg) {
+		throw "NuGet creation has failed."
+	} 
+	
+	return $nupkg
 }
 
-Task Rebuild -Description "Do a rebuild" {
-	Initialize-Folder $ArtifactsDir
-
-	Write-Verbose "Running Rebuild target on $Solution"
-	exec { dotnet @("msbuild", $Solution,
-			("/target:Rebuild"),
-			("/property:Configuration=$BuildConfig"),
-			("/consoleloggerparameters:Summary"),
-			("/nodeReuse:False"),
-			("/maxcpucount"),
-			("/nologo"),
-			("/fileloggerparameters1:LogFile=`"$LogFilePath`""),
-			("/fileloggerparameters2:errorsonly;LogFile=`"$ErrorLogFilePath`""))
-	}
-}
-
-Task Help -Alias ? -Description "Display task information" {
-	WriteDocumentation
-}
-
-Task Package -Depends Compile -Description "Package up the build artifacts" {
-	Initialize-Folder $NuGetDir -Safe
-
-	if ($BuildConfig -eq "Release") {
-		& .\tools\nupkg\BuildNupkg.cmd
-	}
-	else {
-		& .\tools\nupkg\buildDebugNupkg.cmd
-	}
-
-	MoveNuGetToArtifacts
-	SavePDBs
-}
-
-function MoveNuGetToArtifacts {
-	Write-Line-Host "Moving NuGet file to Artifactory directory..."
+function MoveNuGetToArtifacts($nuGet) {
+	WriteLineHost "Moving NuGet file to Artefacts directory..."
 
 	Get-ChildItem -Path $NuGetDir -Include *.nupkg -Recurse | Remove-Item
 	$files = Get-ChildItem -Path $NuGetDir -Include *.nupkg -Recurse
@@ -202,14 +218,13 @@ function MoveNuGetToArtifacts {
 		throw "Old NuGet package left. Clear it manually and then re-run a package task."
 	}
 
-	Move-Item -Path "$SourceDir\*.nupkg" -Destination $NuGetDir
+	Move-Item -Path $nuGet -Destination $NuGetDir
+	$nuGetPath = Get-ChildItem -Path $NuGetDir -Include *.nupkg -Recurse | Select-Object -Index 0
 
-	$nuGetPath = Get-ChildItem -Path $NuGetDir -Include *.nupkg -Recurse | Select-Object -index 0
-
-	Write-Line-Host "NuGet placed in $nuGetPath"
+	WriteLineHost "NuGet placed at $nuGetPath."
 }
 
-function Write-Line-Host($msg) {
+function WriteLineHost($msg) {
 	Write-Host
 	Write-Host $msg
 	Write-Host

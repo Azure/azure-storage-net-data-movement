@@ -11,6 +11,7 @@
     <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
     <DebugType>portable</DebugType>
     <DefineConstants>TRACE;DMLIB_TEST;DOTNET5_4;DNXCORE50;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;RUNTIME_INFORMATION</DefineConstants>
+	<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
 
   <ItemGroup>
