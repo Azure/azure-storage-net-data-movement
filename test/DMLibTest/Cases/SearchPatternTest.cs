@@ -119,9 +119,11 @@ namespace DMLibTest
             if (CrossPlatformHelpers.IsWindows)
             {
                 nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "folder1", "TestFile2"));
+
+                // Moved to Windows only case, because "?" doesn't work as test expects on Linux.
+                nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile"));
             }
 
-            nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile1"));
             nodesToKeep.Add(DMLibDataHelper.GetFileNode(expectedResult.RootNode, "testfile2"));
             DMLibDataHelper.RemoveAllFileNodesExcept(expectedResult.RootNode, nodesToKeep);
