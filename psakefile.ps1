@@ -12,6 +12,7 @@ properties {
 	$ErrorLogFilePath = Join-Path $LogsDir "builderrors.log"
 	$VersionFilePath = Join-Path $PSScriptRoot "version.txt"
 	$NugetPublishUrl = "https://relativity.jfrog.io/relativity/api/nuget/nuget-local"
+	$NugetApiKeyName = "UnarmedTapirsNugetApiKey"
 
 }
 
@@ -97,6 +98,25 @@ Task Package -Description "Package up the build artifacts" {
 	SavePDBs
 }
 
+Task Publish -Depends Package -Description "Publishes NuGet package to Artifactory" {
+	EnsureEnvironmentVariableForPublishing
+	
+	$nugetApiKey = (GetEnvironmentVariable($NugetApiKeyName)).Value
+	$nupkg = Get-ChildItem -Path $ArtifactsDir -Include *.nupkg -Recurse
+
+	if ($null -eq $nupkg) {
+		throw "There's no NuGet in Artifacts that can be published."
+	}
+
+	WriteLineHost "Publishing $nupkg to $NugetPublishUrl"
+
+	exec { .\.nuget\NuGet.exe @("push", "$nupkg", 
+			"-Source", "$NugetPublishUrl",
+			"-ApiKey", "$nugetApiKey",
+			"-Timeout", "501")
+	}
+}
+
 function Compile() {
 	Initialize-Folder $ArtifactsDir -Safe
 	Initialize-Folder $LogsDir -Safe
@@ -146,7 +166,7 @@ function PublishTestsNetFramework($TestProject, $TargetDirectory) {
 }
 
 function RunTests([string] $testProjectName) {	
-	EnsureRequiredEnvVariables
+	EnsureEnvironmentVariablesForTests
 
 	$TestResultsPath = Join-Path $LogsDir "{assembly}.{framework}.TestResults.xml"
 	Set-Location $SourceDir\test\$testProjectName
@@ -166,35 +186,29 @@ function Get-ProjectFiles {
 	return dotnet sln "$Solution" list | Select-Object -Skip 2
 }
 
-# this will be used in the future when we will figure out how to safely use the certificate
-Task Sign -Description "Sign all files" {
-	Get-ChildItem $PSScriptRoot -recurse `
-	| Where-Object { $_.Directory.FullName -notmatch "Vendor" -and $_.Directory.FullName -notmatch "packages" -and $_.Directory.FullName -notmatch "buildtools" -and $_.Directory.FullName -notmatch "obj" -and @(".dll", ".msi", ".exe") -contains $_.Extension } `
-	| Select-Object -expand FullName `
-	| Set-DigitalSignature -ErrorAction Stop
-}
-
-function EnsureRequiredEnvVariables() {
+function EnsureEnvironmentVariablesForTests() {
 	$variableNames = @("DM_LIB_CONNECTION_STRING_SOURCE", "DM_LIB_CONNECTION_STRING_DESTINATION", "DESTINATION_ENCRYPTION_SCOPE")
 
 	foreach ($variableName in $variableNames) {
-		$variable = (Get-ChildItem -Path Env: | Where-Object -Property Name -eq $variableName)
-		if (!$variable) {
-			Write-Host ""
-			throw "Missing required environment variables (DM_LIB_CONNECTION_STRING_SOURCE, DM_LIB_CONNECTION_STRING_DESTINATION, DESTINATION_ENCRYPTION_SCOPE). Tests won't run."
-		}
+		EnsureEnvironmentVariableExist($variableName)
 	}
 }
 
-function FormatEnvVariable([string] $variableName, [bool] $addExportPrefix) {
-	$variableValue = (Get-ChildItem -Path Env: | Where-Object -Property Name -eq $variableName).Value
+function EnsureEnvironmentVariableForPublishing() {
+	EnsureEnvironmentVariableExist($NugetApiKeyName)
+}
 
-	if ($addExportPrefix) {
-		return "export $variableName=$variableValue"
+function EnsureEnvironmentVariableExist($variableName) {
+	$variable = GetEnvironmentVariable($variableName)
+	
+	if (!$variable) {
+		Write-Host ""
+		throw "Missing required environment variable - $variableName. Script cannot continue."
 	}
-	else {
-		return "$variableName=$variableValue"
-	}
+}
+
+function GetEnvironmentVariable($variableName) {
+	return (Get-ChildItem -Path Env: | Where-Object -Property Name -eq $variableName)
 }
 
 function CreateNuGet($version) {
