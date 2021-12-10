@@ -1,32 +1,29 @@
-Function UpdateVersionInFile
-{
-    Param ([string]$path, [string]$prefix, [string]$suffix, [int]$verNum)
+Param(
+    [parameter(Mandatory = $true)]
+    [string]
+    $Version
+)
 
-    if ($env:BUILD_NUMBER)
-    {
+Function UpdateVersionInFile {
+    Param ([string]$path, [string]$prefix, [string]$suffix, [string]$verNum)
 
-        $lines = Get-Content $path -Encoding UTF8
+    $lines = Get-Content $path -Encoding UTF8
 
-        $new_lines =  $lines | %{
-            if ($_.StartsWith($prefix))
-            {
-                $num = $_.Substring($prefix.Length, $_.Length - $prefix.Length - $suffix.Length)
-                $num_p = $num.Split('.')
-                $new_num = [System.String]::Join('.', $num_p[0 .. ($verNum-2)] + $env:BUILD_NUMBER)
-                return $prefix + $new_num + $suffix
-            }
-            else
-            {
-                return $_
-            }        
+    $new_lines = $lines | % {
+        if ($_.StartsWith($prefix)) {
+            return $prefix + $verNum + $suffix
         }
-
-        Set-Content -Path $path -Value $new_lines -Encoding UTF8
+        else {
+            return $_
+        }        
     }
+
+    Set-Content -Path $path -Value $new_lines -Encoding UTF8
 }
 
-UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\nupkg\Microsoft.Azure.Storage.DataMovement.nuspec') '    <version>' '</version>' 4
+# Nuspec is now set directly via nuget pack orchestrated by build.ps1
+# UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\nupkg\Microsoft.Azure.Storage.DataMovement.nuspec') '    <version>' '</version>' 4
 
-UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\AssemblyInfo\SharedAssemblyInfo.cs') '[assembly: AssemblyFileVersion("' '")]' 4
+UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\AssemblyInfo\SharedAssemblyInfo.cs') '[assembly: AssemblyFileVersion("' '")]' $Version
 
-UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\..\netcore\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj') '    <Version>' '</Version>' 4
+UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\..\netcore\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj') '    <Version>' '</Version>' $Version

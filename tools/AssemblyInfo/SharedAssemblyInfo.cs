@@ -1,4 +1,4 @@
-﻿//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // <copyright file="SharedAssemblyInfo.cs" company="Microsoft">
 //    Copyright (c) Microsoft Corporation
 // </copyright>
@@ -12,8 +12,9 @@ using System.Reflection;
 using System.Resources;
 using System.Runtime.InteropServices;
 
+#pragma warning disable CS7035 // The specified version string does not conform to the recommended format - major.minor.build.revision 
 [assembly: AssemblyVersion("2.0.4.0")]
-[assembly: AssemblyFileVersion("2.0.4.0")]
+[assembly: AssemblyFileVersion("3.0.0-pre.1")]
 
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("Microsoft Azure Storage")]

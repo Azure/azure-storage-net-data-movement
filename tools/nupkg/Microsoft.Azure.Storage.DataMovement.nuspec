@@ -1,21 +1,16 @@
 ﻿<?xml version="1.0"?>
-<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
-  <metadata minClientVersion="2.12">
-    <id>Microsoft.Azure.Storage.DataMovement</id>
-    <version>2.0.4</version>
-    <title>Microsoft Azure Storage Data Movement Library</title>
-    <authors>Microsoft</authors>
-    <owners>Microsoft</owners>
-	<copyright>© Microsoft Corporation. All rights reserved.</copyright>
-    <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=624876</licenseUrl>
-    <projectUrl>https://github.com/Azure/azure-storage-net-data-movement</projectUrl>
-    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</iconUrl>
+<package>
+  <metadata>
+    <id>Relativity.TransferApi.DataMovement</id>
+    <version>$version$</version>
+    <authors>Relativity ODA LLC</authors>
+    <owners>Relativity ODA LLC</owners>
+    <projectUrl>https://platform.relativity.com/index.html</projectUrl>
+    <licenseUrl>https://www.relativity.com/nuget-relativity-license/</licenseUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
-    <description>Microsoft Azure Storage DataMovement Library offers a set of APIs extending the existing Azure Storage .Net Client Library to help customer transfer Azure Blob and File Storage with high-performance, scalability and reliability.
-      For this release, see notes - https://github.com/Azure/azure-storage-net-data-movement/blob/master/README.md and https://github.com/Azure/azure-storage-net-data-movement/blob/master/changelog.txt
-      Microsoft Azure Storage team's blog - http://blogs.msdn.com/b/windowsazurestorage/</description>
-    <summary>A client library designed for high-performance and scalable uploading, downloading and copying data to and from Microsoft Azure Blob and File Storage</summary>
-    <tags>Microsoft, Azure, Storage, Blob, File, DataMovement, Upload, Download, Copy, High-Performance, Scalable, Reliable, windowsazureofficial</tags>
+    <description>Fork of Microsoft's Azure Storage DataMovement Library (https://github.com/Azure/azure-storage-net-data-movement) tailored to meet Transfer API requirements. </description>
+    <copyright>© Relativity. All rights reserved.</copyright>
+    <tags>Relativity, Transfer API, Azure, Blob, Fileshare, DataMovement, Upload, Download</tags>
     <dependencies>
       <group targetFramework="net452">
         <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="1.8.0.0" />

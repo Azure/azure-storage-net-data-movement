@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Description>Microsoft.WindowsAzure.Storage.DataMovement Class Library</Description>
-    <Version>2.0.4.0</Version>
+    <Version>3.0.0-pre.1</Version>
     <Authors>Microsoft</Authors>
     <TargetFramework>netstandard2.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
