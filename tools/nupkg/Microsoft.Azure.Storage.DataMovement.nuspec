@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>Fork of Microsoft's Azure Storage DataMovement Library (https://github.com/Azure/azure-storage-net-data-movement) tailored to meet Transfer API requirements. </description>
     <copyright>© Relativity. All rights reserved.</copyright>
-    <tags>Relativity, Transfer API, Azure, ADLS, Blob, Fileshare, DataMovement, Upload, Download</tags>
+    <tags>Relativity, Transfer API, Azure, Blob, Fileshare, DataMovement, Upload, Download</tags>
     <dependencies>
       <group targetFramework="net452">
         <dependency id="Microsoft.WindowsAzure.ConfigurationManager" version="1.8.0.0" />
