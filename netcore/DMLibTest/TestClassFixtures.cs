@@ -172,17 +172,43 @@ namespace DMLibTest
         }
     }
 
-    public class OverwriteTestFixture : IDisposable
+    public class ValidateDestinationPathTestFixture : IDisposable
     {
-        public OverwriteTestFixture()
+        public ValidateDestinationPathTestFixture()
         {
-            OverwriteTest.MyClassInitialize(null);
+	        ValidateDestinationPathTest.MyClassInitialize(null);
         }
 
         public void Dispose()
         {
-            OverwriteTest.MyClassCleanup();
+	        ValidateDestinationPathTest.MyClassCleanup();
         }
+    }
+
+    public class OverwriteTestFixture : IDisposable
+    {
+	    public OverwriteTestFixture()
+	    {
+		    OverwriteTest.MyClassInitialize(null);
+	    }
+
+	    public void Dispose()
+	    {
+		    OverwriteTest.MyClassCleanup();
+	    }
+    }
+
+    public class ValidateSourcePathTestFixture : IDisposable
+    {
+	    public ValidateSourcePathTestFixture()
+	    {
+		    OverwriteTest.MyClassInitialize(null);
+	    }
+
+	    public void Dispose()
+	    {
+		    OverwriteTest.MyClassCleanup();
+	    }
     }
 
     public class ProgressHandlerTestFixture : IDisposable

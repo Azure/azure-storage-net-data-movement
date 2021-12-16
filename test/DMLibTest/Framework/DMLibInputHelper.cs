@@ -38,5 +38,30 @@ namespace DMLibTest
                 });
             };
         }
+
+        public static ValidatePathCallbackAsync GetDefaultFailedPathValidationCallback()
+        {
+	        return async source =>
+	        {
+		        await Task.Run(() =>
+		        {
+			        var error = $"Validation for path: {DMLibTestHelper.TransferInstanceToString(source)} should fail.";
+
+                    Test.Info(error);
+                    throw new Exception(error);
+		        });
+	        };
+        }
+
+        public static ValidatePathCallbackAsync GetDefaultSucceededPathValidationCallback()
+        {
+	        return async source =>
+	        {
+		        await Task.Run(() =>
+		        {
+			        Test.Info("Validation for path: {0} should pass.", DMLibTestHelper.TransferInstanceToString(source));
+		        });
+	        };
+        }
     }
 }

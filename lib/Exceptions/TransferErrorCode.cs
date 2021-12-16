@@ -125,5 +125,10 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Uncategorized transfer error.
         /// </summary>
         Unknown = 32,
+
+        /// <summary>
+        /// The path failed the validation. 
+        /// </summary>
+        PathCustomValidationFailed = 33,
     }
 }

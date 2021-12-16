@@ -145,6 +145,7 @@
     <Compile Include="Cases\SnapshotTest.cs" />
     <Compile Include="Cases\ChunkedMemoryStreamTests.cs" />
     <Compile Include="Cases\UnsupportedDirectionTest.cs" />
+    <Compile Include="Cases\ValidateDestinationPathTest.cs" />
     <Compile Include="Framework\AssemblyInitCleanup.cs" />
     <Compile Include="Framework\CopyWrapper.cs" />
     <Compile Include="Framework\DMLibDataHelper.cs" />
@@ -183,7 +184,7 @@
     <Compile Include="Util\Helpers.cs" />
     <Compile Include="Util\SASGenerator.cs" />
     <Compile Include="Util\TestAccounts.cs" />
-    <Compile Include="@(GeneratedSourceFile)"/>
+    <Compile Include="@(GeneratedSourceFile)" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\lib\DataMovement.csproj">

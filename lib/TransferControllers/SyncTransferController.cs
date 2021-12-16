@@ -13,7 +13,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     using System.Threading.Tasks;
     using Microsoft.Azure.Storage.Blob;
 
-    internal class SyncTransferController : TransferControllerBase
+    internal class SyncTransferController : TransferControllerBase  
     {
         private readonly TransferReaderWriterBase reader;
         private readonly TransferReaderWriterBase writer;
@@ -144,6 +144,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
             }
 
+            await ValidateDestinationPathAsync();
+
             if (!this.reader.PreProcessed && this.reader.HasWork)
             {
                 await this.reader.DoWorkInternalAsync();
@@ -163,6 +165,23 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         protected override void SetErrorState(Exception ex)
         {
             this.ErrorOccurred = true;
+        }
+
+        private async Task ValidateDestinationPathAsync()
+        {
+	        if (null != this.TransferContext && null != this.TransferContext.ValidateDestinationPathCallbackAsync)
+	        {
+		        var transferLocation = this.TransferJob.Destination;
+		        try
+		        {
+			        await this.TransferContext.ValidateDestinationPathCallbackAsync(transferLocation.Instance);
+		        }
+		        catch (Exception ex)
+		        {
+			        throw new TransferInvalidPathException(string.Format(CultureInfo.CurrentCulture, 
+				        Resources.DestinationPathValidationFailed, transferLocation.ToString()), ex);
+		        }
+	        }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]

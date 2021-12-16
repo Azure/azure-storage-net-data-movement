@@ -125,6 +125,15 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
         /// <summary>
+        /// Gets or sets the callback invoked to validate the destination. 
+        /// </summary>
+        public ValidatePathCallbackAsync ValidateDestinationPathCallbackAsync
+        {
+	        get;
+	        set;
+        }
+
+        /// <summary>
         /// Gets or sets the progress update handler.
         /// </summary>
         public IProgress<TransferStatus> ProgressHandler

@@ -88,6 +88,7 @@
     <Compile Include="ChunkedMemoryStream.cs" />
     <Compile Include="CopyMethod.cs" />
     <Compile Include="DirectoryListingScheduler.cs" />
+    <Compile Include="Exceptions\TransferInvalidPathException.cs" />
     <Compile Include="Extensions\StorageCopyState.cs" />
     <Compile Include="FileNativeMethods.cs" />
     <Compile Include="FileSecurityNativeMethods.cs" />

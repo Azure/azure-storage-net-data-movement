@@ -5,8 +5,7 @@
 //------------------------------------------------------------------------------
 namespace Microsoft.Azure.Storage.DataMovement
 {
-    using System;
-    using System.Threading.Tasks;
+	using System.Threading.Tasks;
 
     /// <summary>
     /// Callback invoked to tell whether to overwrite an existing destination.
@@ -35,4 +34,10 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// <param name="source">Source instance in the transfer.</param>
     /// <param name="destination">Instance of destination to be overwritten.</param>
     public delegate Task SetAttributesCallbackAsync(object source, object destination);
+
+    /// <summary>
+    /// Callback invoked to tell whether a path to be transferred is valid.
+    /// </summary>
+    /// <param name="destination">Instance of the transfer destination.</param>
+    public delegate Task ValidatePathCallbackAsync(object destination);
 }

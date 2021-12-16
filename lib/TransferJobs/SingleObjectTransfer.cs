@@ -36,6 +36,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     {
         private const string TransferJobName = "TransferJob";
         private const string ShouldTransferCheckedName = "ShouldTransferChecked";
+        private const string ShouldValidateDestinationName = "ShouldValidateDestination";
 
         /// <summary>
         /// Internal transfer job.
@@ -236,9 +237,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                 eventArgs.EndTime = DateTime.UtcNow;
                 eventArgs.Exception = exception;
 
-                if (exception.ErrorCode == TransferErrorCode.NotOverwriteExistingDestination)
+                if (exception.ErrorCode == TransferErrorCode.NotOverwriteExistingDestination ||
+                    exception.ErrorCode == TransferErrorCode.PathCustomValidationFailed)
                 {
-                    // transfer skipped
+	                // transfer skipped due to either already existing on destination side or its path does not meet validation
                     this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Skipped);
                     if (this.Context != null)
                     {
