@@ -24,6 +24,8 @@ Function UpdateVersionInFile {
 # Nuspec is now set directly via nuget pack orchestrated by build.ps1
 # UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\nupkg\Microsoft.Azure.Storage.DataMovement.nuspec') '    <version>' '</version>' 4
 
+UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\AssemblyInfo\SharedAssemblyInfo.cs') '[assembly: AssemblyVersion("' '")]' $Version
+
 UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\AssemblyInfo\SharedAssemblyInfo.cs') '[assembly: AssemblyFileVersion("' '")]' $Version
 
 UpdateVersionInFile ((Split-Path -Parent $PSCommandPath) + '\..\..\netcore\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj') '    <Version>' '</Version>' $Version
