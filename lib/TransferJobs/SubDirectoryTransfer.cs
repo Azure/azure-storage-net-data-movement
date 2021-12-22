@@ -614,7 +614,44 @@ namespace Microsoft.Azure.Storage.DataMovement
                             fileDirectory.Metadata.Add(keyValuePair);
                         }
 
-                        fileDirectory.SetMetadataAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
+                        try
+                        {
+                            fileDirectory.SetMetadataAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
+                        }
+                        catch (StorageException ex)
+                        {
+                            if (null != ex.RequestInformation)
+                            {
+                                // SetMetadata fails for directories with ReadOnlyAttribute set
+                                if (string.Equals("ReadOnlyAttribute", ex.RequestInformation.ErrorCode))
+                                {
+                                    // Remove the ReadOnly attribute
+                                    fileDirectory.Properties.NtfsAttributes &= ~CloudFileNtfsAttributes.ReadOnly;
+                                    fileDirectory.SetPropertiesAsync(
+                                        Transfer_RequestOptions.DefaultFileRequestOptions,
+                                        Utils.GenerateOperationContext(null),
+                                        cancellationToken).GetAwaiter().GetResult();
+
+                                    // Set the metadata
+                                    fileDirectory.SetMetadataAsync(null, Transfer_RequestOptions.DefaultFileRequestOptions, null, cancellationToken).GetAwaiter().GetResult();
+
+                                    // Restore the ReadOnly attribute
+                                    fileDirectory.Properties.NtfsAttributes |= CloudFileNtfsAttributes.ReadOnly;
+                                    fileDirectory.SetPropertiesAsync(
+                                        Transfer_RequestOptions.DefaultFileRequestOptions,
+                                        Utils.GenerateOperationContext(null),
+                                        cancellationToken).GetAwaiter().GetResult();
+                                }
+                                else
+                                {
+                                    throw;
+                                }
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
                     }
                 }
             }
