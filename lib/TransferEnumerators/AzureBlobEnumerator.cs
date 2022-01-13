@@ -177,6 +177,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
                         if (returnItOrNot)
                         {
+	                        if (IsDirectory(blob))
+	                        {
+		                        // just swallow the directory regardless is it empty or not - this part differs from original DML version
+		                        continue;
+	                        }
+
                             yield return new AzureBlobEntry(
                                 blob.Name.Remove(0, dirPrefix.Length),
                                 blob,
@@ -188,6 +194,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                 continuationToken = resultSegment.ContinuationToken;
             }
             while (continuationToken != null);
+        }
+
+		/// <summary>
+		/// Determines whether the specified blob is a directory based on its metadata.
+		/// </summary>
+		/// <returns>
+		///   <c>true</c> if the specified blob is a directory; otherwise, <c>false</c>.
+		/// </returns>
+		private static bool IsDirectory(CloudBlob blob)
+        {
+	        return blob.Metadata.ContainsKey(Constants.DirectoryBlobMetadataKey);
         }
 
         /// <summary>
