@@ -100,7 +100,26 @@ Task Package -Description "Package up the build artifacts" {
 
 Task Publish -Depends Package -Description "Publishes NuGet package to Artifactory" {
 	EnsureEnvironmentVariableForPublishing
+
+	if (CreatePromptGuardBeforePublish) {
+		PublishNuGetPackage
+		return
+	}
+}
+
+function CreatePromptGuardBeforePublish() {
+	Write-Host "`nThis command will publish nuget to Artifactory. If you are sure, type " -NoNewline -ForegroundColor Yellow
+	Write-Host "[yes, y] " -ForegroundColor Magenta -NoNewline
+	$answer = Read-Host
+
+	if (("y" -ieq $answer) -or ("yes" -ieq $answer)) {
+		return $true
+	}
 	
+	return $false
+}
+
+function PublishNuGetPackage() {
 	$nugetApiKey = (GetEnvironmentVariable($NugetApiKeyName)).Value
 	$nupkg = Get-ChildItem -Path $ArtifactsDir -Include *.nupkg -Recurse
 
