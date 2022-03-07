@@ -289,7 +289,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             else
             {
-                this.SetHasWorkOrFinished();
+                await this.SetHasWorkOrFinished().ConfigureAwait(false);
                 return;
             }
 
@@ -350,10 +350,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 });
             }
 
-            this.SetHasWorkOrFinished();
+            await this.SetHasWorkOrFinished().ConfigureAwait(false);
         }
 
-        private void SetHasWorkOrFinished()
+        private async Task SetHasWorkOrFinished()
         {
             if (this.expectOffset == this.SharedTransferData.TotalLength)
             {
@@ -399,6 +399,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             this.TransferJob.Transfer.PreserveSMBPermissions);
                     }
                 }
+
+                await this.Controller.SetCustomAttributesAsync(this.TransferJob.Source.Instance, this.filePath)
+                    .ConfigureAwait(false);
 
                 this.NotifyFinished(ex);
                 this.state = State.Finished;

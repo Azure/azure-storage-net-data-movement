@@ -92,14 +92,14 @@ namespace DMLibTest.Cases
         private static readonly string MetadataKey1 = FileOp.NextCIdentifierString(random);
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethod(DMLibDataType.CloudFile, DMLibDataType.Local)]
+        [DMLibTestMethod(DMLibDataType.Cloud, DMLibDataType.Local)]
         public void TestDirectorySetAttributesToLocal()
         {
             TestSetAttributesToLocal(true);
         }
 
         [TestCategory(Tag.Function)]
-        [DMLibTestMethod(DMLibDataType.BlockBlob, DMLibDataType.Local)]
+        [DMLibTestMethod(DMLibDataType.Cloud, DMLibDataType.Local)]
         public void TestSetAttributesToLocal()
         {
             TestSetAttributesToLocal(false);
@@ -107,6 +107,7 @@ namespace DMLibTest.Cases
 
         private void TestSetAttributesToLocal(bool IsDirectoryTransfer)
         {
+            var setAttributeCallbackWasExecuted = false;
             DMLibDataInfo sourceDataInfo = new DMLibDataInfo(string.Empty);
             FileNode fileNode = new FileNode(DMLibTestBase.FileName)
             {
@@ -123,7 +124,7 @@ namespace DMLibTest.Cases
                 {
                     SetAttributesCallbackAsync = async (sourceObj, destObj) =>
                     {
-                        Test.Error("SetAttributes callback should not be invoked when destination is local");
+                        setAttributeCallbackWasExecuted = true;
                     }
                 };
             }
@@ -133,7 +134,7 @@ namespace DMLibTest.Cases
                 {
                     SetAttributesCallbackAsync = async (sourceObj, destObj) =>
                     {
-                        Test.Error("SetAttributes callback should not be invoked when destination is local");
+                        setAttributeCallbackWasExecuted = true;
                     }
                 };
             }
@@ -157,6 +158,8 @@ namespace DMLibTest.Cases
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             VerificationHelper.VerifyTransferSucceed(result, sourceDataInfo);
+            Test.Assert(setAttributeCallbackWasExecuted, "SetAttributeCallback {0} executed.",
+                setAttributeCallbackWasExecuted ? "was" : "was not");
         }
 
         [TestCategory(Tag.Function)]
