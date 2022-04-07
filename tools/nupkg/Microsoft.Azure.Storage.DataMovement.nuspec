@@ -23,7 +23,7 @@
         <dependency id="Microsoft.Azure.Storage.Blob" version="11.2.3" />
       </group>
       <group targetFramework="netstandard2.0">
-        <dependency id="Mono.Posix.NETStandard" version="1.0.0-beta2" />
+        <dependency id="Mono.Posix.NETStandard" version="1.0.0" />
         <dependency id="NETStandard.Library" version="2.0.1" />
         <dependency id="Microsoft.Azure.Storage.File" version="11.2.3" />
         <dependency id="Microsoft.Azure.Storage.Blob" version="11.2.3" />
