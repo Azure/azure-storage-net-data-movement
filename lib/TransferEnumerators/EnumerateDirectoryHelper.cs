@@ -764,6 +764,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
         private static bool SymlinkedDirExists(string dirPath)
         {
             dirPath = dirPath.TrimEnd(Path.DirectorySeparatorChar);
+            UnixSymbolicLinkInfo symlinkInfo = null;
             try
             {
                 UnixFileSystemInfo fileSystemInfo = UnixFileSystemInfo.GetFileSystemEntry(dirPath);
@@ -772,11 +773,15 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                     return false;
                 }
 
-                UnixSymbolicLinkInfo symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
+                symlinkInfo = fileSystemInfo as UnixSymbolicLinkInfo;
                 if (symlinkInfo.HasContents && symlinkInfo.GetContents().IsDirectory)
                 {
                     return true;
                 }
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw CreateDirectoryNotFoundException(symlinkInfo, dirPath, ex);
             }
             catch (DllNotFoundException ex)
             {
@@ -787,7 +792,19 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
             return false;
         }
-        
+
+        private static Exception CreateDirectoryNotFoundException(UnixSymbolicLinkInfo symlinkInfo,
+            string dirOrSymlinkPath,
+            Exception innerException)
+        {
+            return symlinkInfo == null
+                ? new DirectoryNotFoundException(string.Format(Resources.DirectoryNotFoundException, dirOrSymlinkPath),
+                    innerException)
+                : new DirectoryNotFoundException(
+                    string.Format(Resources.DirectoryForSymlinkNotFoundException, dirOrSymlinkPath,
+                        symlinkInfo.GetContents().FullName ?? dirOrSymlinkPath), innerException);
+        }
+
         private static string GetParentPath(string filePath)
         {
             if (filePath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))

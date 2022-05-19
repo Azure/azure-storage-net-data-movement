@@ -352,7 +352,7 @@ namespace DMLibTest
         /// <returns></returns>
         public static bool ListBlobs(string connectionString, string containerName, out List<string> blobNames, out List<string> blobMD5s)
         {
-            CloudBlobClient BlobClient = CloudStorageAccount.Parse(connectionString).CreateCloudBlobClient();
+            CloudBlobClient BlobClient = AccountExtensions.CreateCloudBlobClient(CloudStorageAccount.Parse(connectionString));
             BlobClient.DefaultRequestOptions.RetryPolicy = new LinearRetry(TimeSpan.Zero, 3);
 
             blobNames = new List<string>();
@@ -1827,7 +1827,7 @@ namespace DMLibTest
         public CloudFileHelper(CloudStorageAccount account)
         {
             this.Account = account;
-            this.FileClient = account.CreateCloudFileClient();
+            this.FileClient = AccountExtensions.CreateCloudFileClient(account);
             this.FileClient.DefaultRequestOptions.RetryPolicy = new LinearRetry(TimeSpan.Zero, 3);
         }
 
@@ -2697,7 +2697,7 @@ namespace DMLibTest
         public CloudBlobHelper(CloudStorageAccount account)
         {
             Account = account;
-            BlobClient = account.CreateCloudBlobClient();
+            BlobClient = AccountExtensions.CreateCloudBlobClient(account);
             BlobClient.DefaultRequestOptions.RetryPolicy = new LinearRetry(TimeSpan.Zero, 3);
         }
 

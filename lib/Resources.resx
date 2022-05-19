@@ -418,4 +418,10 @@ MD5 in property: {2}</value>
   <data name="DestinationPathValidationFailed" xml:space="preserve">
     <value>Destination path '{0}' failed the validation.</value>
   </data>
+  <data name="DirectoryNotFoundException" xml:space="preserve">
+    <value>Unable to open directory "{0}". Directory does not exist.</value>
+  </data>
+  <data name="DirectoryForSymlinkNotFoundException" xml:space="preserve">
+    <value>Unable to resolve symlink {0} to directory {1}. Directory does not exist.</value>
+  </data>
 </root>
