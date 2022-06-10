@@ -4,8 +4,6 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-#if DEBUG
-
 using System;
 using System.IO;
 using Microsoft.Azure.Storage.DataMovement;
@@ -174,5 +172,3 @@ namespace DMLibTest.Cases
         #endregion
     }
 }
-
-#endif

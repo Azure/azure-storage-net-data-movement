@@ -4,8 +4,6 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-#if DEBUG
-
 using System;
 using System.IO;
 using System.Threading;
@@ -184,5 +182,3 @@ namespace DMLibTest.Cases
 
     }
 }
-
-#endif
