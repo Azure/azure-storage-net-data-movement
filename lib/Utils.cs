@@ -3,6 +3,7 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
+
 namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
@@ -879,6 +880,25 @@ namespace Microsoft.Azure.Storage.DataMovement
         public static string ToLongPath(this string originPath)
         {
             return TransferManager.Configurations.SupportUncPath ? LongPath.ToUncPath(originPath) : originPath;
+        }
+
+        internal static void ValidateJournalAssemblyVersion(string originalFormatVersion, string className)
+        {
+            if (HasJournalDifferentAssemblyVersion(originalFormatVersion))
+            {
+                throw new System.InvalidOperationException(
+                    string.Format(
+                        CultureInfo.CurrentCulture,
+                        Resources.DeserializationVersionNotMatchException,
+                        className,
+                        originalFormatVersion,
+                        Constants.FormatVersion));
+            }
+        }
+
+        private static bool HasJournalDifferentAssemblyVersion(string originalFormatVersion)
+        {
+            return !string.Equals(Constants.FormatVersion, originalFormatVersion, StringComparison.Ordinal);
         }
 
         private static bool IsValidWindowsFileName(string fileName)

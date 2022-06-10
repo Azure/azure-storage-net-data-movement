@@ -172,6 +172,30 @@ namespace DMLibTest
         }
     }
 
+    public class TransferContextTestFixture : IDisposable
+    {
+        public TransferContextTestFixture()
+        {
+            TransferContextTests.MyClassInitialize(null);
+        }
+        public void Dispose()
+        {
+            TransferContextTests.MyClassCleanup();
+        }
+    }
+
+    public class EnumeratorTestFixture : IDisposable
+    {
+        public EnumeratorTestFixture()
+        {
+            EnumeratorTests.MyClassInitialize(null);
+        }
+        public void Dispose()
+        {
+            EnumeratorTests.MyClassCleanup();
+        }
+    }
+
     public class ValidateDestinationPathTestFixture : IDisposable
     {
         public ValidateDestinationPathTestFixture()

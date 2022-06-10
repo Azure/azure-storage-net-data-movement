@@ -155,9 +155,20 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         private byte[] memoryBuffer = new byte[BufferSizeGranularity];
 
+        /// <summary>
+        /// A flag that indicates whether to validate an assembly version serialized in a journal stream or not.
+        /// </summary>
+        internal bool DisableJournalValidation { get; }
+
         public StreamJournal(Stream journal)
+            : this(journal, false)
+        {
+        }
+
+        public StreamJournal(Stream journal, bool disableJournalValidation)
         {
             stream = journal;
+            DisableJournalValidation = disableJournalValidation;
 #if BINARY_SERIALIZATION
             formatter.Context = new StreamingContext(formatter.Context.State, this);
 #else
@@ -193,15 +204,9 @@ namespace Microsoft.Azure.Storage.DataMovement
 #else
                     string version = (string)this.ReadObject(this.stringSerializer);
 #endif
-                    if (!string.Equals(version, Constants.FormatVersion, StringComparison.Ordinal))
+                    if (!DisableJournalValidation)
                     {
-                        throw new System.InvalidOperationException(
-                            string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.DeserializationVersionNotMatchException,
-                            "Journal",
-                            version,
-                            Constants.FormatVersion));
+                        Utils.ValidateJournalAssemblyVersion(version, "Journal");
                     }
 
                     this.stream.Position = JournalHeadOffset;

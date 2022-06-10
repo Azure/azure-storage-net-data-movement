@@ -65,10 +65,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Initializes a new instance of the <see cref="TransferCheckpoint"/> class.
         /// </summary>
         /// <param name="journalStream">Stream to write checkpoint journal to. </param>
-        internal TransferCheckpoint(Stream journalStream)
+        /// <param name="disableJournalValidation">A flag that indicates whether to validate an assembly version serialized in a journal stream or not.</param>
+        internal TransferCheckpoint(Stream journalStream, bool disableJournalValidation)
         {
             this.TransferCollection = new TransferCollection<Transfer>();
-            this.Journal = new StreamJournal(journalStream);
+            this.Journal = new StreamJournal(journalStream, disableJournalValidation);
             Transfer transferInstance = this.Journal.Initialize();
 
             if (null != transferInstance)

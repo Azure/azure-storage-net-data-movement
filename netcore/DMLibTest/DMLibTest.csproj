@@ -1,81 +1,109 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" DefaultTargets="FullBuild">
 
-  <PropertyGroup>
-    <Description>DMLibTest Class Library</Description>
-    <Authors>emmazhu</Authors>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
-    <AssemblyName>DMLibTest</AssemblyName>
-    <PackageId>DMLibTest</PackageId>
-    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <AssetTargetFallback>$(AssetTargetFallback);dnxcore50;portable-net45+win8</AssetTargetFallback>
-    <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
-    <DebugType>portable</DebugType>
-    <DefineConstants>TRACE;DMLIB_TEST;DOTNET5_4;DNXCORE50;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;RUNTIME_INFORMATION</DefineConstants>
-	<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-  </PropertyGroup>
+	<PropertyGroup>
+		<Description>DMLibTest Class Library</Description>
+		<Authors>emmazhu</Authors>
+		<TargetFramework>netcoreapp2.0</TargetFramework>
+		<AssemblyName>DMLibTest</AssemblyName>
+		<PackageId>DMLibTest</PackageId>
+		<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+		<AssetTargetFallback>$(AssetTargetFallback);dnxcore50;portable-net45+win8</AssetTargetFallback>
+		<RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
+		<DebugType>portable</DebugType>
+		<DefineConstants>TRACE;DMLIB_TEST;DOTNET5_4;DNXCORE50;EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION;RUNTIME_INFORMATION</DefineConstants>
+		<ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="..\..\lib\LongPathFileStream.cs" Link="Framework\LongPathFileStream.cs" />
-    <Compile Include="..\..\lib\FileSecurityOperations.cs" Link="Framework\FileSecurityOperations.cs" />
-    <Compile Include="..\..\lib\FileSecurityNativeMethods.cs" Link="Framework\FileSecurityNativeMethods.cs" />
-    <Compile Include="..\..\test\DMLibTest\Cases\*.cs">
-      <Link>Cases\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Compile>
-    <Compile Include="..\..\test\DMLibTest\Framework\*.cs">
-      <Link>Framework\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Compile>
-    <Compile Include="..\..\test\DMLibTest\Util\*.cs">
-      <Link>Util\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </Compile>
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\..\lib\LongPathFileStream.cs" Link="Framework\LongPathFileStream.cs" />
+		<Compile Include="..\..\lib\FileSecurityOperations.cs" Link="Framework\FileSecurityOperations.cs" />
+		<Compile Include="..\..\lib\FileSecurityNativeMethods.cs" Link="Framework\FileSecurityNativeMethods.cs" />
+		<Compile Include="..\..\test\DMLibTest\Resources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+		<Compile Include="..\..\test\DMLibTest\Cases\*.cs">
+			<Link>Cases\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</Compile>
+		<Compile Include="..\..\test\DMLibTest\Framework\*.cs">
+			<Link>Framework\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</Compile>
+		<Compile Include="..\..\test\DMLibTest\Util\*.cs">
+			<Link>Util\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</Compile>
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="3.1.0"></PackageReference>
-    <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
-    <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.3" />
-    <PackageReference Include="Microsoft.Azure.Storage.File" Version="11.2.3" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="2.2.7" />
-    <PackageReference Include="MSTest.TestFramework" Version="2.2.7" />
-    <PackageReference Include="xunit" Version="2.2.0" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="..\..\test\DMLibTest\Cases\StreamJournalTests.cs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\test\DMTestLib\DMTestLib.csproj" />
-    <ProjectReference Include="..\DMTestLib\DMTestLib.csproj" />
-    <ProjectReference Include="..\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj" />
-    <ProjectReference Include="..\MsTestLib\MsTestLib.csproj" />
-    <PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
-  </ItemGroup>
-  
-  <PropertyGroup>
-    <CodeGenPath>..\DMLibTestCodeGen_NetCore\</CodeGenPath>
-    <CodeGenProjFile>$(CodeGenPath)DMLibTestCodeGen_NetCore.csproj</CodeGenProjFile>
-    <CodeGenOutputPath>bin\$(Configuration)\netcoreapp3.1\</CodeGenOutputPath>
-    <SourceCodeOuputFolder>$(MSBuildProjectDirectory)\Generated</SourceCodeOuputFolder>
-  </PropertyGroup>
-  
-  <Target Name="FullBuild" DependsOnTargets="AfterBuild" Outputs="$(MSBuildProjectDirectory)\$(OutputPath)$(AssemblyName).dll">
-    <MSBuild Projects="$(MSBuildProjectFile)" Targets="Build" />
-  <Exec Command="dotnet publish $(MSBuildProjectFile) --configuration $(Configuration)" />
-    <MSBuild Projects="$(CodeGenProjFile)" Targets="Build" />
-    <MakeDir Condition="!Exists('$(SourceCodeOuputFolder)')" Directories="$(SourceCodeOuputFolder)" />
-    <Delete Files="@(GeneratedSourceFile)" />
-  
-    <Exec Command="$(CodeGenPath)$(CodeGenOutputPath)DMLibTestCodeGen_NetCore.exe $(MSBuildProjectDirectory)\$(OutputPath)publish\$(AssemblyName).dll $(SourceCodeOuputFolder) DNetCore" />
-    <MSBuild Projects="$(MSBuildProjectFile)" Targets="Build" Properties="Mode=Full" />
-  </Target>
-  
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="coverlet.collector" Version="3.1.0"></PackageReference>
+		<PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
+		<PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.3" />
+		<PackageReference Include="Microsoft.Azure.Storage.File" Version="11.2.3" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="2.2.7" />
+		<PackageReference Include="MSTest.TestFramework" Version="2.2.7" />
+		<PackageReference Include="xunit" Version="2.2.0" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="TestData.xml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\DMTestLib\DMTestLib.csproj" />
+		<ProjectReference Include="..\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj" />
+		<ProjectReference Include="..\MsTestLib\MsTestLib.csproj" />
+		<PackageReference Include="System.Runtime.Serialization.Xml" Version="4.3.0" />
+		<PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
+	</ItemGroup>
+
+	<PropertyGroup>
+		<CodeGenPath>..\DMLibTestCodeGen_NetCore\</CodeGenPath>
+		<CodeGenProjFile>$(CodeGenPath)DMLibTestCodeGen_NetCore.csproj</CodeGenProjFile>
+		<CodeGenOutputPath>bin\$(Configuration)\netcoreapp3.1\</CodeGenOutputPath>
+		<SourceCodeOuputFolder>$(MSBuildProjectDirectory)\Generated</SourceCodeOuputFolder>
+	</PropertyGroup>
+
+	<Target Name="FullBuild" DependsOnTargets="AfterBuild"
+	        Outputs="$(MSBuildProjectDirectory)\$(OutputPath)$(AssemblyName).dll">
+		<MSBuild Projects="$(MSBuildProjectFile)" Targets="Build" />
+		<Exec Command="dotnet publish $(MSBuildProjectFile) --configuration $(Configuration)" />
+		<MSBuild Projects="$(CodeGenProjFile)" Targets="Build" />
+		<MakeDir Condition="!Exists('$(SourceCodeOuputFolder)')" Directories="$(SourceCodeOuputFolder)" />
+		<Delete Files="@(GeneratedSourceFile)" />
+
+		<Exec
+			Command="$(CodeGenPath)$(CodeGenOutputPath)DMLibTestCodeGen_NetCore.exe $(MSBuildProjectDirectory)\$(OutputPath)publish\$(AssemblyName).dll $(SourceCodeOuputFolder) DNetCore" />
+		<MSBuild Projects="$(MSBuildProjectFile)" Targets="Build" Properties="Mode=Full" />
+	</Target>
+
+	<ItemGroup>
+		<Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="TestData.xml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="..\..\test\DMLibTest\Resources.resx" Link="Resources.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<Compile Update="..\..\test\DMLibTest\Resources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\..\test\DMLibTest\Resources\jounal_3.1.1.0_net462.bin" Link="Resources\jounal_3.1.1.0_net462.bin" />
+		<None Include="..\..\test\DMLibTest\Resources\jounal_3.1.1.0_netstandard2.0.bin"
+		      Link="Resources\jounal_3.1.1.0_netstandard2.0.bin" />
+	</ItemGroup>
 
 </Project>

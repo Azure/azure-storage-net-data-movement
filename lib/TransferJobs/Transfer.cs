@@ -86,15 +86,11 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 
             string version = info.GetString(FormatVersionName);
-            if (!string.Equals(Constants.FormatVersion, version, StringComparison.Ordinal))
+            var disableJournalValidation =
+                (context.Context as StreamJournal)?.DisableJournalValidation ?? false;
+            if (!disableJournalValidation)
             {
-                throw new System.InvalidOperationException(
-                    string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.DeserializationVersionNotMatchException,
-                    "TransferJob",
-                    version,
-                    Constants.FormatVersion));
+                Utils.ValidateJournalAssemblyVersion(version, "TransferJob");
             }
 
             var serializableSourceLocation = (SerializableTransferLocation)info.GetValue(SourceName, typeof(SerializableTransferLocation));
@@ -127,17 +123,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         [OnDeserialized]
         private void OnDeserializedCallback(StreamingContext context)
         {
-            if (!string.Equals(Constants.FormatVersion, OriginalFormatVersion, StringComparison.Ordinal))
-            {
-                throw new System.InvalidOperationException(
-                    string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.DeserializationVersionNotMatchException,
-                    "TransferJob",
-                    OriginalFormatVersion,
-                    Constants.FormatVersion));
-            }
-
             if (!IsStreamJournal)
             {
                 this.ProgressTracker = this.progressTracker;

@@ -33,10 +33,21 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryTransferContext" /> class.
         /// </summary>
-        /// <param name="journalStream">The stream into which the transfer journal info will be written into. 
+        /// <param name="journalStream">The stream into which the transfer journal info will be written into.
         /// It can resume the previous paused transfer from its journal stream.</param>
         public DirectoryTransferContext(Stream journalStream)
             :base(journalStream)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DirectoryTransferContext" /> class.
+        /// </summary>
+        /// <param name="journalStream">The stream into which the transfer journal info will be written into.
+        /// It can resume the previous paused transfer from its journal stream.</param>
+        /// <param name="disableJournalValidation">A flag that indicates whether to validate an assembly version serialized in a journal stream or not.</param>
+        public DirectoryTransferContext(Stream journalStream, bool disableJournalValidation)
+            : base(journalStream, disableJournalValidation)
         {
         }
 

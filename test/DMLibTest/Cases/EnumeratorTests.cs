@@ -19,7 +19,7 @@ namespace DMLibTest.Cases
     using Xunit;
 
     [Collection(Collections.Global)]
-    public class EnumeratorTests : DMLibTestBase, IClassFixture<StreamTestFixture>, IDisposable
+    public class EnumeratorTests : DMLibTestBase, IClassFixture<EnumeratorTestFixture>, IDisposable
     {
         public EnumeratorTests()
         {
@@ -146,7 +146,7 @@ namespace DMLibTest.Cases
         [ClassInitialize]
         public static void MyClassInitialize(TestContext testContext)
         {
-            Test.Info("Class Initialize: EnumeratorTests (ala ma kota)");
+            Test.Info("Class Initialize: EnumeratorTests");
             BaseClassInitialize(testContext);
             CleanupSource = false;
         }
