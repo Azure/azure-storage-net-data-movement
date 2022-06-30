@@ -285,7 +285,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <returns>The <see cref="Task"/>.</returns>
         public static async Task ExecuteXsclApiCallAsync(Func<Task> func, CancellationToken cancellationToken)
         {
-            await Task.Run(async () => await func(), cancellationToken);
+            await Task.Run(async () => await func().ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
         }
 
         public static Attributes GenerateAttributes(CloudBlob blob)

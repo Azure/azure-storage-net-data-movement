@@ -223,14 +223,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 Task listTask = Task.Run(() => this.ListNewTransfers(cancellationToken));
 
-                await Task.Run(() => { this.EnumerateAndTransfer(scheduler, cancellationToken); });
+                await Task.Run(() => { this.EnumerateAndTransfer(scheduler, cancellationToken); }).ConfigureAwait(false);
 
-                await listTask;
+                await listTask.ConfigureAwait(false);
             }
             finally
             {
                 // wait for outstanding transfers to complete
-                await allTransfersCompleteSource.Task;
+                await allTransfersCompleteSource.Task.ConfigureAwait(false);
             }
 
             if (this.enumerateException != null)
@@ -320,7 +320,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         {
                             SingleObjectTransfer candidate = this.CreateTransfer(entry);
 
-                            bool shouldTransfer = shouldTransferCallback == null || await shouldTransferCallback(candidate.Source.Instance, candidate.Destination.Instance);
+                            bool shouldTransfer = shouldTransferCallback == null || await shouldTransferCallback(candidate.Source.Instance, candidate.Destination.Instance).ConfigureAwait(false);
 
                             return new Tuple<SingleObjectTransfer, TransferEntry>(shouldTransfer ? candidate : null, entry);
                         }
@@ -503,7 +503,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 try
                 {
-                    await transfer.ExecuteAsync(scheduler, cancellationToken);
+                    await transfer.ExecuteAsync(scheduler, cancellationToken).ConfigureAwait(false);
                 }
                 catch
                 {

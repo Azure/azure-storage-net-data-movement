@@ -133,7 +133,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (!this.TransferJob.Transfer.ShouldTransferChecked)
             {
                 this.hasWork = false;
-                if (await this.CheckShouldTransfer())
+                if (await this.CheckShouldTransfer().ConfigureAwait(false))
                 {
                     return true;
                 }
@@ -144,19 +144,19 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            await ValidateDestinationPathAsync();
+            await ValidateDestinationPathAsync().ConfigureAwait(false);
 
             if (!this.reader.PreProcessed && this.reader.HasWork)
             {
-                await this.reader.DoWorkInternalAsync();
+                await this.reader.DoWorkInternalAsync().ConfigureAwait(false);
             }
             else if (this.reader.PreProcessed && this.writer.HasWork)
             {
-                await this.writer.DoWorkInternalAsync();
+                await this.writer.DoWorkInternalAsync().ConfigureAwait(false);
             }
             else if (this.writer.PreProcessed && this.reader.HasWork)
             {
-                await this.reader.DoWorkInternalAsync();
+                await this.reader.DoWorkInternalAsync().ConfigureAwait(false);
             }
 
             return this.ErrorOccurred || this.writer.IsFinished;
@@ -174,7 +174,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 		        var transferLocation = this.TransferJob.Destination;
 		        try
 		        {
-			        await this.TransferContext.ValidateDestinationPathCallbackAsync(transferLocation.Instance);
+			        await this.TransferContext.ValidateDestinationPathCallbackAsync(transferLocation.Instance).ConfigureAwait(false);
 		        }
 		        catch (Exception ex)
 		        {

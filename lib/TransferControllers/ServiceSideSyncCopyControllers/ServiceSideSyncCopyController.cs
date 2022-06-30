@@ -62,7 +62,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (!this.TransferJob.Transfer.ShouldTransferChecked)
             {
                 this.hasWork = false;
-                if (await this.CheckShouldTransfer())
+                if (await this.CheckShouldTransfer().ConfigureAwait(false))
                 {
                     return true;
                 }
@@ -76,19 +76,19 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             switch (this.state)
             {
                 case State.FetchSourceAttributes:
-                    await this.FetchSourceAttributesAsync();
+                    await this.FetchSourceAttributesAsync().ConfigureAwait(false);
                     break;
                 case State.GetDestination:
-                    await this.GetDestinationAsync();
+                    await this.GetDestinationAsync().ConfigureAwait(false);
                     break;
                 case State.PreCopy:
-                    await this.DoPreCopyAsync();
+                    await this.DoPreCopyAsync().ConfigureAwait(false);
                     break;
                 case State.Copy:
-                    await this.CopyChunkAsync();
+                    await this.CopyChunkAsync().ConfigureAwait(false);
                     break;
                 case State.Commit:
-                    await this.CommitAsync();
+                    await this.CommitAsync().ConfigureAwait(false);
                     break;
                 case State.Finished:
                 case State.Error:
@@ -107,7 +107,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.hasWork = false;
             this.StartCallbackHandler();
-            await this.SourceHandler.FetchAttributesAsync(this.CancellationToken);
+            await this.SourceHandler.FetchAttributesAsync(this.CancellationToken).ConfigureAwait(false);
             this.PostFetchSourceAttributes();
         }
 
@@ -118,16 +118,16 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.SourceHandler.TotalLength,
                 async (exist) =>
                 {
-                    await this.CheckOverwriteAsync(exist, this.SourceHandler.Uri, this.DestHandler.Uri);
+                    await this.CheckOverwriteAsync(exist, this.SourceHandler.Uri, this.DestHandler.Uri).ConfigureAwait(false);
                 },
-                this.CancellationToken);
+                this.CancellationToken).ConfigureAwait(false);
         }
 
         protected async Task CommonCommitAsync()
         {
             await this.DestHandler.CommitAsync(gotDestAttributes, this.SourceHandler.SourceAttributes,
                 this.SetCustomAttributesAsync,
-                this.CancellationToken);
+                this.CancellationToken).ConfigureAwait(false);
         }
 
         protected abstract void PostFetchSourceAttributes();

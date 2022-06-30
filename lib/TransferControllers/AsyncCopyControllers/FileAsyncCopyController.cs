@@ -92,7 +92,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     default(FileCopyOptions),
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
-                    this.CancellationToken); 
+                    this.CancellationToken).ConfigureAwait(false);
                 
                 return new StorageCopyState(this.destFile.CopyState);
             }
@@ -105,7 +105,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     default(FileCopyOptions),
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
-                    this.CancellationToken); 
+                    this.CancellationToken).ConfigureAwait(false);
                 
                 var copyState = new StorageCopyState(this.destFile.CopyState);
 
@@ -138,7 +138,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     fileCopyOptions,
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     operationContext,
-                    this.CancellationToken); 
+                    this.CancellationToken).ConfigureAwait(false);
                 
                 var copyState = new StorageCopyState(this.destFile.CopyState);
 
@@ -161,7 +161,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
-                this.CancellationToken);
+                this.CancellationToken).ConfigureAwait(false);
 
             return new StorageCopyState(this.destFile.CopyState);
         }
@@ -171,7 +171,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             var originalAttributes = Utils.GenerateAttributes(this.destFile, true);
             var originalMetadata = new Dictionary<string, string>(this.destFile.Metadata);
 
-            await setCustomAttributes(this.TransferJob.Source.Instance, this.destFile);
+            await setCustomAttributes(this.TransferJob.Source.Instance, this.destFile).ConfigureAwait(false);
 
             if (!Utils.CompareProperties(originalAttributes, Utils.GenerateAttributes(this.destFile, true)))
             {
@@ -179,7 +179,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
-                this.CancellationToken);
+                this.CancellationToken).ConfigureAwait(false);
             }
 
             if (!originalMetadata.DictionaryEquals(this.destFile.Metadata))
@@ -188,7 +188,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                     Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
-                    this.CancellationToken);
+                    this.CancellationToken).ConfigureAwait(false);
             }
         }
     }

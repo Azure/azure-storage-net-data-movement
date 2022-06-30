@@ -249,7 +249,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 
             this.nameResolver = GetNameResolver(this.Source, this.Destination, this.Delimiter);
-            await this.ExecuteInternalAsync(scheduler, cancellationToken);
+            await this.ExecuteInternalAsync(scheduler, cancellationToken).ConfigureAwait(false);
         }
 
         public abstract Task ExecuteInternalAsync(TransferScheduler scheduler, CancellationToken cancellationToken);

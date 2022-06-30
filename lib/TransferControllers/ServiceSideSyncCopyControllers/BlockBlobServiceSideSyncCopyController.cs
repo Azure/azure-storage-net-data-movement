@@ -111,7 +111,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     accessCondition,
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
-                    this.CancellationToken);
+                    this.CancellationToken).ConfigureAwait(false);
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
                 catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
@@ -121,14 +121,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             catch (StorageException se)
             {
 #endif
-                if (!await this.HandleGetDestinationResultAsync(se))
+                if (!await this.HandleGetDestinationResultAsync(se).ConfigureAwait(false))
                 {
                     throw;
                 }
                 return;
             }
 
-            await this.HandleGetDestinationResultAsync(null);
+            await this.HandleGetDestinationResultAsync(null).ConfigureAwait(false);
         }
 
         protected override async Task CopyChunkAsync()
@@ -215,7 +215,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 accessCondition,
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 operationContext,
-                this.CancellationToken);
+                this.CancellationToken).ConfigureAwait(false);
 
             this.UpdateProgress(() =>
             {
@@ -256,7 +256,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     OverWriteAll = true
                 });
 
-            await this.SetCustomAttributesAsync(this.TransferJob.Source.Instance, this.destBlockBlob);
+            await this.SetCustomAttributesAsync(this.TransferJob.Source.Instance, this.destBlockBlob).ConfigureAwait(false);
 
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.TransferContext);
@@ -266,7 +266,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
                         blobRequestOptions,
                         operationContext,
-                        this.CancellationToken);
+                        this.CancellationToken).ConfigureAwait(false);
 
             // REST API PutBlockList cannot clear existing Content-Type of block blob, so if it's needed to clear existing
             // Content-Type, REST API SetBlobProperties must be called explicitly:
@@ -279,7 +279,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, this.destLocation.CheckedAccessCondition),
                     blobRequestOptions,
                     operationContext,
-                    this.CancellationToken);
+                    this.CancellationToken).ConfigureAwait(false);
             }
 
             this.SetFinish();
@@ -327,7 +327,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 await this.CheckOverwriteAsync(
                     destExist,
                     this.SourceHandler.Uri.ToString(),
-                    this.destBlockBlob.Uri.ToString());
+                    this.destBlockBlob.Uri.ToString()).ConfigureAwait(false);
             }
 
             this.gotDestinationAttributes = true;

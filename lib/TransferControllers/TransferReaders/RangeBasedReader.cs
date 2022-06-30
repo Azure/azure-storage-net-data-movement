@@ -62,13 +62,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 switch (this.state)
                 {
                     case State.FetchAttributes:
-                        await this.FetchAttributesAsync();
+                        await this.FetchAttributesAsync().ConfigureAwait(false);
                         break;
                     case State.GetRanges:
-                        await this.GetRangesAsync();
+                        await this.GetRangesAsync().ConfigureAwait(false);
                         break;
                     case State.Download:
-                        await this.DownloadRangeAsync();
+                        await this.DownloadRangeAsync().ConfigureAwait(false);
                         break;
                     default:
                         break;
@@ -135,8 +135,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             try
             {
                 await Utils.ExecuteXsclApiCallAsync(
-                    async () => await this.DoFetchAttributesAsync(),
-                    this.CancellationToken);
+                    async () => await this.DoFetchAttributesAsync().ConfigureAwait(false),
+                    this.CancellationToken).ConfigureAwait(false);
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
@@ -202,7 +202,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             Utils.RangesSpan rangesSpan = this.rangesSpanList[spanIndex];
 
-            rangesSpan.Ranges = await this.DoGetRangesAsync(rangesSpan);
+            rangesSpan.Ranges = await this.DoGetRangesAsync(rangesSpan).ConfigureAwait(false);
 
             List<Utils.Range> ranges = new List<Utils.Range>();
             Utils.Range currentRange = null;
@@ -368,7 +368,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         DownloadStream = downloadStream
                     };
 
-                    await this.DownloadRangeAsync(rangeBasedDownloadState);
+                    await this.DownloadRangeAsync(rangeBasedDownloadState).ConfigureAwait(false);
                 }
 
                 this.SetChunkFinish();
@@ -410,8 +410,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (asyncState.Range.HasData)
             {
                 await Utils.ExecuteXsclApiCallAsync(
-                    async () => await this.DoDownloadRangeToStreamAsync(asyncState),
-                    this.CancellationToken);
+                    async () => await this.DoDownloadRangeToStreamAsync(asyncState).ConfigureAwait(false),
+                    this.CancellationToken).ConfigureAwait(false);
             }
             else
             {

@@ -100,7 +100,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         protected override async Task GetDestinationAsync()
         {
             this.hasWork = false;
-            await this.CheckAndCreateDestinationAsync();
+            await this.CheckAndCreateDestinationAsync().ConfigureAwait(false);
 
             if (this.TransferJob.CheckPoint.EntryTransferOffset == this.SourceHandler.TotalLength)
             {
@@ -145,7 +145,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     destAccessCondition,
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
-                    this.CancellationToken);
+                    this.CancellationToken).ConfigureAwait(false);
             }
             catch (StorageException se)
             {
@@ -163,7 +163,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
 
             if (needToCheckContent &&
-                (!await this.ValidateAppendedChunkAsync(startOffset, length)))
+                (!await this.ValidateAppendedChunkAsync(startOffset, length).ConfigureAwait(false)))
             {
                 throw new InvalidOperationException(Resources.DestinationChangedException, catchedStorageException);
             }
@@ -193,7 +193,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
-                this.CancellationToken);
+                this.CancellationToken).ConfigureAwait(false);
 
             this.gotDestAttributes = true;
 
@@ -241,7 +241,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     destOperationContext,
                     this.CancellationToken);
 
-                await Task.WhenAll(downloadTasks);
+                await Task.WhenAll(downloadTasks).ConfigureAwait(false);
                 return (!string.IsNullOrEmpty(sourceConentMD5)) && string.Equals(sourceConentMD5, destContentMD5);
             }
             catch (OperationCanceledException)
@@ -260,7 +260,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.hasWork = false;
 
-            await this.CommonCommitAsync();
+            await this.CommonCommitAsync().ConfigureAwait(false);
 
             this.SetFinish();
         }
