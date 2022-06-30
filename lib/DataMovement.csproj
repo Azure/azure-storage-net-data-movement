@@ -88,6 +88,7 @@
     <Compile Include="ChunkedMemoryStream.cs" />
     <Compile Include="CopyMethod.cs" />
     <Compile Include="DirectoryListingScheduler.cs" />
+    <Compile Include="Exceptions\TransferStuckException.cs" />
     <Compile Include="Exceptions\TransferInvalidPathException.cs" />
     <Compile Include="Extensions\StorageCopyState.cs" />
     <Compile Include="FileNativeMethods.cs" />
@@ -187,6 +188,7 @@
     <Compile Include="TransferJobs\AzureFileLocation.cs" />
     <Compile Include="TransferJobs\DirectoryLocation.cs" />
     <Compile Include="TransferJobs\DirectoryTransfer.cs" />
+    <Compile Include="TransferJobs\EnumerationTasksLimitManager.cs" />
     <Compile Include="TransferJobs\FileLocation.cs" />
     <Compile Include="TransferJobs\FlatDirectoryTransfer.cs" />
     <Compile Include="TransferJobs\HierarchyDirectoryTransfer.cs" />

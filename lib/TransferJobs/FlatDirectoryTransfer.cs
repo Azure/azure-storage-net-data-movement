@@ -19,6 +19,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Runtime.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
+    using Shared.Protocol;
 
     /// <summary>
     /// Represents a flat directory transfer operation.
@@ -58,11 +59,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         private object lockEnumerateContinuationToken = new object();
 
         /// <summary>
-        /// Timeout used in reset event waiting.
-        /// </summary>
-        private TimeSpan EnumerationWaitTimeOut = TimeSpan.FromSeconds(10);
-
-        /// <summary>
         /// Used to block enumeration when have enumerated enough transfer entries.
         /// </summary>
         private AutoResetEvent enumerationResetEvent;
@@ -96,6 +92,8 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private TaskCompletionSource<object> allTransfersCompleteSource;
 
+        private EnumerationTasksLimitManager enumerationTasksLimitManager;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="FlatDirectoryTransfer"/> class.
         /// </summary>
@@ -105,7 +103,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         public FlatDirectoryTransfer(TransferLocation source, TransferLocation dest, TransferMethod transferMethod)
             : base(source, dest, transferMethod)
         {
-            this.subTransfers = new TransferCollection<SingleObjectTransfer>();
+	        this.subTransfers = new TransferCollection<SingleObjectTransfer>();
             this.subTransfers.OverallProgressTracker.Parent = this.ProgressTracker;
         }
 
@@ -149,7 +147,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             // Constructors and field initializers are not called by DCS, so initialize things here
             progressUpdateLock = new ReaderWriterLockSlim();
             lockEnumerateContinuationToken = new object();
-            EnumerationWaitTimeOut = TimeSpan.FromSeconds(10);
 
             if (!IsStreamJournal)
             {
@@ -444,7 +441,9 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 foreach (var transfer in this.AllTransfers(cancellationToken))
                 {
-                    this.CheckAndPauseEnumeration(cancellationToken);
+	                // -1 because there's one outstanding task for list while this method is called.
+	                long outstandingTasksForEnumeration = this.outstandingTasks - 1;
+	                enumerationTasksLimitManager.CheckAndPauseEnumeration(outstandingTasksForEnumeration, cancellationToken);
                     transfer.UpdateProgressLock(this.progressUpdateLock);
                     transfer.ShouldTransferChecked = true;
                     this.DoTransfer(transfer, scheduler, cancellationToken);
@@ -464,18 +463,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        private void CheckAndPauseEnumeration(CancellationToken cancellationToken)
-        {
-            // -1 because there's one outstanding task for list while this method is called.
-            if ((this.outstandingTasks - 1) > this.MaxTransferConcurrency)
-            {
-                while (!this.enumerationResetEvent.WaitOne(EnumerationWaitTimeOut)
-                    && !cancellationToken.IsCancellationRequested)
-                {
-                }
-            }
-        }
-
         private void ResetExecutionStatus()
         {
             if (this.enumerationResetEvent != null)
@@ -484,6 +471,8 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 
             this.enumerationResetEvent = new AutoResetEvent(true);
+
+            this.enumerationTasksLimitManager = new EnumerationTasksLimitManager(this.MaxTransferConcurrency, this.enumerationResetEvent, Constants.DefaultEnumerationWaitTimeOut, this.DirectoryContext?.TransferStuckTimeout);
 
             this.enumerateException = null;
 

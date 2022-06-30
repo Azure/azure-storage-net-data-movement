@@ -4,6 +4,8 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
+using System;
+
 namespace Microsoft.Azure.Storage.DataMovement
 {
     using System.IO;
@@ -55,6 +57,15 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Gets or sets the callback invoked to tell whether a transfer should be done.
         /// </summary>
         public ShouldTransferCallbackAsync ShouldTransferCallbackAsync
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Gets or sets the time after which a transfer is considered as stuck.
+        /// </summary>
+        public TimeSpan? TransferStuckTimeout
         {
             get;
             set;
