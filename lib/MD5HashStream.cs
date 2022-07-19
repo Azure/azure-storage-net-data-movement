@@ -50,6 +50,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         private long md5hashOffset;
 
+        private readonly string clientRequestId;
+
         private bool canSeek = true;
 
         /// <summary>
@@ -58,13 +60,16 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="stream">Stream object.</param>
         /// <param name="lastTransferOffset">Offset of the transferred bytes.</param>
         /// <param name="md5hashCheck">Whether need to calculate MD5Hash.</param>
+        /// <param name="clientRequestId">ClientRequestId connected to this stream</param>
         public MD5HashStream(
             Stream stream,
             long lastTransferOffset,
-            bool md5hashCheck)
+            bool md5hashCheck,
+            string clientRequestId)
         {
             this.stream = stream;
             this.md5hashOffset = lastTransferOffset;
+            this.clientRequestId = clientRequestId;
 
             if ((0 == this.md5hashOffset)
                 || (!md5hashCheck))
@@ -155,7 +160,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             try
             {
-                buffer = Utils.RequireBuffer(memoryManager, checkCancellation);
+                buffer = Utils.RequireBuffer(this.clientRequestId, memoryManager, checkCancellation);
             }
             catch (Exception)
             {

@@ -148,6 +148,7 @@
     <Compile Include="Cases\EncryptionScopeTest.cs" />
     <Compile Include="Cases\FollowSymlinkTest.cs" />
     <Compile Include="Cases\LongFilePathTest.cs" />
+    <Compile Include="Cases\MemoryManagerTest.cs" />
     <Compile Include="Cases\MetadataTest.cs" />
     <Compile Include="Cases\SMBPropertiesTest.cs" />
     <Compile Include="Cases\TransferContextTests.cs" />

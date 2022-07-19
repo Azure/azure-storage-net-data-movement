@@ -548,10 +548,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             return false;
         }
 
-        public static byte[] RequireBuffer(MemoryManager memoryManager, Action checkCancellation)
+        public static byte[] RequireBuffer(string clientRequestId, MemoryManager memoryManager, Action checkCancellation)
         {
             byte[] buffer;
-            buffer = memoryManager.RequireBuffer();
+            buffer = memoryManager.RequireBuffer(clientRequestId);
 
             if (null == buffer)
             {
@@ -562,7 +562,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     checkCancellation();
                     retryInterval <<= 1;
                     Thread.Sleep(retryInterval);
-                    buffer = memoryManager.RequireBuffer();
+                    buffer = memoryManager.RequireBuffer(clientRequestId);
                     ++retryCount;
                 }
             }

@@ -30,7 +30,7 @@
             MyTestCleanup();
         }
 #else
-    [TestClass]
+	[TestClass]
 	public class EnumerationTasksLimitManagerTest : DMLibTestBase
 	{
 #endif
@@ -55,7 +55,7 @@
 		{
 			// Arrange
 			var resetEventMock = new Mock<WaitHandle>();
-			
+
 			var sut = new EnumerationTasksLimitManager(_MAX_TRANSFER_CONCURRENCY, resetEventMock.Object, TimeSpan.MinValue, null);
 
 			// Act
@@ -83,8 +83,8 @@
 #if DNXCORE50
 			Assert.Throws<TransferStuckException>(action);
 #else
-            Assert.ThrowsException<TransferStuckException>(action,
-                $"Delegate should throw exception of type {nameof(TransferStuckException)}, but no exception was thrown.");
+			Assert.ThrowsException<TransferStuckException>(action,
+				$"Delegate should throw exception of type {nameof(TransferStuckException)}, but no exception was thrown.");
 #endif
 		}
 
@@ -98,7 +98,7 @@
 			// Arrange
 			var resetEventMock = new Mock<WaitHandle>();
 			resetEventMock.SetupSequence(re => re.WaitOne(It.IsAny<TimeSpan>())).Returns(false).Returns(false).Returns(true);
-			
+
 			var sut = new EnumerationTasksLimitManager(_MAX_TRANSFER_CONCURRENCY, resetEventMock.Object, TimeSpan.Zero, TimeSpan.FromSeconds(10));
 
 			// Act
@@ -128,7 +128,7 @@
 					cts.Cancel();
 				}
 			});
-			
+
 			var sut = new EnumerationTasksLimitManager(_MAX_TRANSFER_CONCURRENCY, resetEventMock.Object, TimeSpan.Zero, TimeSpan.FromSeconds(10));
 
 			// Act
@@ -183,9 +183,9 @@
 		public void MyTestCleanup()
 		{
 			base.BaseTestCleanup();
-			
+
 		}
 
 		#endregion
-    }
+	}
 }

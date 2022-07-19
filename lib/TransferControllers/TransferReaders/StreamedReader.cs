@@ -263,7 +263,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.md5HashStream = new MD5HashStream(
                 this.inputStream,
                 this.transferJob.CheckPoint.EntryTransferOffset,
-                true);
+                true,
+                this.Controller.TransferContext?.ClientRequestId);
 
             this.PreProcessed = true;
 
@@ -310,7 +311,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 await Task.Yield();
             }
 
-            byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
+            byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.Controller.TransferContext?.ClientRequestId, this.SharedTransferData.MemoryChunksRequiredEachTime);
 
             if (null != memoryBuffer)
             {
