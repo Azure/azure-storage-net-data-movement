@@ -162,21 +162,15 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
 
                     this.cloudFile.Properties.FilePermissionKey = permissionKey;
+                }
+                else
+                {
+                    this.cloudFile.FilePermission = this.SharedTransferData.Attributes.PortableSDDL;
+                }
             }
-            else
-            {
-                this.cloudFile.FilePermission = this.SharedTransferData.Attributes.PortableSDDL;
-            }
-        }
 
             Utils.SetAttributes(this.cloudFile, this.SharedTransferData.Attributes, this.TransferJob.Transfer.PreserveSMBAttributes);
             await this.Controller.SetCustomAttributesAsync(this.TransferJob.Source.Instance, this.cloudFile).ConfigureAwait(false);
-
-            await this.cloudFile.SetPropertiesAsync(
-                null,
-                fileRequestOptions,
-                operationContext,
-                this.CancellationToken).ConfigureAwait(false);
 
             if (!originalMetadata.DictionaryEquals(this.cloudFile.Metadata))
             {
@@ -186,6 +180,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     operationContext,
                     this.CancellationToken).ConfigureAwait(false);
             }
+
+            await this.cloudFile.SetPropertiesAsync(
+                null,
+                fileRequestOptions,
+                operationContext,
+                this.CancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
