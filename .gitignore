@@ -192,3 +192,6 @@ FakesAssemblies/
 # DNX
 project.lock.json
 artifacts/
+
+# Idea Rider
+.idea/
