@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
 
     /// <summary>
     /// Class for maintaining a pool of memory buffer objects.
@@ -23,6 +24,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         private readonly int BufferSize;
 
         private readonly object memoryCapacityLockObject = new object();
+
+        public string CellsStatistics => memoryPool.CellsStatistics;
 
         public MemoryManager(
             long capacity, int bufferSize)
@@ -88,6 +91,17 @@ namespace Microsoft.Azure.Storage.DataMovement
             private MemoryCell cellsListHeadCell;
             private ConcurrentDictionary<string, ConcurrentDictionary<byte[], MemoryCell>> transfers;
 
+            public string CellsStatistics
+            {
+	            get
+	            {
+		            lock (cellsListLock)
+		            {
+			            return $"Memory cells (allocated/available/total): {allocatedCells}/{availableCells}/{maxCellCount}";
+		            }
+	            }
+            }
+
             public MemoryPool(int cellsCount, int bufferSize)
             {
                 this.BufferSize = bufferSize;
@@ -117,7 +131,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             public byte[] GetBuffer(string clientRequestId)
             {
-                if (this.availableCells > 0)
+	            if (this.availableCells > 0)
                 {
                     MemoryCell retCell = null;
 

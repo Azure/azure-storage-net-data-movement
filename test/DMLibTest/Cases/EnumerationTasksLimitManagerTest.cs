@@ -37,6 +37,8 @@
 
 		const int _MAX_TRANSFER_CONCURRENCY = 10;
 
+		private static MemoryManager memoryManager = new MemoryManager(10, _MAX_TRANSFER_CONCURRENCY);
+
 #if !DOTNET5_4
 		[DataTestMethod]
 		[DataRow(1)]
@@ -59,7 +61,7 @@
 			var sut = new EnumerationTasksLimitManager(_MAX_TRANSFER_CONCURRENCY, resetEventMock.Object, TimeSpan.MinValue, null);
 
 			// Act
-			sut.CheckAndPauseEnumeration(outstandingTasksNumber, CancellationToken.None);
+			sut.CheckAndPauseEnumeration(outstandingTasksNumber, memoryManager, CancellationToken.None);
 
 			// Assert
 			resetEventMock.Verify(re => re.WaitOne(It.IsAny<TimeSpan>()), Times.Never);
@@ -77,7 +79,7 @@
 			var sut = new EnumerationTasksLimitManager(_MAX_TRANSFER_CONCURRENCY, resetEventMock.Object, TimeSpan.Zero, TimeSpan.FromMilliseconds(1));
 
 			// Act
-			Action action = () => sut.CheckAndPauseEnumeration(_MAX_TRANSFER_CONCURRENCY + 1, CancellationToken.None);
+			Action action = () => sut.CheckAndPauseEnumeration(_MAX_TRANSFER_CONCURRENCY + 1, memoryManager, CancellationToken.None);
 
 			// Assert
 #if DNXCORE50
@@ -102,7 +104,7 @@
 			var sut = new EnumerationTasksLimitManager(_MAX_TRANSFER_CONCURRENCY, resetEventMock.Object, TimeSpan.Zero, TimeSpan.FromSeconds(10));
 
 			// Act
-			sut.CheckAndPauseEnumeration(_MAX_TRANSFER_CONCURRENCY + 1, CancellationToken.None);
+			sut.CheckAndPauseEnumeration(_MAX_TRANSFER_CONCURRENCY + 1, memoryManager, CancellationToken.None);
 
 			// Assert
 			resetEventMock.Verify();
@@ -132,7 +134,7 @@
 			var sut = new EnumerationTasksLimitManager(_MAX_TRANSFER_CONCURRENCY, resetEventMock.Object, TimeSpan.Zero, TimeSpan.FromSeconds(10));
 
 			// Act
-			sut.CheckAndPauseEnumeration(_MAX_TRANSFER_CONCURRENCY + 1, cts.Token);
+			sut.CheckAndPauseEnumeration(_MAX_TRANSFER_CONCURRENCY + 1, memoryManager, cts.Token);
 
 			// Assert
 		}
@@ -150,7 +152,7 @@
 			var sut = new EnumerationTasksLimitManager(_MAX_TRANSFER_CONCURRENCY, resetEventMock.Object, TimeSpan.Zero, null);
 
 			// Act
-			sut.CheckAndPauseEnumeration(_MAX_TRANSFER_CONCURRENCY + 1, CancellationToken.None);
+			sut.CheckAndPauseEnumeration(_MAX_TRANSFER_CONCURRENCY + 1, memoryManager, CancellationToken.None);
 
 			// Assert
 			resetEventMock.Verify();

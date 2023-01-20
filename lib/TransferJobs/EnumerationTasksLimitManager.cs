@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 		private readonly WaitHandle _enumerationResetEvent;
 		private readonly TimeSpan _waitTimeout;
 		private readonly TimeSpan? _transferStuckTimeout;
+		private DateTime _lastUpdate;
 
 		public EnumerationTasksLimitManager(int maxTransferConcurrency, WaitHandle enumerationResetEvent, TimeSpan waitTimeout, TimeSpan? transferStuckTimeout)
 		{
@@ -18,17 +19,22 @@ namespace Microsoft.Azure.Storage.DataMovement
 			_transferStuckTimeout = transferStuckTimeout;
 		}
 
-		public void CheckAndPauseEnumeration(long outstandingTasks, CancellationToken cancellationToken)
+		public void ProgressMade()
+		{
+			_lastUpdate = DateTime.Now;
+		}
+
+		public void CheckAndPauseEnumeration(long outstandingTasks, MemoryManager memoryManager, CancellationToken cancellationToken)
 		{
 			if (outstandingTasks > _maxTransferConcurrency)
 			{
-				DateTime start = DateTime.Now;
+				_lastUpdate = DateTime.Now;
 				while (!_enumerationResetEvent.WaitOne(_waitTimeout)
 				       && !cancellationToken.IsCancellationRequested)
 				{
-					if (IsTransferStuck(start))
+					if (IsTransferStuck(_lastUpdate))
 					{
-						throw new TransferStuckException(Resources.TransferStuckException);
+						throw new TransferStuckException(string.Format(Resources.TransferStuckException, outstandingTasks, memoryManager.CellsStatistics));
 					}
 				}
 			}

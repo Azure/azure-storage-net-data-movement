@@ -425,6 +425,6 @@ MD5 in property: {2}</value>
     <value>Unable to resolve symlink {0} to directory {1}. Directory does not exist.</value>
   </data>
   <data name="TransferStuckException" xml:space="preserve">
-    <value>Detected a stuck transfer.</value>
+    <value>Detected a stuck transfer. Outstanding tasks: {0}. {1}.</value>
   </data>
 </root>
