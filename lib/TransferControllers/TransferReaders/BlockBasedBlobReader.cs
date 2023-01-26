@@ -430,6 +430,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (!this.IsTransferWindowEmpty()
                 || this.transferJob.CheckPoint.EntryTransferOffset < this.SharedTransferData.TotalLength)
             {
+                this.isStateSwitchedInternal = false;
                 this.workToken = 1;
                 return;
             }
