@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// In a flat directory transfer, the enumeration only returns file entries and it only transfers files under the directory.
     /// 
     /// In a hierarchy directory transfer, the enumeration also returns directory entries, 
-    /// it transfers files under the directory and also handles operations on directories.
+    /// it transfers files under the directory and also handles opertions on directories.
     /// </summary>
 #if BINARY_SERIALIZATION
     [Serializable]
@@ -216,26 +216,18 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             this.ResetExecutionStatus();
 
-            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+            try
             {
-	            try
-	            {
-		            Task listTask = Task.Run(() => this.ListNewTransfers(cts.Token));
+                Task listTask = Task.Run(() => this.ListNewTransfers(cancellationToken));
 
-		            await Task.Run(() => { this.EnumerateAndTransfer(scheduler, cts.Token); }).ConfigureAwait(false);
+                await Task.Run(() => { this.EnumerateAndTransfer(scheduler, cancellationToken); }).ConfigureAwait(false);
 
-		            await listTask.ConfigureAwait(false);
-	            }
-	            catch (TransferException transferException) when (transferException.ErrorCode.Equals(TransferErrorCode.TransferStuck))
-	            {
-		            HandleTransferStuckException(scheduler, cts);
-		            throw;
-                }
-	            finally
-	            {
-		            // wait for outstanding transfers to complete
-		            await allTransfersCompleteSource.Task.ConfigureAwait(false);
-	            }
+                await listTask.ConfigureAwait(false);
+            }
+            finally
+            {
+                // wait for outstanding transfers to complete
+                await allTransfersCompleteSource.Task.ConfigureAwait(false);
             }
 
             if (this.enumerateException != null)
@@ -276,17 +268,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 
             base.Dispose(disposing);
-        }
-
-        private void HandleTransferStuckException(TransferScheduler scheduler, CancellationTokenSource cts)
-        {
-	        // When transfer is stuck, the tasks it consists of need to be cancelled - otherwise they will hang indefinitely
-	        cts.Cancel();
-
-            // Even when the tasks were cancelled, buffers that they have allocated may not be released,
-            // which may cause subsequent transfers (possible retries) to get stuck immediately.
-            // Releasing all buffers allocated by the transfer that is stuck.
-            scheduler.MemoryManager.ReleaseBuffers(this.Context.ClientRequestId);
         }
 
         private void ListNewTransfers(CancellationToken cancellationToken)

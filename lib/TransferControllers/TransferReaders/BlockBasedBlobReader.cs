@@ -245,7 +245,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 return;
             }
 
-            byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.Controller.TransferContext?.ClientRequestId, this.SharedTransferData.MemoryChunksRequiredEachTime);
+            byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
 
             if (null != memoryBuffer)
             {

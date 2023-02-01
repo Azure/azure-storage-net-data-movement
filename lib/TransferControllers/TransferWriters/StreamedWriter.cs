@@ -222,8 +222,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.md5HashStream = new MD5HashStream(
                     this.outputStream,
                     this.expectOffset,
-                    !this.SharedTransferData.DisableContentMD5Validation,
-                    this.Controller.TransferContext?.ClientRequestId);
+                    !this.SharedTransferData.DisableContentMD5Validation);
 
                 if (this.md5HashStream.FinishedSeparateMd5Calculator)
                 {

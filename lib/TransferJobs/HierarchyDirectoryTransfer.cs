@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// In a flat directory transfer, the enumeration only returns file entries and it only transfers files under the directory.
     ///
     /// In a hierarchy directory transfer, the enumeration also returns directory entries,
-    /// it transfers files under the directory and also handles operations on directories.
+    /// it transfers files under the directory and also handles opertions on directories.
     /// </summary>
 #if BINARY_SERIALIZATION
     [Serializable]

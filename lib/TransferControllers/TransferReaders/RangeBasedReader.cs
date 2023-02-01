@@ -298,7 +298,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 {
                     // Attempt to reserve memory. If none available we'll
                     // retry some time later.
-                    byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.Controller.TransferContext?.ClientRequestId, this.SharedTransferData.MemoryChunksRequiredEachTime);
+                    byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
 
                     if (null == memoryBuffer)
                     {
