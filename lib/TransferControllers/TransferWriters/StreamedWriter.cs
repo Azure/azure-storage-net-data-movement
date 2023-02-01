@@ -371,7 +371,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                                 string.Format(
                                     CultureInfo.CurrentCulture,
                                     Resources.DownloadedMd5MismatchException,
-                                    $"{this.TransferJob.Source} ({Scheduler.MemoryManager.CellsStatistics})",
+                                    this.TransferJob.Source.ToString(),
                                     calculatedMd5,
                                     storedMd5));
                     }

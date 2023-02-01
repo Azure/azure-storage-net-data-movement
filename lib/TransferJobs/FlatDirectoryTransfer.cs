@@ -462,14 +462,8 @@ namespace Microsoft.Azure.Storage.DataMovement
                 {
 	                // -1 because there's one outstanding task for list while this method is called.
 	                long outstandingTasksForEnumeration = this.outstandingTasks - 1;
-	                enumerationTasksLimitManager.CheckAndPauseEnumeration(outstandingTasksForEnumeration, scheduler.MemoryManager, cancellationToken);
+	                enumerationTasksLimitManager.CheckAndPauseEnumeration(outstandingTasksForEnumeration, cancellationToken);
                     transfer.UpdateProgressLock(this.progressUpdateLock);
-                    var handler = transfer.ProgressTracker.ProgressHandler;
-                    transfer.ProgressTracker.ProgressHandler = new Progress<TransferStatus>(s =>
-                    {
-                        handler?.Report(s);
-                        enumerationTasksLimitManager.ProgressMade();
-                    });
                     transfer.ShouldTransferChecked = true;
                     this.DoTransfer(transfer, scheduler, cancellationToken);
                 }
