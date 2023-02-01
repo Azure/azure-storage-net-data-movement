@@ -130,10 +130,5 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// The path failed the validation. 
         /// </summary>
         PathCustomValidationFailed = 33,
-
-        /// <summary>
-        /// Detected possible transfer stuck.
-        /// </summary>
-        TransferStuck = 34
     }
 }

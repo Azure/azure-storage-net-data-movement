@@ -184,18 +184,6 @@ namespace DMLibTest
         }
     }
 
-    public class EnumerationTasksLimitManagerTestFixture : IDisposable
-    {
-	    public EnumerationTasksLimitManagerTestFixture()
-	    {
-		    EnumerationTasksLimitManagerTest.MyClassInitialize(null);
-	    }
-	    public void Dispose()
-	    {
-		    EnumerationTasksLimitManagerTest.MyClassCleanup();
-	    }
-    }
-
     public class EnumeratorTestFixture : IDisposable
     {
         public EnumeratorTestFixture()

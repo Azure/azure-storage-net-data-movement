@@ -540,21 +540,15 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
             catch (TransferException ex)
             {
-                switch (ex.ErrorCode)
+                if (ex.ErrorCode == TransferErrorCode.FailedCheckingShouldTransfer)
                 {
-                    case TransferErrorCode.TransferStuck:
-                        shouldStopTransfer = true;
-                        this.enumerateException = ex;
-                        break;
-                    case TransferErrorCode.FailedCheckingShouldTransfer:
-                        shouldStopTransfer = true;
-                        this.enumerateException = new TransferException(
-                            TransferErrorCode.FailToEnumerateDirectory,
-                            string.Format(CultureInfo.CurrentCulture,
-                                Resources.EnumerateDirectoryException,
-                                this.Destination.Instance.ConvertToString()),
-                            ex.InnerException);
-                        break;
+                    shouldStopTransfer = true;
+                    this.enumerateException = new TransferException(
+                        TransferErrorCode.FailToEnumerateDirectory,
+                        string.Format(CultureInfo.CurrentCulture,
+                            Resources.EnumerateDirectoryException,
+                            this.Destination.Instance.ConvertToString()),
+                        ex.InnerException);
                 }
 
                 hasError = true;

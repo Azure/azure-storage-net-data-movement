@@ -216,7 +216,5 @@ namespace Microsoft.Azure.Storage.DataMovement
             return Environment.Is64BitProcess ? (long)2 * 1024 * 1024 * 1024 : (long)512 * 1024 * 1024;
 #endif
         }
-
-        internal static readonly TimeSpan DefaultEnumerationWaitTimeOut = TimeSpan.FromSeconds(10);
     }
 }
