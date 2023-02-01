@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 null,
                 Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
 
             if (string.IsNullOrEmpty(this.sourceLocation.ETag))
             {
@@ -116,7 +116,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                      null,
                      Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
                      Utils.GenerateOperationContext(this.Controller.TransferContext),
-                     this.CancellationToken).ConfigureAwait(false))
+                     this.CancellationToken))
             {
                 rangeList.Add(new Utils.Range()
                 {
@@ -138,7 +138,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 null,
                 Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
         }
     }
 }

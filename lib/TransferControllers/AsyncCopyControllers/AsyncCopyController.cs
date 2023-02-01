@@ -179,7 +179,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (!this.TransferJob.Transfer.ShouldTransferChecked)
             {
                 this.hasWork = false;
-                if (await this.CheckShouldTransfer().ConfigureAwait(false))
+                if (await this.CheckShouldTransfer())
                 {
                     return true;
                 }
@@ -193,16 +193,16 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             switch (this.state)
             {
                 case State.FetchSourceAttributes:
-                    await this.FetchSourceAttributesAsync().ConfigureAwait(false);
+                    await this.FetchSourceAttributesAsync();
                     break;
                 case State.GetDestination:
-                    await this.GetDestinationAsync().ConfigureAwait(false);
+                    await this.GetDestinationAsync();
                     break;
                 case State.StartCopy:
-                    await this.StartCopyAsync().ConfigureAwait(false);
+                    await this.StartCopyAsync();
                     break;
                 case State.GetCopyState:
-                    await this.GetCopyStateAsync().ConfigureAwait(false);
+                    await this.GetCopyStateAsync();
                     break;
                 case State.Finished:
                 case State.Error:
@@ -328,7 +328,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             try
             {
-                await this.DoFetchSourceAttributesAsync().ConfigureAwait(false);
+                await this.DoFetchSourceAttributesAsync();
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
@@ -379,7 +379,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             {
                 try
                 {
-                    await this.DoFetchDestAttributesAsync().ConfigureAwait(false);
+                    await this.DoFetchDestAttributesAsync();
                 }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
                 catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
@@ -389,7 +389,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 catch (StorageException se)
                 {
 #endif
-                    if (!await this.HandleGetDestinationResultAsync(se).ConfigureAwait(false))
+                    if (!await this.HandleGetDestinationResultAsync(se))
                     {
                         throw se;
                     }
@@ -397,7 +397,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            await this.HandleGetDestinationResultAsync(null).ConfigureAwait(false);
+            await this.HandleGetDestinationResultAsync(null);
         }
 
         private async Task<bool> HandleGetDestinationResultAsync(Exception e)
@@ -448,7 +448,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 await this.CheckOverwriteAsync(
                     destExist,
                     sourceUri.ToString(),
-                    this.DestUri.ToString()).ConfigureAwait(false);
+                    this.DestUri.ToString());
             }
 
             this.UpdateProgressAddBytesTransferred(0);
@@ -471,7 +471,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             try
             {
-                copyState = await this.DoStartCopyAsync().ConfigureAwait(false);
+                copyState = await this.DoStartCopyAsync();
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
@@ -493,7 +493,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             if ((copyState.Status == StorageCopyStatus.Success) && copyState.TotalBytes.HasValue)
             {
-                await this.HandleFetchCopyStateResultAsync(copyState, false).ConfigureAwait(false);
+                await this.HandleFetchCopyStateResultAsync(copyState, false);
             }
             else
             {
@@ -579,7 +579,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             try
             {
-                copyState = await this.FetchCopyStateAsync().ConfigureAwait(false);
+                copyState = await this.FetchCopyStateAsync();
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
@@ -601,7 +601,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            await this.HandleFetchCopyStateResultAsync(copyState).ConfigureAwait(false);
+            await this.HandleFetchCopyStateResultAsync(copyState);
         }
 
         // In this method, it may need to set customized properties to destination.
@@ -644,12 +644,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     {
                         if (!gotDestinationAttributes)
                         {
-                            await this.DoFetchDestAttributesAsync().ConfigureAwait(false);
+                            await this.DoFetchDestAttributesAsync();
                         }
 
                         // If got here, we've done FetchAttributes on destination after copying completed on server,
                         // no need to one more round of FetchAttributes anymore.
-                        await this.SetAttributesAsync(this.TransferContext.SetAttributesCallbackAsync).ConfigureAwait(false);
+                        await this.SetAttributesAsync(this.TransferContext.SetAttributesCallbackAsync);
                     }
 
                     this.SetFinished();
@@ -784,7 +784,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     accessCondition,
                     Utils.GenerateBlobRequestOptions(sourceLocation.BlobRequestOptions),
                     operationContext,
-                    this.CancellationToken).ConfigureAwait(false);
+                    this.CancellationToken);
             }
             else if(this.TransferJob.Source.Type == TransferLocationType.AzureFile)
             {
@@ -797,7 +797,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     accessCondition,
                     Utils.GenerateFileRequestOptions(sourceLocation.FileRequestOptions),
                     operationContext,
-                    this.CancellationToken).ConfigureAwait(false);
+                    this.CancellationToken);
             }
         }
 

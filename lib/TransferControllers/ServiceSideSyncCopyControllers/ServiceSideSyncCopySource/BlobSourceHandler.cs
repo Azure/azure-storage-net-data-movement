@@ -92,7 +92,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                         accessCondition,
                         Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                         Utils.GenerateOperationContext(this.transferContext),
-                        cancellationToken).ConfigureAwait(false);
+                        cancellationToken);
                 }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))

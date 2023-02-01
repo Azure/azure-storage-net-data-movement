@@ -228,7 +228,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <c>TResult</c> parameter contains the total number of bytes read into the buffer.</returns>
         public async Task<int> ReadAsync(long readOffset, byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            await this.WaitOnSemaphoreAsync(cancellationToken).ConfigureAwait(false);
+            await this.WaitOnSemaphoreAsync(cancellationToken);
 
             try
             {
@@ -241,7 +241,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     buffer,
                     offset,
                     count,
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken);
             }
             finally
             {
@@ -264,10 +264,10 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             if (buffers.Length == 1)
             {
-                return await this.ReadAsync(readOffset, buffers[0], offset, count, cancellationToken).ConfigureAwait(false);
+                return await this.ReadAsync(readOffset, buffers[0], offset, count, cancellationToken);
             }
 
-            await this.WaitOnSemaphoreAsync(cancellationToken).ConfigureAwait(false);
+            await this.WaitOnSemaphoreAsync(cancellationToken);
 
             try
             {
@@ -306,7 +306,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         buffers[currentChunk],
                         currentChunkOffset,
                         bytesToRead,
-                        cancellationToken).ConfigureAwait(false);
+                        cancellationToken);
 
                     totalBytesRead += bytesRead;
                     if (bytesRead < bytesToRead)
@@ -342,7 +342,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <returns>A task that represents the asynchronous write operation.</returns>
         public async Task WriteAsync(long writeOffset, byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            await this.WaitOnSemaphoreAsync(cancellationToken).ConfigureAwait(false);
+            await this.WaitOnSemaphoreAsync(cancellationToken);
 
             try
             {
@@ -380,7 +380,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return;
             }
 
-            await this.WaitOnSemaphoreAsync(cancellationToken).ConfigureAwait(false);
+            await this.WaitOnSemaphoreAsync(cancellationToken);
 
             try
             {
@@ -419,7 +419,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         buffers[currentChunk],
                         currentChunkOffset,
                         bytesToWrite,
-                        cancellationToken).ConfigureAwait(false);
+                        cancellationToken);
 
                     if (remainingCountInCurrentChunk <= count)
                     {
@@ -676,7 +676,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             if (!this.finishedSeparateMd5Calculator)
             {
-                await this.semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                await this.semaphore.WaitAsync(cancellationToken);
             }
         }
 

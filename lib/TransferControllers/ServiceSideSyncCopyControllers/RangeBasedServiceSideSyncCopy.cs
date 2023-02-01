@@ -64,7 +64,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.nextRangesSpanOffset += Constants.PageRangesSpanSize;
             this.hasWork = (this.nextRangesSpanOffset < this.SourceHandler.TotalLength);
 
-            var pageRanges = await this.rangeBasedSourceHandler.GetCopyRangesAsync(rangeSpanOffset, rangeSpanLength, this.CancellationToken).ConfigureAwait(false);
+            var pageRanges = await this.rangeBasedSourceHandler.GetCopyRangesAsync(rangeSpanOffset, rangeSpanLength, this.CancellationToken);
 
             long pageOffset = rangeSpanOffset;
             List<long> pageList = new List<long>();
@@ -196,7 +196,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         {
             this.hasWork = false;
 
-            await this.CheckAndCreateDestinationAsync().ConfigureAwait(false);
+            await this.CheckAndCreateDestinationAsync();
 
             PrepareForCopy();
             this.hasWork = true;
@@ -324,7 +324,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             Uri sourceUri = this.SourceHandler.GetCopySourceUri();
             long length = Math.Min(this.SourceHandler.TotalLength - startOffset, Constants.DefaultTransferChunkSize);
 
-            await this.CopyChunkFromUriAsync(startOffset, length).ConfigureAwait(false);
+            await this.CopyChunkFromUriAsync(startOffset, length);
 
             this.UpdateProgress(() =>
             {
@@ -350,7 +350,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             this.hasWork = false;
 
-            await this.CommonCommitAsync().ConfigureAwait(false);
+            await this.CommonCommitAsync();
 
             this.SetFinish();
         }

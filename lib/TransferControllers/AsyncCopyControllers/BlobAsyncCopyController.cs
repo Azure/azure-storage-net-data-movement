@@ -102,7 +102,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     destAccessCondition,
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
-                    this.CancellationToken).ConfigureAwait(false);
+                    this.CancellationToken);
 
                 return new StorageCopyState(this.destBlob.CopyState);
             }
@@ -117,7 +117,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                          destAccessCondition,
                          Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                          Utils.GenerateOperationContext(this.TransferContext),
-                         this.CancellationToken).ConfigureAwait(false);
+                         this.CancellationToken);
 
                 var copyState = new StorageCopyState(this.destBlob.CopyState);
 
@@ -138,7 +138,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                              destAccessCondition,
                              Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                              Utils.GenerateOperationContext(this.TransferContext),
-                             this.CancellationToken).ConfigureAwait(false);
+                             this.CancellationToken);
 
                     var copyState = new StorageCopyState(this.destBlob.CopyState);
 
@@ -195,7 +195,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
 
             return new StorageCopyState(this.destBlob.CopyState);
         }
@@ -205,7 +205,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             var originalAttributes = Utils.GenerateAttributes(this.destBlob);
             var originalMetadata = new Dictionary<string, string>(this.destBlob.Metadata);
 
-            await setCustomAttributes(this.TransferJob.Source.Instance, this.destBlob).ConfigureAwait(false);
+            await setCustomAttributes(this.TransferJob.Source.Instance, this.destBlob);
 
             if (!Utils.CompareProperties(originalAttributes, Utils.GenerateAttributes(this.destBlob)))
             {
@@ -213,7 +213,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
-                    this.CancellationToken).ConfigureAwait(false);
+                    this.CancellationToken);
             }
 
             if (!originalMetadata.DictionaryEquals(this.destBlob.Metadata))
@@ -222,7 +222,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.TransferContext),
-                    this.CancellationToken).ConfigureAwait(false);
+                    this.CancellationToken);
             }
         }
     }

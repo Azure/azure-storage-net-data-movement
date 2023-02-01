@@ -435,7 +435,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 this.maxConcurrencyControl.Wait();
 
-                await DoEnumerationAndTransferAsync(scheduler, cancellationToken).ConfigureAwait(false);
+                await DoEnumerationAndTransferAsync(scheduler, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -447,14 +447,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             finally
             {
                 this.SignalSubDirTaskDecrement();
-                await this.subDirTransfersCompleteSource.Task.ConfigureAwait(false);
+                await this.subDirTransfersCompleteSource.Task;
 
                 if (this.maxConcurrency == this.maxConcurrencyControl.Release())
                 {
                     this.transfersCompleteSource.TrySetResult(null);
                 }
 
-                await this.transfersCompleteSource.Task.ConfigureAwait(false);
+                await this.transfersCompleteSource.Task;
             }
 
             if (null != this.enumerateException)
@@ -535,7 +535,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 using (transferItem)
                 {
-                    await transferItem.ExecuteAsync(scheduler, cancellationToken).ConfigureAwait(false);
+                    await transferItem.ExecuteAsync(scheduler, cancellationToken);
                 }
             }
             catch (TransferException ex)
@@ -792,7 +792,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 bool errorHappened = false;
                 try
                 {
-                    await directoryListTask.ConfigureAwait(false);
+                    await directoryListTask;
                 }
                 catch (OperationCanceledException)
                 {

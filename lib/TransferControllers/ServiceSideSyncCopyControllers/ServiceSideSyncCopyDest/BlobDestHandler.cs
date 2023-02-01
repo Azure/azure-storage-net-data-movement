@@ -70,7 +70,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                         Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, false),
                         Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                         Utils.GenerateOperationContext(this.transferContext),
-                        cancellationToken).ConfigureAwait(false);
+                        cancellationToken);
 
                     // Only try to send the blob creating request, when blob length is not as expected. Otherwise, only need to clear all pages.
                     needCreateDestination = true;
@@ -79,7 +79,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
                     if (!isForceOverwrite)
                     {
-                        await checkOverwrite(true).ConfigureAwait(false);
+                        await checkOverwrite(true);
                     }
                 }
                 catch (StorageException se)
@@ -95,7 +95,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
             {
                 if (this.transferJob.Overwrite.HasValue)
                 {
-                    await checkOverwrite(true).ConfigureAwait(false);
+                    await checkOverwrite(true);
                 }
                 else
                 {
@@ -103,7 +103,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
 
                     try
                     {
-                        await this.CreateDestinationAsync(totalLength, accessCondition, CancellationToken.None).ConfigureAwait(false);
+                        await this.CreateDestinationAsync(totalLength, accessCondition, CancellationToken.None);
 
                         needCreateDestination = false;
                         this.destLocation.CheckedAccessCondition = true;
@@ -116,7 +116,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                             (((int)HttpStatusCode.Conflict == se.RequestInformation.HttpStatusCode)
                                     && string.Equals(se.RequestInformation.ErrorCode, "BlobAlreadyExists")))
                         {
-                            await checkOverwrite(true).ConfigureAwait(false);
+                            await checkOverwrite(true);
                         }
                         else
                         {
@@ -140,7 +140,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                 await this.CreateDestinationAsync(
                     totalLength,
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
-                    CancellationToken.None).ConfigureAwait(false);
+                    CancellationToken.None);
             }
 
             return gotDestAttributes;
@@ -161,20 +161,20 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                      Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                      blobRequestOptions,
                      operationContext,
-                     cancellationToken).ConfigureAwait(false);
+                     cancellationToken);
             }
 
             var originalMetadata = new Dictionary<string, string>(this.destBlob.Metadata);
 
             Utils.SetAttributes(this.destBlob, sourceAttributes);
 
-            await setCustomAttributes(this.transferJob.Source.Instance, this.destBlob).ConfigureAwait(false);
+            await setCustomAttributes(this.transferJob.Source.Instance, this.destBlob);
 
             await this.destBlob.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 blobRequestOptions,
                 operationContext,
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
 
             if (!originalMetadata.DictionaryEquals(this.destBlob.Metadata))
             {
@@ -182,7 +182,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                     blobRequestOptions,
                     operationContext,
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken);
             }
         }
 

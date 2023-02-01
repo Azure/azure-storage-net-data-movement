@@ -100,13 +100,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             switch (this.state)
             {
                 case State.OpenOutputStream:
-                    await this.HandleOutputStreamAsync().ConfigureAwait(false);
+                    await this.HandleOutputStreamAsync();
                     break;
                 case State.CalculateMD5:
-                    await this.CalculateMD5Async().ConfigureAwait(false);
+                    await this.CalculateMD5Async();
                     break;
                 case State.Write:
-                    await this.WriteChunkDataAsync().ConfigureAwait(false);
+                    await this.WriteChunkDataAsync();
                     break;
                 default:
                     break;
@@ -175,7 +175,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         await this.Controller.CheckOverwriteAsync(
                             LongPathFile.Exists(this.longFilePath),
                             this.TransferJob.Source.Instance,
-                            this.filePath).ConfigureAwait(false);
+                            this.filePath);
                     }
 
                     this.Controller.CheckCancellation();
@@ -247,7 +247,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 {
                     this.hasWork = true;
                 }
-            }).ConfigureAwait(false);
+            });
         }
 
         private Task CalculateMD5Async()

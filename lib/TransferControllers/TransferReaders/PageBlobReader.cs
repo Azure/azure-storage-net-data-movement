@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     accessCondition,
                     Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
-                    this.CancellationToken).ConfigureAwait(false);
+                    this.CancellationToken);
             }
 
             if (string.IsNullOrEmpty(this.sourceLocation.ETag))
@@ -85,7 +85,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     accessCondition,
                     Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
-                    this.CancellationToken).ConfigureAwait(false))
+                    this.CancellationToken))
             {
                 rangeList.Add(new Utils.Range() 
                 {
@@ -111,7 +111,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 accessCondition,
                 Utils.GenerateBlobRequestOptions(this.sourceLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
         }
     }
 }

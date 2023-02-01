@@ -101,7 +101,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
 
                     status = Status.Finished;
-                }, this.CancellationToken).ConfigureAwait(false);
+                }, this.CancellationToken);
             return status == Status.Finished || status == Status.ErrorOccured;
         }
 

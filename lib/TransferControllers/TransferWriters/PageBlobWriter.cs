@@ -82,7 +82,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.destLocation.AccessCondition,
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
             this.destExist = true;
         }
 
@@ -108,7 +108,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions, true),
                 Utils.GenerateOperationContext(this.Controller.TransferContext),
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
         }
 
         protected override async Task WriteRangeAsync(TransferData transferData)
@@ -134,18 +134,18 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                     blobRequestOptions,
                     operationContext,
-                    this.CancellationToken).ConfigureAwait(false);
+                    this.CancellationToken);
             }
 
             var originalMetadata = new Dictionary<string, string>(this.pageBlob.Metadata);
             Utils.SetAttributes(this.pageBlob, this.SharedTransferData.Attributes);
-            await this.Controller.SetCustomAttributesAsync(this.TransferJob.Source.Instance, this.pageBlob).ConfigureAwait(false);
+            await this.Controller.SetCustomAttributesAsync(this.TransferJob.Source.Instance, this.pageBlob);
 
             await this.pageBlob.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 blobRequestOptions,
                 null,
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
             
             if (!originalMetadata.DictionaryEquals(this.pageBlob.Metadata))
             {
@@ -153,7 +153,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                              Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                              blobRequestOptions,
                              operationContext,
-                             this.CancellationToken).ConfigureAwait(false);
+                             this.CancellationToken);
             }
         }
 

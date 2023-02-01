@@ -76,7 +76,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                     null,
                     Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
                     Utils.GenerateOperationContext(this.transferContext),
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken);
             }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
             catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
@@ -173,7 +173,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                 null,
                 Utils.GenerateFileRequestOptions(this.sourceLocation.FileRequestOptions),
                 Utils.GenerateOperationContext(this.transferContext),
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
 
             List<Utils.Range> ranges = new List<Utils.Range>();
 

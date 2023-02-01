@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                 Utils.GenerateConditionWithCustomerCondition(this.SourceLocation.AccessCondition, this.SourceLocation.CheckedAccessCondition),
                 Utils.GenerateBlobRequestOptions(this.SourceLocation.BlobRequestOptions),
                 Utils.GenerateOperationContext(this.TransferContext),
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
 
             List<Utils.Range> ranges = new List<Utils.Range>();
 
