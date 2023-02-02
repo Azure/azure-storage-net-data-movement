@@ -134,6 +134,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <summary>
         /// Detected possible transfer stuck.
         /// </summary>
-        TransferStuck = 34
+        TransferStuck = 34,
+
+        /// <summary>
+        /// Detected content mismatch between source and destination
+        /// </summary>
+        ContentChecksumMismatch = 35,
     }
 }

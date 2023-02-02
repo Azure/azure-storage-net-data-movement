@@ -362,18 +362,24 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 if (this.md5HashStream.CheckMd5Hash && this.md5HashStream.SucceededSeparateMd5Calculator)
                 {
                     string calculatedMd5 = this.md5HashStream.MD5HashTransformFinalBlock();
-
                     string storedMd5 = this.SharedTransferData.Attributes.ContentMD5;
 
-                    if (!calculatedMd5.Equals(storedMd5))
+                    if (!IsEqualOrEmpty(calculatedMd5, storedMd5))
                     {
-                        ex = new InvalidOperationException(
-                                string.Format(
-                                    CultureInfo.CurrentCulture,
-                                    Resources.DownloadedMd5MismatchException,
-                                    $"{this.TransferJob.Source} ({Scheduler.MemoryManager.CellsStatistics})",
-                                    calculatedMd5,
-                                    storedMd5));
+                        var exceptionMessage = string.Format(
+                            CultureInfo.CurrentCulture,
+                            Resources.DownloadedMd5MismatchException, calculatedMd5,
+                            storedMd5);
+
+                        ex = new TransferException(
+                            TransferErrorCode.ContentChecksumMismatch,
+                            exceptionMessage);
+
+                        ex.Data.Add("source", this.TransferJob.Source);
+                        ex.Data.Add("destination", this.TransferJob.Destination);
+                        ex.Data.Add("calculatedMd5", calculatedMd5);
+                        ex.Data.Add("storedMd5", storedMd5);
+                        ex.Data.Add("cellStatistics", Scheduler.MemoryManager.CellsStatistics);
                     }
                 }
 
@@ -411,6 +417,18 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             {
                 this.hasWork = true;
             }
+        }
+
+        private static bool IsEqualOrEmpty(string calculatedMd5, string storedMd5)
+        {
+            // if there is no md5 stored on server side there is nothing to compare.
+            // We accept the risk and treat given file in the same way as the file with equal checksums
+            if (string.IsNullOrEmpty(storedMd5))
+            {
+                return true;
+            }
+
+            return calculatedMd5.Equals(storedMd5);
         }
 
         private void CloseOwnedOutputStream()

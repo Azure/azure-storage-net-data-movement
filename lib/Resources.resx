@@ -156,10 +156,10 @@
     <value>Destination might be changed by other process or application.</value>
   </data>
   <data name="DownloadedMd5MismatchException" xml:space="preserve">
-    <value>The MD5 hash calculated from the downloaded data does not match the MD5 hash stored in the property of source: {0}. Please refer to help or documentation for detail.
-MD5 calculated: {1}
-MD5 in property: {2}</value>
-    <comment>{0} is the uri of source, {1} is the calculated MD5, {2} is the MD5 stored in the source property</comment>
+    <value>The MD5 hash calculated from the downloaded data does not match the MD5 hash stored in the property of source. Please refer to help or documentation for detail.
+MD5 calculated: {0}
+MD5 in property: {1}</value>
+    <comment>{0} is the calculated MD5, {1} is the MD5 stored in the source property</comment>
   </data>
   <data name="DeadLoop" xml:space="preserve">
     <value>Potential dead loop in directory structure due to symbolic link {0} with target to {1}</value>
