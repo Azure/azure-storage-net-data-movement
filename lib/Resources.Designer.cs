@@ -250,9 +250,9 @@ namespace Microsoft.Azure.Storage.DataMovement {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The MD5 hash calculated from the downloaded data does not match the MD5 hash stored in the property of source: {0}. Please refer to help or documentation for detail.
-        ///MD5 calculated: {1}
-        ///MD5 in property: {2}.
+        ///   Looks up a localized string similar to The MD5 hash calculated from the downloaded data does not match the MD5 hash stored in the property of source. Please refer to help or documentation for detail.
+        ///MD5 calculated: {0}
+        ///MD5 in property: {1}.
         /// </summary>
         internal static string DownloadedMd5MismatchException {
             get {

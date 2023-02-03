@@ -108,10 +108,10 @@ namespace DMLibTest.Cases
             var result = this.ExecuteTestCase(sourceDataInfo, options);
 
             Test.Assert(result.Exceptions.Count == 1, "Verify there's one exception.");
-            Exception exception = result.Exceptions[0];
+            var exception = result.Exceptions[0] as TransferException;
 
-            Test.Assert(exception is InvalidOperationException, "Verify it's an invalid operation exception.");
-            VerificationHelper.VerifyExceptionErrorMessage(exception, "The MD5 hash calculated from the downloaded data does not match the MD5 hash stored", checkWrongMD5File);
+            Test.Assert(exception !=null && exception.ErrorCode == TransferErrorCode.ContentChecksumMismatch , "Verify it's an TransferException with ContentChecksumMismatch error code.");
+            VerificationHelper.VerifyExceptionErrorMessage(exception, "The MD5 hash calculated from the downloaded data does not match the MD5 hash stored");
         }
 
         [TestCategory(Tag.Function)]
@@ -155,7 +155,7 @@ namespace DMLibTest.Cases
             {
                 if (args.Exception != null)
                 {
-                    failureReported = args.Exception.Message.Contains(checkWrongMD5File);
+                    failureReported = (args.Exception.Data["source"] as TransferLocation)?.Instance == args.Source;
                 }
             };
 
@@ -342,7 +342,7 @@ namespace DMLibTest.Cases
             {
                 if (args.Exception != null)
                 {
-                    failureReported = args.Exception.Message.Contains(checkWrongMD5File);
+                    failureReported = (args.Exception.Data["source"] as TransferLocation)?.Instance == args.Source;
                 }
 
                 transferExceptions.Add(args.Exception);
@@ -488,7 +488,7 @@ namespace DMLibTest.Cases
                 {
                     if (args.Exception != null)
                     {
-                        failureReported = args.Exception.Message.Contains(wrongMD5File);
+                        failureReported = (args.Exception.Data["source"] as TransferLocation)?.Instance == args.Source;
                     }
 
                     transferExceptions.Add(args.Exception);
