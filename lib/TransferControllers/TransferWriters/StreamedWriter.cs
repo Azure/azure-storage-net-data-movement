@@ -378,7 +378,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         ex.Data.Add("destination", this.TransferJob.Destination);
                         ex.Data.Add("calculatedMd5", calculatedMd5);
                         ex.Data.Add("storedMd5", storedMd5);
-                        ex.Data.Add("cellStatistics", Scheduler.MemoryManager.CellsStatistics);
                     }
                 }
 
