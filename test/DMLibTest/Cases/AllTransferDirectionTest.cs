@@ -127,7 +127,6 @@ namespace DMLibTest
                 }
             }
 
-            DMLibTestContext.DestType = DMLibDataType.AppendBlob;
             // Generate source data for URI source separately since it's destination related
             DataAdaptor<DMLibDataInfo> uriSourceAdaptor = GetSourceAdaptor(DMLibDataType.URI);
             uriSourceAdaptor.Cleanup();
