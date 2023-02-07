@@ -200,7 +200,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             try
             {
-                await UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken).ConfigureAwait(false);
+                await UploadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
             }
             finally
             {
@@ -385,7 +385,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             try
             {
-                return await UploadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken).ConfigureAwait(false);
+                return await UploadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
             }
             finally
             {
@@ -525,7 +525,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             try
             {
-                await DownloadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken).ConfigureAwait(false);
+                await DownloadInternalAsync(sourceLocation, destLocation, options, context, cancellationToken);
             }
             finally
             {
@@ -669,7 +669,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             try
             {
-                return await DownloadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken).ConfigureAwait(false);
+                return await DownloadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
             }
             finally
             {
@@ -1669,7 +1669,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
             }
 
-            await DoTransfer(transfer, context, cancellationToken).ConfigureAwait(false);
+            await DoTransfer(transfer, context, cancellationToken);
 
             return TransferManager.CreateTransferSummary(transfer.ProgressTracker);
         }
@@ -1703,7 +1703,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 transfer.SourceEnumerator = sourceEnumerator;
             }
 
-            await DoTransfer(transfer, context, cancellationToken).ConfigureAwait(false);
+            await DoTransfer(transfer, context, cancellationToken);
 
             return TransferManager.CreateTransferSummary(transfer.ProgressTracker);
         }
@@ -1748,7 +1748,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
             }
 
-            await DoTransfer(transfer, context, cancellationToken).ConfigureAwait(false);
+            await DoTransfer(transfer, context, cancellationToken);
 
             return TransferManager.CreateTransferSummary(transfer.ProgressTracker);
         }
@@ -1774,7 +1774,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 try
                 {
-                    await transfer.ExecuteAsync(scheduler, cancellationToken).ConfigureAwait(false);
+                    await transfer.ExecuteAsync(scheduler, cancellationToken);
                 }
                 finally
                 {

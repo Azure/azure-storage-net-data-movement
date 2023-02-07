@@ -100,10 +100,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             switch (this.state)
             {
                 case State.OpenInputStream:
-                    await this.OpenInputStreamAsync().ConfigureAwait(false);
+                    await this.OpenInputStreamAsync();
                     break;
                 case State.ReadStream:
-                    await this.ReadStreamAsync().ConfigureAwait(false);
+                    await this.ReadStreamAsync();
                     break;
                 case State.Error:
                 case State.Finished:
@@ -263,8 +263,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.md5HashStream = new MD5HashStream(
                 this.inputStream,
                 this.transferJob.CheckPoint.EntryTransferOffset,
-                true,
-                this.Controller.TransferContext?.ClientRequestId);
+                true);
 
             this.PreProcessed = true;
 
@@ -284,7 +283,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 await Task.Run(() =>
                 {
                     this.md5HashStream.CalculateMd5(this.Scheduler.MemoryManager, this.Controller.CheckCancellation);
-                }).ConfigureAwait(false);
+                });
             }
 
             this.SetChunkFinish();
@@ -311,7 +310,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 await Task.Yield();
             }
 
-            byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.Controller.TransferContext?.ClientRequestId, this.SharedTransferData.MemoryChunksRequiredEachTime);
+            byte[][] memoryBuffer = this.Scheduler.MemoryManager.RequireBuffers(this.SharedTransferData.MemoryChunksRequiredEachTime);
 
             if (null != memoryBuffer)
             {
@@ -379,7 +378,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                 using (asyncState)
                 {
-                    await this.ReadChunkAsync(asyncState).ConfigureAwait(false);
+                    await this.ReadChunkAsync(asyncState);
                 }
             }
 
@@ -398,7 +397,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 asyncState.MemoryBuffer,
                 asyncState.BytesRead,
                 asyncState.Length - asyncState.BytesRead,
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
 
             // If a parallel operation caused the controller to be placed in
             // error state exit early to avoid unnecessary I/O.
@@ -419,7 +418,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             if (asyncState.BytesRead < asyncState.Length)
             {
-                await this.ReadChunkAsync(asyncState).ConfigureAwait(false);
+                await this.ReadChunkAsync(asyncState);
             }
             else
             {

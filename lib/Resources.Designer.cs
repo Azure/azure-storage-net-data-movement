@@ -801,15 +801,6 @@ namespace Microsoft.Azure.Storage.DataMovement {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Detected a stuck transfer. Outstanding tasks: {0}. {1}..
-        /// </summary>
-        internal static string TransferStuckException {
-            get {
-                return ResourceManager.GetString("TransferStuckException", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Unable to load a dll, this might because the target dll is located on a disk without exec permission..
         /// </summary>
         internal static string UnableToLoadDLL {

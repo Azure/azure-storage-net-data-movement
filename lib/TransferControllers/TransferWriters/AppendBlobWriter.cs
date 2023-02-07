@@ -86,16 +86,16 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             switch (this.state)
             {
                 case State.FetchAttributes:
-                    await this.FetchAttributesAsync().ConfigureAwait(false);
+                    await this.FetchAttributesAsync();
                     break;
                 case State.Create:
-                    await this.CreateAsync().ConfigureAwait(false);
+                    await this.CreateAsync();
                     break;
                 case State.UploadBlob:
-                    await this.UploadBlobAsync().ConfigureAwait(false);
+                    await this.UploadBlobAsync();
                     break;
                 case State.Commit:
-                    await this.CommitAsync().ConfigureAwait(false);
+                    await this.CommitAsync();
                     break;
                 case State.Error:
                 default:
@@ -145,8 +145,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             accessCondition,
                             Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                             Utils.GenerateOperationContext(this.Controller.TransferContext),
-                            this.CancellationToken).ConfigureAwait(false),
-                        this.CancellationToken).ConfigureAwait(false);
+                            this.CancellationToken),
+                        this.CancellationToken);
 
                     this.destExist = true;
                 }
@@ -179,7 +179,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 }
             }
 
-            await this.HandleFetchAttributesResultAsync(existingBlob).ConfigureAwait(false);
+            await this.HandleFetchAttributesResultAsync(existingBlob);
         }
 
         private async Task HandleFetchAttributesResultAsync(bool existingBlob)
@@ -192,7 +192,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 await this.Controller.CheckOverwriteAsync(
                     existingBlob,
                     this.SharedTransferData.TransferJob.Source.Instance,
-                    this.appendBlob).ConfigureAwait(false);
+                    this.appendBlob);
             }
 
             this.Controller.UpdateProgressAddBytesTransferred(0);
@@ -273,8 +273,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     accessCondition,
                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions, true),
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
-                    this.CancellationToken).ConfigureAwait(false),
-                this.CancellationToken).ConfigureAwait(false);
+                    this.CancellationToken),
+                this.CancellationToken);
 
             this.PreProcessed = true;
 
@@ -340,8 +340,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                                     accessCondition,
                                     Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                                     Utils.GenerateOperationContext(this.Controller.TransferContext),
-                                    this.CancellationToken).ConfigureAwait(false),
-                                this.CancellationToken).ConfigureAwait(false);
+                                    this.CancellationToken),
+                                this.CancellationToken);
                         }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
                         catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
@@ -365,7 +365,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         }
 
                         if (needToCheckContent &&
-                            (!await this.ValidateUploadedChunkAsync(transferData.MemoryBuffer, currentOffset, (long)transferData.Length).ConfigureAwait(false)))
+                            (!await this.ValidateUploadedChunkAsync(transferData.MemoryBuffer, currentOffset, (long)transferData.Length)))
                         {
                             throw new InvalidOperationException(Resources.DestinationChangedException, catchedStorageException);
                         }
@@ -421,19 +421,19 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                         blobRequestOptions,
                         operationContext,
-                        this.CancellationToken).ConfigureAwait(false),
-                    this.CancellationToken).ConfigureAwait(false);
+                        this.CancellationToken),
+                    this.CancellationToken);
             }
 
             var originalMetadata = new Dictionary<string, string>(this.appendBlob.Metadata);
             Utils.SetAttributes(this.appendBlob, this.SharedTransferData.Attributes);
-            await this.Controller.SetCustomAttributesAsync(this.SharedTransferData.TransferJob.Source.Instance, this.appendBlob).ConfigureAwait(false);
+            await this.Controller.SetCustomAttributesAsync(this.SharedTransferData.TransferJob.Source.Instance, this.appendBlob);
 
             await this.appendBlob.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 blobRequestOptions,
                 operationContext,
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
 
             if (!originalMetadata.DictionaryEquals(this.appendBlob.Metadata))
             {
@@ -441,7 +441,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                     blobRequestOptions,
                     operationContext,
-                    this.CancellationToken).ConfigureAwait(false);
+                    this.CancellationToken);
             }
 
             this.SetFinish();
@@ -455,7 +455,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 accessCondition,
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 operationContext,
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
 
             this.destExist = true;
 
@@ -481,7 +481,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 accessCondition,
                 Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions),
                 operationContext,
-                this.CancellationToken).ConfigureAwait(false);
+                this.CancellationToken);
 
             int index = 0;
             for (int i = 0; i < currentData.Length; i++)

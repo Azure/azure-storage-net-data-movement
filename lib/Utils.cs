@@ -285,7 +285,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <returns>The <see cref="Task"/>.</returns>
         public static async Task ExecuteXsclApiCallAsync(Func<Task> func, CancellationToken cancellationToken)
         {
-            await Task.Run(async () => await func().ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+            await Task.Run(async () => await func(), cancellationToken);
         }
 
         public static Attributes GenerateAttributes(CloudBlob blob)
@@ -548,10 +548,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             return false;
         }
 
-        public static byte[] RequireBuffer(string clientRequestId, MemoryManager memoryManager, Action checkCancellation)
+        public static byte[] RequireBuffer(MemoryManager memoryManager, Action checkCancellation)
         {
             byte[] buffer;
-            buffer = memoryManager.RequireBuffer(clientRequestId);
+            buffer = memoryManager.RequireBuffer();
 
             if (null == buffer)
             {
@@ -562,7 +562,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     checkCancellation();
                     retryInterval <<= 1;
                     Thread.Sleep(retryInterval);
-                    buffer = memoryManager.RequireBuffer(clientRequestId);
+                    buffer = memoryManager.RequireBuffer();
                     ++retryCount;
                 }
             }

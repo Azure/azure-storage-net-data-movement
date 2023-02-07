@@ -10,7 +10,6 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Threading;
 
     /// <summary>
     /// Class for maintaining a pool of memory buffer objects.
@@ -25,8 +24,6 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private readonly object memoryCapacityLockObject = new object();
 
-        public string CellsStatistics => memoryPool.CellsStatistics;
-
         public MemoryManager(
             long capacity, int bufferSize)
         {
@@ -39,14 +36,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             this.memoryPool = new MemoryPool(cellNumber, bufferSize);
         }
 
-        public byte[] RequireBuffer(string clientRequestId)
+        public byte[] RequireBuffer()
         {
-            return this.memoryPool.GetBuffer(clientRequestId ?? string.Empty);
+            return this.memoryPool.GetBuffer();
         }
 
-        public byte[][] RequireBuffers(string clientRequestId, int count)
+        public byte[][] RequireBuffers(int count)
         {
-            return this.memoryPool.GetBuffers(clientRequestId ?? string.Empty, count);
+            return this.memoryPool.GetBuffers(count);
         }
 
         public void ReleaseBuffer(byte[] buffer)
@@ -57,12 +54,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         public void ReleaseBuffers(byte[][] buffer)
         {
             this.memoryPool.AddBuffers(buffer);
-        }
-
-
-        public void ReleaseBuffers(string clientRequestId)
-        {
-	        this.memoryPool.AddBuffers(clientRequestId ?? string.Empty);
         }
 
         internal void SetMemoryLimitation(long memoryLimitation)
@@ -89,18 +80,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             private int allocatedCells;
             private object cellsListLock;
             private MemoryCell cellsListHeadCell;
-            private ConcurrentDictionary<string, ConcurrentDictionary<byte[], MemoryCell>> transfers;
-
-            public string CellsStatistics
-            {
-	            get
-	            {
-		            lock (cellsListLock)
-		            {
-			            return $"Memory cells (allocated/available/total): {allocatedCells}/{availableCells}/{maxCellCount}";
-		            }
-	            }
-            }
+            private ConcurrentDictionary<byte[], MemoryCell> cellsInUse;
 
             public MemoryPool(int cellsCount, int bufferSize)
             {
@@ -111,7 +91,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 this.allocatedCells = 0;
                 this.cellsListLock = new object();
                 this.cellsListHeadCell = null;
-                this.transfers = new ConcurrentDictionary<string, ConcurrentDictionary<byte[], MemoryCell>>();
+                this.cellsInUse = new ConcurrentDictionary<byte[], MemoryCell>();
             }
 
             public void SetCapacity(int cellsCount)
@@ -129,9 +109,9 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
             }
 
-            public byte[] GetBuffer(string clientRequestId)
+            public byte[] GetBuffer()
             {
-	            if (this.availableCells > 0)
+                if (this.availableCells > 0)
                 {
                     MemoryCell retCell = null;
 
@@ -157,7 +137,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                     if (null != retCell)
                     {
-	                    TryAddCellsInUse(clientRequestId, retCell);
+                        this.cellsInUse.TryAdd(retCell.Buffer, retCell);
                         return retCell.Buffer;
                     }
                 }
@@ -165,7 +145,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return null;
             }
 
-            public byte[][] GetBuffers(string clientRequestId, int count)
+            public byte[][] GetBuffers(int count)
             {
                 if (this.availableCells >= count)
                 {
@@ -194,7 +174,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                                 --this.availableCells;
 
-                                TryAddCellsInUse(clientRequestId, retCell);
+                                this.cellsInUse.TryAdd(retCell.Buffer, retCell);
                                 retCells.Add(retCell);
                             }
                         }
@@ -216,11 +196,16 @@ namespace Microsoft.Azure.Storage.DataMovement
                     throw new ArgumentNullException("buffer");
                 }
 
-                foreach (var transferCells in this.transfers.Values)
+                MemoryCell cell;
+                if (this.cellsInUse.TryRemove(buffer, out cell))
                 {
-	                RemoveCell(buffer, transferCells);
+                    lock (this.cellsListLock)
+                    {
+                        cell.NextCell = this.cellsListHeadCell;
+                        this.cellsListHeadCell = cell;
+                        ++this.availableCells;
+                    }
                 }
-                
             }
 
             public void AddBuffers(byte[][] buffers)
@@ -238,59 +223,17 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 foreach (var buffer in buffers)
                 {
-	                foreach (var transferCells in this.transfers.Values)
-	                {
-		                RemoveCell(buffer, transferCells);
+                    MemoryCell cell;
+                    if (this.cellsInUse.TryRemove(buffer, out cell))
+                    {
+                        lock (this.cellsListLock)
+                        {
+                            cell.NextCell = this.cellsListHeadCell;
+                            this.cellsListHeadCell = cell;
+                            ++this.availableCells;
+                        }
                     }
                 }
-            }
-
-            public void AddBuffers(string clientRequestId)
-            {
-	            this.transfers.TryGetValue(clientRequestId, out var transferCells);
-
-	            if (transferCells == null)
-	            {
-		            return;
-	            }
-
-                foreach (var buffer in transferCells.Keys)
-                {
-	                RemoveCell(buffer, transferCells);
-                }
-
-                this.transfers.TryRemove(clientRequestId, out var _);
-            }
-
-            private void RemoveCell(byte[] buffer, ConcurrentDictionary<byte[], MemoryCell> cells)
-            {
-	            MemoryCell cell;
-	            if (cells.TryRemove(buffer, out cell))
-	            {
-		            lock (this.cellsListLock)
-		            {
-			            cell.NextCell = this.cellsListHeadCell;
-			            this.cellsListHeadCell = cell;
-			            ++this.availableCells;
-		            }
-	            }
-            }
-
-            private void TryAddCellsInUse(string clientRequestId, MemoryCell retCell)
-            {
-	            this.transfers.AddOrUpdate(
-		            clientRequestId,
-		            ctx =>
-		            {
-			            var newDict = new ConcurrentDictionary<byte[], MemoryCell>();
-			            newDict.TryAdd(retCell.Buffer, retCell);
-			            return newDict;
-		            },
-		            (ctx, dict) =>
-		            {
-			            dict.TryAdd(retCell.Buffer, retCell);
-			            return dict;
-		            });
             }
         }
 

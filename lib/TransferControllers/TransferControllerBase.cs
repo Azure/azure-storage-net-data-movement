@@ -162,7 +162,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                 try
                 {
-                    shouldTransfer = await directoryTransferContext.ShouldTransferCallbackAsync(this.TransferJob.Source.Instance, this.TransferJob.Destination.Instance).ConfigureAwait(false);
+                    shouldTransfer = await directoryTransferContext.ShouldTransferCallbackAsync(this.TransferJob.Source.Instance, this.TransferJob.Destination.Instance);
                 }
                 catch (Exception ex)
                 {
@@ -211,7 +211,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             try
             {
                 Utils.CheckCancellation(this.CancellationToken);
-                setFinish = await this.DoWorkInternalAsync().ConfigureAwait(false);
+                setFinish = await this.DoWorkInternalAsync();
             }
             catch (Exception ex)
             {
@@ -416,7 +416,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             {
                 if (exist)
                 {
-                    if (null == this.TransferContext || null == this.TransferContext.ShouldOverwriteCallbackAsync || !await this.TransferContext.ShouldOverwriteCallbackAsync(source, dest).ConfigureAwait(false))
+                    if (null == this.TransferContext || null == this.TransferContext.ShouldOverwriteCallbackAsync || !await this.TransferContext.ShouldOverwriteCallbackAsync(source, dest))
                     {
                         this.TransferJob.Overwrite = false;
                     }
@@ -444,7 +444,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
         {
             if (null != this.TransferContext && null != this.TransferContext.SetAttributesCallbackAsync)
             {
-                await this.TransferContext.SetAttributesCallbackAsync(source, dest).ConfigureAwait(false);
+                await this.TransferContext.SetAttributesCallbackAsync(source, dest);
             }
         }
     }

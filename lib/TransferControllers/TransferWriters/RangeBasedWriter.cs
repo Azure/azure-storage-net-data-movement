@@ -88,16 +88,16 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             switch (this.state)
             { 
                 case State.FetchAttributes:
-                    await this.FetchAttributesAsync().ConfigureAwait(false);
+                    await this.FetchAttributesAsync();
                     break;
                 case State.Create:
-                    await this.CreateAsync().ConfigureAwait(false);
+                    await this.CreateAsync();
                     break;
                 case State.Upload:
-                    await this.UploadAsync().ConfigureAwait(false);
+                    await this.UploadAsync();
                     break;
                 case State.Commit:
-                    await this.CommitAsync().ConfigureAwait(false);
+                    await this.CommitAsync();
                     break;
                 case State.Error:
                 case State.Finished:
@@ -138,8 +138,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 try
                 {
                     await Utils.ExecuteXsclApiCallAsync(
-                        async () => await this.DoFetchAttributesAsync().ConfigureAwait(false),
-                        this.CancellationToken).ConfigureAwait(false);
+                        async () => await this.DoFetchAttributesAsync(),
+                        this.CancellationToken);
                 }
 #if EXPECT_INTERNAL_WRAPPEDSTORAGEEXCEPTION
                 catch (Exception e) when (e is StorageException || (e is AggregateException && e.InnerException is StorageException))
@@ -173,7 +173,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 await this.Controller.CheckOverwriteAsync(
                     exist,
                     this.TransferJob.Source.Instance,
-                    this.TransferJob.Destination.Instance).ConfigureAwait(false);
+                    this.TransferJob.Destination.Instance);
             }
 
             if (this.TransferJob.Destination.Type == TransferLocationType.AzureBlob)
@@ -216,8 +216,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
 
             await Utils.ExecuteXsclApiCallAsync(
-                async () => await this.DoCreateAsync(this.SharedTransferData.TotalLength).ConfigureAwait(false),
-                this.CancellationToken).ConfigureAwait(false);
+                async () => await this.DoCreateAsync(this.SharedTransferData.TotalLength),
+                this.CancellationToken);
 
             this.InitUpload();
         }
@@ -394,8 +394,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.hasWork = false;
 
             await Utils.ExecuteXsclApiCallAsync(
-                async () => await this.DoCommitAsync().ConfigureAwait(false),
-                this.CancellationToken).ConfigureAwait(false);
+                async () => await this.DoCommitAsync(),
+                this.CancellationToken);
             
             this.SetFinished();
         }

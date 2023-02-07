@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// In a flat directory transfer, the enumeration only returns file entries and it only transfers files under the directory.
     ///
     /// In a hierarchy directory transfer, the enumeration also returns directory entries,
-    /// it transfers files under the directory and also handles operations on directories.
+    /// it transfers files under the directory and also handles opertions on directories.
     /// </summary>
 #if BINARY_SERIALIZATION
     [Serializable]
@@ -435,7 +435,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 this.maxConcurrencyControl.Wait();
 
-                await DoEnumerationAndTransferAsync(scheduler, cancellationToken).ConfigureAwait(false);
+                await DoEnumerationAndTransferAsync(scheduler, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -447,14 +447,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             finally
             {
                 this.SignalSubDirTaskDecrement();
-                await this.subDirTransfersCompleteSource.Task.ConfigureAwait(false);
+                await this.subDirTransfersCompleteSource.Task;
 
                 if (this.maxConcurrency == this.maxConcurrencyControl.Release())
                 {
                     this.transfersCompleteSource.TrySetResult(null);
                 }
 
-                await this.transfersCompleteSource.Task.ConfigureAwait(false);
+                await this.transfersCompleteSource.Task;
             }
 
             if (null != this.enumerateException)
@@ -535,26 +535,20 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 using (transferItem)
                 {
-                    await transferItem.ExecuteAsync(scheduler, cancellationToken).ConfigureAwait(false);
+                    await transferItem.ExecuteAsync(scheduler, cancellationToken);
                 }
             }
             catch (TransferException ex)
             {
-                switch (ex.ErrorCode)
+                if (ex.ErrorCode == TransferErrorCode.FailedCheckingShouldTransfer)
                 {
-                    case TransferErrorCode.TransferStuck:
-                        shouldStopTransfer = true;
-                        this.enumerateException = ex;
-                        break;
-                    case TransferErrorCode.FailedCheckingShouldTransfer:
-                        shouldStopTransfer = true;
-                        this.enumerateException = new TransferException(
-                            TransferErrorCode.FailToEnumerateDirectory,
-                            string.Format(CultureInfo.CurrentCulture,
-                                Resources.EnumerateDirectoryException,
-                                this.Destination.Instance.ConvertToString()),
-                            ex.InnerException);
-                        break;
+                    shouldStopTransfer = true;
+                    this.enumerateException = new TransferException(
+                        TransferErrorCode.FailToEnumerateDirectory,
+                        string.Format(CultureInfo.CurrentCulture,
+                            Resources.EnumerateDirectoryException,
+                            this.Destination.Instance.ConvertToString()),
+                        ex.InnerException);
                 }
 
                 hasError = true;
@@ -798,7 +792,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 bool errorHappened = false;
                 try
                 {
-                    await directoryListTask.ConfigureAwait(false);
+                    await directoryListTask;
                 }
                 catch (OperationCanceledException)
                 {

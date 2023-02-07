@@ -219,7 +219,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             try
             {
-                await scheduler.ExecuteJobAsync(this.transferJob, cancellationToken).ConfigureAwait(false);
+                await scheduler.ExecuteJobAsync(this.transferJob, cancellationToken);
 
                 if (TransferJobStatus.SkippedDueToShouldNotTransfer != this.transferJob.Status)
                 {

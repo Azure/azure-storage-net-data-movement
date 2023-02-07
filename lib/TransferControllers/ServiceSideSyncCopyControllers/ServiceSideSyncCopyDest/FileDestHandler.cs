@@ -45,7 +45,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
             {
                 if (this.transferJob.Overwrite.HasValue)
                 {
-                    await checkOverwrite(true).ConfigureAwait(false);
+                    await checkOverwrite(true);
                 }
                 else 
                 {
@@ -55,14 +55,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                             null,
                             Utils.GenerateFileRequestOptions(this.destLocation.FileRequestOptions),
                             Utils.GenerateOperationContext(this.transferContext),
-                            cancellationToken).ConfigureAwait(false);
+                            cancellationToken);
 
                         // Only try to send the blob creating request, when blob length is not as expected. Otherwise, only need to clear all pages.
                         needCreateDestination = (this.destFile.Properties.Length != totalLength);
                         this.destLocation.CheckedAccessCondition = true;
                         gotDestAttributes = true;
 
-                        await checkOverwrite(true).ConfigureAwait(false);
+                        await checkOverwrite(true);
                     }
                     catch (StorageException se)
                     {
@@ -88,7 +88,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                 await this.CreateDestinationAsync(
                     totalLength,
                     null,
-                    CancellationToken.None).ConfigureAwait(false);
+                    CancellationToken.None);
             }
 
             return gotDestAttributes;
@@ -109,7 +109,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                      Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                      fileRequestOptions,
                      operationContext,
-                     cancellationToken).ConfigureAwait(false);
+                     cancellationToken);
             }
 
             var originalMetadata = new Dictionary<string, string>(this.destFile.Metadata);
@@ -155,13 +155,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                 }
             }
 
-            await setCustomAttributes(this.transferJob.Source.Instance, this.destFile).ConfigureAwait(false);
+            await setCustomAttributes(this.transferJob.Source.Instance, this.destFile);
 
             await this.destFile.SetPropertiesAsync(
                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                 fileRequestOptions,
                 operationContext,
-                cancellationToken).ConfigureAwait(false);
+                cancellationToken);
 
             if (!originalMetadata.DictionaryEquals(this.destFile.Metadata))
             {
@@ -169,7 +169,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers.ServiceSideSy
                     Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
                     fileRequestOptions,
                     operationContext,
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken);
             }
         }
 

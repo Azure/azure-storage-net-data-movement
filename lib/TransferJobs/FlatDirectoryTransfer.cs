@@ -19,14 +19,13 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Runtime.Serialization;
     using System.Threading;
     using System.Threading.Tasks;
-    using Shared.Protocol;
 
     /// <summary>
     /// Represents a flat directory transfer operation.
     /// In a flat directory transfer, the enumeration only returns file entries and it only transfers files under the directory.
     /// 
     /// In a hierarchy directory transfer, the enumeration also returns directory entries, 
-    /// it transfers files under the directory and also handles operations on directories.
+    /// it transfers files under the directory and also handles opertions on directories.
     /// </summary>
 #if BINARY_SERIALIZATION
     [Serializable]
@@ -57,6 +56,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Lock object for enumeration continuation token.
         /// </summary>
         private object lockEnumerateContinuationToken = new object();
+
+        /// <summary>
+        /// Timeout used in reset event waiting.
+        /// </summary>
+        private TimeSpan EnumerationWaitTimeOut = TimeSpan.FromSeconds(10);
 
         /// <summary>
         /// Used to block enumeration when have enumerated enough transfer entries.
@@ -92,8 +96,6 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private TaskCompletionSource<object> allTransfersCompleteSource;
 
-        private EnumerationTasksLimitManager enumerationTasksLimitManager;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="FlatDirectoryTransfer"/> class.
         /// </summary>
@@ -103,7 +105,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         public FlatDirectoryTransfer(TransferLocation source, TransferLocation dest, TransferMethod transferMethod)
             : base(source, dest, transferMethod)
         {
-	        this.subTransfers = new TransferCollection<SingleObjectTransfer>();
+            this.subTransfers = new TransferCollection<SingleObjectTransfer>();
             this.subTransfers.OverallProgressTracker.Parent = this.ProgressTracker;
         }
 
@@ -147,6 +149,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             // Constructors and field initializers are not called by DCS, so initialize things here
             progressUpdateLock = new ReaderWriterLockSlim();
             lockEnumerateContinuationToken = new object();
+            EnumerationWaitTimeOut = TimeSpan.FromSeconds(10);
 
             if (!IsStreamJournal)
             {
@@ -216,26 +219,18 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             this.ResetExecutionStatus();
 
-            using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+            try
             {
-	            try
-	            {
-		            Task listTask = Task.Run(() => this.ListNewTransfers(cts.Token));
+                Task listTask = Task.Run(() => this.ListNewTransfers(cancellationToken));
 
-		            await Task.Run(() => { this.EnumerateAndTransfer(scheduler, cts.Token); }).ConfigureAwait(false);
+                await Task.Run(() => { this.EnumerateAndTransfer(scheduler, cancellationToken); });
 
-		            await listTask.ConfigureAwait(false);
-	            }
-	            catch (TransferException transferException) when (transferException.ErrorCode.Equals(TransferErrorCode.TransferStuck))
-	            {
-		            HandleTransferStuckException(scheduler, cts);
-		            throw;
-                }
-	            finally
-	            {
-		            // wait for outstanding transfers to complete
-		            await allTransfersCompleteSource.Task.ConfigureAwait(false);
-	            }
+                await listTask;
+            }
+            finally
+            {
+                // wait for outstanding transfers to complete
+                await allTransfersCompleteSource.Task;
             }
 
             if (this.enumerateException != null)
@@ -276,17 +271,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 
             base.Dispose(disposing);
-        }
-
-        private void HandleTransferStuckException(TransferScheduler scheduler, CancellationTokenSource cts)
-        {
-	        // When transfer is stuck, the tasks it consists of need to be cancelled - otherwise they will hang indefinitely
-	        cts.Cancel();
-
-            // Even when the tasks were cancelled, buffers that they have allocated may not be released,
-            // which may cause subsequent transfers (possible retries) to get stuck immediately.
-            // Releasing all buffers allocated by the transfer that is stuck.
-            scheduler.MemoryManager.ReleaseBuffers(this.Context.ClientRequestId);
         }
 
         private void ListNewTransfers(CancellationToken cancellationToken)
@@ -336,7 +320,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         {
                             SingleObjectTransfer candidate = this.CreateTransfer(entry);
 
-                            bool shouldTransfer = shouldTransferCallback == null || await shouldTransferCallback(candidate.Source.Instance, candidate.Destination.Instance).ConfigureAwait(false);
+                            bool shouldTransfer = shouldTransferCallback == null || await shouldTransferCallback(candidate.Source.Instance, candidate.Destination.Instance);
 
                             return new Tuple<SingleObjectTransfer, TransferEntry>(shouldTransfer ? candidate : null, entry);
                         }
@@ -460,16 +444,8 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 foreach (var transfer in this.AllTransfers(cancellationToken))
                 {
-	                // -1 because there's one outstanding task for list while this method is called.
-	                long outstandingTasksForEnumeration = this.outstandingTasks - 1;
-	                enumerationTasksLimitManager.CheckAndPauseEnumeration(outstandingTasksForEnumeration, scheduler.MemoryManager, cancellationToken);
+                    this.CheckAndPauseEnumeration(cancellationToken);
                     transfer.UpdateProgressLock(this.progressUpdateLock);
-                    var handler = transfer.ProgressTracker.ProgressHandler;
-                    transfer.ProgressTracker.ProgressHandler = new Progress<TransferStatus>(s =>
-                    {
-                        handler?.Report(s);
-                        enumerationTasksLimitManager.ProgressMade();
-                    });
                     transfer.ShouldTransferChecked = true;
                     this.DoTransfer(transfer, scheduler, cancellationToken);
                 }
@@ -488,6 +464,18 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        private void CheckAndPauseEnumeration(CancellationToken cancellationToken)
+        {
+            // -1 because there's one outstanding task for list while this method is called.
+            if ((this.outstandingTasks - 1) > this.MaxTransferConcurrency)
+            {
+                while (!this.enumerationResetEvent.WaitOne(EnumerationWaitTimeOut)
+                    && !cancellationToken.IsCancellationRequested)
+                {
+                }
+            }
+        }
+
         private void ResetExecutionStatus()
         {
             if (this.enumerationResetEvent != null)
@@ -496,8 +484,6 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 
             this.enumerationResetEvent = new AutoResetEvent(true);
-
-            this.enumerationTasksLimitManager = new EnumerationTasksLimitManager(this.MaxTransferConcurrency, this.enumerationResetEvent, Constants.DefaultEnumerationWaitTimeOut, this.DirectoryContext?.TransferStuckTimeout);
 
             this.enumerateException = null;
 
@@ -517,7 +503,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
                 try
                 {
-                    await transfer.ExecuteAsync(scheduler, cancellationToken).ConfigureAwait(false);
+                    await transfer.ExecuteAsync(scheduler, cancellationToken);
                 }
                 catch
                 {
