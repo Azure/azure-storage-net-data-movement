@@ -181,6 +181,7 @@
     <Compile Include="TransferEnumerators\TransferEntry.cs" />
     <Compile Include="TransferEnumerators\TransferEnumeratorBase.cs" />
     <Compile Include="TransferEventArgs.cs" />
+    <Compile Include="TransferItemStatus.cs" />
     <Compile Include="TransferJobs\AzureBlobDirectoryLocation.cs" />
     <Compile Include="TransferJobs\AzureBlobLocation.cs" />
     <Compile Include="TransferJobs\AzureFileDirectoryLocation.cs" />

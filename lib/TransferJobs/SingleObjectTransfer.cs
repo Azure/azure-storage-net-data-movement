@@ -224,6 +224,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 if (TransferJobStatus.SkippedDueToShouldNotTransfer != this.transferJob.Status)
                 {
                     eventArgs.EndTime = DateTime.UtcNow;
+                    eventArgs.Status = this.transferJob.WritingStatus;
                     this.UpdateTransferJobStatus(this.transferJob, TransferJobStatus.Finished);
 
                     if (this.Context != null)

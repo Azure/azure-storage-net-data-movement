@@ -423,11 +423,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     else
                     {
                         this.TransferJob.Overwrite = true;
+                        this.TransferJob.WritingStatus = TransferItemStatus.Overwritten;
                     }
                 }
                 else
                 {
                     this.TransferJob.Overwrite = true;
+                    this.TransferJob.WritingStatus = TransferItemStatus.Created;
                 }
 
                 this.TransferJob.Transfer.UpdateJournal();

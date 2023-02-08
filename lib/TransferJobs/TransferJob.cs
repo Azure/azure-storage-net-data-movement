@@ -127,6 +127,15 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
         /// <summary>
+        /// Gets or sets whether the file exists on destination and will be (or was) overwritten.
+        /// </summary>
+        public TransferItemStatus? WritingStatus
+        {
+	        get;
+	        set;
+        }
+
+        /// <summary>
         /// Gets or sets ID for the asynchronous copy operation.
         /// </summary>
         /// <value>ID for the asynchronous copy operation.</value>

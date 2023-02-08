@@ -21,6 +21,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             this.Source = source;
             this.Destination = destination;
+            this.Status = TransferItemStatus.Created;
         }
 
         /// <summary>
@@ -66,6 +67,15 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             get;
             internal set;
+        }
+
+        /// <summary>
+        /// Gets the status of the item, depending on whether an item of identical name existed already at destination.
+        /// </summary>
+        public TransferItemStatus? Status
+        {
+	        get;
+	        internal set;
         }
     }
 }
