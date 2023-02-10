@@ -39,6 +39,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		version.txt = version.txt
 	EndProjectSection
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Azure.Storage.DataMovement.Client", "samples\Microsoft.Azure.Storage.DataMovement.Client\Microsoft.Azure.Storage.DataMovement.Client.csproj", "{277703E5-ECBB-4630-AA49-FD40F323F3B0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,6 +87,10 @@ Global
 		{95568547-722F-4628-B4EF-9AE8E63854CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{95568547-722F-4628-B4EF-9AE8E63854CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{95568547-722F-4628-B4EF-9AE8E63854CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{277703E5-ECBB-4630-AA49-FD40F323F3B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{277703E5-ECBB-4630-AA49-FD40F323F3B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{277703E5-ECBB-4630-AA49-FD40F323F3B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{277703E5-ECBB-4630-AA49-FD40F323F3B0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -100,6 +106,7 @@ Global
 		{1BF00C88-1FCE-445B-A09F-04E7420E473B} = {2E5D799B-A7A5-4C67-9FBF-65FC568FA554}
 		{DEC84494-18ED-4011-B999-E40DE26F68ED} = {2E5D799B-A7A5-4C67-9FBF-65FC568FA554}
 		{95568547-722F-4628-B4EF-9AE8E63854CA} = {2E5D799B-A7A5-4C67-9FBF-65FC568FA554}
+		{277703E5-ECBB-4630-AA49-FD40F323F3B0} = {2E5D799B-A7A5-4C67-9FBF-65FC568FA554}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D175E515-B868-46E9-8D35-B0F8FE1F965A}

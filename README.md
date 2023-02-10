@@ -12,7 +12,7 @@ Required frameworks for developement of this fork:
 
 For more information about this fork, please visit **Relativity Data Movement library** page on Einstein
 
-## Building 
+## Building
 
 To build this solution open powershell, navigate to repository directory and type in the following command:
 
@@ -27,7 +27,19 @@ To run tests run following command in powershell:
 - we highly suggest using Relativity VPN
 - To run the tests proper environment variables should be created, or required data should be filled in the TestData.xml file. For valid configuration of env variables please consult Einstein page
 
+## Building CLI
 
+To build CLI open powershell, navigate to repository directory and type in one of the following commands:
+
+`./build.ps1 PublishCli`
+`./build.ps1 PublishCliForLinux`
+`./build.ps1 PublishCliForWindows`
+
+**REMARKS**
+
+- `PublishCli` command invokes `PublishCliForLinux` and `PublishCliForWindows`
+- `PublishCliForLinux` publishes CLI for `netcoreapp3.1` for Linux x64
+- `PublishCliForWindows` publishes CLI for `net462` and `netcoreapp3.1` for Windows x64
 
 # Original Microsofts Azure Data Movement Library readme starts here
 

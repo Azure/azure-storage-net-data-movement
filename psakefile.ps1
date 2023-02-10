@@ -4,6 +4,7 @@ properties {
 	$SourceDir = $PSScriptRoot
 	$Solution = ((Get-ChildItem -Path $SourceDir -Filter *.sln -File)[0].FullName)
 	$ArtifactsDir = Join-Path $PSScriptRoot "Artifacts"
+	$CliArtifactsDir = Join-Path $ArtifactsDir "CLI"
 	$PDBsDir = Join-Path $ArtifactsDir "PDBs"
 	$NuGetDir = Join-Path $ArtifactsDir "NuGet"
 	$TestsArtifactsDir = Join-Path $ArtifactsDir "Tests"
@@ -115,7 +116,7 @@ function CreatePromptGuardBeforePublish() {
 	if (("y" -ieq $answer) -or ("yes" -ieq $answer)) {
 		return $true
 	}
-	
+
 	return $false
 }
 
@@ -129,7 +130,7 @@ function PublishNuGetPackage() {
 
 	WriteLineHost "Publishing $nupkg to $NugetPublishUrl"
 
-	exec { .\.nuget\NuGet.exe @("push", "$nupkg", 
+	exec { .\.nuget\NuGet.exe @("push", "$nupkg",
 			"-Source", "$NugetPublishUrl",
 			"-ApiKey", "$nugetApiKey",
 			"-Timeout", "501")
@@ -153,7 +154,7 @@ function Compile() {
 }
 
 function PublishTestsNetCore($TestProject, $TargetDirectory, $TargetRuntime, $Framework = "netcoreapp2.0") {
-	
+
 	$ArtifactsDir = [IO.Path]::Combine("$TestsArtifactsDir", "$TargetDirectory", "$Framework")
 	try {
 		exec { dotnet @("publish", $TestProject,
@@ -168,7 +169,7 @@ function PublishTestsNetCore($TestProject, $TargetDirectory, $TargetRuntime, $Fr
 }
 
 function PublishTestsNetFramework($TestProject, $TargetDirectory) {
-	
+
 	$ArtifactsDir = [IO.Path]::Combine("$TestsArtifactsDir", "$TargetDirectory", "NetFramework")
 	try {
 		exec { dotnet @("msbuild", "-property:`"Configuration=Release`"",
@@ -184,7 +185,7 @@ function PublishTestsNetFramework($TestProject, $TargetDirectory) {
 	}
 }
 
-function RunTests([string] $testProjectName) {	
+function RunTests([string] $testProjectName) {
 	EnsureEnvironmentVariablesForTests
 
 	$TestResultsPath = Join-Path $LogsDir "{assembly}.{framework}.TestResults.xml"
@@ -219,7 +220,7 @@ function EnsureEnvironmentVariableForPublishing() {
 
 function EnsureEnvironmentVariableExist($variableName) {
 	$variable = GetEnvironmentVariable($variableName)
-	
+
 	if (!$variable) {
 		Write-Host ""
 		throw "Missing required environment variable - $variableName. Script cannot continue."
@@ -237,8 +238,8 @@ function CreateNuGet($version) {
 	$nupkg = (Get-ChildItem -Filter ".\*.nupkg" | Select-Object -First 1)
 	if ($null -eq $nupkg) {
 		throw "NuGet creation has failed."
-	} 
-	
+	}
+
 	return $nupkg
 }
 
@@ -277,4 +278,27 @@ function SavePDBs {
 
 function CopyPDBs($source, $destination) {
 	& robocopy $source $destination Microsoft.Azure.Storage.DataMovement.pdb Microsoft.Azure.Storage.DataMovement.xml /W:5 /R:5 /MT /MIR
+}
+
+Task PublishCli -Depends PublishCliForLinux,PublishCliForWindows -Description "Publish CLI for Windows and Linux" {
+}
+
+Task PublishCliForLinux -Description "Publish CLI for Linux" {
+	PublishCli "Linux" "linux-x64" "netcoreapp3.1"
+}
+
+Task PublishCliForWindows -Description "Publish CLI for Windows" {
+	PublishCli "Windows-net462" "win-x64" "net462"
+	PublishCli "Windows-netcoreapp3.1" "win-x64" "netcoreapp3.1"
+}
+
+function PublishCli($TargetDirectory, $Runtime, $Framework) {
+	$SamplesDir = Join-Path $PSScriptRoot "samples"
+	$Project = Get-ChildItem $SamplesDir\Microsoft.Azure.Storage.DataMovement.Client\*.csproj
+	$ArtifactsDir = Join-Path $CliArtifactsDir $TargetDirectory
+	exec { dotnet @("publish", $Project,
+			("-r:$Runtime"),
+			("-f:$Framework"),
+			("-o:$ArtifactsDir"))
+	}
 }
