@@ -188,5 +188,10 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             return rootBlob.GetSharedAccessSignature(policy);
         }
+
+        internal static bool IsDirectory(this CloudBlob couldBlob)
+        {
+            return couldBlob.Metadata.ContainsKey(Constants.DirectoryBlobMetadataKey);
+        }
     }
 }

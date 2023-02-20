@@ -236,6 +236,15 @@ namespace Microsoft.Azure.Storage.DataMovement
 #else
             catch (StorageException se)
             {
+                if (se.Data.Contains(Constants.IsDirectoryFileNameConflict))
+                {
+                    var transferException = new TransferException(TransferErrorCode.DirectoryFileNameConflict, se.Message, se);
+                    transferException.Data.Add(Constants.FailedPath, se.Data[Constants.FailedPath]);
+                    transferException.Data.Add(Constants.BlobName, se.Data[Constants.BlobName]);
+                    
+                    throw transferException;
+                }
+                
                 throw new TransferException(
                     TransferErrorCode.Unknown,
                     Resources.UncategorizedException,

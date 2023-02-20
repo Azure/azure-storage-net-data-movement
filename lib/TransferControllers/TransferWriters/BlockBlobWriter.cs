@@ -537,13 +537,31 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.blockBlob.Properties.ContentType = null;
             }
 
-            await this.blockBlob.UploadFromStreamAsync(
-                sourceStream,
-                accessCondition,
-                blobRequestOptions,
-                operationContext,
-                this.CancellationToken);
+            try
+            {
+                await this.blockBlob.UploadFromStreamAsync(
+                    sourceStream,
+                    accessCondition,
+                    blobRequestOptions,
+                    operationContext,
+                    this.CancellationToken);
+            }
+            catch (StorageException ex)
+            {
+                if (CheckIfPartOfPathIsNotDirectory(blockBlob, out var failedPath))
+                {
+                    var message = string.Format(Resources.DirectoryFileNameConflict, blockBlob.Name, failedPath);
+                    var exception = new StorageException(message, ex);
+                    exception.Data.Add(Constants.IsDirectoryFileNameConflict, true);
+                    exception.Data.Add(Constants.BlobName, blockBlob.Name);
+                    exception.Data.Add(Constants.FailedPath, failedPath);
 
+                    throw exception;
+                }
+
+                throw;
+            }
+            
             if (providedMD5 != this.blockBlob.Properties.ContentMD5
                 || (this.SharedTransferData.Attributes.OverWriteAll && string.IsNullOrEmpty(this.blockBlob.Properties.ContentType))
                 || (!this.SharedTransferData.Attributes.OverWriteAll && this.blockBlob.Properties.ContentType == string.Empty))
@@ -581,6 +599,44 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
                     this.CancellationToken);
             }
+        }
+
+        private static bool CheckIfPartOfPathIsNotDirectory(CloudBlockBlob cloudBlockBlob, out string failedPath)
+        {
+            var parent = cloudBlockBlob.Parent;
+            failedPath = string.Empty;
+
+            while (parent != null)
+            {
+                var parentName = parent.Prefix.Split(Path.AltDirectorySeparatorChar).Last(NotEmpty);
+                var parentReference = parent.GetBlobReference(Path.Combine(@"../", parentName));
+
+                try
+                {
+                    parentReference.FetchAttributes();
+                }
+                catch (StorageException)
+                {
+                    //It's equal to Blob does not exists
+                    parent = parentReference.Parent;
+                    continue;
+                }
+
+                if (!parentReference.IsDirectory())
+                {
+                    failedPath = parentReference.Name;
+                    return true;
+                }
+
+                parent = parentReference.Parent;
+            }
+
+            return false;
+        }
+
+        private static bool NotEmpty(string value)
+        {
+            return value != string.Empty;
         }
 
         private void SetFinish()
