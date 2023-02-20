@@ -550,9 +550,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             {
                 if (CheckIfPartOfPathIsNotDirectory(blockBlob, out var failedPath))
                 {
-                    var message = string.Format(Resources.DirectoryFileNameConflict, blockBlob.Name, failedPath);
-                    var exception = new StorageException(message, ex);
-                    exception.Data.Add(Constants.IsDirectoryFileNameConflict, true);
+                    var exception = new TransferException(TransferErrorCode.DirectoryFileNameConflict, Resources.DirectoryFileNameConflict, ex);
                     exception.Data.Add(Constants.BlobName, blockBlob.Name);
                     exception.Data.Add(Constants.FailedPath, failedPath);
 
