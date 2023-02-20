@@ -546,7 +546,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     operationContext,
                     this.CancellationToken);
             }
-            catch (StorageException ex)
+            catch (StorageException ex) when (ex.Message.Contains("blob does not exist"))
             {
                 if (CheckIfPartOfPathIsNotDirectory(blockBlob, out var failedPath))
                 {

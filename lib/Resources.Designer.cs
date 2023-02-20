@@ -231,7 +231,7 @@ namespace Microsoft.Azure.Storage.DataMovement {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unable to transfer a file because part of blob address conflicts with file already existing on the blob..
+        ///   Looks up a localized string similar to Unable to transfer an item because its local path includes a directory which is a file at the destination. To resolve this naming conflict you need to rename the local folder or the file at destination..
         /// </summary>
         internal static string DirectoryFileNameConflict {
             get {
