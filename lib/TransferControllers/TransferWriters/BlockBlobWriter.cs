@@ -606,7 +606,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             while (parent != null)
             {
-                var parentName = parent.Prefix.Split(Path.AltDirectorySeparatorChar).Last(NotEmpty);
+                var parentName = parent.Prefix.Split(Path.AltDirectorySeparatorChar).LastOrDefault(NotEmpty);
+                if (parentName == null)
+                {
+                    parent = parent.Parent;
+                    continue;
+                }
+                
                 var parentReference = parent.GetBlobReference(Path.Combine(@"../", parentName));
 
                 try
