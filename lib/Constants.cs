@@ -173,8 +173,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         internal const string UserAgentProductName = "DataMovement";
         
-        internal const string BlobName = "blobName";
-        internal const string FailedPath = "failedPath"; 
+        internal const string DestinationPath = "destinationPath";
+        internal const string ConflictPath = "conflictPath"; 
 
         /// <summary>
         /// UserAgent header.

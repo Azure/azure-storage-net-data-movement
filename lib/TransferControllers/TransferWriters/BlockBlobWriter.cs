@@ -546,13 +546,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     operationContext,
                     this.CancellationToken);
             }
-            catch (StorageException ex) when (ex.Message.Contains("blob does not exist"))
+            catch (StorageException ex) when (ex.RequestInformation.ErrorCode.Equals("BlobNotFound", StringComparison.OrdinalIgnoreCase))
             {
                 if (CheckIfPartOfPathIsNotDirectory(blockBlob, out var failedPath))
                 {
                     var exception = new TransferException(TransferErrorCode.DirectoryFileNameConflict, Resources.DirectoryFileNameConflict, ex);
-                    exception.Data.Add(Constants.BlobName, blockBlob.Name);
-                    exception.Data.Add(Constants.FailedPath, failedPath);
+                    exception.Data.Add(Constants.DestinationPath, blockBlob.Name);
+                    exception.Data.Add(Constants.ConflictPath, failedPath);
 
                     throw exception;
                 }
