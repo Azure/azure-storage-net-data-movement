@@ -135,5 +135,10 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Detected content mismatch between source and destination
         /// </summary>
         ContentChecksumMismatch = 34,
+        
+        /// <summary>
+        /// Detect conflict with file having same name as directory in destination
+        /// </summary>
+        DirectoryFileNameConflict = 35
     }
 }

@@ -4,6 +4,8 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
+using Microsoft.Azure.Storage.Blob.Protocol;
+
 namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 {
     using System;
@@ -537,13 +539,29 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.blockBlob.Properties.ContentType = null;
             }
 
-            await this.blockBlob.UploadFromStreamAsync(
-                sourceStream,
-                accessCondition,
-                blobRequestOptions,
-                operationContext,
-                this.CancellationToken);
+            try
+            {
+                await this.blockBlob.UploadFromStreamAsync(
+                    sourceStream,
+                    accessCondition,
+                    blobRequestOptions,
+                    operationContext,
+                    this.CancellationToken);
+            }
+            catch (StorageException ex) when (ex.RequestInformation.ErrorCode.Equals(BlobErrorCodeStrings.BlobNotFound, StringComparison.OrdinalIgnoreCase))
+            {
+                if (CheckIfPartOfPathIsNotDirectory(blockBlob, out var failedPath))
+                {
+                    var exception = new TransferException(TransferErrorCode.DirectoryFileNameConflict, Resources.DirectoryFileNameConflict, ex);
+                    exception.Data.Add(Constants.DestinationPath, blockBlob.Name);
+                    exception.Data.Add(Constants.ConflictPath, failedPath);
 
+                    throw exception;
+                }
+
+                throw;
+            }
+            
             if (providedMD5 != this.blockBlob.Properties.ContentMD5
                 || (this.SharedTransferData.Attributes.OverWriteAll && string.IsNullOrEmpty(this.blockBlob.Properties.ContentType))
                 || (!this.SharedTransferData.Attributes.OverWriteAll && this.blockBlob.Properties.ContentType == string.Empty))
@@ -581,6 +599,45 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     Utils.GenerateOperationContext(this.Controller.TransferContext),
                     this.CancellationToken);
             }
+        }
+
+        private static bool CheckIfPartOfPathIsNotDirectory(CloudBlockBlob cloudBlockBlob, out string failedPath)
+        {
+            var parent = cloudBlockBlob.Parent;
+            failedPath = string.Empty;
+
+            while (parent != null)
+            {
+                var parentName = parent.Prefix.Split(Path.AltDirectorySeparatorChar).LastOrDefault(x => !string.IsNullOrEmpty(x));
+                if (parentName == null)
+                {
+                    parent = parent.Parent;
+                    continue;
+                }
+                
+                var parentReference = parent.GetBlobReference(Path.Combine(@"../", parentName));
+
+                try
+                {
+                    parentReference.FetchAttributes();
+                }
+                catch (StorageException)
+                {
+                    //It's equal to Blob does not exists
+                    parent = parentReference.Parent;
+                    continue;
+                }
+
+                if (!parentReference.IsDirectory())
+                {
+                    failedPath = parentReference.Name;
+                    return true;
+                }
+
+                parent = parentReference.Parent;
+            }
+
+            return false;
         }
 
         private void SetFinish()

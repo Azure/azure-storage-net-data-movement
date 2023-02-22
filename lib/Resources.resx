@@ -424,4 +424,7 @@ MD5 in property: {1}</value>
   <data name="DirectoryForSymlinkNotFoundException" xml:space="preserve">
     <value>Unable to resolve symlink {0} to directory {1}. Directory does not exist.</value>
   </data>
+  <data name="DirectoryFileNameConflict" xml:space="preserve">
+    <value>Unable to transfer an item because its local path includes a directory which is a file at the destination. To resolve this naming conflict you need to rename the local folder or the file at destination.</value>
+  </data>
 </root>
