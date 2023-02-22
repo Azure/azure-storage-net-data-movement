@@ -4,6 +4,8 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
+using Microsoft.Azure.Storage.Blob.Protocol;
+
 namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 {
     using System;
@@ -546,7 +548,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     operationContext,
                     this.CancellationToken);
             }
-            catch (StorageException ex) when (ex.RequestInformation.ErrorCode.Equals("BlobNotFound", StringComparison.OrdinalIgnoreCase))
+            catch (StorageException ex) when (ex.RequestInformation.ErrorCode.Equals(BlobErrorCodeStrings.BlobNotFound, StringComparison.OrdinalIgnoreCase))
             {
                 if (CheckIfPartOfPathIsNotDirectory(blockBlob, out var failedPath))
                 {
@@ -606,7 +608,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             while (parent != null)
             {
-                var parentName = parent.Prefix.Split(Path.AltDirectorySeparatorChar).LastOrDefault(NotEmpty);
+                var parentName = parent.Prefix.Split(Path.AltDirectorySeparatorChar).LastOrDefault(x => !string.IsNullOrEmpty(x));
                 if (parentName == null)
                 {
                     parent = parent.Parent;
@@ -636,11 +638,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
 
             return false;
-        }
-
-        private static bool NotEmpty(string value)
-        {
-            return value != string.Empty;
         }
 
         private void SetFinish()
