@@ -105,6 +105,12 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
+        public IDataMovementLogger Logger
+        {
+            get;
+            set;
+        }
+
         /// <summary>
         /// Gets the last checkpoint of the transfer.
         /// </summary>

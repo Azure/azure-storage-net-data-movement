@@ -3,6 +3,9 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //------------------------------------------------------------------------------
+
+using System.Text;
+
 namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
@@ -235,6 +238,17 @@ namespace Microsoft.Azure.Storage.DataMovement
         internal void UpdateMaximumCacheSize(int newBlockSize)
         {
             this.MaximumCacheSize = (long)3 * newBlockSize * this.ParallelOperations;
+        }
+
+        internal void LogConfiguration(IDataMovementLogger logger)
+        {
+            var loggerMessage = new StringBuilder();
+            loggerMessage.AppendLine("TransferManager configuration: ");
+            loggerMessage.AppendLine($"ParallelOperations: {ParallelOperations}");
+            loggerMessage.AppendLine($"MaximumCacheSize: {MaximumCacheSize} b");
+            loggerMessage.AppendLine($"AvailablePhysicalMemory: {memStatus.AvailablePhysicalMemory} b");
+
+            logger.Info(loggerMessage.ToString());
         }
     }
 }

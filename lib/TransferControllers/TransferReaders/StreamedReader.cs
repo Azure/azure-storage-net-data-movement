@@ -263,7 +263,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             this.md5HashStream = new MD5HashStream(
                 this.inputStream,
                 this.transferJob.CheckPoint.EntryTransferOffset,
-                true);
+                true, transferJob.Transfer.Logger);
 
             this.PreProcessed = true;
 

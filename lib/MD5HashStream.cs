@@ -61,11 +61,13 @@ namespace Microsoft.Azure.Storage.DataMovement
         public MD5HashStream(
             Stream stream,
             long lastTransferOffset,
-            bool md5hashCheck)
+            bool md5hashCheck,
+            IDataMovementLogger logger)
         {
             this.stream = stream;
             this.md5hashOffset = lastTransferOffset;
-
+            this._logger = logger;
+            
             if ((0 == this.md5hashOffset)
                 || (!md5hashCheck))
             {
@@ -104,6 +106,8 @@ namespace Microsoft.Azure.Storage.DataMovement
                 }
             }
         }
+
+        private IDataMovementLogger _logger;
 
         /// <summary>
         /// Gets a value indicating whether need to calculate MD5 hash.
@@ -155,7 +159,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             try
             {
-                buffer = Utils.RequireBuffer(memoryManager, checkCancellation);
+                buffer = Utils.RequireBuffer(memoryManager, _logger, checkCancellation);
             }
             catch (Exception)
             {

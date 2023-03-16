@@ -548,7 +548,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             return false;
         }
 
-        public static byte[] RequireBuffer(MemoryManager memoryManager, Action checkCancellation)
+        public static byte[] RequireBuffer(MemoryManager memoryManager, IDataMovementLogger logger, Action checkCancellation)
         {
             byte[] buffer;
             buffer = memoryManager.RequireBuffer();
@@ -559,6 +559,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 int retryInterval = 100;
                 while ((retryCount < RequireBufferMaxRetryCount) && (null == buffer))
                 {
+                    logger.Info($"Require buffer access for MD5 calculation retryCount: {retryCount}, retryInterval: {retryInterval}");
                     checkCancellation();
                     retryInterval <<= 1;
                     Thread.Sleep(retryInterval);
@@ -569,10 +570,14 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (null == buffer)
             {
+                memoryManager.LogMemoryState(logger);
+                
                 throw new TransferException(
                     TransferErrorCode.FailToAllocateMemory, 
                     Resources.FailedToAllocateMemoryException);
             }
+            
+            logger.Info("Buffer accessed");
 
             return buffer;
         }
