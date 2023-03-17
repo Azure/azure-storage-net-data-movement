@@ -1999,6 +1999,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 transfer.Logger = context.Logger;
                 scheduler?.TransferOptions.LogConfiguration(transfer.Logger);
+                scheduler?.MemoryManager.LogMemoryState(transfer.Logger);
             }
         }
     }

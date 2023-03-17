@@ -242,13 +242,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         internal void LogConfiguration(IDataMovementLogger logger)
         {
-            var loggerMessage = new StringBuilder();
-            loggerMessage.AppendLine("TransferManager configuration: ");
-            loggerMessage.AppendLine($"ParallelOperations: {ParallelOperations}");
-            loggerMessage.AppendLine($"MaximumCacheSize: {MaximumCacheSize} b");
-            loggerMessage.AppendLine($"AvailablePhysicalMemory: {memStatus.AvailablePhysicalMemory} b");
-
-            logger.Info(loggerMessage.ToString());
+            logger.Info($"TransferManager configuration: ParallelOperations - {ParallelOperations}, MaximumCacheSize - {MaximumCacheSize}, AvailablePhysicalMemory - {memStatus.AvailablePhysicalMemory}.");
         }
     }
 }
