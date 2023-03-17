@@ -424,7 +424,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             // We accept the risk and treat given file in the same way as the file with equal checksums
             if (string.IsNullOrEmpty(storedMd5))
             {
-                TransferJob.Transfer.Logger.Warning("MD5 checksum stored on server is empty. Calculated value check will be omitted.");
+                TransferJob.Transfer.Logger.Warning("MD5 checksum stored on server is empty. Check against value calculated locally will be omitted.");
                 return true;
             }
 

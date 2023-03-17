@@ -1597,7 +1597,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             Transfer transfer = GetOrCreateSingleObjectTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 
-            InitializeLogger(transfer, context.Logger);
+            InitializeLogger(transfer, context);
 
             if ((null != uploadOptions)
                 && (destLocation.Type == TransferLocationType.AzureFile))
@@ -1613,7 +1613,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             Transfer transfer = GetOrCreateSingleObjectTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 
-            InitializeLogger(transfer, context.Logger);
+            InitializeLogger(transfer, context);
             
             if ((null != downloadOptions)
                 && (sourceLocation.Type == TransferLocationType.AzureFile))
@@ -1629,7 +1629,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             Transfer transfer = GetOrCreateSingleObjectTransfer(sourceLocation, destLocation, CopyMethodToTransferMethod(copyMethod), context);
 
-            InitializeLogger(transfer, context.Logger);
+            InitializeLogger(transfer, context);
             
             if (null != options)
             {
@@ -1650,7 +1650,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             DirectoryTransfer transfer = GetOrCreateDirectoryTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 
-            InitializeLogger(transfer, context.Logger);
+            InitializeLogger(transfer, context);
             
             if (transfer.SourceEnumerator == null || !AreSameTransferEnumerators(transfer.SourceEnumerator, sourceEnumerator))
             {
@@ -1686,7 +1686,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             DirectoryTransfer transfer = GetOrCreateDirectoryTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 
-            InitializeLogger(transfer, context.Logger);
+            InitializeLogger(transfer, context);
             
             if (null != options)
             {
@@ -1729,7 +1729,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             DirectoryTransfer transfer = GetOrCreateDirectoryTransfer(sourceLocation, destLocation, transferMethod, context);
 
-            InitializeLogger(transfer, context.Logger);
+            InitializeLogger(transfer, context);
             
             if (transfer.SourceEnumerator == null || !AreSameTransferEnumerators(transfer.SourceEnumerator, sourceEnumerator))
             {
@@ -1993,10 +1993,13 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
-        private static void InitializeLogger(Transfer transfer, IDataMovementLogger logger)
+        private static void InitializeLogger(Transfer transfer, TransferContext context)
         {
-            transfer.Logger = logger;
-            scheduler?.TransferOptions.LogConfiguration(transfer.Logger);
+            if (context != null)
+            {
+                transfer.Logger = context.Logger;
+                scheduler?.TransferOptions.LogConfiguration(transfer.Logger);
+            }
         }
     }
 }
