@@ -226,7 +226,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     return;
                 }
                 
-                _logger = value;
+_logger = value ?? NullLogger.Instance;
             }
         }
 
