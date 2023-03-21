@@ -219,15 +219,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         public IDataMovementLogger Logger
         {
             get => _logger ?? NullLogger.Instance;
-            set
-            {
-                if (value == null)
-                {
-                    return;
-                }
-                
-_logger = value ?? NullLogger.Instance;
-            }
+            set => _logger = value ?? NullLogger.Instance;
         }
 
         private IDataMovementLogger _logger;
