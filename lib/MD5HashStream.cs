@@ -58,6 +58,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="stream">Stream object.</param>
         /// <param name="lastTransferOffset">Offset of the transferred bytes.</param>
         /// <param name="md5hashCheck">Whether need to calculate MD5Hash.</param>
+        /// <param name="logger">Transfer logger</param>
         public MD5HashStream(
             Stream stream,
             long lastTransferOffset,
