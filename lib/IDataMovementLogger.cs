@@ -11,7 +11,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Info level logging.
         /// </summary>
         /// <param name="message"></param>
-        /// <param name="args"></param>
         void Info(string message);
 
 
@@ -19,7 +18,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Warning level logging.
         /// </summary>
         /// <param name="message"></param>
-        /// <param name="args"></param>
         void Warning(string message);
         
         /// <summary>
@@ -27,14 +25,12 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         /// <param name="exception"></param>
         /// <param name="message"></param>
-        /// <param name="args"></param>
         void Warning(Exception exception, string message);
         
         /// <summary>
         /// Error level logging.
         /// </summary>
         /// <param name="message"></param>
-        /// <param name="args"></param>
         void Error(string message);
         
         /// <summary>
@@ -42,7 +38,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         /// <param name="exception"></param>
         /// <param name="message"></param>
-        /// <param name="args"></param>
         void Error(Exception exception, string message);
     }
 }
