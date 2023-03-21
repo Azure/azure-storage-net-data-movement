@@ -93,8 +93,10 @@
     <Compile Include="FileNativeMethods.cs" />
     <Compile Include="FileSecurityNativeMethods.cs" />
     <Compile Include="FileSecurityOperations.cs" />
+    <Compile Include="IDataMovementLogger.cs" />
     <Compile Include="LongPathFile.cs" />
     <Compile Include="LongPathFileStream.cs" />
+    <Compile Include="NullLogger.cs" />
     <Compile Include="PreserveSMBPermissions.cs" />
     <Compile Include="TestHook\FaultInjectionPoint.cs" />
     <Compile Include="DirectoryTransferContext.cs" />

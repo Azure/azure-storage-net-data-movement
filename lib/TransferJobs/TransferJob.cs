@@ -113,7 +113,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                 return this.Transfer.Destination;
             }
         }
-
         /// <summary>
         /// Gets or sets the overwrite flag.
         /// </summary>

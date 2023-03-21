@@ -4,6 +4,8 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
+using System.Text;
+
 namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
@@ -54,6 +56,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         public void ReleaseBuffers(byte[][] buffer)
         {
             this.memoryPool.AddBuffers(buffer);
+        }
+
+        public void LogMemoryState(IDataMovementLogger logger)
+        {
+            this.memoryPool.LogMemoryState(logger);
         }
 
         internal void SetMemoryLimitation(long memoryLimitation)
@@ -234,6 +241,11 @@ namespace Microsoft.Azure.Storage.DataMovement
                         }
                     }
                 }
+            }
+
+            public void LogMemoryState(IDataMovementLogger logger)
+            {
+                logger.Info($"Current memory statistics: MaxCells - {maxCellCount}, AvailableCells - {availableCells}, AllocatedCells - {allocatedCells}.");
             }
         }
 

@@ -216,6 +216,14 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
+        public IDataMovementLogger Logger
+        {
+            get => _logger ?? NullLogger.Instance;
+            set => _logger = value ?? NullLogger.Instance;
+        }
+
+        private IDataMovementLogger _logger;
+
         /// <summary>
         /// Gets or sets blob type of destination blob.
         /// </summary>
@@ -355,6 +363,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             this.Dispose(true);
             GC.SuppressFinalize(this);
+            
         }
 
         protected virtual void Dispose(bool disposing)

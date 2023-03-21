@@ -222,7 +222,8 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.md5HashStream = new MD5HashStream(
                     this.outputStream,
                     this.expectOffset,
-                    !this.SharedTransferData.DisableContentMD5Validation);
+                    !this.SharedTransferData.DisableContentMD5Validation, 
+                    TransferJob.Transfer.Logger);
 
                 if (this.md5HashStream.FinishedSeparateMd5Calculator)
                 {
@@ -417,12 +418,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
         }
 
-        private static bool IsEqualOrEmpty(string calculatedMd5, string storedMd5)
+        private bool IsEqualOrEmpty(string calculatedMd5, string storedMd5)
         {
             // if there is no md5 stored on server side there is nothing to compare.
             // We accept the risk and treat given file in the same way as the file with equal checksums
             if (string.IsNullOrEmpty(storedMd5))
             {
+                TransferJob.Transfer.Logger.Warning("MD5 checksum stored on server is empty. Check against value calculated locally will be omitted.");
                 return true;
             }
 
