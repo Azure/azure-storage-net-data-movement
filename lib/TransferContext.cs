@@ -105,6 +105,9 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
+        /// <summary>
+        /// Gets or sets logger which will be passed to Transfer.
+        /// </summary>
         public IDataMovementLogger Logger { get; set; } = NullLogger.Instance;
 
         /// <summary>
