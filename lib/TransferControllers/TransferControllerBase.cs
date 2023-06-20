@@ -437,8 +437,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             if (exist && !this.TransferJob.Overwrite.Value)
             {
-                string exceptionMessage = string.Format(CultureInfo.InvariantCulture, Resources.OverwriteCallbackCancelTransferException, source.ConvertToString(), dest.ConvertToString());
-                throw new TransferSkippedException(exceptionMessage);
+                var ex = new TransferSkippedException(Resources.OverwriteCallbackCancelTransferException);
+                ex.Data.Add("source", source.ConvertToString());
+                ex.Data.Add("destination", dest.ConvertToString());
+                throw ex;
             }
         }
 

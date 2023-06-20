@@ -162,8 +162,7 @@ MD5 in property: {1}</value>
     <comment>{0} is the calculated MD5, {1} is the MD5 stored in the source property</comment>
   </data>
   <data name="DeadLoop" xml:space="preserve">
-    <value>Potential dead loop in directory structure due to symbolic link {0} with target to {1}</value>
-    <comment>{0} is path of symbolic link, {1} is target of the symbolic link.</comment>
+    <value>Potential dead loop in directory structure due to symbolic link targeting parent folder</value>
   </data>
   <data name="DestinationBlobTypeNotMatch" xml:space="preserve">
     <value>User specified blob type does not match the blob type of the existing destination blob.</value>
@@ -175,27 +174,24 @@ MD5 in property: {1}</value>
     <value>Failed to allocate required memory.</value>
   </data>
   <data name="FailedToAsyncCopyObjectException" xml:space="preserve">
-    <value>Failed to copy from "{0}" to "{1}". Copy status: {2}; Description: {3}.</value>
-    <comment>{0} is uri of source, {1} is uri of destination. {2} is the copy status, {3} is the copy status description.</comment>
+    <value>Failed to copy object. Copy status: {0}; Description: {1}.</value>
+    <comment>{0} is the copy status, {1} is the copy status description.</comment>
   </data>
   <data name="FailedToRetrieveCopyStateForObjectException" xml:space="preserve">
-    <value>Failed to retrieve CopyState for object "{0}".</value>
-    <comment>{0} is uri of target object.</comment>
+    <value>Failed to retrieve CopyState for object.</value>
   </data>
   <data name="FailedToGetBlobTypeException" xml:space="preserve">
     <value>Failed to retrieve the original BlobType.</value>
   </data>
   <data name="FailedToOpenFileException" xml:space="preserve">
-    <value>Failed to open file {0}: {1}.</value>
-    <comment>{0} is file name, {1} is detailed error message.</comment>
+    <value>Failed to open file.</value>
   </data>
   <data name="FailedToEnablePrivilegeException" xml:space="preserve">
     <value>Failed to enable {0}, please run the process with an account with privilege '{0}' assigned, for example run it with administrator.</value>
     <comment>{0} is privilege string.</comment>
   </data>
   <data name="FilePathTooLong" xml:space="preserve">
-    <value>The specified path, file name, or both are too long for file: "{0}"</value>
-    <comment>{0} is the relative path.</comment>
+    <value>The specified path, file name, or both are too long.</value>
   </data>
   <data name="InvalidInitialEntryStatusForControllerException" xml:space="preserve">
     <value>The initial entry status {0} is invalid for {1}.</value>
@@ -216,8 +212,7 @@ MD5 in property: {1}</value>
     <comment>{0} is the is the destination blob type.</comment>
   </data>
   <data name="OverwriteCallbackCancelTransferException" xml:space="preserve">
-    <value>Skipped file "{0}" because target "{1}" already exists.</value>
-    <comment>{0} is source file name, {1} is destination file name.</comment>
+    <value>Source file is skipped because target file already exists.</value>
   </data>
   <data name="ParallelCountNotPositiveException" xml:space="preserve">
     <value>Parallel operations count must be positive.</value>
@@ -230,8 +225,7 @@ MD5 in property: {1}</value>
     <comment>{0} is the property or parameter name.</comment>
   </data>
   <data name="PathNotFound" xml:space="preserve">
-    <value>Cannot find the path '{0}'.</value>
-    <comment>{0} is the path.</comment>
+    <value>Path cannot be found.</value>
   </data>
   <data name="PrivilegeRequiredException" xml:space="preserve">
     <value>"Lack of required privilege(s). Please run the process with privilege(s) '{0}' assigned, for example run it with administrator.</value>
@@ -305,8 +299,7 @@ MD5 in property: {1}</value>
     <value>User specified blob type does not match the blob type of the existing source blob.</value>
   </data>
   <data name="SourceNameInvalidInFileSystem" xml:space="preserve">
-    <value>The corresponding destination path for source "{0}" is invalid in Windows system.</value>
-    <comment>{0} is the source uri.</comment>
+    <value>The corresponding destination path is invalid in Windows system.</value>
   </data>
   <data name="StreamMustSupportReadException" xml:space="preserve">
     <value>{0} must support Read.</value>
@@ -368,19 +361,16 @@ MD5 in property: {1}</value>
     <value>The transfer failed.</value>
   </data>
   <data name="FailedToEnumerateDirectory" xml:space="preserve">
-    <value>Failed to enumerate directory {0} with file pattern {1}.</value>
-    <comment>{0} is the directory path, {1} is file pattern.</comment>
+    <value>Failed to enumerate directory with specified file pattern.</value>
   </data>
   <data name="EnumerateDirectoryException" xml:space="preserve">
-    <value>Failed to enumerate directory {0}.</value>
-    <comment>{0} is the directory path.</comment>
+    <value>Failed to enumerate directory.</value>
   </data>
   <data name="FailedToValidateDestinationException" xml:space="preserve">
     <value>Failed to validate destination.</value>
   </data>
   <data name="FailedToGetFileInfoException" xml:space="preserve">
-    <value>Failed to get information for file {0}.</value>
-    <comment>{0} is the file path.</comment>
+    <value>Failed to get file information.</value>
   </data>
   <data name="SearchPatternInRecursiveModeFromAzureFileNotSupportedException" xml:space="preserve">
     <value>Search pattern is not supported in recursive mode when the source is an Azure file directory.</value>
@@ -402,27 +392,25 @@ MD5 in property: {1}</value>
     <value>BlockSize must be multiple of 4MB.</value>
   </data>
   <data name="RelativePathTooLong" xml:space="preserve">
-    <value>File {0} is too long, relative path must not exceed 1024 characters. </value>
-    <comment>{0} is the relative path of the file which exceed the 1024 characters limit.</comment>
+    <value>File path is too long, relative path must not exceed 1024 characters. </value>
   </data>
   <data name="ResumeStreamTransferNotSupported" xml:space="preserve">
     <value>Resuming transfer from or to a stream is not supported. </value>
   </data>
   <data name="FailedToCreateDirectoryException" xml:space="preserve">
-    <value>Failed to create directory {0} because a file already exists with the same name.</value>
-    <comment>{0} is the destination folder name.</comment>
+    <value>Failed to create directory because a file with the same name already exists.</value>
   </data>
   <data name="UnsupportedDummyTransferException" xml:space="preserve">
     <value>Unsupported dummy transfer type.</value>
   </data>
   <data name="DestinationPathValidationFailed" xml:space="preserve">
-    <value>Destination path '{0}' failed the validation.</value>
+    <value>Destination path failed the validation.</value>
   </data>
   <data name="DirectoryNotFoundException" xml:space="preserve">
-    <value>Unable to open directory "{0}". Directory does not exist.</value>
+    <value>Unable to open directory. Directory does not exist.</value>
   </data>
   <data name="DirectoryForSymlinkNotFoundException" xml:space="preserve">
-    <value>Unable to resolve symlink {0} to directory {1}. Directory does not exist.</value>
+    <value>Unable to resolve symlink to directory. Directory does not exist.</value>
   </data>
   <data name="DirectoryFileNameConflict" xml:space="preserve">
     <value>Unable to transfer an item because its local path includes a directory which is a file at the destination. To resolve this naming conflict you need to rename the local folder or the file at destination.</value>

@@ -139,6 +139,16 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <summary>
         /// Detect conflict with file having same name as directory in destination
         /// </summary>
-        DirectoryFileNameConflict = 35
+        DirectoryFileNameConflict = 35,
+
+        /// <summary>
+        /// Unable to open directory, directory does not exist
+        /// </summary>
+        DirectoryNotFound = 36,
+
+        /// <summary>
+        /// Unable to resolve symlink to directory. Directory does not exist
+        /// </summary>
+        DirectoryForSymlinkNotFound = 37
     }
 }

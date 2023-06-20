@@ -4,6 +4,8 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
+using System.Data;
+
 namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 {
     using System;
@@ -178,9 +180,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 		        }
 		        catch (Exception ex)
 		        {
-			        throw new TransferInvalidPathException(string.Format(CultureInfo.CurrentCulture, 
-				        Resources.DestinationPathValidationFailed, transferLocation.ToString()), ex);
-		        }
+			        var exception = new TransferInvalidPathException(Resources.DestinationPathValidationFailed, ex);
+                    exception.Data.Add("path", transferLocation.ToString());
+                    throw exception;
+                }
 	        }
         }
 

@@ -117,14 +117,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                 }
                 catch (Exception ex)
                 {
-                    string errorMessage = string.Format(
-                        CultureInfo.CurrentCulture,
-                        Resources.FailedToEnumerateDirectory,
-                        this.location.BlobDirectory.Uri.AbsoluteUri,
-                        filePattern);
+                    TransferException exception = new TransferException(
+                        TransferErrorCode.FailToEnumerateDirectory, 
+                        Resources.FailedToEnumerateDirectory, 
+                        ex);
 
-                    TransferException exception =
-                        new TransferException(TransferErrorCode.FailToEnumerateDirectory, errorMessage, ex);
+                    exception.Data.Add("directory", this.location.BlobDirectory.Uri.AbsoluteUri);
+                    exception.Data.Add("pattern", filePattern);
+
                     errorEntry = new ErrorEntry(exception);
                 }
 

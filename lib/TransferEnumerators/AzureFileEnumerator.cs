@@ -137,15 +137,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             }
             catch (Exception ex)
             {
-                string errorMessage = string.Format(
-                    CultureInfo.CurrentCulture,
-                    Resources.FailedToEnumerateDirectory,
-                    this.location.FileDirectory.SnapshotQualifiedUri.AbsoluteUri,
-                    fileName);
-
                 // Use TransferException to be more specific about the cloud file URI.
-                TransferException exception =
-                    new TransferException(TransferErrorCode.FailToEnumerateDirectory, errorMessage, ex);
+                TransferException exception = new TransferException(
+                    TransferErrorCode.FailToEnumerateDirectory, 
+                    Resources.FailedToEnumerateDirectory,
+                    ex);
+
+                exception.Data.Add("directory", this.location.FileDirectory.SnapshotQualifiedUri.AbsoluteUri);
+                exception.Data.Add("pattern", fileName);
 
                 errorEntry = new ErrorEntry(exception);
             }
@@ -208,14 +207,15 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                 }
                 catch (Exception ex)
                 {
-                    string errorMessage = string.Format(
-                        CultureInfo.CurrentCulture,
-                        Resources.FailedToEnumerateDirectory,
-                        directory.SnapshotQualifiedUri.AbsoluteUri,
-                        string.Empty);
 
-                    TransferException exception =
-                        new TransferException(TransferErrorCode.FailToEnumerateDirectory, errorMessage, ex);
+                    TransferException exception = new TransferException(
+                        TransferErrorCode.FailToEnumerateDirectory,
+                        Resources.FailedToEnumerateDirectory,
+                        ex);
+
+                    exception.Data.Add("directory", directory.SnapshotQualifiedUri.AbsoluteUri);
+                    exception.Data.Add("pattern", string.Empty);
+
                     errorEntry = new ErrorEntry(exception);
                 }
 

@@ -74,14 +74,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                         if (LongPathFile.Exists(filePath))
                         {
-                            string exceptionMessage = string.Format(
-                                        CultureInfo.CurrentCulture,
-                                        Resources.FailedToCreateDirectoryException,
-                                        filePath);
-
-                            throw new TransferException(
+                            var ex = new TransferException(
                                     TransferErrorCode.FailedToCreateDirectory,
-                                    exceptionMessage);
+                                    Resources.FailedToCreateDirectoryException);
+                            ex.Data.Add("path", filePath);
+                            throw ex;
                         }
                         else
                         {
