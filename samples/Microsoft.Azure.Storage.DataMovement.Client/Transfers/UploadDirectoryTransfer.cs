@@ -37,7 +37,15 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
             ValidateUrl(Options.Destination, nameof(Options.Destination), "Destination should be http(s) url.");
 
             if (!Directory.Exists(Options.Source))
-                throw new DirectoryNotFoundException($"Directory ({Options.Source}) does not exist.");
+            {
+                var ex = new TransferException( 
+                    TransferErrorCode.DirectoryNotFound, 
+                    "Directory does not exist.");
+
+                ex.Data.Add("path", Options.Source);
+                throw ex;
+            }
+
         }
     }
 }

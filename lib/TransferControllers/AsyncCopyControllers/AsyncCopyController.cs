@@ -615,14 +615,13 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             if (null == copyState)
             {
                 // Reach here, the destination should already exist.
-                string exceptionMessage = string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.FailedToRetrieveCopyStateForObjectException,
-                            this.DestUri.ToString());
-
-                throw new TransferException(
+                var ex = new TransferException(
                         TransferErrorCode.FailToRetrieveCopyStateForObject,
-                        exceptionMessage);
+                        Resources.FailedToRetrieveCopyStateForObjectException);
+
+                ex.Data.Add("destination", this.DestUri.ToString());
+
+                throw ex;
             }
             else
             {
@@ -666,15 +665,18 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     string exceptionMessage = string.Format(
                                 CultureInfo.CurrentCulture,
                                 Resources.FailedToAsyncCopyObjectException,
-                                this.GetSourceUri().ToString(),
-                                this.DestUri.ToString(),
                                 copyState.Status.ToString(),
                                 copyState.StatusDescription);
 
                     // CopyStatus.Invalid | Failed | Aborted
-                    throw new TransferException(
+                    var ex = new TransferException(
                             TransferErrorCode.AsyncCopyFailed,
                             exceptionMessage);
+
+                    ex.Data.Add("source", this.GetSourceUri().ToString());
+                    ex.Data.Add("destination", this.DestUri.ToString());
+
+                    throw ex;
                 }
             }
         }

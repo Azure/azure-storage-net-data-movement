@@ -7,6 +7,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using Microsoft.Azure.Storage.DataMovement;
 using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MS.Test.Common.MsTestLib;
@@ -95,9 +96,9 @@ namespace DMLibTest.Cases
             // Assert
 
 #if DNXCORE50
-            Assert.Throws<DirectoryNotFoundException>(action);
+            Assert.Throws<TransferException>(action);
 #else
-            Assert.ThrowsException<DirectoryNotFoundException>(action,
+            Assert.ThrowsException<TransferException>(action,
                 $"Delegate should throw exception of type {nameof(DirectoryNotFoundException)}, but no exception was thrown.");
 #endif
         }

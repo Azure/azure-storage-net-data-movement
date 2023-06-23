@@ -100,14 +100,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             }
             catch (Exception ex)
             {
-                string errorMessage = string.Format(
-                    CultureInfo.CurrentCulture,
+                TransferException exception = new TransferException(
+                    TransferErrorCode.FailToEnumerateDirectory,
                     Resources.FailedToEnumerateDirectory,
-                    this.location.DirectoryPath,
-                    filePattern);
+                    ex);
 
-                TransferException exception =
-                    new TransferException(TransferErrorCode.FailToEnumerateDirectory, errorMessage, ex);
+                exception.Data.Add("directory", this.location.DirectoryPath);
+                exception.Data.Add("pattern", filePattern);
+
                 errorEntry = new ErrorEntry(exception);
             }
 

@@ -133,11 +133,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
                 if (!LongPathDirectory.Exists(directoryName))
                 {
-                    throw new DirectoryNotFoundException(
-                        string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.PathNotFound,
-                            directoryName));
+                    var ex = new TransferException(TransferErrorCode.FailToEnumerateDirectory, Resources.PathNotFound);
+                    ex.Data.Add("path", directoryName);
+                    throw ex;
                 }
 
 #if CODE_ACCESS_SECURITY
@@ -283,11 +281,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
             if (!LongPathDirectory.Exists(directoryName))
             {
-                throw new DirectoryNotFoundException(
-                    string.Format(
-                        CultureInfo.CurrentCulture,
-                        Resources.PathNotFound,
-                        directoryName));
+	            var ex = new TransferException(TransferErrorCode.FailToEnumerateDirectory, Resources.PathNotFound);
+	            ex.Data.Add("path", directoryName);
+	            throw ex;
             }
 
             Utils.CheckCancellation(cancellationToken);
@@ -389,7 +385,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                 }
                 catch (Exception ex)
                 {
-                    throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.EnumerateDirectoryException, folder), ex);
+                    var exception = new TransferException(TransferErrorCode.FailToEnumerateDirectory, Resources.EnumerateDirectoryException, ex);
+                    exception.Data.Add("path", folder);
+                    throw exception;
                 }
 #endif // CODE_ACCESS_SECURITY
 
@@ -413,7 +411,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                         },
                         (ex) =>
                         {
-                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.EnumerateDirectoryException, folder), ex);
+                            var exception = new TransferException(TransferErrorCode.FailToEnumerateDirectory, Resources.EnumerateDirectoryException, ex);
+                            exception.Data.Add("path", folder);
+                            throw exception;
                         }))
                     {
                         Utils.CheckCancellation(cancellationToken);
@@ -449,20 +449,26 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                         {
                             if (!TransferManager.Configurations.SupportUncPath)
                             {
-                                throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.FailedToGetFileInfoException, filePath), ex);
+                                var exception = new TransferException(Resources.FailedToGetFileInfoException, ex);
+                                exception.Data.Add("path", filePath);
+                                throw exception;
                             }
                         }
                         catch (IOException ex)
                         {
                             if (!TransferManager.Configurations.SupportUncPath)
                             {
-                                throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.FailedToGetFileInfoException, filePath), ex);
+                                var exception = new TransferException(Resources.FailedToGetFileInfoException, ex);
+                                exception.Data.Add("path", filePath);
+                                throw exception;
                             }
                         }
                         catch (UnauthorizedAccessException) { }
                         catch (Exception ex)
                         {
-                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.FailedToGetFileInfoException, filePath), ex);
+                            var exception = new TransferException(Resources.FailedToGetFileInfoException, ex);
+                            exception.Data.Add("path", filePath);
+                            throw exception;
                         }
 
                         if (null == fileEntryInfo)
@@ -550,7 +556,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                         },
                         (ex) =>
                         {
-                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.EnumerateDirectoryException, folder), ex);
+                            var exception = new TransferException(TransferErrorCode.FailToEnumerateDirectory, Resources.EnumerateDirectoryException, ex);
+                            exception.Data.Add("path", folder);
+                            throw exception;
                         }))
                     {
                         Utils.CheckCancellation(cancellationToken);
@@ -573,13 +581,15 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                             }
                         }
                         // Cross-plat file system accessibility settings may cause exceptions while
-                        // retrieving attributes from inaccessible paths. These paths shold be skipped.
+                        // retrieving attributes from inaccessible paths. These paths should be skipped.
                         catch (FileNotFoundException) { }
                         catch (IOException) { }
                         catch (UnauthorizedAccessException) { }
                         catch (Exception ex)
                         {
-                            throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.FailedToGetFileInfoException, filePath), ex);
+                            var exception = new TransferException(Resources.FailedToGetFileInfoException, ex);
+                            exception.Data.Add("path", filePath);
+                            throw exception;
                         }
 
                         if (null == fileEntryInfo)
@@ -751,7 +761,10 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 
                 if (fullPath.StartsWith(AppendDirectorySeparator(fileEntryInfo.SymlinkTarget), StringComparison.Ordinal))
                 {
-                    throw new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.DeadLoop, fullPath, fileEntryInfo.SymlinkTarget));
+                    var ex = new TransferException(string.Format(CultureInfo.CurrentCulture, Resources.DeadLoop, fullPath, fileEntryInfo.SymlinkTarget));
+                    ex.Data.Add("symbolicLinkPath", fullPath);
+                    ex.Data.Add("symbolicLinkTarget", fileEntryInfo.SymlinkTarget);
+                    throw ex;
                 }
 
                 return true;
@@ -797,12 +810,19 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             string dirOrSymlinkPath,
             Exception innerException)
         {
-            return symlinkInfo == null
-                ? new DirectoryNotFoundException(string.Format(Resources.DirectoryNotFoundException, dirOrSymlinkPath),
-                    innerException)
-                : new DirectoryNotFoundException(
-                    string.Format(Resources.DirectoryForSymlinkNotFoundException, dirOrSymlinkPath,
-                        symlinkInfo.GetContents().FullName ?? dirOrSymlinkPath), innerException);
+            if (symlinkInfo == null)
+            {
+                var ex = new TransferException(TransferErrorCode.DirectoryNotFound, Resources.DirectoryNotFoundException, innerException);
+                ex.Data.Add("path", dirOrSymlinkPath);
+                return ex;
+            }
+            else
+            {
+                var ex = new TransferException(TransferErrorCode.DirectoryForSymlinkNotFound, Resources.DirectoryForSymlinkNotFoundException, innerException);
+                ex.Data.Add("symlinkPath", dirOrSymlinkPath);
+                ex.Data.Add("directoryPath", symlinkInfo.GetContents().FullName ?? dirOrSymlinkPath);
+                return ex;
+            }
         }
 
         private static string GetParentPath(string filePath)

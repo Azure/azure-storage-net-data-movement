@@ -169,11 +169,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     if (fileLocation.RelativePath != null
                         && fileLocation.RelativePath.Length > Constants.MaxRelativePathLength)
                     {
-                        string errorMessage = string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.RelativePathTooLong,
-                            fileLocation.RelativePath);
-                        throw new TransferException(TransferErrorCode.OpenFileFailed, errorMessage);
+                        var ex = new TransferException(TransferErrorCode.OpenFileFailed, Resources.RelativePathTooLong);
+                        ex.Data.Add("path", fileLocation.RelativePath);
+                        throw ex;
                     }
 
                     this.filePath = fileLocation.FilePath.ToLongPath();
@@ -202,16 +200,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         (ex is SecurityException) ||
                         (ex is ArgumentException && !(ex is ArgumentNullException)))
                     {
-                        string exceptionMessage = string.Format(
-                                    CultureInfo.CurrentCulture,
-                                    Resources.FailedToOpenFileException,
-                                    fileLocation.FilePath,
-                                    ex.Message);
-
-                        throw new TransferException(
+                        var transferEx = new TransferException(
                                 TransferErrorCode.OpenFileFailed,
-                                exceptionMessage,
+                                Resources.FailedToOpenFileException,
                                 ex);
+
+                        transferEx.Data.Add("path", fileLocation.FilePath);
+
+                        throw transferEx;
                     }
                     else
                     {

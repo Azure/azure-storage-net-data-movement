@@ -545,10 +545,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                     shouldStopTransfer = true;
                     this.enumerateException = new TransferException(
                         TransferErrorCode.FailToEnumerateDirectory,
-                        string.Format(CultureInfo.CurrentCulture,
-                            Resources.EnumerateDirectoryException,
-                            this.Destination.Instance.ConvertToString()),
+                        Resources.EnumerateDirectoryException,
                         ex.InnerException);
+
+                    this.enumerateException.Data.Add("path", this.Destination.Instance.ConvertToString());
                 }
 
                 hasError = true;
@@ -815,10 +815,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                     {
                         this.enumerateException = new TransferException(
                             TransferErrorCode.FailToEnumerateDirectory,
-                            string.Format(CultureInfo.CurrentCulture,
-                                Resources.EnumerateDirectoryException,
-                                subDirTransfer.Source.Instance.ConvertToString()),
-                            ex);
+                            Resources.EnumerateDirectoryException,
+                            ex.InnerException);
+
+                        this.enumerateException.Data.Add("path", subDirTransfer.Source.Instance.ConvertToString());
                     }
 
                     shouldStopOthers = true;

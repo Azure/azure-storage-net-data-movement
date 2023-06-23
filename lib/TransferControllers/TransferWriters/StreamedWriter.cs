@@ -204,16 +204,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                     }
                     catch (Exception ex)
                     {
-                        string exceptionMessage = string.Format(
-                                    CultureInfo.CurrentCulture,
-                                    Resources.FailedToOpenFileException,
-                                    this.filePath,
-                                    ex.Message);
+                        var transferEx = new TransferException(
+	                        TransferErrorCode.OpenFileFailed,
+	                        Resources.FailedToOpenFileException,
+	                        ex);
 
-                        throw new TransferException(
-                                TransferErrorCode.OpenFileFailed,
-                                exceptionMessage,
-                                ex);
+                        transferEx.Data.Add("path", this.filePath);
+
+                        throw transferEx;
                     }
                 }
 

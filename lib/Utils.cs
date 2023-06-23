@@ -763,11 +763,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 if (!IsValidWindowsFileName(destPath))
                 {
-                    throw new TransferException(
-                        string.Format(
-                            CultureInfo.CurrentCulture,
-                            Resources.SourceNameInvalidInFileSystem,
-                            sourcePath));
+                    var ex = new TransferException(Resources.SourceNameInvalidInFileSystem);
+                    ex.Data.Add("source", sourcePath);
+                    ex.Data.Add("destination", destPath);
+                    throw ex;
                 }
             }
         }
