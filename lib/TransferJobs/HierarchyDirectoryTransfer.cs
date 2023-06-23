@@ -818,7 +818,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                             Resources.EnumerateDirectoryException,
                             ex.InnerException);
 
-                        this.enumerateException.Data.Add("path", this.Destination.Instance.ConvertToString());
+                        this.enumerateException.Data.Add("path", subDirTransfer.Source.Instance.ConvertToString());
                     }
 
                     shouldStopOthers = true;

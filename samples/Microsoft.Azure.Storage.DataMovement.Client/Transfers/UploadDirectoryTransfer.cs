@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
             {
                 var ex = new TransferException( 
                     TransferErrorCode.DirectoryNotFound, 
-                    "Directory ({Options.Source}) does not exist.");
+                    "Directory does not exist.");
 
                 ex.Data.Add("path", Options.Source);
                 throw ex;
