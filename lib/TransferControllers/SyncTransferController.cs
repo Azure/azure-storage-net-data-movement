@@ -171,20 +171,20 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
         private async Task ValidateDestinationPathAsync()
         {
-	        if (null != this.TransferContext && null != this.TransferContext.ValidateDestinationPathCallbackAsync)
-	        {
-		        var transferLocation = this.TransferJob.Destination;
-		        try
-		        {
-			        await this.TransferContext.ValidateDestinationPathCallbackAsync(transferLocation.Instance);
-		        }
-		        catch (Exception ex)
-		        {
-			        var exception = new TransferInvalidPathException(Resources.DestinationPathValidationFailed, ex);
+            if (null != this.TransferContext && null != this.TransferContext.ValidateDestinationPathCallbackAsync)
+            {
+                var transferLocation = this.TransferJob.Destination;
+                try
+                {
+                    await this.TransferContext.ValidateDestinationPathCallbackAsync(transferLocation.Instance);
+                }
+                catch (Exception ex)
+                {
+                    var exception = new TransferInvalidPathException(Resources.DestinationPathValidationFailed, ex);
                     exception.Data.Add("path", transferLocation.ToString());
                     throw exception;
                 }
-	        }
+            }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope")]
