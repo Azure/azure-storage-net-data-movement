@@ -160,7 +160,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             try
             {
-                buffer = Utils.RequireBuffer(memoryManager, _logger, checkCancellation);
+                buffer = Utils.RequireBufferForMd5Calculation(memoryManager, _logger, checkCancellation);
             }
             catch (Exception)
             {

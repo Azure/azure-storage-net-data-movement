@@ -548,7 +548,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             return false;
         }
 
-        public static byte[] RequireBuffer(MemoryManager memoryManager, IDataMovementLogger logger, Action checkCancellation)
+        public static byte[] RequireBufferForMd5Calculation(MemoryManager memoryManager, IDataMovementLogger logger, Action checkCancellation)
         {
             byte[] buffer;
             buffer = memoryManager.RequireBufferForMd5();
