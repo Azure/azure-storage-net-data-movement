@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// </summary>
     internal static class Utils
     {
-        private const int RequireBufferMaxRetryCount = 10;
+        private const int RequireBufferMaxRetryCount = 15;
 
         /// <summary>
         /// These filenames are reserved on windows, regardless of the file extension.
@@ -551,7 +551,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         public static byte[] RequireBuffer(MemoryManager memoryManager, IDataMovementLogger logger, Action checkCancellation)
         {
             byte[] buffer;
-            buffer = memoryManager.RequireBuffer();
+            buffer = memoryManager.RequireBufferForMd5();
 
             if (null == buffer)
             {
@@ -559,11 +559,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                 int retryInterval = 100;
                 while ((retryCount < RequireBufferMaxRetryCount) && (null == buffer))
                 {
-                    logger.Info($"Require buffer access for MD5 calculation retryCount: {retryCount}, retryInterval: {retryInterval}");
                     checkCancellation();
                     retryInterval <<= 1;
                     Thread.Sleep(retryInterval);
-                    buffer = memoryManager.RequireBuffer();
+                    buffer = memoryManager.RequireBufferForMd5();
                     ++retryCount;
                 }
             }
@@ -577,8 +576,6 @@ namespace Microsoft.Azure.Storage.DataMovement
                     Resources.FailedToAllocateMemoryException);
             }
             
-            logger.Info("Buffer accessed");
-
             return buffer;
         }
 

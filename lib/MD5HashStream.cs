@@ -210,7 +210,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                         this.finishedSeparateMd5Calculator = true;
                     }
 
-                    memoryManager.ReleaseBuffer(buffer);
+                    memoryManager.ReleaseBufferForMd5(buffer);
 
                     throw;
                 }
@@ -218,7 +218,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 offset += readLength;
             }
 
-            memoryManager.ReleaseBuffer(buffer);
+            memoryManager.ReleaseBufferForMd5(buffer);
         }
 
         /// <summary>
