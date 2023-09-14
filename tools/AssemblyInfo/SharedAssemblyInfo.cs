@@ -13,8 +13,8 @@ using System.Resources;
 using System.Runtime.InteropServices;
 
 #pragma warning disable CS7035 // The specified version string does not conform to the recommended format - major.minor.build.revision 
-[assembly: AssemblyVersion("4.3.2")]
-[assembly: AssemblyFileVersion("4.3.2")]
+[assembly: AssemblyVersion("4.3.3")]
+[assembly: AssemblyFileVersion("4.3.3")]
 
 [assembly: AssemblyCompany("Microsoft")]
 [assembly: AssemblyProduct("Microsoft Azure Storage")]
