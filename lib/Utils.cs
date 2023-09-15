@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// </summary>
     internal static class Utils
     {
-        private const int RequireBufferMaxRetryCount = 15;
+        private const int RequireBufferMaxRetryCount = 12;
 
         /// <summary>
         /// These filenames are reserved on windows, regardless of the file extension.
