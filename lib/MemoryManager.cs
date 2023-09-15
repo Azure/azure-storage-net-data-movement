@@ -19,6 +19,8 @@ namespace Microsoft.Azure.Storage.DataMovement
     internal class MemoryManager
     {
         private MemoryPool memoryPool;
+        private MemoryPool md5MemoryPool;
+        private const int CellsCountReservedForMd5Calculation = 8;
 
         private long currentCapacity;
 
@@ -36,6 +38,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             int cellNumber = (int)Math.Min((long)Constants.MemoryManagerCellsMaximum, availableCells);
 
             this.memoryPool = new MemoryPool(cellNumber, bufferSize);
+            
+            // This memory pool is designated for calculating MD5 of already transferred bytes inside files that are in restart mode. 
+            // MD5 that is calculated at the end of object transfer is still done on memory cells that are in transfer pool
+            this.md5MemoryPool = new MemoryPool(CellsCountReservedForMd5Calculation, bufferSize);
         }
 
         public byte[] RequireBuffer()
@@ -43,11 +49,21 @@ namespace Microsoft.Azure.Storage.DataMovement
             return this.memoryPool.GetBuffer();
         }
 
+        public byte[] RequireBufferForMd5()
+        {
+            return this.md5MemoryPool.GetBuffer();
+        }
+
         public byte[][] RequireBuffers(int count)
         {
             return this.memoryPool.GetBuffers(count);
         }
 
+        public void ReleaseBufferForMd5(byte[] buffer)
+        {
+            this.md5MemoryPool.AddBuffer(buffer);
+        }
+        
         public void ReleaseBuffer(byte[] buffer)
         {
             this.memoryPool.AddBuffer(buffer);
