@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// </summary>
     internal static class Utils
     {
-        private const int RequireBufferMaxRetryCount = 12;
+        private const int RequireBufferMaxRetryCount = 50;
 
         /// <summary>
         /// These filenames are reserved on windows, regardless of the file extension.
@@ -551,16 +551,17 @@ namespace Microsoft.Azure.Storage.DataMovement
         public static byte[] RequireBufferForMd5Calculation(MemoryManager memoryManager, IDataMovementLogger logger, Action checkCancellation)
         {
             byte[] buffer;
+            int retryInterval = 0;
             buffer = memoryManager.RequireBufferForMd5();
 
             if (null == buffer)
             {
                 int retryCount = 0;
-                int retryInterval = 100;
+                
                 while ((retryCount < RequireBufferMaxRetryCount) && (null == buffer))
                 {
+                    retryInterval = GetSharedTimeInterval();
                     checkCancellation();
-                    retryInterval <<= 1;
                     Thread.Sleep(retryInterval);
                     buffer = memoryManager.RequireBufferForMd5();
                     ++retryCount;
@@ -569,6 +570,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (null == buffer)
             {
+                DecreaseSharedInterval(retryInterval);
                 memoryManager.LogMemoryState(logger);
                 
                 throw new TransferException(
@@ -576,6 +578,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     Resources.FailedToAllocateMemoryException);
             }
             
+            DecreaseSharedInterval(retryInterval);
             return buffer;
         }
 
@@ -1013,6 +1016,28 @@ namespace Microsoft.Azure.Storage.DataMovement
                     }
                 }
             }
+        }
+
+        private const int BaseTimeInterval = 100;
+
+        private static int _sharedTimeInterval = BaseTimeInterval;
+        
+        private static int GetSharedTimeInterval()
+        {
+            _sharedTimeInterval += BaseTimeInterval;
+
+            return _sharedTimeInterval;
+        }
+
+        private static void DecreaseSharedInterval(int decreaseValue)
+        {
+            if (decreaseValue < BaseTimeInterval)
+            {
+                _sharedTimeInterval = BaseTimeInterval;
+                return;
+            }
+
+            _sharedTimeInterval -= decreaseValue;
         }
     }
 }
