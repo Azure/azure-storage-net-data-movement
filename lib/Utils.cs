@@ -559,7 +559,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 while ((retryCount < RequireBufferMaxRetryCount) && (null == buffer))
                 {
-                    retryInterval = GetSharedTimeInterval();
+                    retryInterval = GetAndBumpSharedTimeInterval();
                     checkCancellation();
                     Thread.Sleep(retryInterval);
                     buffer = memoryManager.RequireBufferForMd5();
@@ -1024,11 +1024,9 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private static int _sharedTimeInterval = BaseTimeInterval;
         
-        private static int GetSharedTimeInterval()
+        private static int GetAndBumpSharedTimeInterval()
         {
-            Interlocked.Add(ref _sharedTimeInterval, BaseTimeInterval);
-
-            return _sharedTimeInterval;
+            return Interlocked.Add(ref _sharedTimeInterval, BaseTimeInterval);
         }
 
         private static void DecreaseSharedInterval(int decreaseValue)
