@@ -552,12 +552,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             byte[] buffer;
             int retryInterval = 0;
+            int retryCount = 0;
             buffer = memoryManager.RequireBufferForMd5();
 
             if (null == buffer)
             {
-                int retryCount = 0;
-                
                 while ((retryCount < RequireBufferMaxRetryCount) && (null == buffer))
                 {
                     retryInterval = GetSharedTimeInterval();
@@ -570,7 +569,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (null == buffer)
             {
-                DecreaseSharedInterval(retryInterval);
+                DecreaseSharedInterval(retryCount * BaseTimeInterval);
                 memoryManager.LogMemoryState(logger);
                 
                 throw new TransferException(
@@ -578,7 +577,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     Resources.FailedToAllocateMemoryException);
             }
             
-            DecreaseSharedInterval(retryInterval);
+            DecreaseSharedInterval(retryCount * BaseTimeInterval);
             return buffer;
         }
 
@@ -1024,20 +1023,20 @@ namespace Microsoft.Azure.Storage.DataMovement
         
         private static int GetSharedTimeInterval()
         {
-            _sharedTimeInterval += BaseTimeInterval;
+            Interlocked.Add(ref _sharedTimeInterval, BaseTimeInterval);
 
             return _sharedTimeInterval;
         }
 
         private static void DecreaseSharedInterval(int decreaseValue)
         {
-            if (decreaseValue < BaseTimeInterval)
+            if (_sharedTimeInterval - decreaseValue < BaseTimeInterval)
             {
-                _sharedTimeInterval = BaseTimeInterval;
+                Interlocked.Exchange(ref _sharedTimeInterval, BaseTimeInterval);
                 return;
             }
 
-            _sharedTimeInterval -= decreaseValue;
+            Interlocked.Add(ref _sharedTimeInterval, -decreaseValue);
         }
     }
 }
