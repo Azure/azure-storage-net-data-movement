@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// </summary>
     internal static class Utils
     {
-        private const int RequireBufferMaxRetryCount = 12;
+        private const int RequireBufferMaxRetryCount = 50;
 
         /// <summary>
         /// These filenames are reserved on windows, regardless of the file extension.
@@ -551,16 +551,16 @@ namespace Microsoft.Azure.Storage.DataMovement
         public static byte[] RequireBufferForMd5Calculation(MemoryManager memoryManager, IDataMovementLogger logger, Action checkCancellation)
         {
             byte[] buffer;
+            int retryInterval = 0;
+            int retryCount = 0;
             buffer = memoryManager.RequireBufferForMd5();
 
             if (null == buffer)
             {
-                int retryCount = 0;
-                int retryInterval = 100;
                 while ((retryCount < RequireBufferMaxRetryCount) && (null == buffer))
                 {
+                    retryInterval = GetAndBumpSharedTimeInterval();
                     checkCancellation();
-                    retryInterval <<= 1;
                     Thread.Sleep(retryInterval);
                     buffer = memoryManager.RequireBufferForMd5();
                     ++retryCount;
@@ -569,6 +569,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (null == buffer)
             {
+                DecreaseSharedInterval(retryCount * BaseTimeInterval);
                 memoryManager.LogMemoryState(logger);
                 
                 throw new TransferException(
@@ -576,6 +577,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     Resources.FailedToAllocateMemoryException);
             }
             
+            DecreaseSharedInterval(retryCount * BaseTimeInterval);
             return buffer;
         }
 
@@ -1013,6 +1015,29 @@ namespace Microsoft.Azure.Storage.DataMovement
                     }
                 }
             }
+        }
+
+        /* When multiple threads asks for buffer they will end up creating big queue waiting.
+        We don't want to wait too long for buffer when it's free to take, and also don't waste retries on short wait time when we know there is big queue ahead. 
+        We've created shared time interval to be shared by threads. It will scale accordingly to amount of calls it gets */ 
+        private const int BaseTimeInterval = 100;
+
+        private static int _sharedTimeInterval = BaseTimeInterval;
+        
+        private static int GetAndBumpSharedTimeInterval()
+        {
+            return Interlocked.Add(ref _sharedTimeInterval, BaseTimeInterval);
+        }
+
+        private static void DecreaseSharedInterval(int decreaseValue)
+        {
+            if (_sharedTimeInterval - decreaseValue < BaseTimeInterval)
+            {
+                Interlocked.Exchange(ref _sharedTimeInterval, BaseTimeInterval);
+                return;
+            }
+
+            Interlocked.Add(ref _sharedTimeInterval, -decreaseValue);
         }
     }
 }
