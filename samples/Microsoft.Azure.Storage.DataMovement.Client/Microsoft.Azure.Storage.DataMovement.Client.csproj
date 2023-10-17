@@ -4,7 +4,7 @@
 		<OutputPath>bin\</OutputPath>
 		<OutputType>Exe</OutputType>
 		<IsTestProject>false</IsTestProject>
-		<TargetFrameworks>net462;netcoreapp3.1</TargetFrameworks>
+		<TargetFrameworks>net462;net6.0</TargetFrameworks>
 		<LangVersion>9</LangVersion>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
@@ -20,11 +20,15 @@
 	<ItemGroup Condition="'$(TargetFramework)' == 'net462'">
 		<ProjectReference Include="..\..\lib\DataMovement.csproj" />
 
-		<PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="1.0.0.0" />
+		<PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="2.0.4" />
 		<PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.3.0" />
 		<PackageReference Include="Microsoft.Azure.Storage.Common" Version="11.2.3.0" />
 		<PackageReference Include="Microsoft.Azure.Storage.File" Version="11.2.3.0" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\netcore\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj" />
 	</ItemGroup>
 
 

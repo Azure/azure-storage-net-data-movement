@@ -17,7 +17,6 @@ namespace Microsoft.Azure.Storage.DataMovement
     {
         private bool preserveSMBAttributes = false;
         private PreserveSMBPermissions preserveSMBPermissions = PreserveSMBPermissions.None;
-        private char delimiter = '/';
 
         /// <summary>
         /// Gets or sets a flag that indicates whether to validate content MD5 or not when reading data from the source object.
@@ -42,14 +41,16 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         public char Delimiter
         {
-            get
-            {
-                return this.delimiter;
-            }
-            set
-            {
-                this.delimiter = value;
-            }
+            get;
+            set;
+        } = '/';
+
+        /// Configures how many entries to request in each remote enumeration call from Azure Storage.
+        /// Configuring a larger number will require fewer calls to Azure Storage, but each call will take longer to complete.
+        /// Maximum supported by the Azure Storage API is 5000. Anything above this is rounded down to 5000.
+        public int? RemoteEnumerationSegmentSize
+        {
+            get; set;
         }
 
         /// <summary>

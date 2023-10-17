@@ -613,18 +613,28 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             AzureBlobDirectoryLocation sourceLocation = new AzureBlobDirectoryLocation(sourceBlobDir);
             DirectoryLocation destLocation = new DirectoryLocation(destPath);
-            AzureBlobEnumerator sourceEnumerator = new AzureBlobEnumerator(sourceLocation);
+            AzureBlobEnumerator sourceEnumerator;
 
+            var logger = GetLogger(context);
+          
             // Set default request options
             SetDefaultRequestOptions(sourceLocation);
 
             if (options != null)
             {
-                sourceEnumerator.SearchPattern = options.SearchPattern;
-                sourceEnumerator.Recursive = options.Recursive;
-                sourceEnumerator.IncludeSnapshots = options.IncludeSnapshots;
+                sourceEnumerator = new AzureBlobEnumerator(sourceLocation, logger)
+                {
+                    SearchPattern = options.SearchPattern,
+                    Recursive = options.Recursive,
+                    IncludeSnapshots = options.IncludeSnapshots,
+                    SegmentSize = options.RemoteEnumerationSegmentSize,
+                };
 
                 sourceLocation.BlobRequestOptions.DisableContentMD5Validation = options.DisableContentMD5Validation;
+            }
+            else
+            {
+                sourceEnumerator = new AzureBlobEnumerator(sourceLocation, logger);
             }
 
             return DownloadDirectoryInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context, cancellationToken);
@@ -1334,7 +1344,10 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             AzureBlobDirectoryLocation sourceLocation = new AzureBlobDirectoryLocation(sourceBlobDir);
             AzureBlobDirectoryLocation destLocation = new AzureBlobDirectoryLocation(destBlobDir);
-            AzureBlobEnumerator sourceEnumerator = new AzureBlobEnumerator(sourceLocation);
+
+            var logger = GetLogger(context);
+            
+            AzureBlobEnumerator sourceEnumerator = new AzureBlobEnumerator(sourceLocation, logger);
 
             // Set default request options for source and destination
             SetDefaultRequestOptions(sourceLocation);
@@ -1416,7 +1429,10 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             AzureBlobDirectoryLocation sourceLocation = new AzureBlobDirectoryLocation(sourceBlobDir);
             AzureFileDirectoryLocation destLocation = new AzureFileDirectoryLocation(destFileDir);
-            AzureBlobEnumerator sourceEnumerator = new AzureBlobEnumerator(sourceLocation);
+
+            var logger = GetLogger(context);
+
+            AzureBlobEnumerator sourceEnumerator = new AzureBlobEnumerator(sourceLocation, logger);
 
             // Set default request options for source and destination
             SetDefaultRequestOptions(sourceLocation);
@@ -1993,14 +2009,18 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
         }
 
+        private static IDataMovementLogger GetLogger(TransferContext context)
+        {
+            return context != null ? context.Logger ?? NullLogger.Instance : NullLogger.Instance;
+        }
+
         private static void InitializeLogger(Transfer transfer, TransferContext context)
         {
-            if (context != null)
-            {
-                transfer.Logger = context.Logger;
-                scheduler?.TransferOptions.LogConfiguration(transfer.Logger);
-                scheduler?.MemoryManager.LogMemoryState(transfer.Logger);
-            }
+            var logger = GetLogger(context);
+         
+            transfer.Logger = logger;
+            scheduler?.TransferOptions.LogConfiguration(transfer.Logger);
+            scheduler?.MemoryManager.LogMemoryState(transfer.Logger);
         }
     }
 }

@@ -30,23 +30,42 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
         /// Configuring a larger number will require fewer calls to Azure Storage, but each call will take longer to complete.
         /// Maximum supported by the Azure Storage API is 5000. Anything above this is rounded down to 5000.
         /// </summary>
-        internal const int ListBlobsSegmentSize = 250;
+        private const int DefaultListBlobsSegmentSize = 250;
 
-        private AzureBlobDirectoryLocation location;
+        /// <summary>
+        /// Initial attempt + all potential retries
+        /// </summary>
+        private const int DefaultMaxAttemptsPerSegment = 3;
+
+        private static readonly TimeSpan DefaultRetryInterval = TimeSpan.FromSeconds(10);
+
+        private readonly AzureBlobDirectoryLocation location;
+        private readonly IDataMovementLogger logger;
 
         private AzureBlobListContinuationToken listContinuationToken;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AzureBlobEnumerator" /> class.
+        /// </summary>
+
+        public AzureBlobEnumerator(AzureBlobDirectoryLocation location, IDataMovementLogger logger) 
+        : this(location, logger, DefaultRetryInterval, DefaultMaxAttemptsPerSegment)
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AzureBlobEnumerator" /> class.
         /// </summary>
-        /// <param name="location">Azure blob directory location.</param>
-        public AzureBlobEnumerator(AzureBlobDirectoryLocation location)
+        public AzureBlobEnumerator(AzureBlobDirectoryLocation location, IDataMovementLogger logger, TimeSpan retryInterval, int maxRetryAttempts)
         {
             this.location = location;
+            this.logger = logger;
+
+            RetryInterval = retryInterval;
+            MaxAttemptsPerPage = maxRetryAttempts;
         }
 
         /// <summary>
-        /// Gets or sets the enumerate continulation token.
+        /// Gets or sets the enumerate continuation token.
         /// </summary>
         public ListContinuationToken EnumerateContinuationToken
         {
@@ -69,6 +88,22 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
         {
             get;
             set;
+        }
+
+        public TimeSpan RetryInterval
+        {
+            get;
+        }
+
+        public int MaxAttemptsPerPage
+        {
+            get;
+        }
+
+        public int? SegmentSize
+        {
+            set;
+            get;
         }
 
         /// <summary>
@@ -105,15 +140,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
                 Utils.CheckCancellation(cancellationToken);
                 try
                 {
-                    resultSegment = container.ListBlobsSegmentedAsync(
-                        patternPrefix,
-                        true,
-                        BlobListingDetails.Snapshots | BlobListingDetails.Metadata,
-                        ListBlobsSegmentSize,
-                        continuationToken,
-                        requestOptions,
-                        null,
-                        cancellationToken).Result;
+                    resultSegment = GetBlobsSegment(container, patternPrefix, continuationToken, requestOptions, cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -196,7 +223,29 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
             while (continuationToken != null);
         }
 
-		/// <summary>
+        private BlobResultSegment GetBlobsSegment(CloudBlobContainer container, string patternPrefix,
+            BlobContinuationToken continuationToken, BlobRequestOptions requestOptions, CancellationToken cancellationToken)
+        {
+            var maxRetries = MaxAttemptsPerPage - 1;
+
+            return RetryExecutor.ExecuteWithRetry(() =>
+                    container.ListBlobsSegmentedAsync(
+                    patternPrefix,
+                    true,
+                    BlobListingDetails.Snapshots | BlobListingDetails.Metadata,
+                    SegmentSize ?? DefaultListBlobsSegmentSize,
+                    continuationToken,
+                    requestOptions,
+                    null,
+                    cancellationToken).Result,
+                onRetry: (exceptionFromLastAttempt, retryCount) =>
+                {
+                    logger.Warning(exceptionFromLastAttempt, $"Remote enumeration failed. Retrying ({retryCount}/{maxRetries}).");
+                },
+            RetryInterval, MaxAttemptsPerPage);
+        }
+
+        /// <summary>
 		/// Determines whether the specified blob is a directory based on its metadata.
 		/// </summary>
 		/// <returns>
