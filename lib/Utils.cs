@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     /// </summary>
     internal static class Utils
     {
-        private const int RequireBufferMaxRetryCount = 50;
+        private const int RequireBufferMaxRetryCount = 75;
 
         /// <summary>
         /// These filenames are reserved on windows, regardless of the file extension.
@@ -1020,7 +1020,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /* When multiple threads asks for buffer they will end up creating big queue waiting.
         We don't want to wait too long for buffer when it's free to take, and also don't waste retries on short wait time when we know there is big queue ahead. 
         We've created shared time interval to be shared by threads. It will scale accordingly to amount of calls it gets */ 
-        private const int BaseTimeInterval = 100;
+        private const int BaseTimeInterval = 300;
 
         private static int _sharedTimeInterval = BaseTimeInterval;
         

@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     {
         private MemoryPool memoryPool;
         private MemoryPool md5MemoryPool;
-        private const int CellsCountReservedForMd5Calculation = 8;
+        private const int CellsCountReservedForMd5Calculation = 16;
 
         private long currentCapacity;
 
