@@ -24,6 +24,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     {
         private volatile State state;
         private SortedDictionary<int, string> blockIds;
+        private List<string> uploadedBlockIds;
         private object blockIdsLock = new object();
         private readonly AzureBlobLocation destLocation;
         private readonly CloudBlockBlob blockBlob;
@@ -266,6 +267,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             // Create sequence array.
             this.blockIds = new SortedDictionary<int, string>();
+            uploadedBlockIds = new List<string>();
             this.InitializeBlockIds();
 
             this.state = State.UploadBlob;
@@ -334,8 +336,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                             transferData.Stream = new ChunkedMemoryStream(transferData.MemoryBuffer, 0, transferData.Length);
                         }
 
+                        var blockId = this.GetBlockId(transferData.StartOffset);
+                        uploadedBlockIds.Add(blockId);
+                        
                         await this.blockBlob.PutBlockAsync(
-                                this.GetBlockId(transferData.StartOffset),
+                                blockId,
                                 transferData.Stream,
                                 null,
                                 Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition, true),
@@ -399,12 +404,24 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
 
-            await this.blockBlob.PutBlockListAsync(
-                        this.blockIds.Values,
-                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                        blobRequestOptions,
-                        operationContext,
-                        this.CancellationToken);
+            try
+            {
+                await this.blockBlob.PutBlockListAsync(
+                    this.blockIds.Values,
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                    blobRequestOptions,
+                    operationContext,
+                    this.CancellationToken);
+            }
+            catch (Exception ex)
+            {
+                ex.Data.Add("BlockListIds", blockIds.Values.ToArray());
+                ex.Data.Add("UploadedBlockListIds", uploadedBlockIds.ToArray());
+                ex.Data.Add("BlockIdPrefix", this.destLocation.BlockIdPrefix);
+                
+                throw;
+            }
+
 
             // REST API PutBlockList cannot clear existing Content-Type of block blob, so if it's needed to clear existing
             // Content-Type, REST API SetBlobProperties must be called explicitly:
