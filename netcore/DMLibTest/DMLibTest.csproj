@@ -46,6 +46,7 @@
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
 		<PackageReference Include="MSTest.TestAdapter" Version="2.2.7" />
 		<PackageReference Include="MSTest.TestFramework" Version="2.2.7" />
+		<PackageReference Include="NSubstitute" Version="4.4.0" />
 		<PackageReference Include="xunit" Version="2.2.0" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
 	</ItemGroup>
@@ -65,16 +66,14 @@
 		<SourceCodeOuputFolder>$(MSBuildProjectDirectory)\Generated</SourceCodeOuputFolder>
 	</PropertyGroup>
 
-	<Target Name="FullBuild" DependsOnTargets="AfterBuild"
-	        Outputs="$(MSBuildProjectDirectory)\$(OutputPath)$(AssemblyName).dll">
+	<Target Name="FullBuild" DependsOnTargets="AfterBuild" Outputs="$(MSBuildProjectDirectory)\$(OutputPath)$(AssemblyName).dll">
 		<MSBuild Projects="$(MSBuildProjectFile)" Targets="Build" />
 		<Exec Command="dotnet publish $(MSBuildProjectFile) --configuration $(Configuration)" />
 		<MSBuild Projects="$(CodeGenProjFile)" Targets="Build" />
 		<MakeDir Condition="!Exists('$(SourceCodeOuputFolder)')" Directories="$(SourceCodeOuputFolder)" />
 		<Delete Files="@(GeneratedSourceFile)" />
 
-		<Exec
-			Command="$(CodeGenPath)$(CodeGenOutputPath)DMLibTestCodeGen_NetCore.exe $(MSBuildProjectDirectory)\$(OutputPath)publish\$(AssemblyName).dll $(SourceCodeOuputFolder) DNetCore" />
+		<Exec Command="$(CodeGenPath)$(CodeGenOutputPath)DMLibTestCodeGen_NetCore.exe $(MSBuildProjectDirectory)\$(OutputPath)publish\$(AssemblyName).dll $(SourceCodeOuputFolder) DNetCore" />
 		<MSBuild Projects="$(MSBuildProjectFile)" Targets="Build" Properties="Mode=Full" />
 	</Target>
 
@@ -102,8 +101,7 @@
 
 	<ItemGroup>
 		<None Include="..\..\test\DMLibTest\Resources\jounal_3.1.1.0_net462.bin" Link="Resources\jounal_3.1.1.0_net462.bin" />
-		<None Include="..\..\test\DMLibTest\Resources\jounal_3.1.1.0_netstandard2.0.bin"
-		      Link="Resources\jounal_3.1.1.0_netstandard2.0.bin" />
+		<None Include="..\..\test\DMLibTest\Resources\jounal_3.1.1.0_netstandard2.0.bin" Link="Resources\jounal_3.1.1.0_netstandard2.0.bin" />
 	</ItemGroup>
 
 </Project>

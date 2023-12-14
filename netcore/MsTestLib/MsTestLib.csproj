@@ -17,6 +17,7 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <DefineConstants>$(DefineConstants);DOTNET5_4</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	<NuGetAuditLevel>critical</NuGetAuditLevel>
   </PropertyGroup>
 
   <ItemGroup>

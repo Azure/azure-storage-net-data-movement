@@ -256,10 +256,11 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 this.lastTransferWindow = new Queue<long>(this.transferJob.CheckPoint.TransferWindow);
             }
 
-            this.md5HashStream = new MD5HashStream(
+            this.md5HashStream = new RetryableMD5HashStream(
                 this.inputStream,
                 this.transferJob.CheckPoint.EntryTransferOffset,
-                true, transferJob.Transfer.Logger);
+                true, transferJob.Transfer.Logger,
+                TimeSpan.FromSeconds(2), 3);
 
             this.PreProcessed = true;
 

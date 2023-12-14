@@ -98,6 +98,7 @@
     <Compile Include="LongPathFileStream.cs" />
     <Compile Include="NullLogger.cs" />
     <Compile Include="PreserveSMBPermissions.cs" />
+    <Compile Include="RetryableMD5HashStream.cs" />
     <Compile Include="RetryExecutor.cs" />
     <Compile Include="TestHook\FaultInjectionPoint.cs" />
     <Compile Include="DirectoryTransferContext.cs" />

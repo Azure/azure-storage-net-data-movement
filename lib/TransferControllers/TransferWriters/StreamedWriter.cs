@@ -217,11 +217,12 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
                 this.outputStream.SetLength(this.SharedTransferData.TotalLength);
 
-                this.md5HashStream = new MD5HashStream(
+                this.md5HashStream = new RetryableMD5HashStream(
                     this.outputStream,
                     this.expectOffset,
                     !this.SharedTransferData.DisableContentMD5Validation, 
-                    TransferJob.Transfer.Logger);
+                    TransferJob.Transfer.Logger,
+                    TimeSpan.FromSeconds(2), 3);
 
                 if (this.md5HashStream.FinishedSeparateMd5Calculator)
                 {

@@ -7,12 +7,11 @@ namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
     using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.IO;
-    using System.Security.Cryptography;
     using System.Threading;
     using System.Threading.Tasks;
+
 
     /// <summary>
     /// Class to make thread safe stream access and calculate MD5 hash.
@@ -149,7 +148,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         /// <param name="memoryManager">Reference to MemoryManager object to require buffer from.</param>
         /// <param name="checkCancellation">Action to check whether to cancel this calculation.</param>
-        public void CalculateMd5(MemoryManager memoryManager, Action checkCancellation)
+        public virtual void CalculateMd5(MemoryManager memoryManager, Action checkCancellation)
         {
             if (null == this.md5hash)
             {
@@ -265,7 +264,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="cancellationToken">Token used to cancel the asynchronous reading.</param>
         /// <returns>A task that represents the asynchronous read operation. The value of the
         /// <c>TResult</c> parameter contains the total number of bytes read into the buffers.</returns>
-        public async Task<int> ReadAsync(long readOffset, byte[][] buffers, int offset, int count, CancellationToken cancellationToken)
+        public virtual async Task<int> ReadAsync(long readOffset, byte[][] buffers, int offset, int count, CancellationToken cancellationToken)
         {
             if (buffers.Length == 1)
             {

@@ -10,6 +10,7 @@
     <RuntimeFrameworkVersion>2.0</RuntimeFrameworkVersion>
     <DefineConstants>$(DefineConstants);DOTNET5_4</DefineConstants>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	<NuGetAuditLevel>critical</NuGetAuditLevel>
   </PropertyGroup>
 
   <ItemGroup>
