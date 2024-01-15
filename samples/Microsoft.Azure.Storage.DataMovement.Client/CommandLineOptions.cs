@@ -20,6 +20,9 @@ namespace Microsoft.Azure.Storage.DataMovement.Client
         [Option('n', "transfers-number", HelpText = "Number of simultaneous transfers", Required = false, Default = 1)]
         public int TransfersNumber { get; set; }
 
+        [Option('i', "job-id", HelpText = "JobId of the transfer (e.g. to resume it later).", Required = false)]
+        public Guid JobId { get; set; }
+
         [Option('t', "sas-tokens", HelpText = "Comma separated SAS tokens (Should be >= -n parameter).",
             Required = true)]
         public string SasTokens

@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
             Validate();
 
             var uri = new Uri(GetRemotePath());
-            JobId = Guid.NewGuid().ToString();
+            JobId = Options.JobId == default ? Guid.NewGuid().ToString() : Options.JobId.ToString();
             StorageUri = new Uri(uri.GetLeftPart(UriPartial.Authority));
             Container = uri.Segments[1].TrimEnd('/');
             RelativePath = string.Join("/", uri.Segments.Skip(2).Select(x => x.TrimEnd('/')));
