@@ -24,7 +24,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
     {
         private volatile State state;
         private SortedDictionary<int, string> blockIds;
-        private List<string> uploadedBlockIds;
         private object blockIdsLock = new object();
         private readonly AzureBlobLocation destLocation;
         private readonly CloudBlockBlob blockBlob;
@@ -267,7 +266,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             // Create sequence array.
             this.blockIds = new SortedDictionary<int, string>();
-            uploadedBlockIds = new List<string>();
             this.InitializeBlockIds();
 
             this.state = State.UploadBlob;
@@ -337,7 +335,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                         }
 
                         var blockId = this.GetBlockId(transferData.StartOffset);
-                        uploadedBlockIds.Add(blockId);
                         
                         await this.blockBlob.PutBlockAsync(
                                 blockId,
@@ -403,7 +400,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
-
+            
             try
             {
                 await this.blockBlob.PutBlockListAsync(
@@ -415,9 +412,17 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             catch (Exception ex)
             {
+                var blocksOnFileshare = await blockBlob.DownloadBlockListAsync(BlockListingFilter.All,
+                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                    blobRequestOptions,
+                    operationContext,
+                    this.CancellationToken );
+                
+                var blockListIds = blocksOnFileshare.Select(x => $"{x.Name} {x.Committed}").ToArray();
+                
                 ex.Data.Add("BlockListIds", blockIds.Values.ToArray());
-                ex.Data.Add("UploadedBlockListIds", uploadedBlockIds.ToArray());
-                ex.Data.Add("BlockIdPrefix", this.destLocation.BlockIdPrefix);
+                ex.Data.Add("BlocksOnFileshare", blockListIds);
+                ex.Data.Add("BlockIdPrefix", Convert.ToBase64String(Encoding.UTF8.GetBytes(this.destLocation.BlockIdPrefix)));
                 
                 throw;
             }
