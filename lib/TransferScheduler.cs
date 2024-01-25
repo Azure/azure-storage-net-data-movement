@@ -210,6 +210,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             }
 
             TransferControllerBase controller = GenerateTransferConstroller(this, job, cancellationToken);
+            job.Transfer.Context.Logger.Info("Initializing controller");
 
             Utils.CheckCancellation(this.cancellationTokenSource.Token);
             this.controllerQueue.Add(controller, this.cancellationTokenSource.Token);

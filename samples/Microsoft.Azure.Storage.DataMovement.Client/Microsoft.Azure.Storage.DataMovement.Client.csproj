@@ -4,7 +4,7 @@
 		<OutputPath>bin\</OutputPath>
 		<OutputType>Exe</OutputType>
 		<IsTestProject>false</IsTestProject>
-		<TargetFrameworks>net462;net6.0</TargetFrameworks>
+		<TargetFrameworks>net462;net5.0</TargetFrameworks>
 		<LangVersion>9</LangVersion>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
@@ -13,9 +13,11 @@
 		<PackageReference Include="CommandLineParser" Version="2.8.0" />
 	</ItemGroup>
 
+<!--
 	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
 		<ProjectReference Include="..\..\netcore\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj" />
 	</ItemGroup>
+-->
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net462'">
 		<ProjectReference Include="..\..\lib\DataMovement.csproj" />
