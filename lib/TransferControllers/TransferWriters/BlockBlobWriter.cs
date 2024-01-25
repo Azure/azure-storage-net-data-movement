@@ -400,7 +400,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
 
             BlobRequestOptions blobRequestOptions = Utils.GenerateBlobRequestOptions(this.destLocation.BlobRequestOptions);
             OperationContext operationContext = Utils.GenerateOperationContext(this.Controller.TransferContext);
-            
+
             try
             {
                 await this.blockBlob.PutBlockListAsync(
