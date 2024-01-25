@@ -412,13 +412,23 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
             }
             catch (Exception ex)
             {
-                var blocksOnFileshare = await blockBlob.DownloadBlockListAsync(BlockListingFilter.All,
-                    Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
-                    blobRequestOptions,
-                    operationContext,
-                    this.CancellationToken );
-                
-                var blockListIds = blocksOnFileshare.Select(x => $"{x.Name} {x.Committed}").ToArray();
+                IEnumerable<ListBlockItem> blocksOnFileshare = null;
+
+                try
+                {
+                    blocksOnFileshare = await blockBlob.DownloadBlockListAsync(BlockListingFilter.All,
+                        Utils.GenerateConditionWithCustomerCondition(this.destLocation.AccessCondition),
+                        blobRequestOptions,
+                        operationContext,
+                        this.CancellationToken);
+                }
+                catch
+                {
+                    //Ignore
+                }
+
+                var blockListIds = blocksOnFileshare?.Select(x => $"{x.Name} {x.Committed}").ToArray() ??
+                                   new string[0];
                 
                 ex.Data.Add("BlockListIds", blockIds.Values.ToArray());
                 ex.Data.Add("BlocksOnFileshare", blockListIds);
