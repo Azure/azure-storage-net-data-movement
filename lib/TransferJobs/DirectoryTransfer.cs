@@ -233,7 +233,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         {
             try
             {
-                Context.Logger.Info("Destination validation");
                 this.Destination.Validate();
             }
             catch (StorageException se)

@@ -60,7 +60,6 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 // new block size will be mutiple of DefaultBlockSize(aka MemoryManager's chunk size)
                 if (this.writer is BlockBlobWriter)
                 {
-                    TransferJob.Logger.Info("Recalculate block size for large block blob uploading. hehehe");
                     var normalMaxBlockBlobSize = (long)50000 * Constants.DefaultTransferChunkSize;
 
                     // Calculate the min block size according to the blob total length
