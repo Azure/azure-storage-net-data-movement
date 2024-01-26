@@ -570,7 +570,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             if (null == buffer)
             {
                 DecreaseSharedInterval(retryCount * BaseTimeInterval);
-                memoryManager.LogMemoryState(logger);
+                logger.Error($"Fail to allocate memory for MD5 calculation. After {retryCount} retries.");
                 
                 throw new TransferException(
                     TransferErrorCode.FailToAllocateMemory, 

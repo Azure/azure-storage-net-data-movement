@@ -424,9 +424,9 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferControllers
                 
                     ex.Data.Add("BlocksOnFileshare", blockListIds);
                 }
-                catch
+                catch(Exception innerEx)
                 {
-                    //Ignore
+                    Controller.TransferContext.Logger.Warning(innerEx, "Failed to get block list from fileshare.");
                 }
 
                 ex.Data.Add("BlockListIds", blockIds.Values.ToArray());
