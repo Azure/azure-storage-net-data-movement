@@ -72,6 +72,11 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
             const string failedTypeMsg = "File failed";
             const string skippedTypeMsg = "File skipped";
 
+            if (Options.AddConsoleLogger)
+            {
+                transferContext.Logger = new ConsoleLogger();
+            }
+            
             transferContext.ClientRequestId = JobId;
             transferContext.FileFailed += (_, e) => e.LogFailedOrSkipped(JobId, failedTypeMsg);
             transferContext.FileSkipped += (_, e) => e.LogFailedOrSkipped(JobId, skippedTypeMsg);

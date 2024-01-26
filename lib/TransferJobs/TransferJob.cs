@@ -92,6 +92,8 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
+        public IDataMovementLogger Logger => Transfer.Logger ?? NullLogger.Instance;
+
         /// <summary>
         /// Gets source location for this transfer job.
         /// </summary>
