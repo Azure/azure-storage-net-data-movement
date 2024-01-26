@@ -216,7 +216,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             set;
         }
 
-        public IDataMovementLogger Logger => Context.Logger ?? NullLogger.Instance;
+        public IDataMovementLogger Logger => Context?.Logger ?? NullLogger.Instance;
 
         /// <summary>
         /// Gets or sets blob type of destination blob.
