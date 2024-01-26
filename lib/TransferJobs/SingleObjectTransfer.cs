@@ -195,7 +195,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <returns>A task representing the transfer operation.</returns>
         public override async Task ExecuteAsync(TransferScheduler scheduler, CancellationToken cancellationToken)
         {
-            Logger.Info("Single object transfer started.");
             if (this.transferJob.Status == TransferJobStatus.Finished ||
                 this.transferJob.Status == TransferJobStatus.Skipped)
             {
@@ -207,7 +206,6 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             if (this.transferJob.Status == TransferJobStatus.Failed)
             {
-                Logger.Info("Resuming failed transfer job.");
                 // Resuming a failed transfer job
                 if (string.IsNullOrEmpty(this.transferJob.CopyId))
                 {
