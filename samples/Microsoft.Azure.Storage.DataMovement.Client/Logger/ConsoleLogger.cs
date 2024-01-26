@@ -2,7 +2,7 @@
 
 namespace Microsoft.Azure.Storage.DataMovement.Client.Logger
 {
-    public class MockLogger : IDataMovementLogger
+    public class ConsoleLogger : IDataMovementLogger
     {
         public void Info(string message)
         {

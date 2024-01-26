@@ -57,5 +57,8 @@ namespace Microsoft.Azure.Storage.DataMovement.Client
 
         [Option( "store-hash", HelpText = "Stores additional file's hash in metadata (Not supported by download).", Required = false, Default = false)]
         public bool AddMd5ToMetadata { get; set; }
+        
+        [Option("console-logger", HelpText = "Add console logger.", Required = false, Default = false)]
+        public bool AddConsoleLogger { get; set; }
     }
 }

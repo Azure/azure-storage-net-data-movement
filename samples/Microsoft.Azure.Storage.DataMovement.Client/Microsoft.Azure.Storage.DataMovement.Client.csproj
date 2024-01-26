@@ -13,11 +13,11 @@
 		<PackageReference Include="CommandLineParser" Version="2.8.0" />
 	</ItemGroup>
 
-<!--
+
 	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
 		<ProjectReference Include="..\..\netcore\Microsoft.Azure.Storage.DataMovement\Microsoft.Azure.Storage.DataMovement.csproj" />
 	</ItemGroup>
--->
+
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net462'">
 		<ProjectReference Include="..\..\lib\DataMovement.csproj" />
