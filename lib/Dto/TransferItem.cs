@@ -3,9 +3,9 @@
 namespace Microsoft.Azure.Storage.DataMovement.Dto
 {
     // <summary> Represents one transfer item that is combined of source path and destination information.</summary>
-    public sealed class PathTransferItem
+    public sealed class TransferItem
     {
-        public PathTransferItem(string source, IListBlobItem destination)
+        public TransferItem(string source, IListBlobItem destination)
         {
             Source = source;
             Destination = destination;

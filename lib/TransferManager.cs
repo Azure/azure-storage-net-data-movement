@@ -231,7 +231,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         /// <param name="transferItems">List of files to be uploaded.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
-        public static Task<TransferStatus> UploadAsync(IEnumerable<PathTransferItem> transferItems)
+        public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems)
         {
             return UploadAsync(transferItems, null, null);
         }
@@ -243,7 +243,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="options">Object that specifies additional options for the operation.</param>
         /// <param name="context">Object that represents the context for the current operation.</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
-        public static Task<TransferStatus> UploadAsync(IEnumerable<PathTransferItem> transferItems,
+        public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
             UploadOptions options, DirectoryTransferContext context)
         {
             return UploadAsync(transferItems, options, context, CancellationToken.None);
@@ -258,7 +258,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="cancellationToken">Cancellation</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         /// <exception cref="NotSupportedException"></exception>
-        public static Task<TransferStatus> UploadAsync(IEnumerable<PathTransferItem> transferItems,
+        public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
             UploadOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
