@@ -88,6 +88,7 @@
     <Compile Include="ChunkedMemoryStream.cs" />
     <Compile Include="CopyMethod.cs" />
     <Compile Include="DirectoryListingScheduler.cs" />
+    <Compile Include="Dto\PathTransferItem.cs" />
     <Compile Include="Exceptions\TransferInvalidPathException.cs" />
     <Compile Include="Extensions\StorageCopyState.cs" />
     <Compile Include="FileNativeMethods.cs" />
@@ -256,7 +257,6 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
