@@ -18,10 +18,14 @@ namespace Microsoft.Azure.Storage.DataMovement.Dto
             Destination = destination;
         }
         
-        // <summary> Source path </summary>
+        /// <summary>
+        /// Source path
+        /// </summary>
         public string Source { get; private set; }
         
-        // <summary> Destination blob </summary>
+        /// <summary>
+        /// Destination blob
+        /// </summary>
         public IListBlobItem Destination { get; private set; }
     }
 }
