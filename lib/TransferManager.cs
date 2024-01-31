@@ -3,6 +3,10 @@
 //    Copyright (c) Microsoft Corporation
 // </copyright>
 //-----------------------------------------------------------------------------
+
+using System.Collections.Generic;
+using Microsoft.Azure.Storage.DataMovement.Dto;
+
 namespace Microsoft.Azure.Storage.DataMovement
 {
     using System;
@@ -220,6 +224,44 @@ namespace Microsoft.Azure.Storage.DataMovement
         public static Task UploadAsync(Stream sourceStream, CloudFile destFile)
         {
             return UploadAsync(sourceStream, destFile, null, null);
+        }
+
+        /// <summary>
+        /// Upload a list of files to Azure Blob Storage.
+        /// </summary>
+        /// <param name="transferItems">List of files to be uploaded.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems)
+        {
+            return UploadAsync(transferItems, null, null);
+        }
+
+        /// <summary>
+        /// Upload a list of files to Azure Blob Storage.
+        /// </summary>
+        /// <param name="transferItems">List of files to be uploaded.</param>
+        /// <param name="options">Object that specifies additional options for the operation.</param>
+        /// <param name="context">Object that represents the context for the current operation.</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
+            UploadOptions options, DirectoryTransferContext context)
+        {
+            return UploadAsync(transferItems, options, context, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Upload a list of files to Azure Blob Storage.
+        /// </summary>
+        /// <param name="transferItems">List of files to be uploaded.</param>
+        /// <param name="options">Object that specifies additional options for the operation.</param>
+        /// <param name="context">Object that represents the context for the current operation.</param>
+        /// <param name="cancellationToken">Cancellation</param>
+        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
+        /// <exception cref="NotSupportedException"></exception>
+        public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
+            UploadOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
         }
 
         /// <summary>
