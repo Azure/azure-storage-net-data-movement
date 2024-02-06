@@ -223,10 +223,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             catch (Exception ex) when (ex is StorageException || (ex is AggregateException && ex.InnerException is StorageException))
             {
                 var storageException = ex as StorageException ?? ex.InnerException as StorageException;
-                
+
                 if (storageException.InnerException is OperationCanceledException)
                 {
-                    job.Logger?.Error(storageException,$"Inner exception threw {nameof(OperationCanceledException)} DmLib will cancel file transfer. Message: {storageException.Message} RequestId: {storageException?.RequestInformation?.ServiceRequestID}");
+                    job.Logger?.Error(storageException, $"Inner exception threw {nameof(OperationCanceledException)} DmLib will cancel file transfer. Message: {storageException.Message} RequestId: {storageException?.RequestInformation?.ServiceRequestID}");
                     throw storageException.InnerException;
                 }
 
