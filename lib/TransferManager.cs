@@ -274,7 +274,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
 	        ITransferEnumerator sourceEnumerator = new LoadFileEnumerator(transferItems);
 
-	        return UploadDirectoryInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context,
+	        return UploadDirectoryOrListOfTransferItemsInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context,
 		        cancellationToken);
         }
 
@@ -415,7 +415,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
             }
 
-            return UploadDirectoryInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context, cancellationToken);
+            return UploadDirectoryOrListOfTransferItemsInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -466,7 +466,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             try
             {
-                return await UploadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
+                return await UploadDirectoryOrListOfTransferItemsInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
             }
             finally
             {
@@ -1743,7 +1743,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             return DoTransfer(transfer, context, cancellationToken);
         }
 
-        private static async Task<TransferStatus> UploadDirectoryInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, ITransferEnumerator sourceEnumerator, UploadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
+        private static async Task<TransferStatus> UploadDirectoryOrListOfTransferItemsInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, ITransferEnumerator sourceEnumerator, UploadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
             DirectoryTransfer transfer = GetOrCreateDirectoryTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 
