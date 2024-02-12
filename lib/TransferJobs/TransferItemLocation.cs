@@ -33,7 +33,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
 #if BINARY_SERIALIZATION
-        private FileLocation(SerializationInfo info, StreamingContext context)
+        private TransferItemLocation(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             if (info == null)
             {

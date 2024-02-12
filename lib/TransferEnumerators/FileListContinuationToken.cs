@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
         }
 
 #if BINARY_SERIALIZATION
-        private FileListContinuationToken(SerializationInfo info, StreamingContext context)
+        protected FileListContinuationToken(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
             {

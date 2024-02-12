@@ -74,7 +74,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
 #if BINARY_SERIALIZATION
-        private FileLocation(SerializationInfo info, StreamingContext context)
+        protected FileLocation(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
             {
