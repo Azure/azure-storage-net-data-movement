@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
-using Microsoft.Azure.Storage.Blob;
 using Microsoft.Azure.Storage.DataMovement.Client.CommandLine;
 using Microsoft.Azure.Storage.DataMovement.Client.Logger;
 using Microsoft.Azure.Storage.DataMovement.Client.Transfers;
-using Microsoft.Azure.Storage.DataMovement.Dto;
 
 namespace Microsoft.Azure.Storage.DataMovement.Client
 {
@@ -60,20 +57,11 @@ namespace Microsoft.Azure.Storage.DataMovement.Client
             
             var tasks = Enumerable.Range(0, options.TransfersNumber).Select(async i =>
             {
-                var transferItems = GetTransferItems();//.Take(1);
-                var transfer = new UploadItemsTransfer(options, transferItems);
+                var transfer = transferFactory.Create();
                 var result = await transfer.ExecuteAsync(cts.Token).ConfigureAwait(false);
             
                 result.PrintResult(transfer.JobId);
-            });            
-            
-            // var tasks = Enumerable.Range(0, options.TransfersNumber).Select(async i =>
-            // {
-            //     var transfer = transferFactory.Create();
-            //     var result = await transfer.ExecuteAsync(cts.Token).ConfigureAwait(false);
-            //
-            //     result.PrintResult(transfer.JobId);
-            // });
+            });
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
 
@@ -81,20 +69,6 @@ namespace Microsoft.Azure.Storage.DataMovement.Client
 
             Console.WriteLine(
                 $"{Environment.NewLine}All transfers ended up. Transfers took {elapsed.Elapsed.TotalSeconds:0} seconds");
-        }
-
-        private static IEnumerable<TransferItem> GetTransferItems()
-        {
-            var root = @"C:\temp\small";
-            var entries = Directory.GetFileSystemEntries(root, "*", SearchOption.AllDirectories);
-            foreach (var entry in entries)
-            {
-                if (System.IO.File.Exists(entry))
-                {
-                    var dst = entry.Substring(root.Length + 1);
-                    yield return new TransferItem(entry, dst);
-                }
-            }
         }
         
         private static string GetHashDescription(CommandLineOptions options)

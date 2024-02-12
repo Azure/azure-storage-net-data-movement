@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Storage.Blob;
@@ -13,21 +14,12 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
     {
         public ListOfItemsTransfer(ListOfItemsCommandLineOptions options) : base(options)
         {
-            var uri = new Uri(GetRemotePath());
+            var uri = new Uri(Options.Destination);
             StorageUri = new StorageUri(new Uri(uri.GetLeftPart(UriPartial.Authority)));
             Container = uri.Segments[1].TrimEnd('/');
+            RelativePath = string.Join("/", uri.Segments.Skip(2).Select(x => x.TrimEnd('/')));
         }
-
-        private string GetRemotePath()
-        {
-            using var sw = new StreamReader(Options.Source);
-            var line = sw.ReadLine();
-
-            return line == null
-                ? throw new ArgumentOutOfRangeException("Load file is empty.")
-                : line.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)[1];
-        }
-
+        
         protected override string GetSasToken()
         {
             return Options.SasToken;
@@ -35,25 +27,25 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
 
         protected override Task<TransferStatus> ExecuteImplAsync(CancellationToken token)
         {
+            var journalPath = Path.Combine(Path.GetTempPath(), JobId);
+            var journal = new FileStream(journalPath, FileMode.OpenOrCreate);
             var transferOptions = new UploadDirectoryOptions { Recursive = true };
-            DirectoryTransferContext transferContext = new(Stream.Null);
+            DirectoryTransferContext transferContext = new(journal);
             AttachEventsAndProgress(transferContext);
+            var transferItems = ReadLoadFile();
+            var destination = CloudBlobContainer.GetDirectoryReference($"{RelativePath}/{JobId}");
 
-            return TransferManager.UploadAsync(ReadLoadFile(), transferOptions, transferContext,
+            return TransferManager.UploadAsync(transferItems, destination, transferOptions, transferContext,
                 token);
         }
 
         private IEnumerable<TransferItem> ReadLoadFile()
         {
             using var sr = new StreamReader(Options.Source);
-            var credentials = CloudBlobContainer.ServiceClient.Credentials;
-
             while (sr.ReadLine() is { } line)
             {
                 var parts = line.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                var blobFile = new CloudBlockBlob(new Uri(parts[1]), credentials);
-
-                yield return new TransferItem(parts[0], blobFile);
+                yield return new TransferItem(parts[0], parts[1]);
             }
         }
 

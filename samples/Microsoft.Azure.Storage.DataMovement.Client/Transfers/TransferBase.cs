@@ -26,6 +26,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
         protected CloudBlobContainer CloudBlobContainer { get; private set; }
         protected string Container { get; set; }
         protected StorageUri StorageUri { get; set; }
+        protected string RelativePath { get; set; }
 
         public string JobId { get; }
 

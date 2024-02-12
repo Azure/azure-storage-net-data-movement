@@ -14,7 +14,6 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
             RelativePath = string.Join("/", uri.Segments.Skip(2).Select(x => x.TrimEnd('/')));
         }
 
-        protected string RelativePath { get; }
 
         private string GetRemotePath()
         {

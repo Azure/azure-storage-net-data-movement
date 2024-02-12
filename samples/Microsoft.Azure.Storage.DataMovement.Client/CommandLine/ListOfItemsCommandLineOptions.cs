@@ -8,9 +8,11 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.CommandLine
     {
         [Option('l', "load-file-path", HelpText = "A load file path.", Required = true)]
         public string Source { get; set; }
+        
+        [Option('d', "destination", HelpText = "Destination path of item to be transferred.", Required = true)]
+        public string Destination { get; set; }        
 
-        [Option('s', "sas-token", HelpText = "SAS token.",
-            Required = true)]
+        [Option('t', "sas-token", HelpText = "SAS token.", Required = true)]
         public string SasToken { get; set; }
 
         [Option("console-logger", HelpText = "Add console logger.", Required = false, Default = false)]
