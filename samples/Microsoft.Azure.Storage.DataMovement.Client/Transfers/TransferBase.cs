@@ -1,50 +1,33 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Storage.Auth;
 using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.DataMovement.Client.CommandLine;
 using Microsoft.Azure.Storage.DataMovement.Client.Logger;
 using Microsoft.Azure.Storage.DataMovement.Client.Progress;
 
 namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
 {
-    internal abstract class TransferBase
+    internal abstract class TransferBase<TOptions> : ITransfer
+    where TOptions:ILoggerConfiguration
     {
-        protected TransferBase(CommandLineOptions options)
+        protected TransferBase(TOptions options)
         {
             Options = options;
+            ValidateImpl();
 
-            Validate();
-
-            var uri = new Uri(GetRemotePath());
-            // JobId = "013f2dc7-09d1-4703-ad87-611c830b1585";
             JobId = Guid.NewGuid().ToString();
-            StorageUri = new Uri(uri.GetLeftPart(UriPartial.Authority));
-            Container = uri.Segments[1].TrimEnd('/');
-            RelativePath = string.Join("/", uri.Segments.Skip(2).Select(x => x.TrimEnd('/')));
         }
 
 
-        protected CommandLineOptions Options { get; }
-        protected string RelativePath { get; }
+        protected TOptions Options { get; }
         protected CloudBlobContainer CloudBlobContainer { get; private set; }
+        protected string Container { get; set; }
+        protected StorageUri StorageUri { get; set; }
 
         public string JobId { get; }
-        private Uri StorageUri { get; }
-        private string Container { get; }
-
-        private string GetRemotePath()
-        {
-            return Options.TransferType switch
-            {
-                TransferType.UploadDirectory => Options.Destination,
-                TransferType.UploadFile => Options.Destination,
-                TransferType.DownloadDirectory => Options.Source,
-                TransferType.DownloadFile => Options.Source,
-                _ => throw new ArgumentOutOfRangeException(nameof(Options.TransferType))
-            };
-        }
 
         public Task<TransferStatus> ExecuteAsync(CancellationToken token)
         {
@@ -57,15 +40,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
         {
         }
 
-        private void Validate()
-        {
-            if (string.IsNullOrWhiteSpace(Options.Source)) throw new ArgumentNullException(nameof(Options.Source));
-            if (string.IsNullOrWhiteSpace(Options.Destination))
-                throw new ArgumentNullException(nameof(Options.Destination));
-
-            ValidateImpl();
-        }
-
+        protected abstract string GetSasToken();
         protected abstract Task<TransferStatus> ExecuteImplAsync(CancellationToken token);
 
         protected void AttachEventsAndProgress(TransferContext transferContext)
@@ -73,10 +48,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
             const string failedTypeMsg = "File failed";
             const string skippedTypeMsg = "File skipped";
 
-            if (Options.AddConsoleLogger)
-            {
-                transferContext.Logger = new ConsoleLogger();
-            }
+            if (Options.AddConsoleLogger) transferContext.Logger = new ConsoleLogger();
 
             transferContext.ClientRequestId = JobId;
             transferContext.FileFailed += (_, e) => e.LogFailedOrSkipped(JobId, failedTypeMsg);
@@ -86,8 +58,8 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
 
         private void EnsureContainerClient()
         {
-            var sasToken = Options.GetSasToken();
-            var cloudBlobClient = new CloudBlobClient(new StorageUri(StorageUri), new StorageCredentials(sasToken));
+            var storageCredentials = new StorageCredentials(GetSasToken());
+            var cloudBlobClient = new CloudBlobClient(StorageUri, storageCredentials);
             CloudBlobContainer = cloudBlobClient.GetContainerReference(Container);
         }
 

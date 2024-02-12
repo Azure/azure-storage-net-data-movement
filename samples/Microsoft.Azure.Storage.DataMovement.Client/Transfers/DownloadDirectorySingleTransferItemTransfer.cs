@@ -1,12 +1,13 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Storage.DataMovement.Client.CommandLine;
 
 namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
 {
-    internal sealed class DownloadDirectoryTransfer : TransferBase
+    internal sealed class DownloadDirectorySingleTransferItemTransfer : SingleTransferItemTransferBase
     {
-        public DownloadDirectoryTransfer(CommandLineOptions options)
+        public DownloadDirectorySingleTransferItemTransfer(CommandLineOptions options)
             : base(options)
         {
             Destination = Path.Combine(Options.Destination, JobId);
