@@ -4,12 +4,13 @@ using System.Linq;
 using CommandLine;
 using Microsoft.Azure.Storage.DataMovement.Client.Transfers;
 
-namespace Microsoft.Azure.Storage.DataMovement.Client
+namespace Microsoft.Azure.Storage.DataMovement.Client.CommandLine
 {
-    internal class CommandLineOptions
+    [Verb("transfer", true, HelpText = "Allow transfer a file or directory to or from ADLS.")]
+    internal class CommandLineOptions : ILoggerConfiguration, ITransferTypeOptions
     {
-        private string sasTokens;
         private readonly ConcurrentQueue<string> sasTokensQueue = new();
+        private string sasTokens;
 
         [Option('s', "source", HelpText = "Source path of item to be transferred.", Required = true)]
         public string Source { get; set; }
@@ -31,22 +32,8 @@ namespace Microsoft.Azure.Storage.DataMovement.Client
                 foreach (var sasToken in (sasTokens ?? string.Empty).Split(',')
                          .Select(x => x.Trim())
                          .Where(x => !string.IsNullOrWhiteSpace(x)))
-                {
                     sasTokensQueue.Enqueue(sasToken);
-                }
             }
-        }
-
-        internal string GetSasToken()
-        {
-            if (sasTokensQueue.Count == 0)
-            {
-                throw new Exception("No more SAS tokens available. Provide more with -t parameter.");
-            }
-
-            sasTokensQueue.TryDequeue(out var sasToken);
-
-            return sasToken;
         }
 
         [Option('r', "transfer-type",
@@ -55,10 +42,21 @@ namespace Microsoft.Azure.Storage.DataMovement.Client
             Required = false, Default = TransferType.UploadDirectory)]
         public TransferType TransferType { get; set; }
 
-        [Option( "store-hash", HelpText = "Stores additional file's hash in metadata (Not supported by download).", Required = false, Default = false)]
+        [Option("store-hash", HelpText = "Stores additional file's hash in metadata (Not supported by download).",
+            Required = false, Default = false)]
         public bool AddMd5ToMetadata { get; set; }
-        
+
         [Option("console-logger", HelpText = "Add console logger.", Required = false, Default = false)]
         public bool AddConsoleLogger { get; set; }
+
+        internal string GetSasToken()
+        {
+            if (sasTokensQueue.Count == 0)
+                throw new Exception("No more SAS tokens available. Provide more with -t parameter.");
+
+            sasTokensQueue.TryDequeue(out var sasToken);
+
+            return sasToken;
+        }
     }
 }

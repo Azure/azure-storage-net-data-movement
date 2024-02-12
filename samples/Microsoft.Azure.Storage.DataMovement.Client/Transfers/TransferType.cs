@@ -5,6 +5,7 @@
         UploadDirectory,
         UploadFile,
         DownloadDirectory,
-        DownloadFile
+        DownloadFile,
+        ListOfItems
     }
 }
