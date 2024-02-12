@@ -16,5 +16,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         LocalDirectory,
         AzureBlobDirectory,
         AzureFileDirectory,
+        TransferItems
     }
 }

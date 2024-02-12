@@ -12,7 +12,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Dto
         /// </summary>
         /// <param name="source">Source path.</param>
         /// <param name="destination">Destination blob.</param>
-        public TransferItem(string source, IListBlobItem destination)
+        public TransferItem(string source, string destination)
         {
             Source = source;
             Destination = destination;
@@ -26,6 +26,6 @@ namespace Microsoft.Azure.Storage.DataMovement.Dto
         /// <summary>
         /// Destination blob
         /// </summary>
-        public IListBlobItem Destination { get; private set; }
+        public string Destination { get; private set; }
     }
 }
