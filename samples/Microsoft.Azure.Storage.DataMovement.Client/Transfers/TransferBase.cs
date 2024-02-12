@@ -18,6 +18,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
             Validate();
 
             var uri = new Uri(GetRemotePath());
+            // JobId = "013f2dc7-09d1-4703-ad87-611c830b1585";
             JobId = Guid.NewGuid().ToString();
             StorageUri = new Uri(uri.GetLeftPart(UriPartial.Authority));
             Container = uri.Segments[1].TrimEnd('/');
@@ -76,7 +77,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
             {
                 transferContext.Logger = new ConsoleLogger();
             }
-            
+
             transferContext.ClientRequestId = JobId;
             transferContext.FileFailed += (_, e) => e.LogFailedOrSkipped(JobId, failedTypeMsg);
             transferContext.FileSkipped += (_, e) => e.LogFailedOrSkipped(JobId, skippedTypeMsg);

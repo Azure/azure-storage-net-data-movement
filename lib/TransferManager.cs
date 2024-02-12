@@ -232,75 +232,44 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Upload a list of files to Azure Blob Storage.
         /// </summary>
         /// <param name="transferItems">List of files to be uploaded.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
-        public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems)
-        {
-            return UploadAsync(transferItems, null, null);
-        }
-
-        /// <summary>
-        /// Upload a list of files to Azure Blob Storage.
-        /// </summary>
-        /// <param name="transferItems">List of files to be uploaded.</param>
-        /// <param name="options">Object that specifies additional options for the operation.</param>
-        /// <param name="context">Object that represents the context for the current operation.</param>
+        /// <param name="destBlobDir">Destination root to be uploaded to.</param>
+        /// <param name="cancellationToken">Cancellation</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
-	        UploadDirectoryOptions options, DirectoryTransferContext context)
+            CloudBlobDirectory destBlobDir, CancellationToken cancellationToken)
         {
-            return UploadAsync(transferItems, options, context, CancellationToken.None);
+            return UploadAsync(transferItems, destBlobDir, null, null, cancellationToken);
         }
 
         /// <summary>
         /// Upload a list of files to Azure Blob Storage.
         /// </summary>
         /// <param name="transferItems">List of files to be uploaded.</param>
+        /// <param name="destBlobDir">Destination root to be uploaded to.</param>
         /// <param name="options">Object that specifies additional options for the operation.</param>
         /// <param name="context">Object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">Cancellation</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         /// <exception cref="NotSupportedException"></exception>
         public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
-	        UploadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
+            CloudBlobDirectory destBlobDir,
+            UploadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
-	        var sourceLocation = new ListOfTransferItemsLocation();
-	        var credentials = GetCredentials(transferItems);
-	        var scheme = GetScheme(transferItems);
-	        var destLocation = new ListOfTransferItemsAzureBlobLocation(scheme, credentials);
-	        if (options != null)
-	        {
-		        destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
-	        }
+            var sourceLocation = new TransferItemsLocation();
+            var destLocation = new AzureBlobDirectoryLocation(destBlobDir);
+            var sourceEnumerator = new DirectEnumerator(transferItems);
 
-	        ITransferEnumerator sourceEnumerator = new LoadFileEnumerator(transferItems);
+            // Set default request options
+            SetDefaultRequestOptions(destLocation);
 
-	        return UploadDirectoryOrListOfTransferItemsInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context,
-		        cancellationToken);
-        }
+            if (options != null)
+            {
+                destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
+            }
 
-        private static string GetScheme(IEnumerable<TransferItem> transferItems)
-        {
-	        var blob = GetFirstBlob(transferItems);
-
-	        return blob.Uri.Scheme;
-        }
-
-        private static CloudBlob GetFirstBlob(IEnumerable<TransferItem> transferItems)
-        {
-	        var transferItem = transferItems.First();
-
-	        return !(transferItem.Destination is CloudBlob blob)
-		        ? throw new ArgumentOutOfRangeException(nameof(transferItems),
-			        "Only CloudBlob is supported as destination")
-		        : blob;
-
-        }
-
-        private static StorageCredentials GetCredentials(IEnumerable<TransferItem> transferItems)
-        {
-	        var blob = GetFirstBlob(transferItems);
-
-	        return blob.ServiceClient.Credentials;
+            return UploadDirectoryOrListOfTransferItemsInternalAsync(sourceLocation, destLocation, sourceEnumerator,
+                options, context,
+                cancellationToken);
         }
 
         /// <summary>
@@ -2102,48 +2071,5 @@ namespace Microsoft.Azure.Storage.DataMovement
             scheduler?.TransferOptions.LogConfiguration(logger);
             scheduler?.MemoryManager.LogMemoryState(logger);
         }
-    }
-
-    //TODO replace with refactored class
-	internal class LoadFileEnumerator : ITransferEnumerator
-    {
-	    public LoadFileEnumerator(IEnumerable<TransferItem> transferItems)
-	    {
-		    throw new NotImplementedException();
-	    }
-
-	    public ListContinuationToken EnumerateContinuationToken { get; set; }
-	    public IEnumerable<TransferEntry> EnumerateLocation(CancellationToken cancellationToken)
-	    {
-		    throw new NotImplementedException();
-	    }
-    }
-
-    //TODO replace with refactored class
-	internal class ListOfTransferItemsAzureBlobLocation : TransferLocation
-	{
-	    public ListOfTransferItemsAzureBlobLocation(string scheme, StorageCredentials credentials)
-	    {
-	    }
-
-	    public override TransferLocationType Type { get; }
-	    public override object Instance { get; }
-	    public BlobRequestOptions BlobRequestOptions { get; set; }
-
-	    public override void Validate()
-	    {
-		    throw new NotImplementedException();
-	    }
-	}
-
-    //TODO replace with refactored class
-    internal class ListOfTransferItemsLocation : TransferLocation
-    {
-	    public override TransferLocationType Type { get; }
-	    public override object Instance { get; }
-	    public override void Validate()
-	    {
-		    throw new NotImplementedException();
-	    }
     }
 }

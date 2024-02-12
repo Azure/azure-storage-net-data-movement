@@ -4,6 +4,7 @@
     {
         UploadDirectory,
         UploadFile,
+        UploadItems,
         DownloadDirectory,
         DownloadFile
     }
