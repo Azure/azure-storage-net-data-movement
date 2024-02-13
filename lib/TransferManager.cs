@@ -236,7 +236,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <param name="cancellationToken">Cancellation</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
-            CloudBlobDirectory destBlobDir, CancellationToken cancellationToken)
+            CloudBlobDirectory rootDestBlobDir, CancellationToken cancellationToken)
         {
             return UploadAsync(transferItems, destBlobDir, null, null, cancellationToken);
         }
