@@ -53,12 +53,10 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
             base.ValidateImpl();
 
             if (string.IsNullOrWhiteSpace(Options.Source)) throw new ArgumentNullException(nameof(Options.Source));
-            if (System.IO.File.Exists(Options.Source)) throw new FileNotFoundException("Load file does not exists");
+            if (!System.IO.File.Exists(Options.Source)) throw new FileNotFoundException("Load file does not exists");
             if (string.IsNullOrWhiteSpace(Options.Destination))
                 throw new ArgumentNullException(nameof(Options.Destination));
             ValidateUrl(Options.Destination, nameof(Options.Destination), "Destination should be http(s) url.");
-
-            throw new FileNotFoundException("Load file does not exists");
         }
     }
 }

@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
         /// </summary>
         /// <param name="info">Serialization info object.</param>
         /// <param name="context">Streaming context.</param>
-        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
             {
