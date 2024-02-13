@@ -5,24 +5,21 @@
 //-----------------------------------------------------------------------------
 
 using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Azure.Storage.Auth;
 using Microsoft.Azure.Storage.DataMovement.Dto;
+using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
+using Microsoft.Azure.Storage.File;
+using TransferKey = System.Tuple<Microsoft.Azure.Storage.DataMovement.TransferLocation, Microsoft.Azure.Storage.DataMovement.TransferLocation>;
 
 namespace Microsoft.Azure.Storage.DataMovement
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
-    using System.IO;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
-    using Microsoft.Azure.Storage.File;
-    using TransferKey = System.Tuple<TransferLocation, TransferLocation>;
-
     /// <summary>
     /// TransferManager class
     /// </summary>
@@ -232,32 +229,33 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Upload a list of files to Azure Blob Storage.
         /// </summary>
         /// <param name="transferItems">List of files to be uploaded.</param>
-        /// <param name="destBlobDir">Destination root to be uploaded to.</param>
+        /// <param name="rootDestBlobDir">Destination root to be uploaded to.</param>
         /// <param name="cancellationToken">Cancellation</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
             CloudBlobDirectory rootDestBlobDir, CancellationToken cancellationToken)
         {
-            return UploadAsync(transferItems, destBlobDir, null, null, cancellationToken);
+            return UploadAsync(transferItems, rootDestBlobDir, null, null, cancellationToken);
         }
 
         /// <summary>
         /// Upload a list of files to Azure Blob Storage.
         /// </summary>
         /// <param name="transferItems">List of files to be uploaded.</param>
-        /// <param name="destBlobDir">Destination root to be uploaded to.</param>
+        /// <param name="rootDestBlobDir">Destination root to be uploaded to.</param>
         /// <param name="options">Object that specifies additional options for the operation.</param>
         /// <param name="context">Object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">Cancellation</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         /// <exception cref="NotSupportedException"></exception>
         public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
-            CloudBlobDirectory destBlobDir,
+            CloudBlobDirectory rootDestBlobDir,
             UploadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
+            var logger = GetLogger(context);
             var sourceLocation = new TransferItemsLocation();
-            var destLocation = new AzureBlobDirectoryLocation(destBlobDir);
-            var sourceEnumerator = new DirectEnumerator(transferItems);
+            var destLocation = new AzureBlobDirectoryLocation(rootDestBlobDir);
+            var sourceEnumerator = new DirectEnumerator(transferItems, logger);
 
             // Set default request options
             SetDefaultRequestOptions(destLocation);
