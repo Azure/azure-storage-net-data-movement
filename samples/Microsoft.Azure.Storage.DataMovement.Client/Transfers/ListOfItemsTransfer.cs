@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Storage.Blob;
 using Microsoft.Azure.Storage.DataMovement.Client.CommandLine;
 using Microsoft.Azure.Storage.DataMovement.Dto;
 
@@ -52,7 +51,12 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
         protected override void ValidateImpl()
         {
             base.ValidateImpl();
-            if (System.IO.File.Exists(Options.Source)) return;
+
+            if (string.IsNullOrWhiteSpace(Options.Source)) throw new ArgumentNullException(nameof(Options.Source));
+            if (System.IO.File.Exists(Options.Source)) throw new FileNotFoundException("Load file does not exists");
+            if (string.IsNullOrWhiteSpace(Options.Destination))
+                throw new ArgumentNullException(nameof(Options.Destination));
+            ValidateUrl(Options.Destination, nameof(Options.Destination), "Destination should be http(s) url.");
 
             throw new FileNotFoundException("Load file does not exists");
         }
