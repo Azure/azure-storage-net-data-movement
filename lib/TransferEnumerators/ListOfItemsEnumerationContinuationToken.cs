@@ -14,20 +14,20 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 #else
     [DataContract]
 #endif // BINARY_SERIALIZATION
-    sealed class DirectEnumerationContinuationToken : FileListContinuationToken
+    sealed class ListOfItemsEnumerationContinuationToken : FileListContinuationToken
 #if BINARY_SERIALIZATION
         , ISerializable
 #endif // BINARY_SERIALIZATION
     {
         private const string SkipCountName = "SkipCount";
 
-        public DirectEnumerationContinuationToken(int skipCount) : base(string.Empty)
+        public ListOfItemsEnumerationContinuationToken(int skipCount) : base(string.Empty)
         {
             this.SkipCount = skipCount;
         }
 
 #if BINARY_SERIALIZATION
-        private DirectEnumerationContinuationToken(SerializationInfo info, StreamingContext context) : base(info, context)
+        private ListOfItemsEnumerationContinuationToken(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             if (info == null)
             {

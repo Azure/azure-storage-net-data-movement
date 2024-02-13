@@ -168,8 +168,8 @@
     <Compile Include="TransferEnumerators\AzureNameResolver.cs" />
     <Compile Include="TransferEnumerators\AzureToFileNameResolver.cs" />
     <Compile Include="TransferEnumerators\AzureBlobToAzureFileNameResolver.cs" />
-    <Compile Include="TransferEnumerators\DirectEnumerationContinuationToken.cs" />
-    <Compile Include="TransferEnumerators\DirectEnumerator.cs" />
+    <Compile Include="TransferEnumerators\ListOfItemsEnumerationContinuationToken.cs" />
+    <Compile Include="TransferEnumerators\ListOfItemsEnumerator.cs" />
     <Compile Include="TransferEnumerators\DirectoryEntry.cs" />
     <Compile Include="TransferEnumerators\EnumerateDirectoryHelper.cs" />
     <Compile Include="TransferEnumerators\ErrorEntry.cs" />

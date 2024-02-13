@@ -255,7 +255,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             var logger = GetLogger(context);
             var sourceLocation = new TransferItemsLocation();
             var destLocation = new AzureBlobDirectoryLocation(rootDestBlobDir);
-            var sourceEnumerator = new DirectEnumerator(transferItems, logger);
+            var sourceEnumerator = new ListOfItemsEnumerator(transferItems, logger);
 
             // Set default request options
             SetDefaultRequestOptions(destLocation);
