@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
                 case TransferType.UploadFile: return new UploadFileSingleTransferItemTransfer((CommandLineOptions)transferTypeOptions);
                 case TransferType.DownloadDirectory: return new DownloadDirectorySingleTransferItemTransfer((CommandLineOptions)transferTypeOptions);
                 case TransferType.DownloadFile: return new DownloadFileSingleTransferItemTransfer((CommandLineOptions)transferTypeOptions);
-                case TransferType.ListOfItems: return new ListOfItemsTransfer((ListOfItemsCommandLineOptions)transferTypeOptions);
+                case TransferType.UploadItems: return new ListOfItemsTransfer((ListOfItemsCommandLineOptions)transferTypeOptions);
                 default:
                     throw new ArgumentOutOfRangeException();
             }

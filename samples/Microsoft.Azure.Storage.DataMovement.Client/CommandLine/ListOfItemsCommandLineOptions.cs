@@ -18,6 +18,6 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.CommandLine
         [Option("console-logger", HelpText = "Add console logger.", Required = false, Default = false)]
         public bool AddConsoleLogger { get; set; }
 
-        public TransferType TransferType => TransferType.ListOfItems;
+        public TransferType TransferType => TransferType.UploadItems;
     }
 }
