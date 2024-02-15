@@ -1,24 +1,26 @@
 ﻿using System;
+using Microsoft.Azure.Storage.DataMovement.Client.CommandLine;
 
 namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
 {
     internal class TransferFactory
     {
-        private readonly CommandLineOptions options;
+        private readonly ITransferTypeOptions transferTypeOptions;
 
-        public TransferFactory(CommandLineOptions options)
+        public TransferFactory(ITransferTypeOptions transferTypeOptions)
         {
-            this.options = options;
+            this.transferTypeOptions = transferTypeOptions;
         }
 
-        public TransferBase Create()
+        public ITransfer Create()
         {
-            switch (options.TransferType)
+            switch (transferTypeOptions.TransferType)
             {
-                case TransferType.UploadDirectory: return new UploadDirectoryTransfer(options);
-                case TransferType.UploadFile: return new UploadFileTransfer(options);
-                case TransferType.DownloadDirectory: return new DownloadDirectoryTransfer(options);
-                case TransferType.DownloadFile: return new DownloadFileTransfer(options);
+                case TransferType.UploadDirectory: return new UploadDirectorySingleTransferItemTransfer((CommandLineOptions)transferTypeOptions);
+                case TransferType.UploadFile: return new UploadFileSingleTransferItemTransfer((CommandLineOptions)transferTypeOptions);
+                case TransferType.DownloadDirectory: return new DownloadDirectorySingleTransferItemTransfer((CommandLineOptions)transferTypeOptions);
+                case TransferType.DownloadFile: return new DownloadFileSingleTransferItemTransfer((CommandLineOptions)transferTypeOptions);
+                case TransferType.UploadItems: return new ListOfItemsTransfer((ListOfItemsCommandLineOptions)transferTypeOptions);
                 default:
                     throw new ArgumentOutOfRangeException();
             }

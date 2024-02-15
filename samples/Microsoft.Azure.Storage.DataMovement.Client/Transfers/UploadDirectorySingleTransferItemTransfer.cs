@@ -1,12 +1,13 @@
 ﻿using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Storage.DataMovement.Client.CommandLine;
 
 namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
 {
-    internal sealed class UploadDirectoryTransfer : TransferBase
+    internal sealed class UploadDirectorySingleTransferItemTransfer : SingleTransferItemTransferBase
     {
-        public UploadDirectoryTransfer(CommandLineOptions options)
+        public UploadDirectorySingleTransferItemTransfer(CommandLineOptions options)
             : base(options)
         {
         }

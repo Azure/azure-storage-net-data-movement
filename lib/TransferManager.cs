@@ -6,21 +6,20 @@
 
 using System.Collections.Generic;
 using Microsoft.Azure.Storage.DataMovement.Dto;
+using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Azure.Storage.Blob;
+using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
+using Microsoft.Azure.Storage.File;
+using TransferKey = System.Tuple<Microsoft.Azure.Storage.DataMovement.TransferLocation, Microsoft.Azure.Storage.DataMovement.TransferLocation>;
 
 namespace Microsoft.Azure.Storage.DataMovement
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
-    using System.IO;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
-    using Microsoft.Azure.Storage.File;
-    using TransferKey = System.Tuple<TransferLocation, TransferLocation>;
-
     /// <summary>
     /// TransferManager class
     /// </summary>
@@ -230,38 +229,45 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// Upload a list of files to Azure Blob Storage.
         /// </summary>
         /// <param name="transferItems">List of files to be uploaded.</param>
-        /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
-        public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems)
-        {
-            return UploadAsync(transferItems, null, null);
-        }
-
-        /// <summary>
-        /// Upload a list of files to Azure Blob Storage.
-        /// </summary>
-        /// <param name="transferItems">List of files to be uploaded.</param>
-        /// <param name="options">Object that specifies additional options for the operation.</param>
-        /// <param name="context">Object that represents the context for the current operation.</param>
+        /// <param name="rootDestBlobDir">Destination root to be uploaded to.</param>
+        /// <param name="cancellationToken">Cancellation</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
-            UploadOptions options, DirectoryTransferContext context)
+            CloudBlobDirectory rootDestBlobDir, CancellationToken cancellationToken)
         {
-            return UploadAsync(transferItems, options, context, CancellationToken.None);
+            return UploadAsync(transferItems, rootDestBlobDir, null, null, cancellationToken);
         }
 
         /// <summary>
         /// Upload a list of files to Azure Blob Storage.
         /// </summary>
         /// <param name="transferItems">List of files to be uploaded.</param>
+        /// <param name="rootDestBlobDir">Destination root to be uploaded to.</param>
         /// <param name="options">Object that specifies additional options for the operation.</param>
         /// <param name="context">Object that represents the context for the current operation.</param>
         /// <param name="cancellationToken">Cancellation</param>
         /// <returns>A <see cref="Task{T}"/> object of type <see cref="TransferStatus"/> that represents the asynchronous operation.</returns>
         /// <exception cref="NotSupportedException"></exception>
         public static Task<TransferStatus> UploadAsync(IEnumerable<TransferItem> transferItems,
-            UploadOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
+            CloudBlobDirectory rootDestBlobDir,
+            UploadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
-            throw new NotSupportedException();
+            var logger = GetLogger(context);
+            var sourceLocation = new TransferItemsLocation();
+            var destLocation = new AzureBlobDirectoryLocation(rootDestBlobDir);
+            var sourceEnumerator = new ListOfItemsEnumerator(transferItems, logger);
+
+            // Set default request options
+            SetDefaultRequestOptions(destLocation);
+
+            if (options != null)
+            {
+                destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
+            }
+
+            return UploadDirectoryOrListOfTransferItemsInternalAsync(sourceLocation, destLocation, sourceEnumerator,
+                options, context,
+                cancellationToken);
         }
 
         /// <summary>
@@ -376,7 +382,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                 destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
             }
 
-            return UploadDirectoryInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context, cancellationToken);
+            return UploadDirectoryOrListOfTransferItemsInternalAsync(sourceLocation, destLocation, sourceEnumerator, options, context, cancellationToken);
         }
 
         /// <summary>
@@ -427,7 +433,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             try
             {
-                return await UploadDirectoryInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
+                return await UploadDirectoryOrListOfTransferItemsInternalAsync(sourceLocation, destLocation, null, options, context, cancellationToken);
             }
             finally
             {
@@ -1704,7 +1710,7 @@ namespace Microsoft.Azure.Storage.DataMovement
             return DoTransfer(transfer, context, cancellationToken);
         }
 
-        private static async Task<TransferStatus> UploadDirectoryInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, ITransferEnumerator sourceEnumerator, UploadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
+        private static async Task<TransferStatus> UploadDirectoryOrListOfTransferItemsInternalAsync(TransferLocation sourceLocation, TransferLocation destLocation, ITransferEnumerator sourceEnumerator, UploadDirectoryOptions options, DirectoryTransferContext context, CancellationToken cancellationToken)
         {
             DirectoryTransfer transfer = GetOrCreateDirectoryTransfer(sourceLocation, destLocation, TransferMethod.SyncCopy, context);
 

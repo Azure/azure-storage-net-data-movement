@@ -31,6 +31,8 @@ namespace Microsoft.Azure.Storage.DataMovement
     [KnownType(typeof(AzureFileLocation))]
     [KnownType(typeof(DirectoryLocation))]
     [KnownType(typeof(FileLocation))]
+    [KnownType(typeof(TransferItemLocation))]
+    [KnownType(typeof(TransferItemsLocation))]
     // StreamLocation intentionally omitted because it is not serializable
     [KnownType(typeof(UriLocation))]
     [KnownType(typeof(SingleObjectTransfer))]
@@ -278,6 +280,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                     FileEntry fileEntry = entry as FileEntry;
 
                     return new FileLocation(fileEntry.FullPath, fileEntry.RelativePath);
+                case TransferLocationType.TransferItems:
+                    FileEntry directEntry = entry as FileEntry;
+
+                    return new TransferItemLocation(directEntry.FullPath, directEntry.RelativePath);                
                 default:
                     throw new ArgumentException("TransferLocationType");
             }
@@ -507,6 +513,13 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             switch (sourceLocation.Type)
             {
+                case TransferLocationType.TransferItems:
+                    if (destLocation.Type == TransferLocationType.AzureBlobDirectory)
+                    {
+                        return new FileToAzureBlobNameResolver();
+                    }
+                    break;
+                
                 case TransferLocationType.AzureBlobDirectory:
                     if (destLocation.Type == TransferLocationType.AzureBlobDirectory)
                     {

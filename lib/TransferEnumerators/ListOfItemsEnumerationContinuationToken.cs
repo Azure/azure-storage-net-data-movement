@@ -14,27 +14,27 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 #else
     [DataContract]
 #endif // BINARY_SERIALIZATION
-    class FileListContinuationToken : ListContinuationToken
+    sealed class ListOfItemsEnumerationContinuationToken : FileListContinuationToken
 #if BINARY_SERIALIZATION
         , ISerializable
 #endif // BINARY_SERIALIZATION
     {
-        private const string FilePathName = "FilePath";
+        private const string SkipCountName = "SkipCount";
 
-        public FileListContinuationToken(string filePath)
+        public ListOfItemsEnumerationContinuationToken(int skipCount) : base(string.Empty)
         {
-            this.FilePath = filePath;
+            this.SkipCount = skipCount;
         }
 
 #if BINARY_SERIALIZATION
-        protected FileListContinuationToken(SerializationInfo info, StreamingContext context)
+        private ListOfItemsEnumerationContinuationToken(SerializationInfo info, StreamingContext context) : base(info, context)
         {
             if (info == null)
             {
                 throw new System.ArgumentNullException("info");
             }
 
-            this.FilePath = info.GetString(FilePathName);
+            this.SkipCount = info.GetInt32(SkipCountName);
         }
 #endif // BINARY_SERIALIZATION
 
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
 #if !BINARY_SERIALIZATION
         [DataMember]
 #endif
-        public string FilePath
+        public int SkipCount
         {
             get;
             private set;
@@ -56,14 +56,14 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
         /// </summary>
         /// <param name="info">Serialization info object.</param>
         /// <param name="context">Streaming context.</param>
-        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
             {
                 throw new System.ArgumentNullException("info");
             }
 
-            info.AddValue(FilePathName, this.FilePath, typeof(string));
+            info.AddValue(SkipCountName, this.SkipCount, typeof(int));
         }
 #endif // BINARY_SERIALIZATION
     }

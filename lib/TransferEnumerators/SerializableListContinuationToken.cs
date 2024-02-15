@@ -16,6 +16,7 @@ namespace Microsoft.Azure.Storage.DataMovement.TransferEnumerators
     [KnownType(typeof(AzureBlobListContinuationToken))]
     [KnownType(typeof(AzureFileListContinuationToken))]
     [KnownType(typeof(FileListContinuationToken))]
+    [KnownType(typeof(ListOfItemsEnumerationContinuationToken))]
 #endif // BINARY_SERIALIZATION
     internal sealed class SerializableListContinuationToken : JournalItem
 #if BINARY_SERIALIZATION

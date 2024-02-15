@@ -74,7 +74,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
 #if BINARY_SERIALIZATION
-        private FileLocation(SerializationInfo info, StreamingContext context)
+        protected FileLocation(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
             {
@@ -132,7 +132,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         public string RelativePath
         {
             get;
-            private set;
+            protected set;
         }
 
         /// <summary>
@@ -141,12 +141,12 @@ namespace Microsoft.Azure.Storage.DataMovement
         public string FilePath
         {
             get;
-            private set;
+            protected set;
         }
 
         #region Serialization helpers
 #if !BINARY_SERIALIZATION
-        [DataMember] private string fullPath;
+        [DataMember] protected string fullPath;
 
         /// <summary>
         /// Gets or sets a variable to indicate whether the file location will be saved to a streamed journal.
@@ -189,7 +189,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         /// <param name="info">Serialization info object.</param>
         /// <param name="context">Streaming context.</param>
-        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
             {

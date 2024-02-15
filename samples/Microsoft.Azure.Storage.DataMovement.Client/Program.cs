@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
+using Microsoft.Azure.Storage.DataMovement.Client.CommandLine;
 using Microsoft.Azure.Storage.DataMovement.Client.Logger;
 using Microsoft.Azure.Storage.DataMovement.Client.Transfers;
 
@@ -14,9 +15,33 @@ namespace Microsoft.Azure.Storage.DataMovement.Client
     {
         private static async Task Main(string[] args)
         {
-            var options = ParseArguments(args);
-            if (options == null) return;
+            await ParseArguments(args);
+        }
 
+        private static async Task TransferListOfItems(ListOfItemsCommandLineOptions options)
+        {
+            Console.WriteLine("Starting list of items transfer:");
+            Console.WriteLine($"  from: {options.Source}");
+            Console.WriteLine($"DMLib version: {typeof(TransferManager).Assembly.GetName().Version}{Environment.NewLine}");
+
+            using var cts = new CancellationTokenSource();
+            HookCancel(cts);
+            var transferFactory = new TransferFactory(options);
+            var elapsed = new Stopwatch();
+            elapsed.Start();
+
+            var transfer = transferFactory.Create();
+            var result = await transfer.ExecuteAsync(cts.Token).ConfigureAwait(false);
+
+            result.PrintResult(transfer.JobId);
+
+            elapsed.Stop();
+
+            Console.WriteLine($"{Environment.NewLine}The transfer ended up. Transfer took {elapsed.Elapsed.TotalSeconds:0} seconds.");
+        }
+
+        private static async Task TransferDefault(CommandLineOptions options)
+        {
             Console.WriteLine($"Starting {GetTransferType(options.TransferType)} transfer:");
             Console.WriteLine($"  from: {options.Source}");
             Console.WriteLine($"  to: {options.Destination}");
@@ -29,12 +54,12 @@ namespace Microsoft.Azure.Storage.DataMovement.Client
             var transferFactory = new TransferFactory(options);
             var elapsed = new Stopwatch();
             elapsed.Start();
-
+            
             var tasks = Enumerable.Range(0, options.TransfersNumber).Select(async i =>
             {
                 var transfer = transferFactory.Create();
                 var result = await transfer.ExecuteAsync(cts.Token).ConfigureAwait(false);
-
+            
                 result.PrintResult(transfer.JobId);
             });
 
@@ -45,7 +70,7 @@ namespace Microsoft.Azure.Storage.DataMovement.Client
             Console.WriteLine(
                 $"{Environment.NewLine}All transfers ended up. Transfers took {elapsed.Elapsed.TotalSeconds:0} seconds");
         }
-
+        
         private static string GetHashDescription(CommandLineOptions options)
         {
             var msg =
@@ -72,14 +97,15 @@ namespace Microsoft.Azure.Storage.DataMovement.Client
             };
         }
 
-        private static CommandLineOptions ParseArguments(IEnumerable<string> args)
+        private static async Task ParseArguments(IEnumerable<string> args)
         {
-            var parserResult = Parser.Default.ParseArguments<CommandLineOptions>(args);
-            if (parserResult.Tag == ParserResultType.NotParsed) return null;
+            var parserResult = Parser.Default.ParseArguments<CommandLineOptions, ListOfItemsCommandLineOptions>(args);
+            if (parserResult.Tag == ParserResultType.NotParsed) return;
 
-            CommandLineOptions options = null;
-            parserResult.WithParsed(o => options = o);
-            return options;
+            await parserResult.MapResult(
+                (CommandLineOptions options) => TransferDefault(options),
+                (ListOfItemsCommandLineOptions options) => TransferListOfItems(options),
+                errors => Task.CompletedTask); ;
         }
 
         private static void HookCancel(CancellationTokenSource cts)
