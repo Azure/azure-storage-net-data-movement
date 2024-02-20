@@ -1,10 +1,11 @@
-﻿using CommandLine;
+﻿using System;
+using CommandLine;
 using Microsoft.Azure.Storage.DataMovement.Client.Transfers;
 
 namespace Microsoft.Azure.Storage.DataMovement.Client.CommandLine
 {
     [Verb("transfer-list", HelpText = "Allow transfer list of items defined in a load file.")]
-    internal class ListOfItemsCommandLineOptions : ILoggerConfiguration, ITransferTypeOptions
+    internal class ListOfItemsCommandLineOptions : IBaseOptions, ITransferTypeOptions
     {
         [Option('l', "load-file-path", HelpText = "A load file path.", Required = true)]
         public string Source { get; set; }
@@ -17,6 +18,9 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.CommandLine
 
         [Option("console-logger", HelpText = "Add console logger.", Required = false, Default = false)]
         public bool AddConsoleLogger { get; set; }
+
+        [Option('j', "jobId", HelpText = "Job id.", Required = false)]
+        public Guid? JobId { get; set; }
 
         public TransferType TransferType => TransferType.UploadItems;
     }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,14 +11,15 @@ using Microsoft.Azure.Storage.DataMovement.Client.Progress;
 namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
 {
     internal abstract class TransferBase<TOptions> : ITransfer
-    where TOptions:ILoggerConfiguration
+    where TOptions:IBaseOptions
     {
         protected TransferBase(TOptions options)
         {
             Options = options;
             ValidateImpl();
 
-            JobId = Guid.NewGuid().ToString();
+            var jobId = Options.JobId ?? Guid.NewGuid();
+            JobId = jobId.ToString();
         }
 
 

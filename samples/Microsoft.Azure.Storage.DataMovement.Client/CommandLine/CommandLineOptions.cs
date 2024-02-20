@@ -7,7 +7,7 @@ using Microsoft.Azure.Storage.DataMovement.Client.Transfers;
 namespace Microsoft.Azure.Storage.DataMovement.Client.CommandLine
 {
     [Verb("transfer", true, HelpText = "Allow transfer a file or directory to or from ADLS.")]
-    internal class CommandLineOptions : ILoggerConfiguration, ITransferTypeOptions
+    internal class CommandLineOptions : IBaseOptions, ITransferTypeOptions
     {
         private readonly ConcurrentQueue<string> sasTokensQueue = new();
         private string sasTokens;
@@ -58,5 +58,8 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.CommandLine
 
             return sasToken;
         }
+        
+        [Option('j', "jobId", HelpText = "Job id.", Required = false)]
+        public Guid? JobId { get; set; }
     }
 }

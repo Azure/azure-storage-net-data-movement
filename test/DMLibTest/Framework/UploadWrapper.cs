@@ -77,17 +77,17 @@ namespace DMLibTest
         private Task<TransferStatus> UploadDirectory(dynamic destObject, TransferItem item)
         {
             UploadDirectoryOptions uploadDirectoryOptions = item.Options as UploadDirectoryOptions;
-            DirectoryTransferContext transferContrext = item.TransferContext as DirectoryTransferContext;
+            DirectoryTransferContext transferContext = item.TransferContext as DirectoryTransferContext;
             CancellationToken cancellationToken = item.CancellationToken;
             string sourcePath = item.SourceObject as string;
 
             if (cancellationToken != null && cancellationToken != CancellationToken.None)
             {
-                return TransferManager.UploadDirectoryAsync(sourcePath, destObject, uploadDirectoryOptions, transferContrext, cancellationToken);
+                return TransferManager.UploadDirectoryAsync(sourcePath, destObject, uploadDirectoryOptions, transferContext, cancellationToken);
             }
-            else if (transferContrext != null || uploadDirectoryOptions != null)
+            else if (transferContext != null || uploadDirectoryOptions != null)
             {
-                return TransferManager.UploadDirectoryAsync(sourcePath, destObject, uploadDirectoryOptions, transferContrext);
+                return TransferManager.UploadDirectoryAsync(sourcePath, destObject, uploadDirectoryOptions, transferContext);
             }
             else
             {

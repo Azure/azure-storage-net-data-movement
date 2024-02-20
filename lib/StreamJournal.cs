@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Threading.Tasks;
 #endif
 
-    internal class StreamJournal
+    internal class StreamJournal : IDisposable
     {
         //------------------------------------------------------------------------------------------------------
         // 0-255: Journal format version string: Assembly name + version
@@ -1158,5 +1158,10 @@ namespace Microsoft.Azure.Storage.DataMovement
             return serializer.Deserialize(this.serializerStream);
         }
 #endif
+        public void Dispose()
+        {
+            stream?.Flush();
+            stream?.Dispose();
+        }
     }
 }

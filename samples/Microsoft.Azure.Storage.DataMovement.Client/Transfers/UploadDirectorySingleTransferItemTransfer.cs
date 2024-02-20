@@ -14,8 +14,10 @@ namespace Microsoft.Azure.Storage.DataMovement.Client.Transfers
 
         protected override Task<TransferStatus> ExecuteImplAsync(CancellationToken token)
         {
+            var journalPath = $"journal_{JobId}";
+            var journal = new FileStream(journalPath, FileMode.OpenOrCreate);
             var transferOptions = new UploadDirectoryOptions { Recursive = true };
-            DirectoryTransferContext transferContext = new(Stream.Null);
+            DirectoryTransferContext transferContext = new(journal);
             AttachEventsAndProgress(transferContext);
             AddAdditionalHashIfRequested(transferContext);
 

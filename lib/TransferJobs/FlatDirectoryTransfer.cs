@@ -6,15 +6,10 @@
 
 namespace Microsoft.Azure.Storage.DataMovement
 {
-    using Microsoft.Azure.Storage.Blob;
-    using Microsoft.Azure.Storage.DataMovement.TransferEnumerators;
-    using Microsoft.Azure.Storage.File;
+    using TransferEnumerators;
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
-    using System.IO;
     using System.Runtime.ExceptionServices;
     using System.Runtime.Serialization;
     using System.Threading;
@@ -268,6 +263,8 @@ namespace Microsoft.Azure.Storage.DataMovement
                     this.progressUpdateLock.Dispose();
                     this.progressUpdateLock = null;
                 }
+                
+                DisposeJournal();
             }
 
             base.Dispose(disposing);
@@ -339,6 +336,8 @@ namespace Microsoft.Azure.Storage.DataMovement
 
         private IEnumerable<SingleObjectTransfer> AllTransfers(CancellationToken cancellationToken)
         {
+            var subTransfersCount = 0;
+            var journalCount = 0;
             if (null == this.Journal)
             {
                 // return all existing transfers in subTransfers
@@ -348,6 +347,7 @@ namespace Microsoft.Azure.Storage.DataMovement
                     transfer.Context = this.Context;
 
                     this.UpdateTransfer(transfer);
+                    subTransfersCount++;
                     yield return transfer as SingleObjectTransfer;
                 }
             }
@@ -361,10 +361,12 @@ namespace Microsoft.Azure.Storage.DataMovement
                     this.UpdateTransfer(transfer);
 
                     this.subTransfers.AddTransfer(transfer, false);
+                    journalCount++;
                     yield return transfer;
                 }
             }
 
+            var enumerationCount = 0;
             while (true)
             {
                 Utils.CheckCancellation(cancellationToken);
@@ -431,9 +433,12 @@ namespace Microsoft.Azure.Storage.DataMovement
 #if DEBUG
                 Utils.HandleFaultInjection(entry.RelativePath, transfer);
 #endif
-
+                enumerationCount++;
                 yield return transfer;
             }
+
+            Logger?.Info($"DmLib enumeration has finished. EnumerationCount: {enumerationCount} - JournalCount: {journalCount} - SubTransfersCount: {subTransfersCount}");
+            OnEnumerationFinished(enumerationCount, journalCount, subTransfersCount);
         }
 
         private void EnumerateAndTransfer(TransferScheduler scheduler, CancellationToken cancellationToken)
@@ -491,7 +496,24 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             this.outstandingTasks = 0;
         }
+        
+        private void OnEnumerationFinished(long enumeratedCount, long journalCount, long subTransfersCount)
+        {
+            var enumerationEventArgs = new EnumerationEventArgs
+            {
+                ItemsEnumerated = enumeratedCount,
+                ItemsEnumeratedFromJournal = journalCount,
+                ItemsEnumeratedFromSubTransfers = subTransfersCount
+            };
+            
+            Context?.OnEnumerationFinished(enumerationEventArgs);
+        }
 
+        private void DisposeJournal()
+        {
+            Logger?.Info("Disposing journal");
+            Journal?.Dispose();
+        }
 
         private async void DoTransfer(Transfer transfer, TransferScheduler scheduler, CancellationToken cancellationToken)
         {

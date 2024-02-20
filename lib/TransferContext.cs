@@ -181,6 +181,11 @@ namespace Microsoft.Azure.Storage.DataMovement
         public event EventHandler<TransferEventArgs> FileFailed;
 
         /// <summary>
+        /// The event triggered when a DmLib enumeration finished.
+        /// </summary>
+        public event EventHandler<EnumerationEventArgs> EnumerationFinished; 
+
+        /// <summary>
         /// Gets the overall transfer progress.
         /// </summary>
         internal TransferProgressTracker OverallProgressTracker
@@ -225,6 +230,11 @@ namespace Microsoft.Azure.Storage.DataMovement
             {
                 handler(this, eventArgs);
             }
+        }
+
+        internal void OnEnumerationFinished(EnumerationEventArgs eventArgs)
+        {
+            EnumerationFinished?.Invoke(this, eventArgs);
         }
     }
 }
