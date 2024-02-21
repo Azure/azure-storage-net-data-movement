@@ -1161,7 +1161,6 @@ namespace Microsoft.Azure.Storage.DataMovement
         public void Dispose()
         {
             stream?.Flush();
-            stream?.Dispose();
         }
     }
 }
