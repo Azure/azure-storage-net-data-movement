@@ -23,6 +23,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     [KnownType(typeof(FileLocation))]
     // StreamLocation intentionally omitted because it is not serializable
     [KnownType(typeof(UriLocation))]
+    [KnownType(typeof(TransferItemsLocation))]
     internal sealed class SerializableTransferLocation
 #if BINARY_SERIALIZATION
         : ISerializable
@@ -69,6 +70,10 @@ namespace Microsoft.Azure.Storage.DataMovement
                     break;
                 case TransferLocationType.LocalDirectory:
                     this.Location = (DirectoryLocation)info.GetValue(TransferLocationName, typeof(DirectoryLocation));
+                    break;
+                case TransferLocationType.TransferItems:
+                    this.Location =
+                        (TransferItemsLocation)info.GetValue(TransferLocationName, typeof(TransferItemsLocation));
                     break;
                 default:
                     break;
@@ -122,6 +127,9 @@ namespace Microsoft.Azure.Storage.DataMovement
                     break;
                 case TransferLocationType.LocalDirectory:
                     info.AddValue(TransferLocationName, this.Location as DirectoryLocation, typeof(DirectoryLocation));
+                    break;
+                case TransferLocationType.TransferItems:
+                    info.AddValue(TransferLocationName, this.Location as TransferItemsLocation, typeof(TransferItemsLocation));
                     break;
                 default:
                     throw new InvalidOperationException(string.Format(
