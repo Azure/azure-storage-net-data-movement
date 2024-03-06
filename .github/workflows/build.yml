@@ -1,0 +1,116 @@
+name: Build pipeline
+on:
+    pull_request:
+    workflow_call:
+        secrets:
+            CLIENT_ID:
+                required: true
+            CLIENT_SECRET:
+                required: true
+            SUBSCRIPTION_ID:
+                required: true
+            TENANT_ID:
+                required: true
+
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    build-and-test:
+        name: Build & Test
+        runs-on: windows-latest
+        defaults:
+            run:
+                shell: pwsh
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: '8'
+
+            - name: Diagnose versions
+              run: |
+                  dotnet --version
+                  pwsh --version
+
+            # - uses: Azure/login@v1
+            #   with:
+            #       creds: '{"clientId":"${{ secrets.CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.TENANT_ID }}"}'
+
+            # - name: Unregister globally available repositories from Nuget/NPM
+            #   uses: relativityone/build-extension/unregister-artifact-sources@main
+
+            # - name: Register Nuget Artifactory
+            #   uses: relativityone/build-extension/artifactory-setup@main
+            #   with:
+            #       KeyVaultName: 'R1-DataTransfer'
+            #       ArtifactType: 'nuget'
+            #       Repository: 'nuget-anthology'
+
+            # - name: Register NPM Artifactory
+            #   uses: relativityone/build-extension/artifactory-setup@main
+            #   with:
+            #       KeyVaultName: 'R1-DataTransfer'
+            #       ArtifactType: 'NPM'
+            #       Repository: 'npm-anthology'
+
+            # - name: Restore dotnet tools
+            #   run: dotnet tool restore
+
+            - name: Compile
+              run: .\build.ps1 Compile -Configuration Release
+
+            # - name: Run dotnet Unit tests
+            #   id: dotnet-unit-test
+            #   run: .\build.ps1 DotnetUnitTest
+
+            # - name: Report dotnet Unit tests
+            #   uses: dorny/test-reporter@v1
+            #   if: steps.dotnet-unit-test.outcome == 'success'
+            #   with:
+            #       name: Dotnet Unit test results
+            #       path: artifacts/testResults/dotnetUnitTestResults/*.trx
+            #       reporter: dotnet-trx
+            #       fail-on-error: true
+
+            # # TODO figure out workaround for dotnet code coverage action - right now it fails because generated report is too big (65535+ characters) https://jira.kcura.com/browse/REL-783660
+            # # - name: Report dotnet code coverage
+            # #   uses: 5monkeys/cobertura-action@master
+            # #   with:
+            # #     path: artifacts/testResults/dotnetUnitTestResults/*/coverage.cobertura.xml
+            # #     minimum_coverage: 50
+
+            # - name: Run dotnet EndToEnd tests
+            #   id: dotnet-endtoend-test
+            #   run: .\build.ps1 DotnetEndToEndTest
+
+            # - name: Report dotnet EndToEnd tests
+            #   uses: dorny/test-reporter@v1
+            #   if: steps.dotnet-endtoend-test.outcome == 'success'
+            #   with:
+            #       name: Dotnet EndToEnd test results
+            #       path: artifacts/testResults/dotnetEndToEndTestResults/*.trx
+            #       reporter: dotnet-trx
+            #       fail-on-error: true
+
+            # - name: Run Aurelia tests
+            #   id: aurelia-unit-test
+            #   run: .\build.ps1 AureliaUnitTest
+
+            # - name: Report Aurelia tests
+            #   uses: dorny/test-reporter@v1
+            #   if: steps.aurelia-unit-test.outcome == 'success'
+            #   with:
+            #       name: Aurelia test results
+            #       path: artifacts/testResults/aureliaTestResults/junit.xml
+            #       reporter: java-junit
+            #       fail-on-error: true
+
+            # - name: Report Aurelia code coverage
+            #   uses: 5monkeys/cobertura-action@master
+            #   with:
+            #       path: artifacts/testResults/aureliaTestResults/cobertura-*.xml
+            #       minimum_coverage: 50
