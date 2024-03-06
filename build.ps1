@@ -36,13 +36,18 @@ Set-StrictMode -Version 2.0
 
 [System.Net.ServicePointManager]::SecurityProtocol = 'Tls12'
 
+Write-Host "Bootstrapping build..."
 $ToolsDir = Join-Path $PSScriptRoot ".buildtools"
 $ReportGenerator = Join-Path $ToolsDir "reportgenerator.exe"
+Write-Host "Importing build tools from $ToolsDir..."
 Import-Module -Force "$ToolsDir\BuildHelpers.psm1" -ErrorAction Stop
+Write-Host "Asserting PSBuildTools module..."
 Assert-Module -Name PSBuildTools -Version 0.7.0 -Path $ToolsDir
+Write-Host "Asserting psake module..."
 Assert-Module -Name psake -Version 4.7.4 -Path $ToolsDir
 if (-not (Test-Path $ReportGenerator))
 {
+	Write-Host "dotnet install"
 	& dotnet tool install dotnet-reportgenerator-globaltool --version 4.1.5 --tool-path $ToolsDir
 	if ($LASTEXITCODE -ne 0) { throw "An error occured while restoring build tools." }
 }
@@ -61,6 +66,7 @@ $Params = @{
 
 Try
 {
+	Write-Host "Invoking psake"
 	Invoke-PSake @Params
 }
 Finally
