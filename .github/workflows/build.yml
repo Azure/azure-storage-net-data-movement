@@ -36,19 +36,19 @@ jobs:
                   dotnet --version
                   pwsh --version
 
-            # - uses: Azure/login@v1
-            #   with:
-            #       creds: '{"clientId":"${{ secrets.CLIENT_ID }}","clientSecret":"${{ secrets.CLIENT_SECRET }}","subscriptionId":"${{ secrets.SUBSCRIPTION_ID }}","tenantId":"${{ secrets.TENANT_ID }}"}'
+            - uses: Azure/login@v1
+              with:
+                  creds: '{"clientId":"${{ secrets.AZURE_SP_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_SP_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}"}'
 
-            # - name: Unregister globally available repositories from Nuget/NPM
-            #   uses: relativityone/build-extension/unregister-artifact-sources@main
+            - name: Unregister globally available repositories from Nuget/NPM
+              uses: relativityone/build-extension/unregister-artifact-sources@main
 
-            # - name: Register Nuget Artifactory
-            #   uses: relativityone/build-extension/artifactory-setup@main
-            #   with:
-            #       KeyVaultName: 'R1-DataTransfer'
-            #       ArtifactType: 'nuget'
-            #       Repository: 'nuget-anthology'
+            - name: Register Nuget Artifactory
+              uses: relativityone/build-extension/artifactory-setup@main
+              with:
+                  KeyVaultName: 'R1-DataTransfer'
+                  ArtifactType: 'nuget'
+                  Repository: 'nuget-anthology'
 
             # - name: Register NPM Artifactory
             #   uses: relativityone/build-extension/artifactory-setup@main
