@@ -983,6 +983,11 @@ namespace Microsoft.Azure.Storage.DataMovement
                 targetRequestOptions.ServerTimeout = customRequestOptions.ServerTimeout;
             }
 
+            if (null != customRequestOptions.NetworkTimeout)
+            {
+                targetRequestOptions.NetworkTimeout = customRequestOptions.NetworkTimeout;
+            }
+
             targetRequestOptions.LocationMode = customRequestOptions.LocationMode;
         }
 

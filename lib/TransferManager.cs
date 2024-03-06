@@ -92,6 +92,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             // Set default request options
             SetDefaultRequestOptions(destLocation);
+            SetCustomBlobRequestOptions(destLocation.BlobRequestOptions, destBlob.ServiceClient.DefaultRequestOptions);
 
             if (options != null)
             {
@@ -143,6 +144,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             // Set default request options
             SetDefaultRequestOptions(destLocation);
+            SetCustomBlobRequestOptions(destLocation.BlobRequestOptions, destBlob.ServiceClient.DefaultRequestOptions);
 
             if (options != null)
             {
@@ -259,7 +261,8 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             // Set default request options
             SetDefaultRequestOptions(destLocation);
-
+            SetCustomBlobRequestOptions(destLocation.BlobRequestOptions, rootDestBlobDir.ServiceClient.DefaultRequestOptions);
+            
             if (options != null)
             {
                 destLocation.BlobRequestOptions.EncryptionScope = options.EncryptionScope;
@@ -374,6 +377,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             // Set default request options
             SetDefaultRequestOptions(destLocation);
+            SetCustomBlobRequestOptions(destLocation.BlobRequestOptions, destBlobDir.ServiceClient.DefaultRequestOptions);
 
             if (options != null)
             {
@@ -461,6 +465,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             // Set default request options
             SetDefaultRequestOptions(sourceLocation);
+            SetCustomBlobRequestOptions(sourceLocation.BlobRequestOptions, sourceBlob.ServiceClient.DefaultRequestOptions);
 
             if (options != null)
             {
@@ -512,6 +517,7 @@ namespace Microsoft.Azure.Storage.DataMovement
 
             // Set default request options
             SetDefaultRequestOptions(sourceLocation);
+            SetCustomBlobRequestOptions(sourceLocation.BlobRequestOptions, sourceBlob.ServiceClient.DefaultRequestOptions);
 
             if (options != null)
             {
@@ -667,6 +673,7 @@ namespace Microsoft.Azure.Storage.DataMovement
           
             // Set default request options
             SetDefaultRequestOptions(sourceLocation);
+            SetCustomBlobRequestOptions(sourceLocation.BlobRequestOptions, sourceBlobDir.ServiceClient.DefaultRequestOptions);
 
             if (options != null)
             {
@@ -2004,6 +2011,18 @@ namespace Microsoft.Azure.Storage.DataMovement
                     // Do nothing for other location type
                     break;
             }
+        }
+        
+        private static void SetCustomBlobRequestOptions(IRequestOptions targetOptions,
+            IRequestOptions customOptions)
+        {
+            if (targetOptions == null)
+            {
+                return;
+            }
+            
+            targetOptions.RetryPolicy = customOptions.RetryPolicy;
+            targetOptions.NetworkTimeout = customOptions.NetworkTimeout;
         }
 
         private static bool AreSameTransferEnumerators(ITransferEnumerator enumerator1, ITransferEnumerator enumerator2)

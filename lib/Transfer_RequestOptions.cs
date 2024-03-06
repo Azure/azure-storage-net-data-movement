@@ -49,6 +49,8 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// </summary>
         private static readonly TimeSpan retryPoliciesDefaultBackoff =
             TimeSpan.FromSeconds(3.0);
+        
+        private static readonly TimeSpan DefaultNetworkTimeout = TimeSpan.FromSeconds(200);
 
         /// <summary>
         /// Gets the default <see cref="BlobRequestOptions"/>.
@@ -67,7 +69,8 @@ namespace Microsoft.Azure.Storage.DataMovement
                     MaximumExecutionTime = DefaultMaximumExecutionTime,
                     RetryPolicy = defaultRetryPolicy,
                     ServerTimeout = DefaultServerTimeout,
-                    UseTransactionalMD5 = true
+                    UseTransactionalMD5 = true,
+                    NetworkTimeout = DefaultNetworkTimeout
                 };
             }
         }
