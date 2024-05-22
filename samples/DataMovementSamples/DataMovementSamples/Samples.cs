@@ -98,17 +98,30 @@ namespace DataMovementSamples
             UploadOptions options = new UploadOptions();
 
             SingleTransferContext context = new SingleTransferContext();
+            int transferSuccess = 0;
             context.SetAttributesCallbackAsync = async (source, destination) =>
             {
                 CloudBlob destBlob = destination as CloudBlob;
                 destBlob.Properties.ContentType = "image/png";
             };
-
             context.ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite;
+            context.FileTransferred += (object sender, TransferEventArgs args) =>
+            {
+                Interlocked.Increment(ref transferSuccess);
+            };
 
             // Start the upload
             await TransferManager.UploadAsync(sourceFileName, destinationBlob, options, context);
-            Console.WriteLine("File {0} is uploaded to {1} successfully.", sourceFileName, destinationBlob.Uri.ToString());
+
+            // Check for successful upload
+            if(transferSuccess > 0)
+            {
+                Console.WriteLine("File {0} is uploaded to {1} successfully.", sourceFileName, destinationBlob.Uri.ToString());
+            }
+            else
+            {
+                Console.WriteLine("File {0} has failed to be uploaded (File has failed or has been skipped).", sourceFileName);
+            }
         }
 
         /// <summary>
@@ -121,10 +134,31 @@ namespace DataMovementSamples
 
             // Create the destination CloudFile instance
             CloudFile destinationFile = await Util.GetCloudFileAsync(ShareName, destinationFileName);
+            SingleTransferContext context = new SingleTransferContext();
+            int transferSuccess = 0;
+            context.SetAttributesCallbackAsync = async (source, destination) =>
+            {
+                CloudFile destFile = destination as CloudFile;
+                destFile.Properties.ContentType = "image/png";
+            };
+            context.ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite;
+            context.FileTransferred += (object sender, TransferEventArgs args) =>
+            {
+                Interlocked.Increment(ref transferSuccess);
+            };
 
             // Start the upload
-            await TransferManager.UploadAsync(sourceFileName, destinationFile);
-            Console.WriteLine("File {0} is uploaded to {1} successfully.", sourceFileName, destinationFile.Uri.ToString());
+            await TransferManager.UploadAsync(sourceFileName, destinationFile, null /* options */, context);
+
+            // Check for successful upload
+            if (transferSuccess > 0)
+            {
+                Console.WriteLine("File {0} is uploaded to {1} successfully.", sourceFileName, destinationFile.Uri.ToString());
+            }
+            else
+            {
+                Console.WriteLine("File {0} has failed to be uploaded (File has failed or has been skipped).", sourceFileName);
+            }
         }
 
         /// <summary>
@@ -150,6 +184,17 @@ namespace DataMovementSamples
 
             TransferCheckpoint checkpoint = null;
             SingleTransferContext context = new SingleTransferContext();
+            int transferSuccess = 0;
+            context.SetAttributesCallbackAsync = async (source, destination) =>
+            {
+                CloudFile destBlob = destination as CloudFile;
+                destBlob.Properties.ContentType = "image/png";
+            };
+            context.ShouldOverwriteCallbackAsync = TransferContext.ForceOverwrite;
+            context.FileTransferred += (object sender, TransferEventArgs args) =>
+            {
+                Interlocked.Increment(ref transferSuccess);
+            };
 
             // Start the transfer
             try
@@ -187,7 +232,15 @@ namespace DataMovementSamples
             // Resume transfer from the stored checkpoint
             Console.WriteLine("Resume the cancelled transfer.");
             await TransferManager.CopyAsync(sourceBlob, destinationBlob, CopyMethod.ServiceSideSyncCopy, null /* options */, resumeContext);
-            Console.WriteLine("CloudBlob {0} is copied to {1} successfully.", sourceBlob.Uri.ToString(), destinationBlob.Uri.ToString());
+            // Check for successful upload
+            if (transferSuccess > 0)
+            {
+                Console.WriteLine("CloudBlob {0} is copied to {1} successfully.", sourceBlob.Uri.ToString(), destinationBlob.Uri.ToString());
+            }
+            else
+            {
+                Console.WriteLine("CloudBlob {0} has failed to be copied to {1} (Blob has failed or has been skipped).", sourceBlob.Uri.ToString(), destinationBlob.Uri.ToString());
+            }
         }
 
         /// <summary>
