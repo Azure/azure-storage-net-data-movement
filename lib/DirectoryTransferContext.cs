@@ -41,7 +41,7 @@ namespace Microsoft.Azure.Storage.DataMovement
         }
 
         /// <summary>
-        /// Gets or sets the callback invoked to tell whether a transfer should be done.
+        /// Gets or sets the callback invoked to check whether a transfer should be done.
         /// </summary>
         public ShouldTransferCallbackAsync ShouldTransferCallbackAsync
         {

@@ -9,7 +9,7 @@ namespace Microsoft.Azure.Storage.DataMovement
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Callback invoked to tell whether to overwrite an existing destination.
+    /// Callback invoked to check whether to overwrite an existing destination.
     /// </summary>
     /// <param name="source">Instance of source used to overwrite the destination.</param>
     /// <param name="destination">Instance of destination to be overwritten.</param>
