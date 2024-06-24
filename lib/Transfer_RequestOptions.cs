@@ -31,16 +31,16 @@ namespace Microsoft.Azure.Storage.DataMovement
         /// <summary>
         /// Stores the default maximum execution time across all potential retries. 
         /// </summary>
-        private static readonly TimeSpan DefaultMaximumExecutionTime =
+        private static TimeSpan DefaultMaximumExecutionTime =
             TimeSpan.FromSeconds(900);
 
         /// <summary>
         /// Stores the default server timeout.
         /// </summary>
-        private static readonly TimeSpan DefaultServerTimeout =
+        private static TimeSpan DefaultServerTimeout =
             TimeSpan.FromSeconds(300);
 
-        public static readonly TimeSpan DefaultCreationServerTimeout =
+        public static TimeSpan DefaultCreationServerTimeout =
             TimeSpan.FromSeconds(30);
 
         /// <summary>
